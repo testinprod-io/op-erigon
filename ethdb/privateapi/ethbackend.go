@@ -83,8 +83,10 @@ type PayloadStatus struct {
 }
 
 type pendingPayload struct {
-	block *types.Block
-	built bool
+	block             *types.Block
+	built             bool
+	forceTransactions [][]byte
+	noTxPool          bool
 }
 
 func NewEthBackendServer(ctx context.Context, eth EthBackend, db kv.RwDB, events *Events, blockReader interfaces.BlockAndTxnReader,
@@ -505,7 +507,16 @@ func (s *EthBackendServer) EngineForkChoiceUpdatedV1(ctx context.Context, req *r
 	emptyHeader.Coinbase = gointerfaces.ConvertH160toAddress(req.PayloadAttributes.SuggestedFeeRecipient)
 	emptyHeader.MixDigest = gointerfaces.ConvertH256ToHash(req.PayloadAttributes.PrevRandao)
 
-	s.pendingPayloads[s.payloadId] = &pendingPayload{block: types.NewBlock(emptyHeader, nil, nil, nil)}
+	var txs []types.Transaction
+	for i, otx := range req.PayloadAttributes.Transactions {
+		tx, err := types.UnmarshalTransactionFromBinary(otx)
+		if err != nil {
+			return nil, fmt.Errorf("bad tx %d in payload attributes: %v", i, err)
+		}
+		txs = append(txs, tx)
+	}
+
+	s.pendingPayloads[s.payloadId] = &pendingPayload{block: types.NewBlock(emptyHeader, txs, nil, nil)}
 
 	log.Trace("[ForkChoiceUpdated] unpause assemble process")
 	s.syncCond.Broadcast()
@@ -541,6 +552,8 @@ func (s *EthBackendServer) StartProposer() {
 		for {
 			var blockToBuild *types.Block
 			var payloadId uint64
+			var forceTransactions [][]byte
+			var noTxPool bool
 
 		FindPayloadToBuild:
 			for {
@@ -560,6 +573,8 @@ func (s *EthBackendServer) StartProposer() {
 					if !payload.built && payload.block.ParentHash() == headHash {
 						blockToBuild = payload.block
 						payloadId = id
+						forceTransactions = payload.forceTransactions
+						noTxPool = payload.noTxPool
 						break FindPayloadToBuild
 					}
 				}
@@ -577,6 +592,8 @@ func (s *EthBackendServer) StartProposer() {
 				Timestamp:             blockToBuild.Header().Time,
 				PrevRandao:            blockToBuild.MixDigest(),
 				SuggestedFeeRecipient: blockToBuild.Header().Coinbase,
+				Transactions:          forceTransactions,
+				NoTxPool:              noTxPool,
 			}
 
 			log.Trace("[Proposer] starting assembling...")

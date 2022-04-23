@@ -392,6 +392,8 @@ func New(stack *node.Node, config *ethconfig.Config, txpoolCfg txpool2.Config, l
 	assembleBlockPOS := func(param *core.BlockProposerParametersPOS) (*types.Block, error) {
 		miningStatePos := stagedsync.NewMiningState(&config.Miner)
 		miningStatePos.MiningConfig.Etherbase = param.SuggestedFeeRecipient
+		miningStatePos.MiningConfig.Transactions = param.Transactions
+		miningStatePos.MiningConfig.NoTxPool = param.NoTxPool
 		proposingSync := stagedsync.New(
 			stagedsync.MiningStages(backend.sentryCtx,
 				stagedsync.StageMiningCreateBlockCfg(backend.chainDB, miningStatePos, *backend.chainConfig, backend.engine, backend.txPool2, backend.txPool2DB, param, tmpdir),

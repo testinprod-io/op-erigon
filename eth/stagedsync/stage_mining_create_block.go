@@ -32,6 +32,7 @@ type MiningBlock struct {
 	Txs      types.Transactions
 	Receipts types.Receipts
 
+	ForceTxs  types.TransactionsStream
 	LocalTxs  types.TransactionsStream
 	RemoteTxs types.TransactionsStream
 }
@@ -120,33 +121,36 @@ func SpawnMiningCreateBlockStage(s *StageState, tx kv.RwTx, cfg MiningCreateBloc
 
 	blockNum := executionAt + 1
 	var txs []types.Transaction
-	if err = cfg.txPool2DB.View(context.Background(), func(tx kv.Tx) error {
-		txSlots := types2.TxsRlp{}
-		if err := cfg.txPool2.Best(200, &txSlots, tx); err != nil {
+	// tx pool must be enabled for us to add txs to current mining block
+	if !cfg.blockProposerParameters.NoTxPool {
+		if err = cfg.txPool2DB.View(context.Background(), func(tx kv.Tx) error {
+			txSlots := types2.TxsRlp{}
+			if err := cfg.txPool2.Best(200, &txSlots, tx); err != nil {
+				return err
+			}
+
+			txs, err = types.DecodeTransactions(txSlots.Txs)
+			if errors.Is(err, io.EOF) {
+				return nil
+			}
+
+			if err != nil {
+				return fmt.Errorf("decode rlp of pending txs: %w", err)
+			}
+			var sender common.Address
+			for i := range txs {
+				copy(sender[:], txSlots.Senders.At(i))
+				txs[i].SetSender(sender)
+			}
+
+			return nil
+		}); err != nil {
 			return err
 		}
-
-		txs, err = types.DecodeTransactions(txSlots.Txs)
-		if errors.Is(err, io.EOF) {
-			return nil
-		}
-
-		if err != nil {
-			return fmt.Errorf("decode rlp of pending txs: %w", err)
-		}
-		var sender common.Address
-		for i := range txs {
-			copy(sender[:], txSlots.Senders.At(i))
-			txs[i].SetSender(sender)
-		}
-
-		return nil
-	}); err != nil {
-		return err
+		current.RemoteTxs = types.NewTransactionsFixedOrder(txs)
+		// txpool v2 - doesn't prioritise local txs over remote
+		current.LocalTxs = types.NewTransactionsFixedOrder(nil)
 	}
-	current.RemoteTxs = types.NewTransactionsFixedOrder(txs)
-	// txpool v2 - doesn't prioritise local txs over remote
-	current.LocalTxs = types.NewTransactionsFixedOrder(nil)
 	log.Debug(fmt.Sprintf("[%s] Candidate txs", logPrefix), "amount", len(txs))
 	localUncles, remoteUncles, err := readNonCanonicalHeaders(tx, blockNum, cfg.engine, coinbase, txPoolLocals)
 	if err != nil {

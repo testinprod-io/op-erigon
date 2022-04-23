@@ -62,6 +62,7 @@ func SpawnMiningExecStage(s *StageState, tx kv.RwTx, cfg MiningExecCfg, quit <-c
 	cfg.vmConfig.NoReceipts = false
 	logPrefix := s.LogPrefix()
 	current := cfg.miningState.MiningBlock
+	forceTxs := current.ForceTxs
 	localTxs := current.LocalTxs
 	remoteTxs := current.RemoteTxs
 	noempty := true
@@ -88,6 +89,18 @@ func SpawnMiningExecStage(s *StageState, tx kv.RwTx, cfg MiningExecCfg, quit <-c
 	// But if we disable empty precommit already, ignore it. Since
 	// empty block is necessary to keep the liveness of the network.
 	if noempty {
+		if !forceTxs.Empty() {
+			logs, err := addTransactionsToMiningBlock(logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, contractHasTEVM, cfg.engine, forceTxs, cfg.miningState.MiningConfig.Etherbase, ibs, quit)
+			if err != nil {
+				return err
+			}
+			// We don't push the pendingLogsEvent while we are mining. The reason is that
+			// when we are mining, the worker will regenerate a mining block every 3 seconds.
+			// In order to avoid pushing the repeated pendingLog, we disable the pending log pushing.
+			//if !w.isRunning() {
+			NotifyPendingLogs(logPrefix, cfg.notifier, logs)
+			//}
+		}
 		if !localTxs.Empty() {
 			logs, err := addTransactionsToMiningBlock(logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, contractHasTEVM, cfg.engine, localTxs, cfg.miningState.MiningConfig.Etherbase, ibs, quit)
 			if err != nil {
