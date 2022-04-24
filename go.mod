@@ -4,7 +4,8 @@ go 1.18
 
 replace github.com/etcd-io/bbolt => go.etcd.io/bbolt v1.3.5
 
-replace github.com/ledgerwatch/erigon-lib v0.0.0-20220423144324-c3b480409230 => ../erigon-lib
+// fork with minor protobuf file changes
+replace github.com/ledgerwatch/erigon-lib v0.0.0-20220423144324-c3b480409230 => github.com/protolambda/erigon-lib v0.0.0-20220424015553-b24bfaa653b2
 
 require (
 	github.com/RoaringBitmap/roaring v0.9.4

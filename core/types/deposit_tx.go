@@ -287,10 +287,8 @@ func NewDepositTransaction(to common.Address, mint *uint256.Int, amount *uint256
 		// Value is transferred from L2 balance, executed after Mint (if any)
 		Value: amount,
 		// gas limit
-		Gas: gasLimit,
-		// wei per gas
-		GasPrice: gasPrice,
-		Data:     data,
+		Gas:  gasLimit,
+		Data: data,
 	}
 }
 
