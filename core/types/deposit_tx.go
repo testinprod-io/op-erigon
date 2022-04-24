@@ -17,9 +17,11 @@
 package types
 
 import (
+	"bytes"
+	"fmt"
+	"github.com/ledgerwatch/erigon/rlp"
 	"io"
 	"math/big"
-	"math/bits"
 	"sync/atomic"
 	"time"
 
@@ -43,10 +45,8 @@ type DepositTx struct {
 	// Value is transferred from L2 balance, executed after Mint (if any)
 	Value *uint256.Int
 	// gas limit
-	Gas uint64
-	// wei per gas
-	GasPrice *uint256.Int
-	Data     []byte
+	Gas  uint64
+	Data []byte
 }
 
 var _ Transaction = (*DepositTx)(nil)
@@ -92,14 +92,7 @@ func (tx DepositTx) RawSignatureValues() (*uint256.Int, *uint256.Int, *uint256.I
 }
 
 func (tx DepositTx) SigningHash(chainID *big.Int) common.Hash {
-	return rlpHash([]interface{}{
-		DepositsNonce,
-		tx.GasPrice,
-		tx.Gas,
-		tx.To,
-		tx.Value,
-		tx.Data,
-	})
+	panic("deposit tx does not have a signing hash")
 }
 
 // NOTE: Need to check this
@@ -114,85 +107,95 @@ func (tx *DepositTx) Size() common.StorageSize {
 
 // NOTE: Need to check this
 func (tx DepositTx) EncodingSize() int {
-	payloadSize, _, _ := tx.payloadSize()
-	return payloadSize
+	var buf bytes.Buffer
+	if err := tx.MarshalBinary(&buf); err != nil {
+		panic(err)
+	}
+	return len(buf.Bytes())
 }
 
-// NOTE: honestly, tired of saying it, but need to check this lol
-func (tx DepositTx) payloadSize() (payloadSize int, nonceLen, gasLen int) {
-	payloadSize++
-	if tx.Nonce >= 128 {
-		nonceLen = (bits.Len64(tx.Nonce) + 7) / 8
+// MarshalBinary returns the canonical encoding of the transaction.
+// For legacy transactions, it returns the RLP encoding. For EIP-2718 typed
+// transactions, it returns the type and payload.
+func (tx DepositTx) MarshalBinary(w io.Writer) error {
+	if _, err := w.Write([]byte{DepositTxType}); err != nil {
+		return err
 	}
-	payloadSize += nonceLen
-	payloadSize++
-	var gasPriceLen int
-	if tx.GasPrice.BitLen() >= 8 {
-		gasPriceLen = (tx.GasPrice.BitLen() + 7) / 8
+	if err := tx.encodePayload(w); err != nil {
+		return err
 	}
-	payloadSize += gasPriceLen
-	payloadSize++
-	if tx.Gas >= 128 {
-		gasLen = (bits.Len64(tx.Gas) + 7) / 8
-	}
-	payloadSize += gasLen
-	payloadSize++
-	if tx.To != nil {
-		payloadSize += 20
-	}
-	payloadSize++
-	var valueLen int
-	if tx.Value.BitLen() >= 8 {
-		valueLen = (tx.Value.BitLen() + 7) / 8
-	}
-	payloadSize += valueLen
-	// size of Data
-	payloadSize++
-	switch len(tx.Data) {
-	case 0:
-	case 1:
-		if tx.Data[0] >= 128 {
-			payloadSize++
-		}
-	default:
-		if len(tx.Data) >= 56 {
-			payloadSize += (bits.Len(uint(len(tx.Data))) + 7) / 8
-		}
-		payloadSize += len(tx.Data)
-	}
-	// size of V
-	payloadSize++
-	var vLen int
-	if tx.V.BitLen() >= 8 {
-		vLen = (tx.V.BitLen() + 7) / 8
-	}
-	payloadSize += vLen
-	payloadSize++
-	var rLen int
-	if tx.R.BitLen() >= 8 {
-		rLen = (tx.R.BitLen() + 7) / 8
-	}
-	payloadSize += rLen
-	payloadSize++
-	var sLen int
-	if tx.S.BitLen() >= 8 {
-		sLen = (tx.S.BitLen() + 7) / 8
-	}
-	payloadSize += sLen
-	return payloadSize, nonceLen, gasLen
+	return nil
 }
 
-// EncodeString
+func (tx DepositTx) encodePayload(w io.Writer) error {
+	return rlp.Encode(w, []interface{}{
+		tx.SourceHash,
+		tx.From,
+		tx.To,
+		tx.Mint,
+		tx.Value,
+		tx.Gas,
+		tx.Data,
+	})
+}
 
-// EncodeStringSizePrefix
+func (tx DepositTx) EncodeRLP(w io.Writer) error {
+	return tx.MarshalBinary(w)
+}
 
-// MarshalBinary
-
-// encodePayload
-
-// EncodeRLP
-
-// DeocdeRLP
+func (tx *DepositTx) DecodeRLP(s *rlp.Stream) error {
+	_, err := s.List()
+	if err != nil {
+		return err
+	}
+	var b []byte
+	// SourceHash
+	if b, err = s.Bytes(); err != nil {
+		return err
+	}
+	if len(b) != 32 {
+		return fmt.Errorf("wrong size for Source hash: %d", len(b))
+	}
+	copy(tx.SourceHash[:], b)
+	// From
+	if b, err = s.Bytes(); err != nil {
+		return err
+	}
+	if len(b) != 20 {
+		return fmt.Errorf("wrong size for From hash: %d", len(b))
+	}
+	copy(tx.From[:], b)
+	// To (optional)
+	if b, err = s.Bytes(); err != nil {
+		return err
+	}
+	if len(b) > 0 && len(b) != 20 {
+		return fmt.Errorf("wrong size for To: %d", len(b))
+	}
+	if len(b) > 0 {
+		tx.To = &common.Address{}
+		copy((*tx.To)[:], b)
+	}
+	// Mint
+	if b, err = s.Uint256Bytes(); err != nil {
+		return err
+	}
+	tx.Mint = new(uint256.Int).SetBytes(b)
+	// Value
+	if b, err = s.Uint256Bytes(); err != nil {
+		return err
+	}
+	tx.Value = new(uint256.Int).SetBytes(b)
+	// Gas
+	if tx.Gas, err = s.Uint(); err != nil {
+		return err
+	}
+	// Data
+	if tx.Data, err = s.Bytes(); err != nil {
+		return err
+	}
+	return s.ListEnd()
+}
 
 func (tx *DepositTx) FakeSign(address common.Address) (Transaction, error) {
 	cpy := tx.copy()
@@ -221,16 +224,10 @@ func (tx *DepositTx) Hash() common.Hash {
 		tx.Mint,
 		tx.Value,
 		tx.Gas,
-		tx.GasPrice,
 		tx.Data,
 	})
 	tx.hash.Store(&hash)
 	return hash
-}
-
-// TODO: marshalling stuff
-func (tx DepositTx) MarshalBinary(w io.Writer) error {
-	return nil
 }
 
 // not sure ab this one lol
@@ -246,9 +243,10 @@ func (tx DepositTx) IsStarkNet() bool {
 	return false
 }
 
-func (tx DepositTx) GetPrice() *uint256.Int  { return tx.GasPrice }
-func (tx DepositTx) GetTip() *uint256.Int    { return tx.GasPrice }
-func (tx DepositTx) GetFeeCap() *uint256.Int { return tx.GasPrice }
+// All zero in the prototype
+func (tx DepositTx) GetPrice() *uint256.Int  { return uint256.NewInt(0) }
+func (tx DepositTx) GetTip() *uint256.Int    { return uint256.NewInt(0) }
+func (tx DepositTx) GetFeeCap() *uint256.Int { return uint256.NewInt(0) }
 
 // Is this needed at all?
 func (tx DepositTx) GetEffectiveGasTip(baseFee *uint256.Int) *uint256.Int {
@@ -269,10 +267,8 @@ func (tx DepositTx) GetEffectiveGasTip(baseFee *uint256.Int) *uint256.Int {
 }
 
 func (tx DepositTx) Cost() *uint256.Int {
-	total := new(uint256.Int).SetUint64(tx.Gas)
-	total.Mul(total, tx.GasPrice)
-	total.Add(total, tx.Value)
-	return total
+	// No gas cost yet in prototype
+	return tx.Value.Clone()
 }
 
 func (tx DepositTx) GetAccessList() AccessList {
@@ -297,12 +293,6 @@ func NewDepositTransaction(to common.Address, mint *uint256.Int, amount *uint256
 		Data:     data,
 	}
 }
-
-// func (tx *DepositTx) txType() byte           { return DepositTxType }
-
-// func (tx *DepositTx) setSignatureValues(chainID, v, r, s *big.Int) {
-// 	panic("deposit tx does not have a signature")
-// }
 
 // copy creates a deep copy of the transaction data and initializes all fields.
 func (tx DepositTx) copy() *DepositTx {
@@ -329,9 +319,9 @@ func (tx DepositTx) AsMessage(s Signer, _ *big.Int) (Message, error) {
 	msg := Message{
 		nonce:      DepositsNonce,
 		gasLimit:   tx.Gas,
-		gasPrice:   *tx.GasPrice,
-		tip:        *tx.GasPrice,
-		feeCap:     *tx.GasPrice,
+		gasPrice:   *uint256.NewInt(0),
+		tip:        *uint256.NewInt(0),
+		feeCap:     *uint256.NewInt(0),
 		from:       tx.From,
 		to:         tx.To,
 		amount:     *tx.Value,
