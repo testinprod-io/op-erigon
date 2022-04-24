@@ -60,6 +60,7 @@ type StateTransition struct {
 	tip        *uint256.Int
 	initialGas uint64
 	value      *uint256.Int
+	mint       *uint256.Int
 	data       []byte
 	state      vm.IntraBlockState
 	evm        vm.VMInterface
@@ -83,6 +84,8 @@ type Message interface {
 	Gas() uint64
 	Value() *uint256.Int
 
+	// Mint is nil if there is no minting
+	Mint() *uint256.Int
 	Nonce() uint64
 	CheckNonce() bool
 	Data() []byte
@@ -205,6 +208,7 @@ func NewStateTransition(evm vm.VMInterface, msg Message, gp *GasPool) *StateTran
 		gasFeeCap: msg.FeeCap(),
 		tip:       msg.Tip(),
 		value:     msg.Value(),
+		mint:      msg.Mint(),
 		data:      msg.Data(),
 		state:     evm.IntraBlockState(),
 
@@ -277,6 +281,11 @@ func (st *StateTransition) buyGas(gasBailout bool) error {
 
 // DESCRIBED: docs/programmers_guide/guide.md#nonce
 func (st *StateTransition) preCheck(gasBailout bool) error {
+	if st.msg.Nonce() == types.DepositsNonce {
+		// No fee fields to check, no nonce to check, and no need to check if EOA (L1 already verified it for us)
+		// Gas is free, but no refunds!
+		return nil
+	}
 	// Make sure this transaction's nonce is correct.
 	if st.msg.CheckNonce() {
 		stNonce := st.state.GetNonce(st.msg.From())
@@ -340,13 +349,38 @@ func (st *StateTransition) preCheck(gasBailout bool) error {
 // However if any consensus issue encountered, return the error directly with
 // nil evm execution result.
 func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*ExecutionResult, error) {
+	if mint := st.msg.Mint(); mint != nil {
+		st.state.AddBalance(st.msg.From(), mint)
+	}
+	snap := st.state.Snapshot()
+
+	result, err := st.innerTransitionDb(refunds, gasBailout)
+	if err != nil { // EVM errors would have a result.Err and a nil execution err
+		// Failed deposits must still be included.
+		// On failure, we rewind any state changes from after the minting, and increment the nonce.
+		if st.msg.Nonce() == types.DepositsNonce {
+			st.state.RevertToSnapshot(snap)
+			// Even though we revert the state changes, always increment the nonce for the next deposit transaction
+			st.state.SetNonce(st.msg.From(), st.state.GetNonce(st.msg.From())+1)
+			result = &ExecutionResult{
+				UsedGas:    0, // No gas charge on non-EVM fails like balance checks, congestion is controlled on L1
+				Err:        fmt.Errorf("failed deposit: %w", err),
+				ReturnData: nil,
+			}
+			err = nil
+		}
+	}
+	return result, err
+
+}
+
+func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*ExecutionResult, error) {
 	var input1 *uint256.Int
 	var input2 *uint256.Int
 	if st.isBor {
 		input1 = st.state.GetBalance(st.msg.From()).Clone()
 		input2 = st.state.GetBalance(st.evm.Context().Coinbase).Clone()
 	}
-
 	// First check this message satisfies all consensus rules before
 	// applying the message. The rules include these clauses
 	//
@@ -374,15 +408,17 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*Executi
 	london := st.evm.ChainRules().IsLondon
 	contractCreation := msg.To() == nil
 
-	// Check clauses 4-5, subtract intrinsic gas if everything is correct
-	gas, err := IntrinsicGas(st.data, st.msg.AccessList(), contractCreation, homestead, istanbul)
-	if err != nil {
-		return nil, err
+	if st.msg.Nonce() != types.DepositsNonce {
+		// Check clauses 4-5, subtract intrinsic gas if everything is correct
+		gas, err := IntrinsicGas(st.data, st.msg.AccessList(), contractCreation, homestead, istanbul)
+		if err != nil {
+			return nil, err
+		}
+		if st.gas < gas {
+			return nil, fmt.Errorf("%w: have %d, want %d", ErrIntrinsicGas, st.gas, gas)
+		}
+		st.gas -= gas
 	}
-	if st.gas < gas {
-		return nil, fmt.Errorf("%w: have %d, want %d", ErrIntrinsicGas, st.gas, gas)
-	}
-	st.gas -= gas
 
 	var bailout bool
 	// Gas bailout (for trace_call) should only be applied if there is not sufficient balance to perform value transfer
@@ -411,6 +447,14 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*Executi
 		// Increment the nonce for the next transaction
 		st.state.SetNonce(msg.From(), st.state.GetNonce(sender.Address())+1)
 		ret, st.gas, vmerr = st.evm.Call(sender, st.to(), st.data, st.gas, st.value, bailout)
+	}
+	// if deposit: skip refunds, skip tipping coinbase
+	if st.msg.Nonce() == types.DepositsNonce {
+		return &ExecutionResult{
+			UsedGas:    st.gasUsed(),
+			Err:        vmerr,
+			ReturnData: ret,
+		}, nil
 	}
 	if refunds {
 		if london {
