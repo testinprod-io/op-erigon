@@ -461,6 +461,7 @@ type Message struct {
 	data       []byte
 	accessList AccessList
 	checkNonce bool
+	mint       *uint256.Int
 }
 
 func NewMessage(from common.Address, to *common.Address, nonce uint64, amount *uint256.Int, gasLimit uint64, gasPrice *uint256.Int, feeCap, tip *uint256.Int, data []byte, accessList AccessList, checkNonce bool) Message {
@@ -473,6 +474,7 @@ func NewMessage(from common.Address, to *common.Address, nonce uint64, amount *u
 		data:       data,
 		accessList: accessList,
 		checkNonce: checkNonce,
+		mint:       nil,
 	}
 	if gasPrice != nil {
 		m.gasPrice.Set(gasPrice)
@@ -497,3 +499,4 @@ func (m Message) Nonce() uint64          { return m.nonce }
 func (m Message) Data() []byte           { return m.data }
 func (m Message) AccessList() AccessList { return m.accessList }
 func (m Message) CheckNonce() bool       { return m.checkNonce }
+func (m Message) Mint() *uint256.Int     { return m.mint }

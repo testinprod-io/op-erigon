@@ -326,6 +326,7 @@ func (tx DepositTx) AsMessage(s Signer, _ *big.Int) (Message, error) {
 		data:       tx.Data,
 		accessList: nil,
 		checkNonce: true,
+		mint:       tx.Mint,
 	}
 
 	return msg, nil
