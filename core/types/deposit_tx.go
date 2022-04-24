@@ -19,13 +19,16 @@ package types
 import (
 	"io"
 	"math/big"
+	"math/bits"
 	"sync/atomic"
+	"time"
 
 	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/erigon/common"
 )
 
 type DepositTx struct {
+	time time.Time // Time first seen locally (spam avoidance)
 	// caches
 	hash atomic.Value //nolint:structcheck
 	size atomic.Value //nolint:structcheck
@@ -84,11 +87,128 @@ func (tx DepositTx) SetSender(addr common.Address) {
 	tx.From = addr
 }
 
+func (tx DepositTx) RawSignatureValues() (*uint256.Int, *uint256.Int, *uint256.Int) {
+	panic("deposit tx does not have a signature")
+}
+
+func (tx DepositTx) SigningHash(chainID *big.Int) common.Hash {
+	return rlpHash([]interface{}{
+		DepositsNonce,
+		tx.GasPrice,
+		tx.Gas,
+		tx.To,
+		tx.Value,
+		tx.Data,
+	})
+}
+
+// NOTE: Need to check this
+func (tx *DepositTx) Size() common.StorageSize {
+	if size := tx.size.Load(); size != nil {
+		return size.(common.StorageSize)
+	}
+	c := tx.EncodingSize()
+	tx.size.Store(common.StorageSize(c))
+	return common.StorageSize(c)
+}
+
+// NOTE: Need to check this
+func (tx DepositTx) EncodingSize() int {
+	payloadSize, _, _ := tx.payloadSize()
+	return payloadSize
+}
+
+// NOTE: honestly, tired of saying it, but need to check this lol
+func (tx DepositTx) payloadSize() (payloadSize int, nonceLen, gasLen int) {
+	payloadSize++
+	if tx.Nonce >= 128 {
+		nonceLen = (bits.Len64(tx.Nonce) + 7) / 8
+	}
+	payloadSize += nonceLen
+	payloadSize++
+	var gasPriceLen int
+	if tx.GasPrice.BitLen() >= 8 {
+		gasPriceLen = (tx.GasPrice.BitLen() + 7) / 8
+	}
+	payloadSize += gasPriceLen
+	payloadSize++
+	if tx.Gas >= 128 {
+		gasLen = (bits.Len64(tx.Gas) + 7) / 8
+	}
+	payloadSize += gasLen
+	payloadSize++
+	if tx.To != nil {
+		payloadSize += 20
+	}
+	payloadSize++
+	var valueLen int
+	if tx.Value.BitLen() >= 8 {
+		valueLen = (tx.Value.BitLen() + 7) / 8
+	}
+	payloadSize += valueLen
+	// size of Data
+	payloadSize++
+	switch len(tx.Data) {
+	case 0:
+	case 1:
+		if tx.Data[0] >= 128 {
+			payloadSize++
+		}
+	default:
+		if len(tx.Data) >= 56 {
+			payloadSize += (bits.Len(uint(len(tx.Data))) + 7) / 8
+		}
+		payloadSize += len(tx.Data)
+	}
+	// size of V
+	payloadSize++
+	var vLen int
+	if tx.V.BitLen() >= 8 {
+		vLen = (tx.V.BitLen() + 7) / 8
+	}
+	payloadSize += vLen
+	payloadSize++
+	var rLen int
+	if tx.R.BitLen() >= 8 {
+		rLen = (tx.R.BitLen() + 7) / 8
+	}
+	payloadSize += rLen
+	payloadSize++
+	var sLen int
+	if tx.S.BitLen() >= 8 {
+		sLen = (tx.S.BitLen() + 7) / 8
+	}
+	payloadSize += sLen
+	return payloadSize, nonceLen, gasLen
+}
+
+// EncodeString
+
+// EncodeStringSizePrefix
+
+// MarshalBinary
+
+// encodePayload
+
+// EncodeRLP
+
+// DeocdeRLP
+
 func (tx *DepositTx) FakeSign(address common.Address) (Transaction, error) {
 	cpy := tx.copy()
 	cpy.SetSender(address)
 	return cpy, nil
 }
+
+func (tx *DepositTx) WithSignature(signer Signer, sig []byte) (Transaction, error) {
+	return tx.copy(), nil
+}
+
+func (tx DepositTx) Time() time.Time {
+	return tx.time
+}
+
+func (tx DepositTx) Type() byte { return DepositTxType }
 
 func (tx *DepositTx) Hash() common.Hash {
 	if hash := tx.hash.Load(); hash != nil {
@@ -179,10 +299,6 @@ func NewDepositTransaction(to common.Address, mint *uint256.Int, amount *uint256
 }
 
 // func (tx *DepositTx) txType() byte           { return DepositTxType }
-
-// func (tx *DepositTx) rawSignatureValues() (v, r, s *big.Int) {
-// 	panic("deposit tx does not have a signature")
-// }
 
 // func (tx *DepositTx) setSignatureValues(chainID, v, r, s *big.Int) {
 // 	panic("deposit tx does not have a signature")

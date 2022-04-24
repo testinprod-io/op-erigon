@@ -45,6 +45,7 @@ const (
 	AccessListTxType
 	DynamicFeeTxType
 	StarknetType
+	DepositTxType
 )
 
 // Transaction is an Ethereum transaction.
