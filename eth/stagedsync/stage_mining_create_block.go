@@ -36,6 +36,7 @@ type MiningBlock struct {
 	Txs      types.Transactions
 	Receipts types.Receipts
 
+	ForceTxs  types.TransactionsStream
 	LocalTxs  types.TransactionsStream
 	RemoteTxs types.TransactionsStream
 }
@@ -128,7 +129,7 @@ func SpawnMiningCreateBlockStage(s *StageState, tx kv.RwTx, cfg MiningCreateBloc
 
 	blockNum := executionAt + 1
 	var txs []types.Transaction
-	if err = cfg.txPool2DB.View(context.Background(), func(poolTx kv.Tx) error {
+	txPoolFn := func(poolTx kv.Tx) error {
 		txSlots := types2.TxsRlp{}
 		if err := cfg.txPool2.Best(200, &txSlots, poolTx); err != nil {
 			return err
@@ -156,13 +157,23 @@ func SpawnMiningCreateBlockStage(s *StageState, tx kv.RwTx, cfg MiningCreateBloc
 			txs[len(txs)-1].SetSender(sender)
 		}
 		return nil
-	}); err != nil {
-		return err
+	}
+	// tx pool must be enabled for us to add txs to current mining block
+	if cfg.blockBuilderParameters == nil || !cfg.blockBuilderParameters.NoTxPool {
+		if err = cfg.txPool2DB.View(context.Background(), txPoolFn); err != nil {
+			return err
+		}
 	}
 	log.Debug(fmt.Sprintf("[%s] Candidate txs", logPrefix), "amount", len(txs))
-	localUncles, remoteUncles, err := readNonCanonicalHeaders(tx, blockNum, cfg.engine, coinbase, txPoolLocals)
-	if err != nil {
-		return err
+
+	// TODO: uncles should also be ignored in PoS, not just Optimism.
+	// There are no uncles after the Merge. Erigon miner bug?
+	var localUncles, remoteUncles map[common.Hash]*types.Header
+	if cfg.chainConfig.Optimism == nil {
+		localUncles, remoteUncles, err = readNonCanonicalHeaders(tx, blockNum, cfg.engine, coinbase, txPoolLocals)
+		if err != nil {
+			return err
+		}
 	}
 	chain := ChainReader{Cfg: cfg.chainConfig, Db: tx}
 	var GetBlocksFromHash = func(hash common.Hash, n int) (blocks []*types.Block) {

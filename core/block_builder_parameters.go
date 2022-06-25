@@ -9,4 +9,6 @@ type BlockBuilderParameters struct {
 	Timestamp             uint64
 	PrevRandao            common.Hash
 	SuggestedFeeRecipient common.Address
+	Transactions          [][]byte
+	NoTxPool              bool
 }

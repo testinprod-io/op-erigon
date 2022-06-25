@@ -2,6 +2,12 @@ module github.com/ledgerwatch/erigon
 
 go 1.18
 
+// fork with minor protobuf file changes and txpool support
+replace github.com/ledgerwatch/erigon-lib v0.0.0-20220908070132-4fea8e9ba2fc => github.com/protolambda/erigon-lib v0.0.0-20220909010446-acb5710a4ba7
+
+// for local dev:
+//replace github.com/protolambda/erigon-lib v0.0.0-20220908070132-4fea8e9ba2fc => ../erigon-lib
+
 require (
 	github.com/gballet/go-verkle v0.0.0-20220722103930-acd34254ebff
 	github.com/ledgerwatch/erigon-lib v0.0.0-20220908070132-4fea8e9ba2fc

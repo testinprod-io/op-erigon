@@ -47,6 +47,8 @@ var (
 	priceLimit   uint64
 	accountSlots uint64
 	priceBump    uint64
+
+	optimism bool
 )
 
 func init() {
@@ -68,6 +70,7 @@ func init() {
 	rootCmd.PersistentFlags().Uint64Var(&priceLimit, "txpool.pricelimit", txpool.DefaultConfig.MinFeeCap, "Minimum gas price (fee cap) limit to enforce for acceptance into the pool")
 	rootCmd.PersistentFlags().Uint64Var(&accountSlots, "txpool.accountslots", txpool.DefaultConfig.AccountSlots, "Minimum number of executable transaction slots guaranteed per account")
 	rootCmd.PersistentFlags().Uint64Var(&priceBump, "txpool.pricebump", txpool.DefaultConfig.PriceBump, "Price bump percentage to replace an already existing transaction")
+	rootCmd.PersistentFlags().BoolVar(&optimism, "txpool.optimism", txpool.DefaultConfig.Optimism, "Enable Optimism Bedrock to make txpool account for L1 cost of transactions")
 	rootCmd.Flags().StringSliceVar(&traceSenders, utils.TxPoolTraceSendersFlag.Name, []string{}, utils.TxPoolTraceSendersFlag.Usage)
 }
 
@@ -124,6 +127,7 @@ var rootCmd = &cobra.Command{
 		cfg.MinFeeCap = priceLimit
 		cfg.AccountSlots = accountSlots
 		cfg.PriceBump = priceBump
+		cfg.Optimism = optimism
 
 		cacheConfig := kvcache.DefaultCoherentConfig
 		cacheConfig.MetricsLabel = "txpool"

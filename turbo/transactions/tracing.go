@@ -44,6 +44,7 @@ func ComputeTxEnv(ctx context.Context, block *types.Block, cfg *params.ChainConf
 
 	header := block.Header()
 	BlockContext := core.NewEVMBlockContext(header, core.GetHashFn(header, getHeader), engine, nil)
+	BlockContext.L1CostFunc = core.NewL1CostFunc(cfg, statedb)
 	vmenv := vm.NewEVM(BlockContext, vm.TxContext{}, statedb, cfg, vm.Config{})
 	rules := vmenv.ChainRules()
 	for idx, tx := range block.Transactions() {

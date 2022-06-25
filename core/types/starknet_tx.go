@@ -150,6 +150,9 @@ func (tx StarknetTransaction) AsMessage(s Signer, baseFee *big.Int, rules *param
 
 	var err error
 	msg.from, err = tx.Sender(s)
+	if err != nil {
+		return msg, err
+	}
 	return msg, err
 }
 
@@ -514,4 +517,8 @@ func (tx StarknetTransaction) EncodingSize() int {
 	}
 	envelopeSize += 2
 	return envelopeSize
+}
+
+func (tx StarknetTransaction) RollupDataGas() uint64 {
+	return 0
 }

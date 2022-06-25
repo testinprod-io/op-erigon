@@ -285,6 +285,10 @@ type RPCTransaction struct {
 	V                *hexutil.Big      `json:"v"`
 	R                *hexutil.Big      `json:"r"`
 	S                *hexutil.Big      `json:"s"`
+
+	// deposit-tx only
+	SourceHash *common.Hash `json:"sourceHash,omitempty"`
+	Mint       *hexutil.Big `json:"mint,omitempty"`
 }
 
 // newRPCTransaction returns a transaction that will serialize to the RPC
@@ -335,6 +339,11 @@ func newRPCTransaction(tx types.Transaction, blockHash common.Hash, blockNumber 
 			result.GasPrice = (*hexutil.Big)(price.ToBig())
 		} else {
 			result.GasPrice = nil
+		}
+	case *types.DepositTx:
+		result.SourceHash = &t.SourceHash
+		if t.Mint != nil {
+			result.Mint = (*hexutil.Big)(t.Mint.ToBig())
 		}
 	}
 	signer := types.LatestSignerForChainID(chainId)

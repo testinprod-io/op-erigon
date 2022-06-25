@@ -186,6 +186,7 @@ func (rw *ReconWorker) runTxTask(txTask *state.TxTask) {
 		vmConfig := vm.Config{NoReceipts: true, SkipAnalysis: core.SkipAnalysis(rw.chainConfig, txTask.BlockNum)}
 		getHashFn := core.GetHashFn(txTask.Header, rw.getHeader)
 		blockContext := core.NewEVMBlockContext(txTask.Header, getHashFn, rw.engine, nil /* author */)
+		blockContext.L1CostFunc = core.NewL1CostFunc(rw.chainConfig, ibs)
 		ibs.Prepare(txHash, txTask.BlockHash, txTask.TxIndex)
 		msg, err := txTask.Tx.AsMessage(*types.MakeSigner(rw.chainConfig, txTask.BlockNum), txTask.Header.BaseFee, rules)
 		if err != nil {
