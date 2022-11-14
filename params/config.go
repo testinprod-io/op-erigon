@@ -259,6 +259,9 @@ type ChainConfig struct {
 	Aura   *AuRaConfig   `json:"aura,omitempty"`
 	Parlia *ParliaConfig `json:"parlia,omitempty" toml:",omitempty"`
 	Bor    *BorConfig    `json:"bor,omitempty"`
+
+	// Optimism config
+	Optimism *OptimismConfig `json:"optimism,omitempty"`
 }
 
 // EthashConfig is the consensus engine configs for proof-of-work based sealing.
@@ -278,6 +281,17 @@ type CliqueConfig struct {
 // String implements the stringer interface, returning the consensus engine details.
 func (c *CliqueConfig) String() string {
 	return "clique"
+}
+
+// OptimismConfig is the optimism config.
+type OptimismConfig struct {
+	BaseFeeRecipient common.Address `json:"baseFeeRecipient"`
+	L1FeeRecipient   common.Address `json:"l1FeeRecipient"`
+}
+
+// String implements the stringer interface, returning the optimism fee config details.
+func (o *OptimismConfig) String() string {
+	return "optimism"
 }
 
 // AuRaConfig is the consensus engine configs for proof-of-authority based sealing.

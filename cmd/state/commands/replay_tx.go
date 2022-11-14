@@ -165,6 +165,7 @@ func replayTxNum(ctx context.Context, allSnapshots *snapshotsync.RoSnapshots, bl
 		engine := initConsensusEngine(chainConfig, logger, allSnapshots)
 		txnHash := txn.Hash()
 		blockContext := core.NewEVMBlockContext(header, getHashFn, engine, nil /* author */)
+		blockContext.L1CostFunc = core.NewL1CostFunc(chainConfig, ibs)
 		ibs.Prepare(txnHash, blockHash, txIndex)
 		msg, err := txn.AsMessage(*types.MakeSigner(chainConfig, bn), header.BaseFee, rules)
 		if err != nil {

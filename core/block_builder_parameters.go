@@ -10,4 +10,7 @@ type BlockBuilderParameters struct {
 	PrevRandao            common.Hash
 	SuggestedFeeRecipient common.Address
 	PayloadId             uint64
+	Transactions          [][]byte
+	NoTxPool              bool
+	GasLimit              *uint64
 }

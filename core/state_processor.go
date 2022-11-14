@@ -108,6 +108,7 @@ func ApplyTransaction(config *params.ChainConfig, blockHashFunc func(n uint64) c
 		vmenv = &vm.CVMAdapter{Cvm: vm.NewCVM(ibs)}
 	} else {
 		blockContext := NewEVMBlockContext(header, blockHashFunc, engine, author)
+		blockContext.L1CostFunc = NewL1CostFunc(config, ibs)
 		vmenv = vm.NewEVM(blockContext, vm.TxContext{}, ibs, config, cfg)
 	}
 

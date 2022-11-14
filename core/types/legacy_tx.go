@@ -380,6 +380,9 @@ func (tx LegacyTx) AsMessage(s Signer, _ *big.Int, _ *params.Rules) (Message, er
 
 	var err error
 	msg.from, err = tx.Sender(s)
+	if err != nil {
+		return msg, err
+	}
 	return msg, err
 }
 
@@ -464,4 +467,8 @@ func (tx *LegacyTx) Sender(signer Signer) (common.Address, error) {
 	}
 	tx.from.Store(addr)
 	return addr, nil
+}
+
+func (tx *LegacyTx) RollupDataGas() uint64 {
+	return tx.computeRollupGas(tx)
 }

@@ -392,6 +392,7 @@ func (tx DynamicFeeTransaction) AsMessage(s Signer, baseFee *big.Int, rules *par
 		data:       tx.Data,
 		accessList: tx.AccessList,
 		checkNonce: true,
+		l1CostGas:  tx.RollupDataGas(),
 	}
 	if !rules.IsLondon {
 		return msg, errors.New("eip-1559 transactions require London")
@@ -409,6 +410,9 @@ func (tx DynamicFeeTransaction) AsMessage(s Signer, baseFee *big.Int, rules *par
 
 	var err error
 	msg.from, err = tx.Sender(s)
+	if err != nil {
+		return msg, err
+	}
 	return msg, err
 }
 
@@ -482,4 +486,8 @@ func NewEIP1559Transaction(chainID uint256.Int, nonce uint64, to common.Address,
 		Tip:    gasTip,
 		FeeCap: gasFeeCap,
 	}
+}
+
+func (tx *DynamicFeeTransaction) RollupDataGas() uint64 {
+	return tx.computeRollupGas(tx)
 }

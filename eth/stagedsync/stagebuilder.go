@@ -27,6 +27,15 @@ func MiningStages(
 	return []*Stage{
 		{
 			ID:          stages.MiningCreateBlock,
+			Description: "Mining: add force-txs",
+			Forward: func(firstCycle bool, badBlockUnwind bool, s *StageState, u Unwinder, tx kv.RwTx) error {
+				return SpawnMiningForceTxsStage(s, tx, createBlockCfg, ctx.Done())
+			},
+			Unwind: func(firstCycle bool, u *UnwindState, s *StageState, tx kv.RwTx) error { return nil },
+			Prune:  func(firstCycle bool, u *PruneState, tx kv.RwTx) error { return nil },
+		},
+		{
+			ID:          stages.MiningCreateBlock,
 			Description: "Mining: construct new block from tx pool",
 			Forward: func(firstCycle bool, badBlockUnwind bool, s *StageState, u Unwinder, tx kv.RwTx, quiet bool) error {
 				return SpawnMiningCreateBlockStage(s, tx, createBlockCfg, ctx.Done())

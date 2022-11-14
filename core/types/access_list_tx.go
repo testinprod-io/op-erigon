@@ -488,6 +488,7 @@ func (tx AccessListTx) AsMessage(s Signer, _ *big.Int, rules *params.Rules) (Mes
 		data:       tx.Data,
 		accessList: tx.AccessList,
 		checkNonce: true,
+		l1CostGas:  tx.RollupDataGas(),
 	}
 
 	if !rules.IsBerlin {
@@ -496,6 +497,9 @@ func (tx AccessListTx) AsMessage(s Signer, _ *big.Int, rules *params.Rules) (Mes
 
 	var err error
 	msg.from, err = tx.Sender(s)
+	if err != nil {
+		return msg, err
+	}
 	return msg, err
 }
 
@@ -575,4 +579,8 @@ func (tx *AccessListTx) Sender(signer Signer) (common.Address, error) {
 	}
 	tx.from.Store(addr)
 	return addr, nil
+}
+
+func (tx *AccessListTx) RollupDataGas() uint64 {
+	return tx.computeRollupGas(tx)
 }

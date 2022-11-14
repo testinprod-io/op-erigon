@@ -191,6 +191,8 @@ func (sg Signer) SenderWithContext(context *secp256k1.Context, tx Transaction) (
 	signChainID := sg.chainID.ToBig() // This is reset to nil if tx is unprotected
 	// recoverPlain below will subract 27 from V
 	switch t := tx.(type) {
+	case *DepositTx:
+		return t.From, nil
 	case *LegacyTx:
 		if !t.Protected() {
 			if !sg.unprotected {
@@ -293,6 +295,8 @@ func (sg Signer) SignatureValues(tx Transaction, sig []byte) (R, S, V *uint256.I
 			return nil, nil, nil, ErrInvalidChainId
 		}
 		R, S, V = decodeSignature(sig)
+	case *DepositTx:
+		return nil, nil, nil, fmt.Errorf("deposits do not have a signature")
 	default:
 		return nil, nil, nil, ErrTxTypeNotSupported
 	}

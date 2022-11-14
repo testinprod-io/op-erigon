@@ -46,9 +46,14 @@ type ForkChoiceState struct {
 
 // PayloadAttributes represent the attributes required to start assembling a payload
 type PayloadAttributes struct {
-	Timestamp             hexutil.Uint64 `json:"timestamp"             gencodec:"required"`
-	PrevRandao            common.Hash    `json:"prevRandao"            gencodec:"required"`
-	SuggestedFeeRecipient common.Address `json:"suggestedFeeRecipient" gencodec:"required"`
+	Timestamp             hexutil.Uint64 `json:"timestamp"                gencodec:"required"`
+	PrevRandao            common.Hash    `json:"prevRandao"               gencodec:"required"`
+	SuggestedFeeRecipient common.Address `json:"suggestedFeeRecipient"    gencodec:"required"`
+
+	// optimism
+	NoTxPool     bool            `json:"noTxPool,omitempty"       gencodec:"optional"`
+	Transactions []hexutil.Bytes `json:"transactions,omitempty"   gencodec:"optional"`
+	GasLimit     *hexutil.Uint64 `json:"gasLimit,omitempty"       gencodec:"optional"`
 }
 
 // TransitionConfiguration represents the correct configurations of the CL and the EL
@@ -98,10 +103,17 @@ func (e *EngineImpl) ForkchoiceUpdatedV1(ctx context.Context, forkChoiceState *F
 
 	var prepareParameters *remote.EnginePayloadAttributes
 	if payloadAttributes != nil {
+		txs := make([][]byte, 0, len(payloadAttributes.Transactions))
+		for _, tx := range payloadAttributes.Transactions {
+			txs = append(txs, tx)
+		}
 		prepareParameters = &remote.EnginePayloadAttributes{
 			Timestamp:             uint64(payloadAttributes.Timestamp),
 			PrevRandao:            gointerfaces.ConvertHashToH256(payloadAttributes.PrevRandao),
 			SuggestedFeeRecipient: gointerfaces.ConvertAddressToH160(payloadAttributes.SuggestedFeeRecipient),
+			NoTxPool:              &payloadAttributes.NoTxPool,
+			Transactions:          txs,
+			GasLimit:              (*uint64)(payloadAttributes.GasLimit),
 		}
 	}
 	reply, err := e.api.EngineForkchoiceUpdatedV1(ctx, &remote.EngineForkChoiceUpdatedRequest{

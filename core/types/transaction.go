@@ -31,6 +31,7 @@ import (
 	"github.com/ledgerwatch/erigon/crypto"
 	"github.com/ledgerwatch/erigon/params"
 	"github.com/ledgerwatch/erigon/rlp"
+	"github.com/ledgerwatch/log/v3"
 )
 
 var (
@@ -46,6 +47,7 @@ const (
 	AccessListTxType
 	DynamicFeeTxType
 	StarknetType
+	DepositTxType = 0x7E
 )
 
 // Transaction is an Ethereum transaction.
@@ -96,6 +98,52 @@ type TransactionMisc struct {
 	hash atomic.Value //nolint:structcheck
 	size atomic.Value //nolint:structcheck
 	from atomic.Value
+
+	// cache how much gas the tx takes on L1 for its share of rollup data
+	rollupGas atomic.Value
+}
+
+type rollupGasCounter struct {
+	zeroes uint64
+	ones   uint64
+}
+
+func (r *rollupGasCounter) Write(p []byte) (int, error) {
+	for _, byt := range p {
+		if byt == 0 {
+			r.zeroes++
+		} else {
+			r.ones++
+		}
+	}
+	return len(p), nil
+}
+
+func (r *rollupGasCounter) RollupGas() uint64 {
+	zeroesGas := r.zeroes * params.TxDataZeroGas
+	onesGas := (r.ones + 68) * params.TxDataNonZeroGasEIP2028
+	return zeroesGas + onesGas
+}
+
+// computeRollupGas is a helper method to compute and cache the rollup gas cost for any tx type
+func (tm *TransactionMisc) computeRollupGas(tx interface {
+	MarshalBinary(w io.Writer) error
+	Type() byte
+}) uint64 {
+	if tx.Type() == DepositTxType {
+		return 0
+	}
+	if v := tm.rollupGas.Load(); v != nil {
+		return v.(uint64)
+	}
+	var c rollupGasCounter
+	err := tx.MarshalBinary(&c)
+	if err != nil { // Silent error, invalid txs will not be marshalled/unmarshalled for batch submission anyway.
+		log.Error("failed to encode tx for L1 cost computation", "err", err)
+	}
+	total := c.RollupGas()
+	tm.rollupGas.Store(total)
+	return total
 }
 
 // RLP-marshalled legacy transactions and binary-marshalled (not wrapped into an RLP string) typed (EIP-2718) transactions
@@ -119,6 +167,7 @@ func (tm TransactionMisc) From() *atomic.Value {
 
 func DecodeTransaction(s *rlp.Stream) (Transaction, error) {
 	kind, size, err := s.Kind()
+
 	if err != nil {
 		return nil, err
 	}
@@ -155,6 +204,12 @@ func DecodeTransaction(s *rlp.Stream) (Transaction, error) {
 		tx = t
 	case StarknetType:
 		t := &StarknetTransaction{}
+		if err = t.DecodeRLP(s); err != nil {
+			return nil, err
+		}
+		tx = t
+	case DepositTxType:
+		t := &DepositTx{}
 		if err = t.DecodeRLP(s); err != nil {
 			return nil, err
 		}
@@ -461,6 +516,10 @@ type Message struct {
 	accessList AccessList
 	checkNonce bool
 	isFree     bool
+
+	isSystemTx bool
+	mint       *uint256.Int
+	l1CostGas  uint64
 }
 
 func NewMessage(from common.Address, to *common.Address, nonce uint64, amount *uint256.Int, gasLimit uint64, gasPrice *uint256.Int, feeCap, tip *uint256.Int, data []byte, accessList AccessList, checkNonce bool, isFree bool) Message {
@@ -505,3 +564,6 @@ func (m Message) IsFree() bool { return m.isFree }
 func (m *Message) SetIsFree(isFree bool) {
 	m.isFree = isFree
 }
+func (m Message) IsSystemTx() bool      { return m.isSystemTx }
+func (m Message) Mint() *uint256.Int    { return m.mint }
+func (m Message) RollupDataGas() uint64 { return m.l1CostGas }

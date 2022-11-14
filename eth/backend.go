@@ -396,6 +396,7 @@ func New(stack *node.Node, config *ethconfig.Config, logger log.Logger) (*Ethere
 
 		backend.newTxs2 = make(chan types2.Hashes, 1024)
 		//defer close(newTxs)
+		config.TxPool.Optimism = chainConfig.Optimism != nil
 		backend.txPool2DB, backend.txPool2, backend.txPool2Fetch, backend.txPool2Send, backend.txPool2GrpcServer, err = txpooluitl.AllComponents(
 			ctx, config.TxPool, kvcache.NewDummy(), backend.newTxs2, backend.chainDB, backend.sentriesClient.Sentries(), stateDiffClient,
 		)
@@ -432,6 +433,8 @@ func New(stack *node.Node, config *ethconfig.Config, logger log.Logger) (*Ethere
 	assembleBlockPOS := func(param *core.BlockBuilderParameters, interrupt *int32) (*types.Block, error) {
 		miningStatePos := stagedsync.NewProposingState(&config.Miner)
 		miningStatePos.MiningConfig.Etherbase = param.SuggestedFeeRecipient
+		miningStatePos.MiningConfig.Transactions = param.Transactions
+		miningStatePos.MiningConfig.NoTxPool = param.NoTxPool
 		proposingSync := stagedsync.New(
 			stagedsync.MiningStages(backend.sentryCtx,
 				stagedsync.StageMiningCreateBlockCfg(backend.chainDB, miningStatePos, *backend.chainConfig, backend.engine, backend.txPool2, backend.txPool2DB, param, tmpdir),
