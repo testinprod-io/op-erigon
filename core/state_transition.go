@@ -88,6 +88,7 @@ type Message interface {
 	// Mint is nil if there is no minting
 	Mint() *uint256.Int
 	IsSystemTx() bool
+	IsDepositTx() bool
 	RollupDataGas() uint64
 
 	Nonce() uint64
@@ -322,7 +323,7 @@ func CheckEip1559TxGasFeeCap(from common.Address, gasFeeCap, tip, baseFee *uint2
 
 // DESCRIBED: docs/programmers_guide/guide.md#nonce
 func (st *StateTransition) preCheck(gasBailout bool) error {
-	if st.msg.Nonce() == types.DepositsNonce {
+	if st.msg.IsDepositTx() {
 		// No fee fields to check, no nonce to check, and no need to check if EOA (L1 already verified it for us)
 		// Gas is free, but no refunds!
 		st.initialGas = st.msg.Gas()
@@ -391,7 +392,7 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*Executi
 	result, err := st.innerTransitionDb(refunds, gasBailout)
 	// Failed deposits must still be included. Unless we cannot produce the block at all due to the gas limit.
 	// On deposit failure, we rewind any state changes from after the minting, and increment the nonce.
-	if err != nil && err != ErrGasLimitReached && st.msg.Nonce() == types.DepositsNonce {
+	if err != nil && err != ErrGasLimitReached && st.msg.IsDepositTx() {
 		st.state.RevertToSnapshot(snap)
 		// Even though we revert the state changes, always increment the nonce for the next deposit transaction
 		st.state.SetNonce(st.msg.From(), st.state.GetNonce(st.msg.From())+1)
@@ -503,7 +504,7 @@ func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*Ex
 		ret, st.gas, vmerr = st.evm.Call(sender, st.to(), st.data, st.gas, st.value, bailout)
 	}
 	// if deposit: skip refunds, skip tipping coinbase
-	if st.msg.Nonce() == types.DepositsNonce {
+	if st.msg.IsDepositTx() {
 		// Record deposits as using all their gas (matches the gas pool)
 		// System Transactions are special & are not recorded as using any gas (anywhere)
 		gasUsed := st.msg.Gas()

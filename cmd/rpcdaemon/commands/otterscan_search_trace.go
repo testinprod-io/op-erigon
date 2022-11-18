@@ -71,7 +71,7 @@ func (api *OtterscanAPIImpl) traceBlock(dbtx kv.Tx, ctx context.Context, blockNu
 	}
 	engine := ethash.NewFaker()
 
-	blockReceipts := rawdb.ReadReceipts(dbtx, block, senders)
+	blockReceipts := rawdb.ReadReceipts(api._chainConfig, dbtx, block, senders)
 	header := block.Header()
 	rules := chainConfig.Rules(block.NumberU64())
 	found := false

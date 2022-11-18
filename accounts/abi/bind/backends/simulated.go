@@ -80,6 +80,8 @@ type SimulatedBackend struct {
 	rmLogsFeed event.Feed
 	chainFeed  event.Feed
 	logsFeed   event.Feed
+
+	chainCfg *params.ChainConfig
 }
 
 // NewSimulatedBackend creates a new binding backend using a simulated blockchain
@@ -100,6 +102,7 @@ func NewSimulatedBackendWithConfig(alloc core.GenesisAlloc, config *params.Chain
 			}
 			return h
 		},
+		chainCfg: config,
 	}
 	backend.emptyPendingBlock()
 	return backend
@@ -240,7 +243,7 @@ func (b *SimulatedBackend) TransactionReceipt(ctx context.Context, txHash common
 		return nil, err
 	}
 	defer tx.Rollback()
-	receipt, _, _, _, err := rawdb.ReadReceipt(tx, txHash)
+	receipt, _, _, _, err := rawdb.ReadReceipt(b.chainCfg, tx, txHash)
 	return receipt, err
 }
 
@@ -665,7 +668,7 @@ func (b *SimulatedBackend) callContract(_ context.Context, call ethereum.CallMsg
 	txContext := core.NewEVMTxContext(msg)
 	header := block.Header()
 	evmContext := core.NewEVMBlockContext(header, core.GetHashFn(header, b.getHeader), b.m.Engine, nil)
-	evmContext.L1CostFunc = core.NewL1CostFunc(b.m.ChainConfig, statedb)
+	evmContext.L1CostFunc = types.NewL1CostFunc(b.m.ChainConfig, statedb)
 	// Create a new environment which holds all relevant information
 	// about the transaction and calling mechanisms.
 	vmEnv := vm.NewEVM(evmContext, txContext, statedb, b.m.ChainConfig, vm.Config{})
@@ -781,6 +784,7 @@ func (m callMsg) AccessList() types.AccessList { return m.CallMsg.AccessList }
 func (m callMsg) IsFree() bool                 { return false }
 func (m callMsg) Mint() *uint256.Int           { return nil }
 func (m callMsg) RollupDataGas() uint64        { return 0 }
+func (m callMsg) IsDepositTx() bool            { return false }
 func (m callMsg) IsSystemTx() bool             { return false }
 
 // filterBackend implements filters.Backend to support filtering for logs without
@@ -819,7 +823,7 @@ func (fb *filterBackend) GetReceipts(ctx context.Context, hash common.Hash) (typ
 	if err != nil {
 		return nil, err
 	}
-	return rawdb.ReadReceipts(tx, b, senders), nil
+	return rawdb.ReadReceipts(fb.b.chainCfg, tx, b, senders), nil
 }
 
 func (fb *filterBackend) GetLogs(ctx context.Context, hash common.Hash) ([][]*types.Log, error) {
@@ -840,7 +844,7 @@ func (fb *filterBackend) GetLogs(ctx context.Context, hash common.Hash) ([][]*ty
 	if err != nil {
 		return nil, err
 	}
-	receipts := rawdb.ReadReceipts(tx, b, senders)
+	receipts := rawdb.ReadReceipts(fb.b.chainCfg, tx, b, senders)
 	if receipts == nil {
 		return nil, nil
 	}

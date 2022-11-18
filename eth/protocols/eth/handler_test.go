@@ -94,7 +94,7 @@ func TestGetBlockReceipts(t *testing.T) {
 
 			hashes = append(hashes, block.Hash())
 			// If known, encode and queue for response packet
-			r, err := rawdb.ReadReceiptsByHash(tx, block.Hash())
+			r, err := rawdb.ReadReceiptsByHash(params.TestChainConfig, tx, block.Hash())
 			if err != nil {
 				return err
 			}

@@ -101,7 +101,7 @@ func (api *ErigonImpl) WatchTheBurn(ctx context.Context, blockNr rpc.BlockNumber
 	tips := big.NewInt(0)
 
 	if header.BaseFee != nil {
-		receipts, err := rawdb.ReadReceiptsByHash(tx, header.Hash())
+		receipts, err := rawdb.ReadReceiptsByHash(chainConfig, tx, header.Hash())
 		if err != nil {
 			return Issuance{}, err
 		}

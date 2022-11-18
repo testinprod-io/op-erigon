@@ -60,12 +60,8 @@ func (tx DepositTx) GetChainID() *uint256.Int {
 	panic("deposits are not signed and do not have a chain-ID")
 }
 
-// DepositsNonce identifies a deposit, since go-ethereum abstracts all transaction types to a core.Message.
-// Deposits do not set a nonce, deposits are included by the system and cannot be repeated or included elsewhere.
-const DepositsNonce uint64 = 0xffff_ffff_ffff_fffd
-
 func (tx DepositTx) GetNonce() uint64 {
-	return DepositsNonce
+	return 0
 }
 
 func (tx DepositTx) GetTo() *common.Address {
@@ -330,19 +326,20 @@ func (tx DepositTx) copy() *DepositTx {
 // AsMessage returns the transaction as a core.Message.
 func (tx DepositTx) AsMessage(s Signer, baseFee *big.Int, rules *params.Rules) (Message, error) {
 	msg := Message{
-		nonce:      DepositsNonce,
-		gasLimit:   tx.Gas,
-		gasPrice:   *uint256.NewInt(0),
-		tip:        *uint256.NewInt(0),
-		feeCap:     *uint256.NewInt(0),
-		from:       tx.From,
-		to:         tx.To,
-		amount:     *tx.Value,
-		data:       tx.Data,
-		accessList: nil,
-		checkNonce: true,
-		isSystemTx: tx.IsSystemTransaction,
-		mint:       tx.Mint,
+		nonce:       0,
+		gasLimit:    tx.Gas,
+		gasPrice:    *uint256.NewInt(0),
+		tip:         *uint256.NewInt(0),
+		feeCap:      *uint256.NewInt(0),
+		from:        tx.From,
+		to:          tx.To,
+		amount:      *tx.Value,
+		data:        tx.Data,
+		accessList:  nil,
+		checkNonce:  true,
+		isSystemTx:  tx.IsSystemTransaction,
+		isDepositTx: true,
+		mint:        tx.Mint,
 	}
 	return msg, nil
 }

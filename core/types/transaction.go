@@ -517,9 +517,10 @@ type Message struct {
 	checkNonce bool
 	isFree     bool
 
-	isSystemTx bool
-	mint       *uint256.Int
-	l1CostGas  uint64
+	isSystemTx  bool
+	isDepositTx bool
+	mint        *uint256.Int
+	l1CostGas   uint64
 }
 
 func NewMessage(from common.Address, to *common.Address, nonce uint64, amount *uint256.Int, gasLimit uint64, gasPrice *uint256.Int, feeCap, tip *uint256.Int, data []byte, accessList AccessList, checkNonce bool, isFree bool) Message {
@@ -565,5 +566,6 @@ func (m *Message) SetIsFree(isFree bool) {
 	m.isFree = isFree
 }
 func (m Message) IsSystemTx() bool      { return m.isSystemTx }
+func (m Message) IsDepositTx() bool     { return m.isDepositTx }
 func (m Message) Mint() *uint256.Int    { return m.mint }
 func (m Message) RollupDataGas() uint64 { return m.l1CostGas }
