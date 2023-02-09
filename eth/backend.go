@@ -435,6 +435,7 @@ func New(stack *node.Node, config *ethconfig.Config, logger log.Logger) (*Ethere
 		miningStatePos.MiningConfig.Etherbase = param.SuggestedFeeRecipient
 		miningStatePos.MiningConfig.Transactions = param.Transactions
 		miningStatePos.MiningConfig.NoTxPool = param.NoTxPool
+		miningStatePos.MiningConfig.GasLimit = *param.GasLimit
 		proposingSync := stagedsync.New(
 			stagedsync.MiningStages(backend.sentryCtx,
 				stagedsync.StageMiningCreateBlockCfg(backend.chainDB, miningStatePos, *backend.chainConfig, backend.engine, backend.txPool2, backend.txPool2DB, param, tmpdir),
