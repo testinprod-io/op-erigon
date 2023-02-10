@@ -17,11 +17,11 @@
 package types
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/ledgerwatch/erigon/params"
 	"io"
 	"math/big"
+	"math/bits"
 	"sync/atomic"
 	"time"
 
@@ -43,7 +43,7 @@ type DepositTx struct {
 	// nil means contract creation
 	To *common.Address `rlp:"nil"`
 	// Mint is minted on L2, locked on L1, nil if no minting.
-	Mint *uint256.Int
+	Mint *uint256.Int `rlp:"nil"`
 	// Value is transferred from L2 balance, executed after Mint (if any)
 	Value *uint256.Int
 	// gas limit
@@ -108,41 +108,157 @@ func (tx *DepositTx) Size() common.StorageSize {
 
 // NOTE: Need to check this
 func (tx DepositTx) EncodingSize() int {
-	var buf bytes.Buffer
-	if err := tx.MarshalBinary(&buf); err != nil {
-		panic(err)
+	payloadSize, _, _, _ := tx.payloadSize()
+	envelopeSize := payloadSize
+	// Add envelope size and type size
+	if payloadSize >= 56 {
+		envelopeSize += (bits.Len(uint(payloadSize)) + 7) / 8
 	}
-	return len(buf.Bytes())
+	envelopeSize += 2
+	return envelopeSize
 }
 
 // MarshalBinary returns the canonical encoding of the transaction.
 // For legacy transactions, it returns the RLP encoding. For EIP-2718 typed
 // transactions, it returns the type and payload.
 func (tx DepositTx) MarshalBinary(w io.Writer) error {
-	if _, err := w.Write([]byte{DepositTxType}); err != nil {
+	payloadSize, nonceLen, gasLen, accessListLen := tx.payloadSize()
+	var b [33]byte
+	// encode TxType
+	b[0] = DepositTxType
+	if _, err := w.Write(b[:1]); err != nil {
 		return err
 	}
-	if err := tx.encodePayload(w); err != nil {
+	if err := tx.encodePayload(w, b[:], payloadSize, nonceLen, gasLen, accessListLen); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (tx DepositTx) encodePayload(w io.Writer) error {
-	return rlp.Encode(w, []interface{}{
-		tx.SourceHash,
-		tx.From,
-		tx.To,
-		tx.Mint,
-		tx.Value,
-		tx.Gas,
-		tx.IsSystemTransaction,
-		tx.Data,
-	})
+func (tx DepositTx) payloadSize() (payloadSize int, nonceLen, gasLen, accessListLen int) {
+	// size of SourceHash
+	payloadSize += 33
+	// size of From
+	payloadSize += 21
+	// size of To
+	payloadSize++
+	if tx.To != nil {
+		payloadSize += 20
+	}
+	// size of Mint
+	payloadSize++
+	payloadSize += rlp.Uint256LenExcludingHead(tx.Mint)
+	// size of Value
+	payloadSize++
+	payloadSize += rlp.Uint256LenExcludingHead(tx.Value)
+	// size of Gas
+	payloadSize++
+	gasLen = rlp.IntLenExcludingHead(tx.Gas)
+	payloadSize += gasLen
+	// size of IsSystemTransaction
+	payloadSize++
+	// size of Data
+	payloadSize++
+	switch len(tx.Data) {
+	case 0:
+	case 1:
+		if tx.Data[0] >= 128 {
+			payloadSize++
+		}
+	default:
+		if len(tx.Data) >= 56 {
+			payloadSize += (bits.Len(uint(len(tx.Data))) + 7) / 8
+		}
+		payloadSize += len(tx.Data)
+	}
+	return payloadSize, 0, gasLen, 0
+}
+
+func (tx DepositTx) encodePayload(w io.Writer, b []byte, payloadSize, nonceLen, gasLen, accessListLen int) error {
+	// prefix
+	if err := EncodeStructSizePrefix(payloadSize, w, b); err != nil {
+		return err
+	}
+	// encode SourceHash
+	b[0] = 128 + 32
+	if _, err := w.Write(b[:1]); err != nil {
+		return nil
+	}
+	if _, err := w.Write(tx.SourceHash.Bytes()); err != nil {
+		return nil
+	}
+	// encode From
+	b[0] = 128 + 20
+	if _, err := w.Write(b[:1]); err != nil {
+		return nil
+	}
+	if _, err := w.Write(tx.From.Bytes()); err != nil {
+		return nil
+	}
+	// encode To
+	if tx.To == nil {
+		b[0] = 128
+	} else {
+		b[0] = 128 + 20
+	}
+	if _, err := w.Write(b[:1]); err != nil {
+		return err
+	}
+	if tx.To != nil {
+		if _, err := w.Write(tx.To.Bytes()); err != nil {
+			return err
+		}
+	}
+	// encode Mint
+	if err := tx.Mint.EncodeRLP(w); err != nil {
+		return err
+	}
+	// encode Value
+	if err := tx.Value.EncodeRLP(w); err != nil {
+		return err
+	}
+	// encode Gas
+	if err := rlp.EncodeInt(tx.Gas, w, b); err != nil {
+		return err
+	}
+	// encode IsSystemTransaction
+	if tx.IsSystemTransaction {
+		b[0] = 0x01
+	} else {
+		b[0] = 0x80
+	}
+	if _, err := w.Write(b[:1]); err != nil {
+		return nil
+	}
+	// encode Data
+	if err := rlp.EncodeString(tx.Data, w, b); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (tx DepositTx) EncodeRLP(w io.Writer) error {
-	return tx.MarshalBinary(w)
+	payloadSize, nonceLen, gasLen, accessListLen := tx.payloadSize()
+	envelopeSize := payloadSize
+	if payloadSize >= 56 {
+		envelopeSize += (bits.Len(uint(payloadSize)) + 7) / 8
+	}
+	// size of struct prefix and TxType
+	envelopeSize += 2
+	var b [33]byte
+	// envelope
+	if err := rlp.EncodeStringSizePrefix(envelopeSize, w, b[:]); err != nil {
+		return err
+	}
+	// encode TxType
+	b[0] = DepositTxType
+	if _, err := w.Write(b[:1]); err != nil {
+		return err
+	}
+	if err := tx.encodePayload(w, b[:], payloadSize, nonceLen, gasLen, accessListLen); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (tx *DepositTx) DecodeRLP(s *rlp.Stream) error {

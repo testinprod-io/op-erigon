@@ -3,7 +3,7 @@ module github.com/ledgerwatch/erigon
 go 1.18
 
 // fork with minor protobuf file changes and txpool support
-replace github.com/ledgerwatch/erigon-lib v0.0.0-20221111153622-b810bb6ee08a => github.com/protolambda/erigon-lib v0.0.0-20221118225458-36689dd039e9
+replace github.com/ledgerwatch/erigon-lib v0.0.0-20221111153622-b810bb6ee08a => github.com/testinprod-io/erigon-lib v0.0.0-20230210041931-25647e12e4e0
 
 // for local dev:
 //replace github.com/ledgerwatch/erigon-lib v0.0.0-20221111153622-b810bb6ee08a => ../erigon-lib
