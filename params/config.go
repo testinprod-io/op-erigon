@@ -261,7 +261,8 @@ type ChainConfig struct {
 	Bor    *BorConfig    `json:"bor,omitempty"`
 
 	// Optimism config
-	Optimism *OptimismConfig `json:"optimism,omitempty"`
+	BedrockBlock *big.Int        `json:"bedrockBlock,omitempty"`
+	Optimism     *OptimismConfig `json:"optimism,omitempty"`
 }
 
 // EthashConfig is the consensus engine configs for proof-of-work based sealing.
@@ -285,8 +286,8 @@ func (c *CliqueConfig) String() string {
 
 // OptimismConfig is the optimism config.
 type OptimismConfig struct {
-	BaseFeeRecipient common.Address `json:"baseFeeRecipient"`
-	L1FeeRecipient   common.Address `json:"l1FeeRecipient"`
+	EIP1559Elasticity  uint64 `json:"eip1559Elasticity"`
+	EIP1559Denominator uint64 `json:"eip1559Denominator"`
 }
 
 // String implements the stringer interface, returning the optimism fee config details.
