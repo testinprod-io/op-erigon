@@ -87,6 +87,7 @@ type Transaction interface {
 	SetSender(common.Address)
 	IsContractDeploy() bool
 	IsStarkNet() bool
+	RollupDataGas() uint64
 }
 
 // TransactionMisc is collection of miscelaneous fields for transaction that is supposed to be embedded into concrete

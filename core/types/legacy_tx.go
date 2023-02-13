@@ -376,6 +376,7 @@ func (tx LegacyTx) AsMessage(s Signer, _ *big.Int, _ *params.Rules) (Message, er
 		data:       tx.Data,
 		accessList: nil,
 		checkNonce: true,
+		l1CostGas:  tx.RollupDataGas(),
 	}
 
 	var err error
