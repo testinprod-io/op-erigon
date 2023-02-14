@@ -936,8 +936,8 @@ github.com/supranational/blst v0.3.10/go.mod h1:jZJtfjgudtNl4en1tzwPIV3KjUnQUvG3
 github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07/go.mod h1:kDXzergiv9cbyO7IOYJZWg1U88JhDg3PB6klq9Hg2pA=
 github.com/tendermint/go-amino v0.14.1 h1:o2WudxNfdLNBwMyl2dqOJxiro5rfrEaU0Ugs6offJMk=
 github.com/tendermint/go-amino v0.14.1/go.mod h1:i/UKE5Uocn+argJJBb12qTZsCDBcAYMbR92AaJVmKso=
-github.com/testinprod-io/erigon-lib v0.0.0-20230210041931-25647e12e4e0 h1:S8rS82rWUvl1308JJkMx/NzBNW5Sb8R4UYGVDlfW5Y8=
-github.com/testinprod-io/erigon-lib v0.0.0-20230210041931-25647e12e4e0/go.mod h1:kpPwRlauFpW0ku2tSTqMe98lVbY1Ik53jd6+fkncrko=
+github.com/testinprod-io/erigon-lib v0.0.0-20230210112813-cfe2987c3c35 h1:jw9XJxJES85kwHaRa+gTJJM/WYybGC71ceSBja1YxnU=
+github.com/testinprod-io/erigon-lib v0.0.0-20230210112813-cfe2987c3c35/go.mod h1:kpPwRlauFpW0ku2tSTqMe98lVbY1Ik53jd6+fkncrko=
 github.com/tidwall/btree v1.3.1 h1:636+tdVDs8Hjcf35Di260W2xCW4KuoXOKyk9QWOvCpA=
 github.com/tidwall/btree v1.3.1/go.mod h1:LGm8L/DZjPLmeWGjv5kFrY8dL4uVhMmzmmLYmsObdKE=
 github.com/tinylib/msgp v1.0.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
