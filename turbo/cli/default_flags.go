@@ -61,6 +61,7 @@ var DefaultFlags = []cli.Flag{
 	utils.HTTPApiFlag,
 	utils.WSEnabledFlag,
 	utils.WsCompressionFlag,
+	utils.WSPortFlag,
 	utils.HTTPTraceFlag,
 	utils.StateCacheFlag,
 	utils.RpcBatchConcurrencyFlag,
@@ -154,4 +155,6 @@ var DefaultFlags = []cli.Flag{
 	utils.LightClientDiscoveryTCPPortFlag,
 	utils.SentinelAddrFlag,
 	utils.SentinelPortFlag,
+
+	utils.GenesisPathFlag,
 }

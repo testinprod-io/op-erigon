@@ -19,7 +19,9 @@ package utils
 
 import (
 	"crypto/ecdsa"
+	"encoding/json"
 	"fmt"
+	"golang.org/x/exp/slices"
 	"io"
 	"math/big"
 	"os"
@@ -751,6 +753,11 @@ var (
 		Usage: "Port for sentinel",
 		Value: 7777,
 	}
+	GenesisPathFlag = cli.StringFlag{
+		Name:  "genesis.path",
+		Usage: "Genesis JSON file path",
+		Value: "/genesis.json",
+	}
 )
 
 var MetricFlags = []cli.Flag{MetricsEnabledFlag, MetricsEnabledExpensiveFlag, MetricsHTTPFlag, MetricsPortFlag}
@@ -1003,7 +1010,7 @@ func setEtherbase(ctx *cli.Context, cfg *ethconfig.Config) {
 		}
 	}
 
-	if ctx.GlobalString(ChainFlag.Name) == networkname.DevChainName || ctx.GlobalString(ChainFlag.Name) == networkname.BorDevnetChainName {
+	if slices.Contains([]string{networkname.DevChainName, networkname.BorDevnetChainName, networkname.OptimismDevnetChainName}, ctx.GlobalString(ChainFlag.Name)) {
 		if etherbase == "" {
 			cfg.Miner.SigKey = core.DevnetSignPrivateKey
 			cfg.Miner.Etherbase = core.DevnetEtherbase
@@ -1450,6 +1457,31 @@ func CheckExclusive(ctx *cli.Context, args ...interface{}) {
 	}
 }
 
+// readGenesis will read the given JSON format genesis file and return
+// the initialized Genesis structure
+func readGenesis(genesisPath string) *core.Genesis {
+	// Make sure we have a valid genesis JSON
+	if len(genesisPath) == 0 {
+		Fatalf("Must supply path to genesis JSON file")
+	}
+	file, err := os.Open(genesisPath)
+	if err != nil {
+		Fatalf("Failed to read genesis file: %v", err)
+	}
+	defer func(file *os.File) {
+		closeErr := file.Close()
+		if closeErr != nil {
+			log.Warn("Failed to close file", "err", closeErr)
+		}
+	}(file)
+
+	genesis := new(core.Genesis)
+	if err := json.NewDecoder(file).Decode(genesis); err != nil {
+		Fatalf("invalid genesis file: %v", err)
+	}
+	return genesis
+}
+
 // SetEthConfig applies eth-related command line flags to the config.
 func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.Config) {
 	cfg.CL = ctx.GlobalBool(ExternalConsensusFlag.Name)
@@ -1575,6 +1607,17 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 		if !ctx.GlobalIsSet(MinerGasPriceFlag.Name) {
 			cfg.Miner.GasPrice = big.NewInt(1)
 		}
+	case networkname.OptimismDevnetChainName:
+		// Create new developer account or reuse existing one
+		developer := cfg.Miner.Etherbase
+		if developer == (common.Address{}) {
+			Fatalf("Please specify developer account address using --miner.etherbase")
+		}
+		log.Info("Using developer account", "address", developer)
+
+		// Create a new developer genesis block or reuse existing one
+		cfg.Genesis = readGenesis(ctx.GlobalString(GenesisPathFlag.Name))
+		//log.Info("Using custom developer period", "seconds", cfg.Genesis.Config.Clique.Period)
 	}
 
 	if ctx.GlobalIsSet(OverrideTerminalTotalDifficulty.Name) {
