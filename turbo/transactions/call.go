@@ -76,6 +76,7 @@ func DoCall(
 		return nil, err
 	}
 	blockCtx, txCtx := GetEvmContext(msg, header, blockNrOrHash.RequireCanonical, tx, headerReader)
+	blockCtx.L1CostFunc = types.NewL1CostFunc(chainConfig, state)
 
 	evm := vm.NewEVM(blockCtx, txCtx, state, chainConfig, vm.Config{NoBaseFee: true})
 

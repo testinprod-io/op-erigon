@@ -939,6 +939,7 @@ func (api *TraceAPIImpl) Call(ctx context.Context, args TraceCallParam, traceTyp
 	blockCtx, txCtx := transactions.GetEvmContext(msg, header, blockNrOrHash.RequireCanonical, tx, api._blockReader)
 	blockCtx.GasLimit = math.MaxUint64
 	blockCtx.MaxGasLimit = true
+	blockCtx.L1CostFunc = types.NewL1CostFunc(chainConfig, ibs)
 
 	evm := vm.NewEVM(blockCtx, txCtx, ibs, chainConfig, vm.Config{Debug: traceTypeTrace, Tracer: &ot})
 
@@ -1157,6 +1158,7 @@ func (api *TraceAPIImpl) doCallMany(ctx context.Context, dbtx kv.Tx, msgs []type
 			blockCtx.MaxGasLimit = true
 		}
 		ibs := state.New(cachedReader)
+		blockCtx.L1CostFunc = types.NewL1CostFunc(chainConfig, ibs)
 		// Create initial IntraBlockState, we will compare it with ibs (IntraBlockState after the transaction)
 
 		evm := vm.NewEVM(blockCtx, txCtx, ibs, chainConfig, vmConfig)

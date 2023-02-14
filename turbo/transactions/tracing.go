@@ -53,6 +53,7 @@ func ComputeTxEnv(ctx context.Context, block *types.Block, cfg *params.ChainConf
 		signer := types.MakeSigner(cfg, block.NumberU64())
 		msg, _ := txn.AsMessage(*signer, header.BaseFee, cfg.Rules(block.NumberU64()))
 		blockCtx, txCtx := GetEvmContext(msg, header, true /* requireCanonical */, dbtx, headerReader)
+		blockCtx.L1CostFunc = types.NewL1CostFunc(cfg, ibs)
 		return msg, blockCtx, txCtx, ibs, reader, nil
 
 	}

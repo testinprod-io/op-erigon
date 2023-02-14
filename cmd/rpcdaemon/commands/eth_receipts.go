@@ -404,6 +404,7 @@ func (api *APIImpl) getLogsV3(ctx context.Context, tx kv.Tx, begin, end uint64, 
 		blockCtx, txCtx := transactions.GetEvmContext(msg, header, true /* requireCanonical */, tx, api._blockReader)
 		vmConfig := vm.Config{SkipAnalysis: skipAnalysis}
 		ibs := state.New(stateReader)
+		blockCtx.L1CostFunc = types.NewL1CostFunc(chainConfig, ibs)
 		evm := vm.NewEVM(blockCtx, txCtx, ibs, chainConfig, vmConfig)
 
 		gp := new(core.GasPool).AddGas(msg.Gas())

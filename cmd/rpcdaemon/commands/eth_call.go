@@ -427,6 +427,7 @@ func (api *APIImpl) CreateAccessList(ctx context.Context, args ethapi2.CallArgs,
 		tracer := logger.NewAccessListTracer(accessList, *args.From, to, precompiles)
 		config := vm.Config{Tracer: tracer, Debug: true, NoBaseFee: true}
 		blockCtx, txCtx := transactions.GetEvmContext(msg, header, bNrOrHash.RequireCanonical, tx, api._blockReader)
+		blockCtx.L1CostFunc = types.NewL1CostFunc(chainConfig, state)
 
 		evm := vm.NewEVM(blockCtx, txCtx, state, chainConfig, config)
 		gp := new(core.GasPool).AddGas(msg.Gas())
