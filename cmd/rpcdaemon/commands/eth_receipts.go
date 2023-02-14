@@ -664,7 +664,7 @@ func marshalReceipt(receipt *types.Receipt, txn types.Transaction, chainConfig *
 		rollupDataGas := txn.RollupDataGas()
 		fields["l1GasPrice"] = hexutil.Big(*l1GasPrice.BaseFee)
 		fields["l1GasUsed"] = hexutil.Uint64(rollupDataGas)
-		fields["l1Fee"] = hexutil.Bytes(types.L1Cost(rollupDataGas, baseFee, overhead, scalar).Bytes())
+		fields["l1Fee"] = hexutil.Big(*types.L1Cost(rollupDataGas, baseFee, overhead, scalar).ToBig())
 		fields["l1FeeScalar"] = l1GasPrice.GetFeeScalar()
 	}
 

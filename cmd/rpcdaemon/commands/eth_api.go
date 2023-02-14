@@ -309,6 +309,7 @@ type RPCTransaction struct {
 	// deposit-tx only
 	SourceHash *common.Hash `json:"sourceHash,omitempty"`
 	Mint       *hexutil.Big `json:"mint,omitempty"`
+	IsSystemTx bool         `json:"isSystemTx,omitempty"`
 }
 
 // newRPCTransaction returns a transaction that will serialize to the RPC
@@ -331,6 +332,7 @@ func newRPCTransaction(tx types.Transaction, blockHash common.Hash, blockNumber 
 	switch t := tx.(type) {
 	case *types.LegacyTx:
 		chainId = types.DeriveChainId(&t.V).ToBig()
+		result.ChainID = (*hexutil.Big)(chainId)
 		result.GasPrice = (*hexutil.Big)(t.GasPrice.ToBig())
 		result.V = (*hexutil.Big)(t.V.ToBig())
 		result.R = (*hexutil.Big)(t.R.ToBig())
@@ -361,12 +363,11 @@ func newRPCTransaction(tx types.Transaction, blockHash common.Hash, blockNumber 
 			result.GasPrice = nil
 		}
 	case *types.DepositTx:
-		chainId = common.Big0
-		result.ChainID = (*hexutil.Big)(chainId)
 		if t.Mint != nil {
 			result.Mint = (*hexutil.Big)(t.Mint.ToBig())
 		}
 		result.SourceHash = &t.SourceHash
+		result.IsSystemTx = t.IsSystemTransaction
 	}
 	signer := types.LatestSignerForChainID(chainId)
 	result.From, _ = tx.Sender(*signer)
