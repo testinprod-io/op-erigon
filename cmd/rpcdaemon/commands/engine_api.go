@@ -60,6 +60,11 @@ type PayloadAttributes struct {
 	PrevRandao            common.Hash         `json:"prevRandao"            gencodec:"required"`
 	SuggestedFeeRecipient common.Address      `json:"suggestedFeeRecipient" gencodec:"required"`
 	Withdrawals           []*types.Withdrawal `json:"withdrawals"`
+
+	// optimism
+	NoTxPool     bool            `json:"noTxPool,omitempty"       gencodec:"optional"`
+	Transactions []hexutil.Bytes `json:"transactions,omitempty"   gencodec:"optional"`
+	GasLimit     *hexutil.Uint64 `json:"gasLimit,omitempty"       gencodec:"optional"`
 }
 
 // TransitionConfiguration represents the correct configurations of the CL and the EL
@@ -160,11 +165,18 @@ func (e *EngineImpl) forkchoiceUpdated(version uint32, ctx context.Context, fork
 
 	var attributes *remote.EnginePayloadAttributes
 	if payloadAttributes != nil {
+		txs := make([][]byte, 0, len(payloadAttributes.Transactions))
+		for _, tx := range payloadAttributes.Transactions {
+			txs = append(txs, tx)
+		}
 		attributes = &remote.EnginePayloadAttributes{
 			Version:               1,
 			Timestamp:             uint64(payloadAttributes.Timestamp),
 			PrevRandao:            gointerfaces.ConvertHashToH256(payloadAttributes.PrevRandao),
 			SuggestedFeeRecipient: gointerfaces.ConvertAddressToH160(payloadAttributes.SuggestedFeeRecipient),
+			NoTxPool:              &payloadAttributes.NoTxPool,
+			Transactions:          txs,
+			GasLimit:              (*uint64)(payloadAttributes.GasLimit),
 		}
 		if version >= 2 && payloadAttributes.Withdrawals != nil {
 			attributes.Version = 2

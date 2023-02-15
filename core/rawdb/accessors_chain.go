@@ -22,6 +22,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"github.com/ledgerwatch/erigon/params"
 	"math"
 	"math/big"
 	"time"
@@ -988,7 +989,7 @@ func ReadRawReceipts(db kv.Tx, blockNum uint64) types.Receipts {
 // The current implementation populates these metadata fields by reading the receipts'
 // corresponding block body, so if the block body is not found it will return nil even
 // if the receipt itself is stored.
-func ReadReceipts(db kv.Tx, block *types.Block, senders []libcommon.Address) types.Receipts {
+func ReadReceipts(config *params.ChainConfig, db kv.Tx, block *types.Block, senders []libcommon.Address) types.Receipts {
 	if block == nil {
 		return nil
 	}
@@ -1000,14 +1001,14 @@ func ReadReceipts(db kv.Tx, block *types.Block, senders []libcommon.Address) typ
 	if len(senders) > 0 {
 		block.SendersToTxs(senders)
 	}
-	if err := receipts.DeriveFields(block.Hash(), block.NumberU64(), block.Transactions(), senders); err != nil {
+	if err := receipts.DeriveFields(config, block.Hash(), block.NumberU64(), block.Transactions(), senders); err != nil {
 		log.Error("Failed to derive block receipts fields", "hash", block.Hash(), "number", block.NumberU64(), "err", err, "stack", dbg.Stack())
 		return nil
 	}
 	return receipts
 }
 
-func ReadReceiptsByHash(db kv.Tx, hash libcommon.Hash) (types.Receipts, error) {
+func ReadReceiptsByHash(config *params.ChainConfig, db kv.Tx, hash libcommon.Hash) (types.Receipts, error) {
 	number := ReadHeaderNumber(db, hash)
 	if number == nil {
 		return nil, nil
@@ -1023,7 +1024,7 @@ func ReadReceiptsByHash(db kv.Tx, hash libcommon.Hash) (types.Receipts, error) {
 	if b == nil {
 		return nil, nil
 	}
-	receipts := ReadReceipts(db, b, s)
+	receipts := ReadReceipts(config, db, b, s)
 	if receipts == nil {
 		return nil, nil
 	}

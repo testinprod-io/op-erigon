@@ -15,4 +15,7 @@ type BlockBuilderParameters struct {
 	SuggestedFeeRecipient libcommon.Address
 	Withdrawals           []*types.Withdrawal
 	PayloadId             uint64
+	Transactions          [][]byte
+	NoTxPool              bool
+	GasLimit              *uint64
 }

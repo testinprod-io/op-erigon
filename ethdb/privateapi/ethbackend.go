@@ -622,11 +622,18 @@ func (s *EthBackendServer) EngineForkChoiceUpdated(ctx context.Context, req *rem
 	}
 	defer tx2.Rollback()
 	headHash := rawdb.ReadHeadBlockHash(tx2)
+	if s.config.Optimism != nil {
+		headHash = forkChoice.HeadBlockHash
+	}
 	headNumber := rawdb.ReadHeaderNumber(tx2, headHash)
+	if headNumber == nil {
+		log.Warn("unknown parent hash in block building", "parent", headHash)
+		return nil, &InvalidPayloadAttributesErr
+	}
 	headHeader := rawdb.ReadHeader(tx2, headHash, *headNumber)
 	tx2.Rollback()
 
-	if headHeader.Hash() != forkChoice.HeadBlockHash {
+	if headHeader.Hash() != forkChoice.HeadBlockHash && s.config.Optimism == nil {
 		// Per Item 2 of https://github.com/ethereum/execution-apis/blob/v1.0.0-alpha.9/src/engine/specification.md#specification-1:
 		// Client software MAY skip an update of the forkchoice state and
 		// MUST NOT begin a payload build process if forkchoiceState.headBlockHash doesn't reference a leaf of the block tree.
@@ -639,7 +646,7 @@ func (s *EthBackendServer) EngineForkChoiceUpdated(ctx context.Context, req *rem
 		return &remote.EngineForkChoiceUpdatedResponse{PayloadStatus: convertPayloadStatus(status)}, nil
 	}
 
-	if headHeader.Time >= payloadAttributes.Timestamp {
+	if headHeader.Time >= payloadAttributes.Timestamp && s.config.Optimism == nil {
 		return nil, &InvalidPayloadAttributesErr
 	}
 

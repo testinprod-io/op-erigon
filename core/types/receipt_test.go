@@ -201,7 +201,7 @@ func TestDeriveFields(t *testing.T) {
 	hash := libcommon.BytesToHash([]byte{0x03, 0x14})
 
 	clearComputedFieldsOnReceipts(t, receipts)
-	if err := receipts.DeriveFields(hash, number.Uint64(), txs, []libcommon.Address{libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0})}); err != nil {
+	if err := receipts.DeriveFields(params.TestChainConfig, hash, number.Uint64(), txs, []libcommon.Address{libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0})}); err != nil {
 		t.Fatalf("DeriveFields(...) = %v, want <nil>", err)
 	}
 	// Iterate over all the computed fields and check that they're correct

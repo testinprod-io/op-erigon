@@ -222,7 +222,7 @@ func (b *GasPriceOracleBackend) ChainConfig() *chain.Config {
 	return b.cc
 }
 func (b *GasPriceOracleBackend) GetReceipts(ctx context.Context, hash libcommon.Hash) (types.Receipts, error) {
-	return rawdb.ReadReceiptsByHash(b.tx, hash)
+	return rawdb.ReadReceiptsByHash(b.cc, b.tx, hash)
 }
 func (b *GasPriceOracleBackend) PendingBlockAndReceipts() (*types.Block, types.Receipts) {
 	return nil, nil

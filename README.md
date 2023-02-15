@@ -1,8 +1,9 @@
-# Erigon
+# Optimistic Erigon
 
-Erigon is an implementation of Ethereum (execution client), on the efficiency frontier, written in Go.
+A fork of Erigon that supports the Optimism Bedrock upgrade. (experimental)
 
-![Build status](https://github.com/ledgerwatch/erigon/actions/workflows/ci.yml/badge.svg)
+[`protolambda/erigon-lib`](https://github.com/protolambda/erigon-lib) has minimal backwards-compatible changes to add Optimism engine-api fields on the `optimism` branch.
+[`protolambda/erigon-interfaces`](https://github.com/protolambda/erigon-interfaces) defines the protobuf changes for `erigon-lib` on the `optimism` branch.
 
 ![Coverage](https://gist.githubusercontent.com/revitteth/ee38e9beb22353eef6b88f2ad6ed7aa9/raw/badge.svg)
 

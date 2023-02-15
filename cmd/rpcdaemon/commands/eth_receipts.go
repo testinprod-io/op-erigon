@@ -37,7 +37,7 @@ import (
 )
 
 func (api *BaseAPI) getReceipts(ctx context.Context, tx kv.Tx, chainConfig *chain.Config, block *types.Block, senders []common.Address) (types.Receipts, error) {
-	if cached := rawdb.ReadReceipts(tx, block, senders); cached != nil {
+	if cached := rawdb.ReadReceipts(api._chainConfig, tx, block, senders); cached != nil {
 		return cached, nil
 	}
 	engine := api.engine()
@@ -817,6 +817,19 @@ func marshalReceipt(receipt *types.Receipt, txn types.Transaction, chainConfig *
 	if receipt.ContractAddress != (common.Address{}) {
 		fields["contractAddress"] = receipt.ContractAddress
 	}
+
+	if chainConfig.Optimism != nil && txn.Type() != types.DepositTxType {
+		l1GasPrice := block.GetL1GasPrice()
+		baseFee, _ := uint256.FromBig(l1GasPrice.BaseFee)
+		overhead, _ := uint256.FromBig(l1GasPrice.Overhead)
+		scalar, _ := uint256.FromBig(l1GasPrice.Scalar)
+		rollupDataGas := txn.RollupDataGas()
+		fields["l1GasPrice"] = hexutil.Big(*l1GasPrice.BaseFee)
+		fields["l1GasUsed"] = hexutil.Uint64(rollupDataGas)
+		fields["l1Fee"] = hexutil.Big(*types.L1Cost(rollupDataGas, baseFee, overhead, scalar).ToBig())
+		fields["l1FeeScalar"] = l1GasPrice.GetFeeScalar()
+	}
+
 	return fields
 }
 

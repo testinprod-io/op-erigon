@@ -49,7 +49,7 @@ func (b *testBackend) GetReceipts(ctx context.Context, hash libcommon.Hash) (typ
 		return nil, err
 	}
 	defer tx.Rollback()
-	return rawdb.ReadReceiptsByHash(tx, hash)
+	return rawdb.ReadReceiptsByHash(b.cfg, tx, hash)
 }
 
 func (b *testBackend) PendingBlockAndReceipts() (*types.Block, types.Receipts) {

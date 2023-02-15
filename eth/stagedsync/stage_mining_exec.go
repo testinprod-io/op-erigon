@@ -92,6 +92,9 @@ func SpawnMiningExecStage(s *StageState, tx kv.RwTx, cfg MiningExecCfg, quit <-c
 	logPrefix := s.LogPrefix()
 	current := cfg.miningState.MiningBlock
 	txs := current.PreparedTxs
+	forceTxs := current.ForceTxs
+	localTxs := current.LocalTxs
+	remoteTxs := current.RemoteTxs
 	noempty := true
 
 	stateReader := state.NewPlainStateReader(tx)
@@ -365,7 +368,7 @@ func filterBadTransactions(transactions []types.Transaction, config chain.Config
 	return filtered, nil
 }
 
-func addTransactionsToMiningBlock(logPrefix string, current *MiningBlock, chainConfig chain.Config, vmConfig *vm.Config, getHeader func(hash libcommon.Hash, number uint64) *types.Header, engine consensus.Engine, txs types.TransactionsStream, coinbase libcommon.Address, ibs *state.IntraBlockState, quit <-chan struct{}, interrupt *int32, payloadId uint64) (types.Logs, bool, error) {
+func addTransactionsToMiningBlock(logPrefix string, current *MiningBlock, chainConfig chain.Config, vmConfig *vm.Config, getHeader func(hash libcommon.Hash, number uint64) *types.Header, engine consensus.Engine, txs types.TransactionsStream, coinbase libcommon.Address, ibs *state.IntraBlockState, quit <-chan struct{}, interrupt *int32, payloadId uint64, allowDeposits bool) (types.Logs, bool, error) {
 	header := current.Header
 	tcount := 0
 	gasPool := new(core.GasPool).AddGas(header.GasLimit - header.GasUsed)
@@ -451,6 +454,12 @@ LOOP:
 		}
 
 		// Start executing the transaction
+		ibs.Prepare(txn.Hash(), common.Hash{}, tcount)
+		if !allowDeposits && txn.Type() == types.DepositTxType {
+			log.Warn(fmt.Sprintf("[%s] Ignoring deposit tx that made its way through mempool", logPrefix), "hash", txn.Hash())
+			txs.Pop()
+			continue
+		}
 		logs, err := miningCommitTx(txn, coinbase, vmConfig, chainConfig, ibs, current)
 
 		if errors.Is(err, core.ErrGasLimitReached) {

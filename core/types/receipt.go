@@ -20,6 +20,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/holiman/uint256"
+	"github.com/ledgerwatch/erigon/params"
 	"io"
 	"math/big"
 
@@ -68,6 +70,12 @@ type Receipt struct {
 	BlockHash        libcommon.Hash `json:"blockHash,omitempty" codec:"-"`
 	BlockNumber      *big.Int       `json:"blockNumber,omitempty" codec:"-"`
 	TransactionIndex uint           `json:"transactionIndex" codec:"-"`
+
+	// OVM legacy: extend receipts with their L1 price (if a rollup tx)
+	L1GasPrice *big.Int   `json:"l1GasPrice,omitempty"`
+	L1GasUsed  *big.Int   `json:"l1GasUsed,omitempty"`
+	L1Fee      *big.Int   `json:"l1Fee,omitempty"`
+	FeeScalar  *big.Float `json:"l1FeeScalar,omitempty"`
 }
 
 type receiptMarshaling struct {
@@ -78,6 +86,12 @@ type receiptMarshaling struct {
 	GasUsed           hexutil.Uint64
 	BlockNumber       *hexutil.Big
 	TransactionIndex  hexutil.Uint
+
+	// Optimism: extend receipts with their L1 price (if a rollup tx)
+	L1GasPrice *hexutil.Big
+	L1GasUsed  *hexutil.Big
+	L1Fee      *hexutil.Big
+	FeeScalar  *big.Float
 }
 
 // receiptRLP is the consensus encoding of a receipt.
@@ -246,7 +260,7 @@ func (r *Receipt) DecodeRLP(s *rlp.Stream) error {
 		}
 		r.Type = b[0]
 		switch r.Type {
-		case AccessListTxType, DynamicFeeTxType:
+		case AccessListTxType, DynamicFeeTxType, DepositTxType:
 			if err := r.decodePayload(s); err != nil {
 				return err
 			}
@@ -442,6 +456,11 @@ func (rs Receipts) EncodeIndex(i int, w *bytes.Buffer) {
 		if err := rlp.Encode(w, data); err != nil {
 			panic(err)
 		}
+	case DepositTxType:
+		w.WriteByte(DepositTxType)
+		if err := rlp.Encode(w, data); err != nil {
+			panic(err)
+		}
 	default:
 		// For unsupported types, write nothing. Since this is for
 		// DeriveSha, the error will be caught matching the derived hash
@@ -451,7 +470,7 @@ func (rs Receipts) EncodeIndex(i int, w *bytes.Buffer) {
 
 // DeriveFields fills the receipts with their computed fields based on consensus
 // data and contextual infos like containing block and transactions.
-func (r Receipts) DeriveFields(hash libcommon.Hash, number uint64, txs Transactions, senders []libcommon.Address) error {
+func (r Receipts) DeriveFields(config *params.ChainConfig, hash libcommon.Hash, number uint64, txs Transactions, senders []libcommon.Address) error {
 	logIndex := uint(0) // logIdx is unique within the block and starts from 0
 	if len(txs) != len(r) {
 		return fmt.Errorf("transaction and receipt count mismatch, tx count = %d, receipts count = %d", len(txs), len(r))
@@ -490,6 +509,26 @@ func (r Receipts) DeriveFields(hash libcommon.Hash, number uint64, txs Transacti
 			r[i].Logs[j].TxIndex = uint(i)
 			r[i].Logs[j].Index = logIndex
 			logIndex++
+		}
+	}
+	if config.Optimism != nil && len(txs) >= 2 { // need at least an info tx and a non-info tx
+		if data := txs[0].GetData(); len(data) >= 4+32*8 { // function selector + 8 arguments to setL1BlockValues
+			l1Basefee := new(uint256.Int).SetBytes(data[4+32*2 : 4+32*3]) // arg index 2
+			overhead := new(uint256.Int).SetBytes(data[4+32*6 : 4+32*7])  // arg index 6
+			scalar := new(uint256.Int).SetBytes(data[4+32*7 : 4+32*8])    // arg index 7
+			fscalar := new(big.Float).SetInt(scalar.ToBig())              // legacy: format fee scalar as big Float
+			fdivisor := new(big.Float).SetUint64(1_000_000)               // 10**6, i.e. 6 decimals
+			feeScalar := new(big.Float).Quo(fscalar, fdivisor)
+			for i := 0; i < len(r); i++ {
+				if tx, ok := txs[i].(RollupMessage); ok && !tx.IsDepositTx() {
+					r[i].L1GasPrice = l1Basefee.ToBig()
+					r[i].L1GasUsed = new(big.Int).SetUint64(tx.RollupDataGas())
+					r[i].L1Fee = L1Cost(tx.RollupDataGas(), l1Basefee, overhead, scalar).ToBig()
+					r[i].FeeScalar = feeScalar
+				}
+			}
+		} else {
+			return fmt.Errorf("L1 info tx only has %d bytes, cannot read gas price parameters", len(data))
 		}
 	}
 	return nil
