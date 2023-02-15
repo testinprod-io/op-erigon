@@ -709,6 +709,17 @@ func DefaultBorDevnetGenesisBlock() *Genesis {
 	}
 }
 
+func DefaultOptimismGoerliGenesisBlock() *Genesis {
+	return &Genesis{
+		Config:     params.OptimismGoerliChainConfig,
+		Difficulty: big.NewInt(1),
+		Mixhash:    common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"),
+		ExtraData:  hexutil.MustDecode("0x000000000000000000000000000000000000000000000000000000000000000027770a9694e4b4b1e130ab91bc327c36855f612e0000000000000000000000000000000000000000000000000000"),
+		GasLimit:   15000000,
+		Alloc:      readPrealloc("allocs/optimism-goerli.json"),
+	}
+}
+
 func DefaultGnosisGenesisBlock() *Genesis {
 	return &Genesis{
 		Config:     params.GnosisChainConfig,
@@ -716,7 +727,6 @@ func DefaultGnosisGenesisBlock() *Genesis {
 		AuRaSeal:   common.FromHex("0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
 		GasLimit:   0x989680,
 		Difficulty: big.NewInt(0x20000),
-		Alloc:      readPrealloc("allocs/gnosis.json"),
 	}
 }
 
@@ -786,6 +796,8 @@ func DefaultGenesisBlockByChainName(chain string) *Genesis {
 		return DefaultBorMainnetGenesisBlock()
 	case networkname.BorDevnetChainName:
 		return DefaultBorDevnetGenesisBlock()
+	case networkname.OptimismGoerliChainName:
+		return DefaultOptimismGoerliGenesisBlock()
 	case networkname.GnosisChainName:
 		return DefaultGnosisGenesisBlock()
 	default:
