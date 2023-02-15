@@ -1633,13 +1633,13 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 	case networkname.OptimismDevnetChainName:
 		// Create new developer account or reuse existing one
 		developer := cfg.Miner.Etherbase
-		if developer == (common.Address{}) {
+		if developer == (libcommon.Address{}) {
 			Fatalf("Please specify developer account address using --miner.etherbase")
 		}
 		log.Info("Using developer account", "address", developer)
 
 		// Create a new developer genesis block or reuse existing one
-		cfg.Genesis = readGenesis(ctx.GlobalString(GenesisPathFlag.Name))
+		cfg.Genesis = readGenesis(ctx.String(GenesisPathFlag.Name))
 		//log.Info("Using custom developer period", "seconds", cfg.Genesis.Config.Clique.Period)
 	}
 

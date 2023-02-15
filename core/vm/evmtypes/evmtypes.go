@@ -30,6 +30,9 @@ type BlockContext struct {
 	Difficulty  *big.Int          // Provides information for DIFFICULTY
 	BaseFee     *uint256.Int      // Provides information for BASEFEE
 	PrevRanDao  *libcommon.Hash   // Provides information for PREVRANDAO
+
+	// L1CostFunc returns the L1 cost of the rollup message, the function may be nil, or return nil
+	L1CostFunc types.L1CostFunc
 }
 
 // TxContext provides the EVM with information about a transaction.

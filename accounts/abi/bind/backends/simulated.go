@@ -85,7 +85,7 @@ type SimulatedBackend struct {
 	chainFeed  event.Feed
 	logsFeed   event.Feed
 
-	chainCfg *params.ChainConfig
+	chainCfg *chain.Config
 }
 
 // NewSimulatedBackend creates a new binding backend using a simulated blockchain

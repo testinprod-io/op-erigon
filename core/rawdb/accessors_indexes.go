@@ -17,7 +17,7 @@
 package rawdb
 
 import (
-	"github.com/ledgerwatch/erigon/params"
+	"github.com/ledgerwatch/erigon-lib/chain"
 	"math/big"
 
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
@@ -130,7 +130,7 @@ func ReadTransaction(db kv.Tx, hash libcommon.Hash, blockNumber uint64) (types.T
 	return nil, libcommon.Hash{}, 0, 0, nil
 }
 
-func ReadReceipt(config *params.ChainConfig, db kv.Tx, txHash libcommon.Hash) (*types.Receipt, libcommon.Hash, uint64, uint64, error) {
+func ReadReceipt(config *chain.Config, db kv.Tx, txHash libcommon.Hash) (*types.Receipt, libcommon.Hash, uint64, uint64, error) {
 	// Retrieve the context of the receipt based on the transaction hash
 	blockNumber, err := ReadTxLookupEntry(db, txHash)
 	if err != nil {

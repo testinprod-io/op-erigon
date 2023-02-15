@@ -454,7 +454,7 @@ LOOP:
 		}
 
 		// Start executing the transaction
-		ibs.Prepare(txn.Hash(), common.Hash{}, tcount)
+		ibs.Prepare(txn.Hash(), libcommon.Hash{}, tcount)
 		if !allowDeposits && txn.Type() == types.DepositTxType {
 			log.Warn(fmt.Sprintf("[%s] Ignoring deposit tx that made its way through mempool", logPrefix), "hash", txn.Hash())
 			txs.Pop()

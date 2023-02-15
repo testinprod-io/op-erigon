@@ -21,7 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/holiman/uint256"
-	"github.com/ledgerwatch/erigon/params"
+	"github.com/ledgerwatch/erigon-lib/chain"
 	"io"
 	"math/big"
 
@@ -470,7 +470,7 @@ func (rs Receipts) EncodeIndex(i int, w *bytes.Buffer) {
 
 // DeriveFields fills the receipts with their computed fields based on consensus
 // data and contextual infos like containing block and transactions.
-func (r Receipts) DeriveFields(config *params.ChainConfig, hash libcommon.Hash, number uint64, txs Transactions, senders []libcommon.Address) error {
+func (r Receipts) DeriveFields(config *chain.Config, hash libcommon.Hash, number uint64, txs Transactions, senders []libcommon.Address) error {
 	logIndex := uint(0) // logIdx is unique within the block and starts from 0
 	if len(txs) != len(r) {
 		return fmt.Errorf("transaction and receipt count mismatch, tx count = %d, receipts count = %d", len(txs), len(r))

@@ -22,7 +22,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"github.com/ledgerwatch/erigon/params"
+	"github.com/ledgerwatch/erigon-lib/chain"
 	"math"
 	"math/big"
 	"time"
@@ -989,7 +989,7 @@ func ReadRawReceipts(db kv.Tx, blockNum uint64) types.Receipts {
 // The current implementation populates these metadata fields by reading the receipts'
 // corresponding block body, so if the block body is not found it will return nil even
 // if the receipt itself is stored.
-func ReadReceipts(config *params.ChainConfig, db kv.Tx, block *types.Block, senders []libcommon.Address) types.Receipts {
+func ReadReceipts(config *chain.Config, db kv.Tx, block *types.Block, senders []libcommon.Address) types.Receipts {
 	if block == nil {
 		return nil
 	}
@@ -1008,7 +1008,7 @@ func ReadReceipts(config *params.ChainConfig, db kv.Tx, block *types.Block, send
 	return receipts
 }
 
-func ReadReceiptsByHash(config *params.ChainConfig, db kv.Tx, hash libcommon.Hash) (types.Receipts, error) {
+func ReadReceiptsByHash(config *chain.Config, db kv.Tx, hash libcommon.Hash) (types.Receipts, error) {
 	number := ReadHeaderNumber(db, hash)
 	if number == nil {
 		return nil, nil
