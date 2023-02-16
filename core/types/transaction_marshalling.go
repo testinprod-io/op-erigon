@@ -31,10 +31,10 @@ type txJSON struct {
 	To       *libcommon.Address `json:"to"`
 
 	// Deposit transaction fields
-	SourceHash *common.Hash    `json:"sourceHash,omitempty"`
-	From       *common.Address `json:"from,omitempty"`
-	Mint       *hexutil.Big    `json:"mint,omitempty"`
-	IsSystemTx *bool           `json:"isSystemTx,omitempty"`
+	SourceHash *libcommon.Hash    `json:"sourceHash,omitempty"`
+	From       *libcommon.Address `json:"from,omitempty"`
+	Mint       *hexutil.Big       `json:"mint,omitempty"`
+	IsSystemTx *bool              `json:"isSystemTx,omitempty"`
 
 	// Access list transaction fields:
 	ChainID    *hexutil.Big       `json:"chainId,omitempty"`
@@ -105,7 +105,7 @@ func (tx DepositTx) MarshalJSON() ([]byte, error) {
 
 	enc.Hash = tx.Hash()
 	enc.Type = hexutil.Uint64(tx.Type())
-	enc.ChainID = (*hexutil.Big)(common.Big0)
+	enc.ChainID = (*hexutil.Big)(libcommon.Big0)
 	enc.Gas = (*hexutil.Uint64)(&tx.Gas)
 	enc.Value = (*hexutil.Big)(tx.Value.ToBig())
 	enc.Data = (*hexutil.Bytes)(&tx.Data)

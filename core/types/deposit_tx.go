@@ -18,7 +18,9 @@ package types
 
 import (
 	"fmt"
-	"github.com/ledgerwatch/erigon/params"
+	"github.com/ledgerwatch/erigon-lib/chain"
+	libcommon "github.com/ledgerwatch/erigon-lib/common"
+	types2 "github.com/ledgerwatch/erigon-lib/types"
 	"io"
 	"math/big"
 	"math/bits"
@@ -37,11 +39,11 @@ type DepositTx struct {
 	hash atomic.Value //nolint:structcheck
 	size atomic.Value //nolint:structcheck
 	// SourceHash uniquely identifies the source of the deposit
-	SourceHash common.Hash
+	SourceHash libcommon.Hash
 	// From is exposed through the types.Signer, not through TxData
-	From common.Address
+	From libcommon.Address
 	// nil means contract creation
-	To *common.Address `rlp:"nil"`
+	To *libcommon.Address `rlp:"nil"`
 	// Mint is minted on L2, locked on L1, nil if no minting.
 	Mint *uint256.Int `rlp:"nil"`
 	// Value is transferred from L2 balance, executed after Mint (if any)
@@ -64,7 +66,7 @@ func (tx DepositTx) GetNonce() uint64 {
 	return 0
 }
 
-func (tx DepositTx) GetTo() *common.Address {
+func (tx DepositTx) GetTo() *libcommon.Address {
 	return tx.To
 }
 
@@ -80,11 +82,11 @@ func (tx DepositTx) GetData() []byte {
 	return tx.Data
 }
 
-func (tx DepositTx) GetSender() (common.Address, bool) {
+func (tx DepositTx) GetSender() (libcommon.Address, bool) {
 	return tx.From, false
 }
 
-func (tx DepositTx) SetSender(addr common.Address) {
+func (tx DepositTx) SetSender(addr libcommon.Address) {
 	tx.From = addr
 }
 
@@ -92,7 +94,7 @@ func (tx DepositTx) RawSignatureValues() (*uint256.Int, *uint256.Int, *uint256.I
 	panic("deposit tx does not have a signature")
 }
 
-func (tx DepositTx) SigningHash(chainID *big.Int) common.Hash {
+func (tx DepositTx) SigningHash(chainID *big.Int) libcommon.Hash {
 	panic("deposit tx does not have a signing hash")
 }
 
@@ -291,7 +293,7 @@ func (tx *DepositTx) DecodeRLP(s *rlp.Stream) error {
 		return fmt.Errorf("wrong size for To: %d", len(b))
 	}
 	if len(b) > 0 {
-		tx.To = &common.Address{}
+		tx.To = &libcommon.Address{}
 		copy((*tx.To)[:], b)
 	}
 	// Mint
@@ -318,7 +320,7 @@ func (tx *DepositTx) DecodeRLP(s *rlp.Stream) error {
 	return s.ListEnd()
 }
 
-func (tx *DepositTx) FakeSign(address common.Address) (Transaction, error) {
+func (tx *DepositTx) FakeSign(address libcommon.Address) (Transaction, error) {
 	cpy := tx.copy()
 	cpy.SetSender(address)
 	return cpy, nil
@@ -334,9 +336,9 @@ func (tx DepositTx) Time() time.Time {
 
 func (tx DepositTx) Type() byte { return DepositTxType }
 
-func (tx *DepositTx) Hash() common.Hash {
+func (tx *DepositTx) Hash() libcommon.Hash {
 	if hash := tx.hash.Load(); hash != nil {
-		return *hash.(*common.Hash)
+		return *hash.(*libcommon.Hash)
 	}
 	hash := prefixedRlpHash(DepositTxType, []interface{}{
 		tx.SourceHash,
@@ -392,15 +394,15 @@ func (tx DepositTx) Cost() *uint256.Int {
 	return tx.Value.Clone()
 }
 
-func (tx DepositTx) GetAccessList() AccessList {
+func (tx DepositTx) GetAccessList() types2.AccessList {
 	return nil
 }
 
 // NewDepositTransaction creates a deposit transaction
 func NewDepositTransaction(
-	sourceHash common.Hash,
-	from common.Address,
-	to common.Address,
+	sourceHash libcommon.Hash,
+	from libcommon.Address,
+	to libcommon.Address,
 	mint *uint256.Int,
 	value *uint256.Int,
 	gasLimit uint64,
@@ -440,7 +442,7 @@ func (tx DepositTx) copy() *DepositTx {
 }
 
 // AsMessage returns the transaction as a core.Message.
-func (tx DepositTx) AsMessage(s Signer, baseFee *big.Int, rules *params.Rules) (Message, error) {
+func (tx DepositTx) AsMessage(s Signer, baseFee *big.Int, rules *chain.Rules) (Message, error) {
 	msg := Message{
 		nonce:       0,
 		gasLimit:    tx.Gas,
@@ -460,7 +462,7 @@ func (tx DepositTx) AsMessage(s Signer, baseFee *big.Int, rules *params.Rules) (
 	return msg, nil
 }
 
-func (tx *DepositTx) Sender(signer Signer) (common.Address, error) {
+func (tx *DepositTx) Sender(signer Signer) (libcommon.Address, error) {
 	return tx.From, nil
 }
 

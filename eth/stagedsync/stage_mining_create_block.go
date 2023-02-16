@@ -128,9 +128,14 @@ func SpawnMiningCreateBlockStage(s *StageState, tx kv.RwTx, cfg MiningCreateBloc
 
 	blockNum := executionAt + 1
 
-	localUncles, remoteUncles, err := readNonCanonicalHeaders(tx, blockNum, cfg.engine, coinbase, txPoolLocals)
-	if err != nil {
-		return err
+	// TODO: uncles should also be ignored in PoS, not just Optimism.
+	// There are no uncles after the Merge. Erigon miner bug?
+	var localUncles, remoteUncles map[libcommon.Hash]*types.Header
+	if cfg.chainConfig.Optimism == nil {
+		localUncles, remoteUncles, err = readNonCanonicalHeaders(tx, blockNum, cfg.engine, coinbase, txPoolLocals)
+		if err != nil {
+			return err
+		}
 	}
 	chain := ChainReader{Cfg: cfg.chainConfig, Db: tx}
 	var GetBlocksFromHash = func(hash libcommon.Hash, n int) (blocks []*types.Block) {

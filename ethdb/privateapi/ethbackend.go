@@ -656,6 +656,9 @@ func (s *EthBackendServer) EngineForkChoiceUpdated(ctx context.Context, req *rem
 		PrevRandao:            gointerfaces.ConvertH256ToHash(payloadAttributes.PrevRandao),
 		SuggestedFeeRecipient: gointerfaces.ConvertH160toAddress(payloadAttributes.SuggestedFeeRecipient),
 		PayloadId:             s.payloadId,
+		Transactions:          payloadAttributes.Transactions,
+		NoTxPool:              payloadAttributes.NoTxPool != nil && *req.PayloadAttributes.NoTxPool,
+		GasLimit:              payloadAttributes.GasLimit,
 	}
 	if payloadAttributes.Version >= 2 {
 		param.Withdrawals = ConvertWithdrawalsFromRpc(payloadAttributes.Withdrawals)

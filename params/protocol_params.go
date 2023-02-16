@@ -17,7 +17,7 @@
 package params
 
 import (
-	"github.com/ledgerwatch/erigon/common"
+	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"math/big"
 )
 
@@ -25,9 +25,9 @@ import (
 var (
 	GasLimitBoundDivisor uint64 = 1024 // The bound divisor of the gas limit, used in update calculations.
 	// The base fee portion of the transaction fee accumulates at this predeploy
-	OptimismBaseFeeRecipient = common.HexToAddress("0x4200000000000000000000000000000000000019")
+	OptimismBaseFeeRecipient = libcommon.HexToAddress("0x4200000000000000000000000000000000000019")
 	// The L1 portion of the transaction fee accumulates at this predeploy
-	OptimismL1FeeRecipient = common.HexToAddress("0x420000000000000000000000000000000000001A")
+	OptimismL1FeeRecipient = libcommon.HexToAddress("0x420000000000000000000000000000000000001A")
 )
 
 const (
