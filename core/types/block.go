@@ -746,18 +746,6 @@ type Block struct {
 	size atomic.Value
 }
 
-type L1GasPrice struct {
-	BaseFee  *big.Int
-	Overhead *big.Int
-	Scalar   *big.Int
-}
-
-func (l *L1GasPrice) GetFeeScalar() *big.Float {
-	fscalar := new(big.Float).SetInt(l.Scalar)
-	fdivisor := new(big.Float).SetUint64(1_000_000)
-	return new(big.Float).Quo(fscalar, fdivisor)
-}
-
 // Copy transaction senders from body into the transactions
 func (b *Body) SendersToTxs(senders []libcommon.Address) {
 	if senders == nil {
@@ -1775,17 +1763,6 @@ func (b *Block) Hash() libcommon.Hash {
 	v := b.header.Hash()
 	b.hash.Store(v)
 	return v
-}
-
-func (b *Block) GetL1GasPrice() *L1GasPrice {
-	systemTx := b.transactions[0]
-	data := systemTx.GetData()
-	l1GasPrice := &L1GasPrice{
-		BaseFee:  new(big.Int).SetBytes(data[4+32*2 : 4+32*3]), // arg index 2
-		Overhead: new(big.Int).SetBytes(data[4+32*6 : 4+32*7]), // arg index 6
-		Scalar:   new(big.Int).SetBytes(data[4+32*7 : 4+32*8]), // arg index 7
-	}
-	return l1GasPrice
 }
 
 type Blocks []*Block

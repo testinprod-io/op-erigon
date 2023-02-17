@@ -819,15 +819,10 @@ func marshalReceipt(receipt *types.Receipt, txn types.Transaction, chainConfig *
 	}
 
 	if chainConfig.Optimism != nil && txn.Type() != types.DepositTxType {
-		l1GasPrice := block.GetL1GasPrice()
-		baseFee, _ := uint256.FromBig(l1GasPrice.BaseFee)
-		overhead, _ := uint256.FromBig(l1GasPrice.Overhead)
-		scalar, _ := uint256.FromBig(l1GasPrice.Scalar)
-		rollupDataGas := txn.RollupDataGas()
-		fields["l1GasPrice"] = hexutil.Big(*l1GasPrice.BaseFee)
-		fields["l1GasUsed"] = hexutil.Uint64(rollupDataGas)
-		fields["l1Fee"] = hexutil.Big(*types.L1Cost(rollupDataGas, baseFee, overhead, scalar).ToBig())
-		fields["l1FeeScalar"] = l1GasPrice.GetFeeScalar()
+		fields["l1GasPrice"] = hexutil.Big(*receipt.L1GasPrice)
+		fields["l1GasUsed"] = hexutil.Big(*receipt.L1GasUsed)
+		fields["l1Fee"] = hexutil.Big(*receipt.L1Fee)
+		fields["l1FeeScalar"] = receipt.FeeScalar
 	}
 
 	return fields
