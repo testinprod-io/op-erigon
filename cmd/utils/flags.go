@@ -751,6 +751,10 @@ var (
 		Usage: "Port for sentinel",
 		Value: 7777,
 	}
+	ImportExecutionFlag = cli.BoolFlag{
+		Name:  "import.execution",
+		Usage: "Execution when importing chain",
+	}
 )
 
 var MetricFlags = []cli.Flag{MetricsEnabledFlag, MetricsEnabledExpensiveFlag, MetricsHTTPFlag, MetricsPortFlag}
@@ -1583,6 +1587,7 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 	if ctx.GlobalIsSet(OverrideMergeNetsplitBlock.Name) {
 		cfg.OverrideMergeNetsplitBlock = GlobalBig(ctx, OverrideMergeNetsplitBlock.Name)
 	}
+	cfg.ImportExecution = ctx.GlobalIsSet(ImportExecutionFlag.Name)
 }
 
 // SetDNSDiscoveryDefaults configures DNS discovery with the given URL if

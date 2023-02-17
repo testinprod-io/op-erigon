@@ -20,10 +20,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/holiman/uint256"
-	"github.com/ledgerwatch/erigon/params"
 	"io"
 	"math/big"
+
+	"github.com/holiman/uint256"
+	"github.com/ledgerwatch/erigon/params"
 
 	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/common/hexutil"
@@ -50,6 +51,35 @@ const (
 // Receipt represents the results of a transaction.
 // DESCRIBED: docs/programmers_guide/guide.md#organising-ethereum-state-into-a-merkle-tree
 type Receipt struct {
+	// Consensus fields: These fields are defined by the Yellow Paper
+	Type              uint8  `json:"type,omitempty"`
+	PostState         []byte `json:"root" codec:"1"`
+	Status            uint64 `json:"status" codec:"2"`
+	CumulativeGasUsed uint64 `json:"cumulativeGasUsed" gencodec:"required" codec:"3"`
+	Bloom             Bloom  `json:"logsBloom"         gencodec:"required" codec:"-"`
+	Logs              Logs   `json:"logs"              gencodec:"required" codec:"-"`
+
+	// Implementation fields: These fields are added by geth when processing a transaction.
+	// They are stored in the chain database.
+	TxHash          common.Hash    `json:"transactionHash" gencodec:"required" codec:"-"`
+	ContractAddress common.Address `json:"contractAddress" codec:"-"`
+	GasUsed         uint64         `json:"gasUsed" gencodec:"required" codec:"-"`
+
+	// Inclusion information: These fields provide information about the inclusion of the
+	// transaction corresponding to this receipt.
+	BlockHash        common.Hash `json:"blockHash,omitempty" codec:"-"`
+	BlockNumber      *big.Int    `json:"blockNumber,omitempty" codec:"-"`
+	TransactionIndex uint        `json:"transactionIndex" codec:"-"`
+
+	// OVM legacy: extend receipts with their L1 price (if a rollup tx)
+	L1GasPrice *big.Int   `json:"l1GasPrice,omitempty"`
+	L1GasUsed  *big.Int   `json:"l1GasUsed,omitempty"`
+	L1Fee      *big.Int   `json:"l1Fee,omitempty"`
+	FeeScalar  *big.Float `json:"l1FeeScalar,omitempty"`
+}
+
+// exact same structure with Receipt but using default rlp methods
+type HackReceipt struct {
 	// Consensus fields: These fields are defined by the Yellow Paper
 	Type              uint8  `json:"type,omitempty"`
 	PostState         []byte `json:"root" codec:"1"`
@@ -431,6 +461,9 @@ func decodeV3StoredReceiptRLP(r *ReceiptForStorage, blob []byte) error {
 
 // Receipts implements DerivableList for receipts.
 type Receipts []*Receipt
+type ReceiptsList []*Receipts
+
+type HackReceipts []*HackReceipt
 
 // Len returns the number of receipts in this list.
 func (rs Receipts) Len() int { return len(rs) }
