@@ -3,6 +3,8 @@ package cbor
 import (
 	"fmt"
 	"io"
+	"math/big"
+	"reflect"
 
 	"github.com/ledgerwatch/log/v3"
 	"github.com/ugorji/go/codec"
@@ -23,6 +25,8 @@ func Decoder(r io.Reader) *codec.Decoder {
 			var handle codec.CborHandle
 			handle.ReaderBufferSize = 64 * 1024
 			handle.ZeroCopy = true // if you need access to object outside of db transaction - please copy bytes before deserialization
+			handle.SetInterfaceExt(bigIntType, 1, BigIntExt{})
+			handle.SetInterfaceExt(bigFloatType, 2, BigFloatExt{})
 			d = codec.NewDecoder(r, &handle)
 		}
 	}
@@ -39,6 +43,8 @@ func DecoderBytes(r []byte) *codec.Decoder {
 			var handle codec.CborHandle
 			handle.ReaderBufferSize = 64 * 1024
 			handle.ZeroCopy = true // if you need access to object outside of db transaction - please copy bytes before deserialization
+			handle.SetInterfaceExt(bigIntType, 1, BigIntExt{})
+			handle.SetInterfaceExt(bigFloatType, 2, BigFloatExt{})
 			d = codec.NewDecoderBytes(r, &handle)
 		}
 	}
@@ -68,6 +74,8 @@ func Encoder(w io.Writer) *codec.Encoder {
 			handle.StructToArray = true
 			handle.OptimumSize = true
 			handle.StringToRaw = true
+			handle.SetInterfaceExt(bigIntType, 1, BigIntExt{})
+			handle.SetInterfaceExt(bigFloatType, 2, BigFloatExt{})
 
 			e = codec.NewEncoder(w, &handle)
 		}
@@ -87,6 +95,8 @@ func EncoderBytes(w *[]byte) *codec.Encoder {
 			handle.StructToArray = true
 			handle.OptimumSize = true
 			handle.StringToRaw = true
+			handle.SetInterfaceExt(bigIntType, 1, BigIntExt{})
+			handle.SetInterfaceExt(bigFloatType, 2, BigFloatExt{})
 
 			e = codec.NewEncoderBytes(w, &handle)
 		}
@@ -111,4 +121,29 @@ func Return(d interface{}) {
 	default:
 		panic(fmt.Sprintf("unexpected type: %T", d))
 	}
+}
+
+var bigIntType = reflect.TypeOf(big.NewInt(0))
+var bigFloatType = reflect.TypeOf(big.NewFloat(0))
+
+type BigIntExt struct{}
+
+func (x BigIntExt) ConvertExt(v interface{}) interface{} {
+	v2 := v.(*big.Int)
+	return v2.Bytes()
+}
+func (x BigIntExt) UpdateExt(dest interface{}, v interface{}) {
+	d := dest.(*big.Int)
+	d.SetBytes(v.([]byte))
+}
+
+type BigFloatExt struct{}
+
+func (x BigFloatExt) ConvertExt(v interface{}) interface{} {
+	v2 := v.(*big.Float)
+	return v2.String()
+}
+func (x BigFloatExt) UpdateExt(dest interface{}, v interface{}) {
+	d := dest.(*big.Float)
+	d.SetString(v.(string))
 }

@@ -511,7 +511,7 @@ func (r Receipts) DeriveFields(config *chain.Config, hash libcommon.Hash, number
 			logIndex++
 		}
 	}
-	if config.Optimism != nil && len(txs) >= 2 { // need at least an info tx and a non-info tx
+	if config.IsOptimismBedrock(number) && len(txs) >= 2 { // need at least an info tx and a non-info tx
 		if data := txs[0].GetData(); len(data) >= 4+32*8 { // function selector + 8 arguments to setL1BlockValues
 			l1Basefee := new(uint256.Int).SetBytes(data[4+32*2 : 4+32*3]) // arg index 2
 			overhead := new(uint256.Int).SetBytes(data[4+32*6 : 4+32*7])  // arg index 6
