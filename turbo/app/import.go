@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
 	"os"
 	"os/signal"
 	"strings"
@@ -149,8 +150,27 @@ func ImportReceipts(ethereum *eth.Ethereum, chainDB kv.RwDB, fn string) error {
 			// hack assuming that default rlp will work
 			var b2 types.Receipts
 			for _, hackReceipt := range b {
-				receipt := (*types.Receipt)(hackReceipt)
-				b2 = append(b2, receipt)
+				feeScalar := new(big.Float)
+				feeScalar.SetString(hackReceipt.FeeScalar)
+				receipt := types.Receipt{
+					hackReceipt.Type,
+					hackReceipt.PostState,
+					hackReceipt.Status,
+					hackReceipt.CumulativeGasUsed,
+					hackReceipt.Bloom,
+					hackReceipt.Logs,
+					hackReceipt.TxHash,
+					hackReceipt.ContractAddress,
+					hackReceipt.GasUsed,
+					hackReceipt.BlockHash,
+					hackReceipt.BlockNumber,
+					hackReceipt.TransactionIndex,
+					hackReceipt.L1GasPrice,
+					hackReceipt.L1GasUsed,
+					hackReceipt.L1Fee,
+					feeScalar,
+				}
+				b2 = append(b2, &receipt)
 			}
 
 			// log.Info("DEBUG print")
@@ -488,7 +508,11 @@ func InsertReceipts(ethereum *eth.Ethereum, receiptsList []*types.Receipts) erro
 		block := rawdb.ReadBlock(tx, firstReceipt.BlockHash, blockNumber)
 
 		var receiptsVal types.Receipts = *receipts
-		rawdb.WriteReceipts(tx, blockNumber, receiptsVal)
+		err = rawdb.WriteReceipts(tx, blockNumber, receiptsVal)
+		if err != nil {
+			log.Error(err.Error())
+			break
+		}
 
 		receiptHash := types.DeriveSha(receipts)
 		if receiptHash != block.ReceiptHash() {
