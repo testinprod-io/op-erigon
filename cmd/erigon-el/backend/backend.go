@@ -120,12 +120,14 @@ type Ethereum struct {
 
 	networkID uint64
 
-	lock              sync.RWMutex // Protects the variadic fields (e.g. gas price and etherbase)
-	chainConfig       *chain.Config
-	genesisHash       libcommon.Hash
-	miningSealingQuit chan struct{}
-	pendingBlocks     chan *types.Block
-	minedBlocks       chan *types.Block
+	lock                 sync.RWMutex // Protects the variadic fields (e.g. gas price and etherbase)
+	chainConfig          *chain.Config
+	genesisHash          libcommon.Hash
+	seqRPCService        *rpc.Client
+	historicalRPCService *rpc.Client
+	miningSealingQuit    chan struct{}
+	pendingBlocks        chan *types.Block
+	minedBlocks          chan *types.Block
 
 	// downloader fields
 	sentryCtx      context.Context
@@ -445,6 +447,26 @@ func NewBackend(stack *node.Node, config *ethconfig.Config, logger log.Logger) (
 		return nil, err
 	}
 
+	// Setup sequencer and hsistorical RPC relay services
+	if config.RollupSequencerHTTP != "" {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		client, err := rpc.DialContext(ctx, config.RollupSequencerHTTP)
+		cancel()
+		if err != nil {
+			return nil, err
+		}
+		backend.seqRPCService = client
+	}
+	if config.RollupHistoricalRPC != "" {
+		ctx, cancel := context.WithTimeout(context.Background(), config.RollupHistoricalRPCTimeout)
+		client, err := rpc.DialContext(ctx, config.RollupHistoricalRPC)
+		cancel()
+		if err != nil {
+			return nil, err
+		}
+		backend.historicalRPCService = client
+	}
+
 	var miningRPC txpool_proto.MiningServer
 	stateDiffClient := direct.NewStateDiffClientDirect(kvRPC)
 	if config.DeprecatedTxPool.Disable {
@@ -659,8 +681,8 @@ func NewBackend(stack *node.Node, config *ethconfig.Config, logger log.Logger) (
 	if casted, ok := backend.engine.(*bor.Bor); ok {
 		borDb = casted.DB
 	}
-	apiList := commands.APIList(chainKv, borDb, ethRpcClient, txPoolRpcClient, miningRpcClient, ff, stateCache, backend.blockReader, backend.agg, httpRpcCfg, backend.engine)
-	authApiList := commands.AuthAPIList(chainKv, ethRpcClient, txPoolRpcClient, miningRpcClient, ff, stateCache, backend.blockReader, backend.agg, httpRpcCfg, backend.engine)
+	apiList := commands.APIList(chainKv, borDb, ethRpcClient, txPoolRpcClient, miningRpcClient, ff, stateCache, backend.blockReader, backend.agg, httpRpcCfg, backend.engine, backend.historicalRPCService)
+	authApiList := commands.AuthAPIList(chainKv, ethRpcClient, txPoolRpcClient, miningRpcClient, ff, stateCache, backend.blockReader, backend.agg, httpRpcCfg, backend.engine, backend.historicalRPCService)
 	go func() {
 		if err := cli.StartRpcServer(ctx, httpRpcCfg, apiList, authApiList); err != nil {
 			log.Error(err.Error())
@@ -990,6 +1012,15 @@ func (s *Ethereum) Stop() error {
 	if s.agg != nil {
 		s.agg.Close()
 	}
+
+	// Stop RPC services to sequencer and historical nodes
+	if s.seqRPCService != nil {
+		s.seqRPCService.Close()
+	}
+	if s.historicalRPCService != nil {
+		s.historicalRPCService.Close()
+	}
+
 	s.chainDB.Close()
 	return nil
 }
