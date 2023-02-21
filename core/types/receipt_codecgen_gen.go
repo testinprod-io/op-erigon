@@ -64,7 +64,11 @@ func (x *Receipt) CodecEncodeSelf(e *codec1978.Encoder) {
 			yy2arr2 := z.EncBasicHandle().StructToArray
 			_ = yy2arr2
 			const yyr2 bool = false // struct tag has 'toArray'
-			z.EncWriteArrayStart(4)
+			var yyn7 bool = x.L1GasPrice == nil
+			var yyn8 bool = x.L1GasUsed == nil
+			var yyn9 bool = x.L1Fee == nil
+			var yyn10 bool = x.FeeScalar == nil
+			z.EncWriteArrayStart(8)
 			z.EncWriteArrayElem()
 			r.EncodeUint(uint64(x.Type))
 			z.EncWriteArrayElem()
@@ -77,6 +81,50 @@ func (x *Receipt) CodecEncodeSelf(e *codec1978.Encoder) {
 			r.EncodeUint(uint64(x.Status))
 			z.EncWriteArrayElem()
 			r.EncodeUint(uint64(x.CumulativeGasUsed))
+			if yyn7 {
+				z.EncWriteArrayElem()
+				r.EncodeNil()
+			} else {
+				z.EncWriteArrayElem()
+				if !z.EncBinary() && z.IsJSONHandle() {
+					z.EncJSONMarshal(x.L1GasPrice)
+				} else {
+					z.EncFallback(x.L1GasPrice)
+				}
+			}
+			if yyn8 {
+				z.EncWriteArrayElem()
+				r.EncodeNil()
+			} else {
+				z.EncWriteArrayElem()
+				if !z.EncBinary() && z.IsJSONHandle() {
+					z.EncJSONMarshal(x.L1GasUsed)
+				} else {
+					z.EncFallback(x.L1GasUsed)
+				}
+			}
+			if yyn9 {
+				z.EncWriteArrayElem()
+				r.EncodeNil()
+			} else {
+				z.EncWriteArrayElem()
+				if !z.EncBinary() && z.IsJSONHandle() {
+					z.EncJSONMarshal(x.L1Fee)
+				} else {
+					z.EncFallback(x.L1Fee)
+				}
+			}
+			if yyn10 {
+				z.EncWriteArrayElem()
+				r.EncodeNil()
+			} else {
+				z.EncWriteArrayElem()
+				if !z.EncBinary() {
+					z.EncTextMarshal(x.FeeScalar)
+				} else {
+					z.EncFallback(x.FeeScalar)
+				}
+			}
 			z.EncWriteArrayEnd()
 		}
 	}
@@ -138,6 +186,66 @@ func (x *Receipt) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 			x.Status = (uint64)(r.DecodeUint64())
 		case "3":
 			x.CumulativeGasUsed = (uint64)(r.DecodeUint64())
+		case "L1GasPrice":
+			if r.TryNil() {
+				if x.L1GasPrice != nil { // remove the if-true
+					x.L1GasPrice = nil
+				}
+			} else {
+				if x.L1GasPrice == nil {
+					x.L1GasPrice = new(pkg2_big.Int)
+				}
+				if !z.DecBinary() && z.IsJSONHandle() {
+					z.DecJSONUnmarshal(x.L1GasPrice)
+				} else {
+					z.DecFallback(x.L1GasPrice, false)
+				}
+			}
+		case "L1GasUsed":
+			if r.TryNil() {
+				if x.L1GasUsed != nil { // remove the if-true
+					x.L1GasUsed = nil
+				}
+			} else {
+				if x.L1GasUsed == nil {
+					x.L1GasUsed = new(pkg2_big.Int)
+				}
+				if !z.DecBinary() && z.IsJSONHandle() {
+					z.DecJSONUnmarshal(x.L1GasUsed)
+				} else {
+					z.DecFallback(x.L1GasUsed, false)
+				}
+			}
+		case "L1Fee":
+			if r.TryNil() {
+				if x.L1Fee != nil { // remove the if-true
+					x.L1Fee = nil
+				}
+			} else {
+				if x.L1Fee == nil {
+					x.L1Fee = new(pkg2_big.Int)
+				}
+				if !z.DecBinary() && z.IsJSONHandle() {
+					z.DecJSONUnmarshal(x.L1Fee)
+				} else {
+					z.DecFallback(x.L1Fee, false)
+				}
+			}
+		case "FeeScalar":
+			if r.TryNil() {
+				if x.FeeScalar != nil { // remove the if-true
+					x.FeeScalar = nil
+				}
+			} else {
+				if x.FeeScalar == nil {
+					x.FeeScalar = new(pkg2_big.Float)
+				}
+				if !z.DecBinary() {
+					z.DecTextUnmarshal(x.FeeScalar)
+				} else {
+					z.DecFallback(x.FeeScalar, false)
+				}
+			}
 		default:
 			z.DecStructFieldNotFound(-1, yys3)
 		} // end switch yys3
@@ -148,69 +256,169 @@ func (x *Receipt) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer2
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
-	var yyj9 int
-	var yyb9 bool
-	var yyhl9 bool = l >= 0
-	yyj9++
-	if yyhl9 {
-		yyb9 = yyj9 > l
+	var yyj17 int
+	var yyb17 bool
+	var yyhl17 bool = l >= 0
+	yyj17++
+	if yyhl17 {
+		yyb17 = yyj17 > l
 	} else {
-		yyb9 = z.DecCheckBreak()
+		yyb17 = z.DecCheckBreak()
 	}
-	if yyb9 {
+	if yyb17 {
 		z.DecReadArrayEnd()
 		return
 	}
 	z.DecReadArrayElem()
 	x.Type = (uint8)(z.C.UintV(r.DecodeUint64(), 8))
-	yyj9++
-	if yyhl9 {
-		yyb9 = yyj9 > l
+	yyj17++
+	if yyhl17 {
+		yyb17 = yyj17 > l
 	} else {
-		yyb9 = z.DecCheckBreak()
+		yyb17 = z.DecCheckBreak()
 	}
-	if yyb9 {
+	if yyb17 {
 		z.DecReadArrayEnd()
 		return
 	}
 	z.DecReadArrayElem()
 	x.PostState = r.DecodeBytes(([]byte)(x.PostState), false)
-	yyj9++
-	if yyhl9 {
-		yyb9 = yyj9 > l
+	yyj17++
+	if yyhl17 {
+		yyb17 = yyj17 > l
 	} else {
-		yyb9 = z.DecCheckBreak()
+		yyb17 = z.DecCheckBreak()
 	}
-	if yyb9 {
+	if yyb17 {
 		z.DecReadArrayEnd()
 		return
 	}
 	z.DecReadArrayElem()
 	x.Status = (uint64)(r.DecodeUint64())
-	yyj9++
-	if yyhl9 {
-		yyb9 = yyj9 > l
+	yyj17++
+	if yyhl17 {
+		yyb17 = yyj17 > l
 	} else {
-		yyb9 = z.DecCheckBreak()
+		yyb17 = z.DecCheckBreak()
 	}
-	if yyb9 {
+	if yyb17 {
 		z.DecReadArrayEnd()
 		return
 	}
 	z.DecReadArrayElem()
 	x.CumulativeGasUsed = (uint64)(r.DecodeUint64())
-	for {
-		yyj9++
-		if yyhl9 {
-			yyb9 = yyj9 > l
-		} else {
-			yyb9 = z.DecCheckBreak()
+	yyj17++
+	if yyhl17 {
+		yyb17 = yyj17 > l
+	} else {
+		yyb17 = z.DecCheckBreak()
+	}
+	if yyb17 {
+		z.DecReadArrayEnd()
+		return
+	}
+	z.DecReadArrayElem()
+	if r.TryNil() {
+		if x.L1GasPrice != nil { // remove the if-true
+			x.L1GasPrice = nil
 		}
-		if yyb9 {
+	} else {
+		if x.L1GasPrice == nil {
+			x.L1GasPrice = new(pkg2_big.Int)
+		}
+		if !z.DecBinary() && z.IsJSONHandle() {
+			z.DecJSONUnmarshal(x.L1GasPrice)
+		} else {
+			z.DecFallback(x.L1GasPrice, false)
+		}
+	}
+	yyj17++
+	if yyhl17 {
+		yyb17 = yyj17 > l
+	} else {
+		yyb17 = z.DecCheckBreak()
+	}
+	if yyb17 {
+		z.DecReadArrayEnd()
+		return
+	}
+	z.DecReadArrayElem()
+	if r.TryNil() {
+		if x.L1GasUsed != nil { // remove the if-true
+			x.L1GasUsed = nil
+		}
+	} else {
+		if x.L1GasUsed == nil {
+			x.L1GasUsed = new(pkg2_big.Int)
+		}
+		if !z.DecBinary() && z.IsJSONHandle() {
+			z.DecJSONUnmarshal(x.L1GasUsed)
+		} else {
+			z.DecFallback(x.L1GasUsed, false)
+		}
+	}
+	yyj17++
+	if yyhl17 {
+		yyb17 = yyj17 > l
+	} else {
+		yyb17 = z.DecCheckBreak()
+	}
+	if yyb17 {
+		z.DecReadArrayEnd()
+		return
+	}
+	z.DecReadArrayElem()
+	if r.TryNil() {
+		if x.L1Fee != nil { // remove the if-true
+			x.L1Fee = nil
+		}
+	} else {
+		if x.L1Fee == nil {
+			x.L1Fee = new(pkg2_big.Int)
+		}
+		if !z.DecBinary() && z.IsJSONHandle() {
+			z.DecJSONUnmarshal(x.L1Fee)
+		} else {
+			z.DecFallback(x.L1Fee, false)
+		}
+	}
+	yyj17++
+	if yyhl17 {
+		yyb17 = yyj17 > l
+	} else {
+		yyb17 = z.DecCheckBreak()
+	}
+	if yyb17 {
+		z.DecReadArrayEnd()
+		return
+	}
+	z.DecReadArrayElem()
+	if r.TryNil() {
+		if x.FeeScalar != nil { // remove the if-true
+			x.FeeScalar = nil
+		}
+	} else {
+		if x.FeeScalar == nil {
+			x.FeeScalar = new(pkg2_big.Float)
+		}
+		if !z.DecBinary() {
+			z.DecTextUnmarshal(x.FeeScalar)
+		} else {
+			z.DecFallback(x.FeeScalar, false)
+		}
+	}
+	for {
+		yyj17++
+		if yyhl17 {
+			yyb17 = yyj17 > l
+		} else {
+			yyb17 = z.DecCheckBreak()
+		}
+		if yyb17 {
 			break
 		}
 		z.DecReadArrayElem()
-		z.DecStructFieldNotFound(yyj9-1, "")
+		z.DecStructFieldNotFound(yyj17-1, "")
 	}
 }
 

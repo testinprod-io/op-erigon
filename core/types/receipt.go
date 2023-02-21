@@ -78,7 +78,6 @@ type Receipt struct {
 	FeeScalar  *big.Float `json:"l1FeeScalar,omitempty"`
 }
 
-// exact same structure with Receipt but using default rlp methods
 type HackReceipt struct {
 	// Consensus fields: These fields are defined by the Yellow Paper
 	Type              uint8  `json:"type,omitempty"`
@@ -101,10 +100,10 @@ type HackReceipt struct {
 	TransactionIndex uint        `json:"transactionIndex" codec:"-"`
 
 	// OVM legacy: extend receipts with their L1 price (if a rollup tx)
-	L1GasPrice *big.Int   `json:"l1GasPrice,omitempty"`
-	L1GasUsed  *big.Int   `json:"l1GasUsed,omitempty"`
-	L1Fee      *big.Int   `json:"l1Fee,omitempty"`
-	FeeScalar  *big.Float `json:"l1FeeScalar,omitempty"`
+	L1GasPrice *big.Int `json:"l1GasPrice,omitempty"`
+	L1GasUsed  *big.Int `json:"l1GasUsed,omitempty"`
+	L1Fee      *big.Int `json:"l1Fee,omitempty"`
+	FeeScalar  string   `json:"l1FeeScalar,omitempty"`
 }
 
 type receiptMarshaling struct {
