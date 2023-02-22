@@ -1,28 +1,37 @@
 package app
 
 import (
+	"bytes"
 	"compress/gzip"
 	"context"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"math/big"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 
+	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon/cmd/utils"
 	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/core"
 	"github.com/ledgerwatch/erigon/core/rawdb"
+	"github.com/ledgerwatch/erigon/core/state"
 	"github.com/ledgerwatch/erigon/core/types"
+	"github.com/ledgerwatch/erigon/crypto"
 	"github.com/ledgerwatch/erigon/eth"
 	stageSync "github.com/ledgerwatch/erigon/eth/stagedsync/stages"
+	"github.com/ledgerwatch/erigon/params"
 	"github.com/ledgerwatch/erigon/rlp"
 	turboNode "github.com/ledgerwatch/erigon/turbo/node"
 	"github.com/ledgerwatch/erigon/turbo/stages"
+	"github.com/ledgerwatch/erigon/turbo/trie"
 
 	"github.com/ledgerwatch/log/v3"
 	"github.com/urfave/cli"
@@ -65,6 +74,20 @@ var importReceiptCommand = cli.Command{
 The import command imports receipts from an RLP-encoded form.`,
 }
 
+var importStateCommand = cli.Command{
+	Action:    MigrateFlags(importState),
+	Name:      "import-state",
+	Usage:     "Import a state file",
+	ArgsUsage: "<filename> <blockNum>",
+	Flags: []cli.Flag{
+		utils.DataDirFlag,
+		utils.ChainFlag,
+	},
+	Category: "BLOCKCHAIN COMMANDS",
+	Description: `
+The import command imports state from a json form`,
+}
+
 func importReceipts(ctx *cli.Context) error {
 	if len(ctx.Args()) < 1 {
 		utils.Fatalf("This command requires an argument.")
@@ -86,6 +109,179 @@ func importReceipts(ctx *cli.Context) error {
 	if err := ImportReceipts(ethereum, ethereum.ChainDB(), ctx.Args().First()); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func importState(ctx *cli.Context) error {
+	if ctx.NArg() < 2 {
+		utils.Fatalf("This command requires an argument.")
+	}
+
+	logger := log.New(ctx)
+
+	nodeCfg := turboNode.NewNodConfigUrfave(ctx)
+	ethCfg := turboNode.NewEthConfigUrfave(ctx, nodeCfg)
+
+	stack := makeConfigNode(nodeCfg)
+	defer stack.Close()
+
+	ethereum, err := eth.New(stack, ethCfg, logger)
+	if err != nil {
+		return err
+	}
+	fn := ctx.Args().First()
+	blockNum, err := strconv.ParseInt(ctx.Args().Get(1), 10, 64)
+	if err != nil {
+		utils.Fatalf("Export error in parsing parameters: block number not an integer\n")
+	}
+
+	if err := ImportState(ethereum, fn, uint64(blockNum)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// modified from l2geth's core/state/dump.go
+type ImportAccount struct {
+	Balance  string                 `json:"balance"`
+	Nonce    uint64                 `json:"nonce"`
+	Root     string                 `json:"root"`
+	CodeHash string                 `json:"codeHash"`
+	Code     string                 `json:"code,omitempty"`
+	Storage  map[common.Hash]string `json:"storage,omitempty"`
+}
+
+type ImportAlloc map[common.Address]ImportAccount
+
+func (ia *ImportAlloc) UnmarshalJson(data []byte) error {
+	m := make(ImportAlloc)
+	if err := json.Unmarshal(data, &m); err != nil {
+		return err
+	}
+	*ia = make(ImportAlloc)
+	for addr, a := range m {
+		(*ia)[common.Address(addr)] = a
+	}
+	return nil
+}
+
+func ImportState(ethereum *eth.Ethereum, fn string, blockNumber uint64) error {
+	log.Info("Importing state", "file", fn)
+	log.Info("Importing state for block number", "blockNumber", blockNumber)
+	fh, err := os.Open(fn)
+	if err != nil {
+		return err
+	}
+
+	// TODO: make as json stream
+	decoder := json.NewDecoder(fh)
+	ia := make(ImportAlloc)
+
+	if err := decoder.Decode(&ia); err != nil {
+		return err
+	}
+
+	db := ethereum.ChainDB()
+	tx, err := db.BeginRw(ethereum.SentryCtx())
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	r, w := state.NewDbStateReader(tx), state.NewDbStateWriter(tx, blockNumber)
+	//stateReader := state.NewPlainStateReader(tx)
+	statedb := state.New(r)
+
+	idx := 0
+	for address, account := range ia {
+		idx += 1
+		fmt.Println(idx, address.Hex())
+		balanceBigInt, ok := new(big.Int).SetString(account.Balance, 10)
+		if !ok {
+			return errors.New("balance bigint conversion failure")
+		}
+		balance, overflow := uint256.FromBig(balanceBigInt)
+		if overflow {
+			return errors.New("balance overflow")
+		}
+		statedb.AddBalance(address, balance)
+		hexCode := account.Code
+		code, err := hex.DecodeString(hexCode)
+		if err != nil {
+			return fmt.Errorf("code hexdecode failure, %s", hexCode)
+		}
+		hexCodeHash := account.CodeHash
+		codeHash, err := hex.DecodeString(hexCodeHash)
+		if err != nil {
+			return fmt.Errorf("codehash hexdecode failure, %s", hexCodeHash)
+		}
+		tempCodeHash := crypto.Keccak256(code)
+		if !bytes.Equal(tempCodeHash, codeHash) {
+			return fmt.Errorf("codehash mismatch, expected %x, got %x", codeHash, tempCodeHash)
+		}
+		statedb.SetCode(address, code)
+		statedb.SetNonce(address, account.Nonce)
+		for key, hexValue := range account.Storage {
+			key := key
+			value, err := hex.DecodeString(hexValue)
+			if err != nil {
+				return errors.New("value hexdecode failure")
+			}
+			val := uint256.NewInt(0).SetBytes(value)
+			statedb.SetState(address, &key, *val)
+		}
+
+		if len(account.Code) > 0 || len(account.Storage) > 0 {
+			statedb.SetIncarnation(address, state.FirstContractIncarnation)
+		}
+
+		// newAccount, err := stateReader.ReadAccountData(address)
+		// if err != nil {
+		// 	return err
+		// }
+		// tempStorageRoot := newAccount.Root.Bytes()
+		// hexStorageRoot := account.Root
+		// storageRoot, err := hex.DecodeString(hexStorageRoot)
+		// if err != nil {
+		//  	return errors.New("storage root hexdecode failure")
+		// }
+		// if !bytes.Equal(tempStorageRoot, storageRoot) {
+		// 	return fmt.Errorf("storage root mismatch, expected %x, got %x", tempStorageRoot, storageRoot)
+		// }
+	}
+
+	if err := statedb.FinalizeTx(&params.Rules{}, w); err != nil {
+		return err
+	}
+
+	root, err := trie.CalcRoot("genesis", tx)
+	if err != nil {
+		log.Info("root calculation failed")
+	}
+	log.Info("newly calculated root", "root", root.Hex())
+
+	blockWriter := state.NewPlainStateWriter(tx, tx, blockNumber)
+	if err := statedb.CommitBlock(&params.Rules{}, blockWriter); err != nil {
+		return fmt.Errorf("cannot write state: %w", err)
+	}
+	if err := blockWriter.WriteChangeSets(); err != nil {
+		return fmt.Errorf("cannot write change sets: %w", err)
+	}
+	if err := blockWriter.WriteHistory(); err != nil {
+		return fmt.Errorf("cannot write history: %w", err)
+	}
+
+	blockHash, err := rawdb.ReadCanonicalHash(tx, blockNumber)
+	if err != nil {
+		return err
+	}
+
+	header := rawdb.ReadHeader(tx, blockHash, blockNumber)
+	log.Info("state root stored at blockheader", "root", header.Root.Hex())
+
+	tx.Commit()
 
 	return nil
 }
@@ -434,13 +630,15 @@ func InsertChainWithoutExecution(ethereum *eth.Ethereum, chain *core.ChainPack) 
 	}
 	defer tx.Rollback()
 
-	log.Info("test", "length", chain.Length())
-	log.Info("test", "length", len(chain.Blocks))
-	log.Info("test", "length", len(chain.Receipts))
+	// log.Info("test", "length", chain.Length())
+	// log.Info("test", "length", len(chain.Blocks))
+	// log.Info("test", "length", len(chain.Receipts))
 
 	for i := 0; i < chain.Length(); i++ {
 		block := chain.Blocks[i]
-		log.Info("Write", "block", block.Number().String())
+		if i == 0 {
+			log.Info("Write", "blockNum", block.Number().String())
+		}
 		WriteBlockWithoutExecution(ethereum, tx, block)
 	}
 	tx.Commit()
@@ -504,7 +702,7 @@ func InsertReceipts(ethereum *eth.Ethereum, receiptsList []*types.Receipts) erro
 		}
 		firstReceipt := []*types.Receipt(*receipts)[0]
 		blockNumber := firstReceipt.BlockNumber.Uint64()
-		log.Info("Write receipt", "block", blockNumber)
+		// log.Info("Write receipt", "block", blockNumber)
 		block := rawdb.ReadBlock(tx, firstReceipt.BlockHash, blockNumber)
 
 		var receiptsVal types.Receipts = *receipts

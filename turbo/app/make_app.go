@@ -29,7 +29,7 @@ func MakeApp(action func(*cli.Context), cliFlags []cli.Flag) *cli.App {
 		debug.Exit()
 		return nil
 	}
-	app.Commands = []cli.Command{initCommand, importCommand, importReceiptCommand, snapshotCommand}
+	app.Commands = []cli.Command{initCommand, importCommand, importReceiptCommand, importStateCommand, snapshotCommand}
 	return app
 }
 
