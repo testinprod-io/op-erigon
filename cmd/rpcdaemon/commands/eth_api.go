@@ -278,11 +278,15 @@ type APIImpl struct {
 	db                   kv.RoDB
 	GasCap               uint64
 	ReturnDataLimit      int
+	seqRPCService        *rpc.Client
 	historicalRPCService *rpc.Client
 }
 
 // NewEthAPI returns APIImpl instance
-func NewEthAPI(base *BaseAPI, db kv.RoDB, eth rpchelper.ApiBackend, txPool txpool.TxpoolClient, mining txpool.MiningClient, gascap uint64, returnDataLimit int, histRPCService *rpc.Client) *APIImpl {
+func NewEthAPI(
+	base *BaseAPI, db kv.RoDB, eth rpchelper.ApiBackend, txPool txpool.TxpoolClient, mining txpool.MiningClient,
+	gascap uint64, returnDataLimit int, seqRPCService *rpc.Client, histRPCService *rpc.Client,
+) *APIImpl {
 	if gascap == 0 {
 		gascap = uint64(math.MaxUint64 / 2)
 	}
@@ -296,6 +300,7 @@ func NewEthAPI(base *BaseAPI, db kv.RoDB, eth rpchelper.ApiBackend, txPool txpoo
 		gasCache:             NewGasPriceCache(),
 		GasCap:               gascap,
 		ReturnDataLimit:      returnDataLimit,
+		seqRPCService:        seqRPCService,
 		historicalRPCService: histRPCService,
 	}
 }
