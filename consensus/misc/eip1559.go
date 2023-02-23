@@ -35,7 +35,7 @@ func VerifyEip1559Header(config *chain.Config, parent, header *types.Header) err
 	// Verify that the gas limit remains within allowed bounds
 	parentGasLimit := parent.GasLimit
 	if !config.IsLondon(parent.Number.Uint64()) {
-		parentGasLimit = parent.GasLimit * params.ElasticityMultiplier
+		parentGasLimit = parent.GasLimit * config.ElasticityMultiplier(params.ElasticityMultiplier)
 	}
 	if config.Optimism == nil { // gasLimit can adjust instantly in optimism
 		if err := VerifyGaslimit(parentGasLimit, header.GasLimit); err != nil {
@@ -63,9 +63,9 @@ func CalcBaseFee(config *chain.Config, parent *types.Header) *big.Int {
 	}
 
 	var (
-		parentGasTarget          = parent.GasLimit / params.ElasticityMultiplier
+		parentGasTarget          = parent.GasLimit / config.ElasticityMultiplier(params.ElasticityMultiplier)
 		parentGasTargetBig       = new(big.Int).SetUint64(parentGasTarget)
-		baseFeeChangeDenominator = new(big.Int).SetUint64(getBaseFeeChangeDenominator(config.Bor, parent.Number.Uint64()))
+		baseFeeChangeDenominator = new(big.Int).SetUint64(getBaseFeeChangeDenominator(config, parent.Number.Uint64()))
 	)
 	// If the parent gasUsed is the same as the target, the baseFee remains unchanged.
 	if parent.GasUsed == parentGasTarget {
@@ -96,12 +96,12 @@ func CalcBaseFee(config *chain.Config, parent *types.Header) *big.Int {
 	}
 }
 
-func getBaseFeeChangeDenominator(borConfig *chain.BorConfig, number uint64) uint64 {
+func getBaseFeeChangeDenominator(config *chain.Config, number uint64) uint64 {
 	// If we're running bor based chain post delhi hardfork, return the new value
-	if borConfig != nil && borConfig.IsDelhi(number) {
+	if config.Bor != nil && config.Bor.IsDelhi(number) {
 		return params.BaseFeeChangeDenominatorPostDelhi
 	}
 
 	// Return the original once for other chains and pre-fork cases
-	return params.BaseFeeChangeDenominator
+	return config.BaseFeeChangeDenominator(params.BaseFeeChangeDenominator)
 }
