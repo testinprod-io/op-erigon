@@ -13,6 +13,7 @@ import (
 	"github.com/ledgerwatch/erigon/core/state"
 	"github.com/ledgerwatch/erigon/eth/stagedsync/stages"
 	"github.com/ledgerwatch/erigon/eth/tracers"
+	"github.com/ledgerwatch/erigon/params"
 	"github.com/ledgerwatch/erigon/rpc"
 	"github.com/ledgerwatch/erigon/turbo/adapter/ethapi"
 	"github.com/ledgerwatch/erigon/turbo/transactions"
@@ -39,6 +40,22 @@ type PrivateDebugAPIImpl struct {
 	*BaseAPI
 	db     kv.RoDB
 	GasCap uint64
+}
+
+func (api *PrivateDebugAPIImpl) GetChainConfig(ctx context.Context) (*params.ChainConfig, error) {
+	tx, err := api.db.BeginRo(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	genesisBlock, err := rawdb.ReadBlockByNumber(tx, 0)
+	if err != nil {
+		return nil, err
+	}
+	chainConfig, err := rawdb.ReadChainConfig(tx, genesisBlock.Hash())
+
+	return chainConfig, err
 }
 
 // NewPrivateDebugAPI returns PrivateDebugAPIImpl instance
@@ -233,11 +250,19 @@ func (api *PrivateDebugAPIImpl) AccountAt(ctx context.Context, blockHash common.
 	if block == nil {
 		return nil, nil
 	}
-	_, _, _, ibs, _, err := transactions.ComputeTxEnv(ctx, block, chainConfig, api._blockReader, tx, txIndex, api._agg, api.historyV3(tx))
+	_, _, _, ibs, stateReader, err := transactions.ComputeTxEnv(ctx, block, chainConfig, api._blockReader, tx, txIndex, api._agg, api.historyV3(tx))
 	if err != nil {
 		return nil, err
 	}
+
+	account, err := stateReader.ReadAccountData(address)
+	if err != nil {
+		return nil, err
+	}
+
 	result := &AccountResult{}
+	result.Root = account.Root.Hex()
+
 	result.Balance.ToInt().Set(ibs.GetBalance(address).ToBig())
 	result.Nonce = hexutil.Uint64(ibs.GetNonce(address))
 	result.Code = ibs.GetCode(address)
@@ -245,9 +270,40 @@ func (api *PrivateDebugAPIImpl) AccountAt(ctx context.Context, blockHash common.
 	return result, nil
 }
 
+func (api *PrivateDebugAPIImpl) AccountStorageTrieRootAt(ctx context.Context, blockHash common.Hash, address common.Address) (*AccountStorageTrieRoot, error) {
+	tx, err := api.db.BeginRo(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	block, err := api.blockByHashWithSenders(tx, blockHash)
+	if err != nil {
+		return nil, err
+	}
+	if block == nil {
+		return nil, nil
+	}
+
+	stateReader := state.NewPlainStateReader(tx)
+	account, err := stateReader.ReadAccountData(address)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &AccountStorageTrieRoot{}
+	result.Root = account.Root.Hex()
+	return result, nil
+}
+
+type AccountStorageTrieRoot struct {
+	Root string `json:"root"`
+}
+
 type AccountResult struct {
 	Balance  hexutil.Big    `json:"balance"`
 	Nonce    hexutil.Uint64 `json:"nonce"`
+	Root     string         `json:"root"`
 	Code     hexutil.Bytes  `json:"code"`
 	CodeHash common.Hash    `json:"codeHash"`
 }
