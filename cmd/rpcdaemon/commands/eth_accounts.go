@@ -8,6 +8,7 @@ import (
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/hexutility"
 	"github.com/ledgerwatch/erigon-lib/gointerfaces"
+	"github.com/ledgerwatch/log/v3"
 	"google.golang.org/grpc"
 
 	"github.com/ledgerwatch/erigon/turbo/rpchelper"
@@ -32,6 +33,9 @@ func (api *APIImpl) GetBalance(ctx context.Context, address libcommon.Address, b
 	if err != nil {
 		return nil, err
 	}
+
+	//log.Warn("header info", "ctx", ctx, "tx", tx, "block", blockNrOrHash, "api", api, "header", header, "err", err)
+	log.Warn("chain config", "", api._chainConfig)
 
 	if api._chainConfig.IsOptimismPreBedrock(header.Number.Uint64()) {
 		if api.historicalRPCService != nil {
@@ -92,7 +96,7 @@ func (api *APIImpl) GetTransactionCount(ctx context.Context, address libcommon.A
 	if api._chainConfig.IsOptimismPreBedrock(header.Number.Uint64()) {
 		if api.historicalRPCService != nil {
 			var res hexutil.Uint64
-			err := api.historicalRPCService.CallContext(ctx, &res, "eth_getCode", address, blockNrOrHash)
+			err := api.historicalRPCService.CallContext(ctx, &res, "eth_getTransactionCount", address, blockNrOrHash)
 			if err != nil {
 				return nil, fmt.Errorf("historical backend error: %w", err)
 			}

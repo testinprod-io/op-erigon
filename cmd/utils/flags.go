@@ -582,17 +582,17 @@ var (
 	}
 
 	// Rollup Flags
-	RollupSequencerHTTPFlag = &cli.StringFlag{
+	RollupSequencerHTTPFlag = cli.StringFlag{
 		Name:  "rollup.sequencerhttp",
 		Usage: "HTTP endpoint for the sequencer mempool",
 	}
 
-	RollupHistoricalRPCFlag = &cli.StringFlag{
+	RollupHistoricalRPCFlag = cli.StringFlag{
 		Name:  "rollup.historicalrpc",
 		Usage: "RPC endpoint for historical data.",
 	}
 
-	RollupHistoricalRPCTimeoutFlag = &cli.StringFlag{
+	RollupHistoricalRPCTimeoutFlag = cli.StringFlag{
 		Name:  "rollup.historicalrpctimeout",
 		Usage: "Timeout for historical RPC requests.",
 		Value: "5s",
