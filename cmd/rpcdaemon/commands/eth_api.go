@@ -121,7 +121,7 @@ type BaseAPI struct {
 
 func NewBaseApi(
 	f *rpchelper.Filters, stateCache kvcache.Cache, blockReader services.FullBlockReader, agg *libstate.AggregatorV3,
-	singleNodeMode bool, evmCallTimeout time.Duration, engine consensus.EngineReader, chainConfig *chain.Config,
+	singleNodeMode bool, evmCallTimeout time.Duration, engine consensus.EngineReader,
 ) *BaseAPI {
 	blocksLRUSize := 128 // ~32Mb
 	if !singleNodeMode {
@@ -134,7 +134,7 @@ func NewBaseApi(
 
 	return &BaseAPI{
 		filters: f, stateCache: stateCache, blocksLRU: blocksLRU, _blockReader: blockReader, _txnReader: blockReader,
-		_agg: agg, evmCallTimeout: evmCallTimeout, _engine: engine, _chainConfig: chainConfig,
+		_agg: agg, evmCallTimeout: evmCallTimeout, _engine: engine,
 	}
 }
 

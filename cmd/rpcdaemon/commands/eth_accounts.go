@@ -33,15 +33,22 @@ func (api *APIImpl) GetBalance(ctx context.Context, address libcommon.Address, b
 		blockNum = uint64(number)
 	} else if hash, ok := blockNrOrHash.Hash(); ok {
 		block, err := api.blockByHashWithSenders(tx, hash)
+		if block == nil {
+			return nil, fmt.Errorf("header not found")
+		}
 		if err != nil {
-			return nil, fmt.Errorf("invalid hash: %w", err)
+			return nil, err
 		}
 		blockNum = block.NumberU64()
 	} else {
 		return nil, fmt.Errorf("invalid block number of hash")
 	}
 
-	if api._chainConfig.IsOptimismPreBedrock(blockNum) {
+	chainConfig, err := api.chainConfig(tx)
+	if err != nil {
+		return nil, err
+	}
+	if chainConfig.IsOptimismPreBedrock(blockNum) {
 		if api.historicalRPCService != nil {
 			var res hexutil.Big
 			err := api.historicalRPCService.CallContext(ctx, &res, "eth_getBalance", address, fmt.Sprintf("0x%x", blockNum))
@@ -97,15 +104,22 @@ func (api *APIImpl) GetTransactionCount(ctx context.Context, address libcommon.A
 		blockNum = uint64(number)
 	} else if hash, ok := blockNrOrHash.Hash(); ok {
 		block, err := api.blockByHashWithSenders(tx, hash)
+		if block == nil {
+			return nil, fmt.Errorf("header not found")
+		}
 		if err != nil {
-			return nil, fmt.Errorf("invalid hash: %w", err)
+			return nil, err
 		}
 		blockNum = block.NumberU64()
 	} else {
 		return nil, fmt.Errorf("invalid block number of hash")
 	}
 
-	if api._chainConfig.IsOptimismPreBedrock(blockNum) {
+	chainConfig, err := api.chainConfig(tx)
+	if err != nil {
+		return nil, err
+	}
+	if chainConfig.IsOptimismPreBedrock(blockNum) {
 		if api.historicalRPCService != nil {
 			var res hexutil.Uint64
 			err := api.historicalRPCService.CallContext(ctx, &res, "eth_getTransactionCount", address, fmt.Sprintf("0x%x", blockNum))
@@ -143,15 +157,22 @@ func (api *APIImpl) GetCode(ctx context.Context, address libcommon.Address, bloc
 		blockNum = uint64(number)
 	} else if hash, ok := blockNrOrHash.Hash(); ok {
 		block, err := api.blockByHashWithSenders(tx, hash)
+		if block == nil {
+			return nil, fmt.Errorf("header not found")
+		}
 		if err != nil {
-			return nil, fmt.Errorf("invalid hash: %w", err)
+			return nil, err
 		}
 		blockNum = block.NumberU64()
 	} else {
 		return nil, fmt.Errorf("invalid block number of hash")
 	}
 
-	if api._chainConfig.IsOptimismPreBedrock(blockNum) {
+	chainConfig, err := api.chainConfig(tx)
+	if err != nil {
+		return nil, err
+	}
+	if chainConfig.IsOptimismPreBedrock(blockNum) {
 		if api.historicalRPCService != nil {
 			var res hexutil.Bytes
 			err := api.historicalRPCService.CallContext(ctx, &res, "eth_getCode", address, fmt.Sprintf("0x%x", blockNum))
@@ -165,10 +186,6 @@ func (api *APIImpl) GetCode(ctx context.Context, address libcommon.Address, bloc
 	}
 
 	defer tx.Rollback()
-	chainConfig, err := api.chainConfig(tx)
-	if err != nil {
-		return nil, fmt.Errorf("read chain config: %v", err)
-	}
 	reader, err := rpchelper.CreateStateReader(ctx, tx, blockNrOrHash, 0, api.filters, api.stateCache, api.historyV3(tx), chainConfig.ChainName)
 	if err != nil {
 		return nil, err
@@ -201,15 +218,22 @@ func (api *APIImpl) GetStorageAt(ctx context.Context, address libcommon.Address,
 		blockNum = uint64(number)
 	} else if hash, ok := blockNrOrHash.Hash(); ok {
 		block, err := api.blockByHashWithSenders(tx, hash)
+		if block == nil {
+			return hexutility.Encode(common.LeftPadBytes(empty, 32)), fmt.Errorf("header not found")
+		}
 		if err != nil {
-			return hexutility.Encode(common.LeftPadBytes(empty, 32)), fmt.Errorf("invalid hash: %w", err)
+			return hexutility.Encode(common.LeftPadBytes(empty, 32)), err
 		}
 		blockNum = block.NumberU64()
 	} else {
 		return hexutility.Encode(common.LeftPadBytes(empty, 32)), fmt.Errorf("invalid block number of hash")
 	}
 
-	if api._chainConfig.IsOptimismPreBedrock(blockNum) {
+	chainConfig, err := api.chainConfig(tx)
+	if err != nil {
+		return hexutility.Encode(common.LeftPadBytes(empty, 32)), err
+	}
+	if chainConfig.IsOptimismPreBedrock(blockNum) {
 		if api.historicalRPCService != nil {
 			var res hexutil.Bytes
 			err := api.historicalRPCService.CallContext(ctx, &res, "eth_getStorageAt", address, fmt.Sprintf("0x%x", blockNum))
