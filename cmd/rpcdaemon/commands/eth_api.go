@@ -317,21 +317,21 @@ type RPCTransaction struct {
 	BlockNumber      *hexutil.Big       `json:"blockNumber"`
 	From             common.Address     `json:"from"`
 	Gas              hexutil.Uint64     `json:"gas"`
-	GasPrice         *hexutil.Big       `json:"gasPrice"`
+	GasPrice         *hexutil.Big       `json:"gasPrice,omitempty"`
 	Tip              *hexutil.Big       `json:"maxPriorityFeePerGas,omitempty"`
 	FeeCap           *hexutil.Big       `json:"maxFeePerGas,omitempty"`
 	Hash             common.Hash        `json:"hash"`
 	Input            hexutil.Bytes      `json:"input"`
 	Nonce            hexutil.Uint64     `json:"nonce"`
-	To               *common.Address    `json:"to"`
+	To               *common.Address    `json:"to,omitempty"`
 	TransactionIndex *hexutil.Uint64    `json:"transactionIndex"`
 	Value            *hexutil.Big       `json:"value"`
 	Type             hexutil.Uint64     `json:"type"`
 	Accesses         *types2.AccessList `json:"accessList,omitempty"`
 	ChainID          *hexutil.Big       `json:"chainId,omitempty"`
-	V                *hexutil.Big       `json:"v"`
-	R                *hexutil.Big       `json:"r"`
-	S                *hexutil.Big       `json:"s"`
+	V                *hexutil.Big       `json:"v,omitempty"`
+	R                *hexutil.Big       `json:"r,omitempty"`
+	S                *hexutil.Big       `json:"s,omitempty"`
 
 	// deposit-tx only
 	SourceHash *common.Hash `json:"sourceHash,omitempty"`
