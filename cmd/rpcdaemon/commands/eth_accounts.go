@@ -8,7 +8,6 @@ import (
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/hexutility"
 	"github.com/ledgerwatch/erigon-lib/gointerfaces"
-	"github.com/ledgerwatch/log/v3"
 	"google.golang.org/grpc"
 
 	"github.com/ledgerwatch/erigon/turbo/rpchelper"
@@ -29,13 +28,23 @@ func (api *APIImpl) GetBalance(ctx context.Context, address libcommon.Address, b
 	defer tx.Rollback()
 
 	// Handle pre-bedrock blocks
-	blockNum := uint64(blockNrOrHash.BlockNumber.Int64())
-	log.Warn("INFO", "block", blockNrOrHash, "config", api._chainConfig.BedrockBlock, "blockNum", blockNum, "api.historicalRPCService", api.historicalRPCService)
+	var blockNum uint64
+	if number, ok := blockNrOrHash.Number(); ok {
+		blockNum = uint64(number)
+	} else if hash, ok := blockNrOrHash.Hash(); ok {
+		block, err := api.blockByHashWithSenders(tx, hash)
+		if err != nil {
+			return nil, fmt.Errorf("invalid hash: %w", err)
+		}
+		blockNum = block.NumberU64()
+	} else {
+		return nil, fmt.Errorf("invalid block number of hash")
+	}
+
 	if api._chainConfig.IsOptimismPreBedrock(blockNum) {
 		if api.historicalRPCService != nil {
-			log.Warn("HIST ETH_GETBALANCE")
 			var res hexutil.Big
-			err := api.historicalRPCService.CallContext(ctx, &res, "eth_getBalance", address, blockNrOrHash)
+			err := api.historicalRPCService.CallContext(ctx, &res, "eth_getBalance", address, fmt.Sprintf("0x%x", blockNum))
 			if err != nil {
 				return nil, fmt.Errorf("historical backend error: %w", err)
 			}
@@ -82,15 +91,24 @@ func (api *APIImpl) GetTransactionCount(ctx context.Context, address libcommon.A
 	}
 	defer tx.Rollback()
 
-	log.Warn("INFO", "block", blockNrOrHash)
+	// Handle pre-bedrock blocks
+	var blockNum uint64
+	if number, ok := blockNrOrHash.Number(); ok {
+		blockNum = uint64(number)
+	} else if hash, ok := blockNrOrHash.Hash(); ok {
+		block, err := api.blockByHashWithSenders(tx, hash)
+		if err != nil {
+			return nil, fmt.Errorf("invalid hash: %w", err)
+		}
+		blockNum = block.NumberU64()
+	} else {
+		return nil, fmt.Errorf("invalid block number of hash")
+	}
 
-	// // Handle pre-bedrock blocks
-	blockNum := uint64(blockNrOrHash.BlockNumber.Int64())
 	if api._chainConfig.IsOptimismPreBedrock(blockNum) {
 		if api.historicalRPCService != nil {
-			log.Warn("HIST ETH_GETTRANSACTIONCOUNT")
 			var res hexutil.Uint64
-			err := api.historicalRPCService.CallContext(ctx, &res, "eth_getTransactionCount", address, blockNrOrHash)
+			err := api.historicalRPCService.CallContext(ctx, &res, "eth_getTransactionCount", address, fmt.Sprintf("0x%x", blockNum))
 			if err != nil {
 				return nil, fmt.Errorf("historical backend error: %w", err)
 			}
@@ -119,15 +137,24 @@ func (api *APIImpl) GetCode(ctx context.Context, address libcommon.Address, bloc
 		return nil, fmt.Errorf("getCode cannot open tx: %w", err1)
 	}
 
-	log.Warn("INFO", "block", blockNrOrHash)
-
 	// Handle pre-bedrock blocks
-	blockNum := uint64(blockNrOrHash.BlockNumber.Int64())
+	var blockNum uint64
+	if number, ok := blockNrOrHash.Number(); ok {
+		blockNum = uint64(number)
+	} else if hash, ok := blockNrOrHash.Hash(); ok {
+		block, err := api.blockByHashWithSenders(tx, hash)
+		if err != nil {
+			return nil, fmt.Errorf("invalid hash: %w", err)
+		}
+		blockNum = block.NumberU64()
+	} else {
+		return nil, fmt.Errorf("invalid block number of hash")
+	}
+
 	if api._chainConfig.IsOptimismPreBedrock(blockNum) {
 		if api.historicalRPCService != nil {
-			log.Warn("HIST ETH_GETCODE")
 			var res hexutil.Bytes
-			err := api.historicalRPCService.CallContext(ctx, &res, "eth_getCode", address, blockNrOrHash)
+			err := api.historicalRPCService.CallContext(ctx, &res, "eth_getCode", address, fmt.Sprintf("0x%x", blockNum))
 			if err != nil {
 				return nil, fmt.Errorf("historical backend error: %w", err)
 			}
@@ -169,12 +196,23 @@ func (api *APIImpl) GetStorageAt(ctx context.Context, address libcommon.Address,
 	defer tx.Rollback()
 
 	// Handle pre-bedrock blocks
-	blockNum := uint64(blockNrOrHash.BlockNumber.Int64())
+	var blockNum uint64
+	if number, ok := blockNrOrHash.Number(); ok {
+		blockNum = uint64(number)
+	} else if hash, ok := blockNrOrHash.Hash(); ok {
+		block, err := api.blockByHashWithSenders(tx, hash)
+		if err != nil {
+			return hexutility.Encode(common.LeftPadBytes(empty, 32)), fmt.Errorf("invalid hash: %w", err)
+		}
+		blockNum = block.NumberU64()
+	} else {
+		return hexutility.Encode(common.LeftPadBytes(empty, 32)), fmt.Errorf("invalid block number of hash")
+	}
+
 	if api._chainConfig.IsOptimismPreBedrock(blockNum) {
-		log.Warn("HIST ETH_GETSTORAGEAT")
 		if api.historicalRPCService != nil {
 			var res hexutil.Bytes
-			err := api.historicalRPCService.CallContext(ctx, &res, "eth_getStorageAt", address, blockNrOrHash)
+			err := api.historicalRPCService.CallContext(ctx, &res, "eth_getStorageAt", address, fmt.Sprintf("0x%x", blockNum))
 			if err != nil {
 				return hexutility.Encode(common.LeftPadBytes(empty, 32)), fmt.Errorf("historical backend error: %w", err)
 			}
