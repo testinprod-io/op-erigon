@@ -21,13 +21,14 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
-	"golang.org/x/exp/slices"
 	"math/big"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
+
+	"golang.org/x/exp/slices"
 
 	"github.com/c2h5oh/datasize"
 	"github.com/ledgerwatch/erigon-lib/chain"
@@ -578,6 +579,23 @@ var (
 		Name:  "gpo.maxprice",
 		Usage: "Maximum gas price will be recommended by gpo",
 		Value: ethconfig.Defaults.GPO.MaxPrice.Int64(),
+	}
+
+	// Rollup Flags
+	RollupSequencerHTTPFlag = cli.StringFlag{
+		Name:  "rollup.sequencerhttp",
+		Usage: "HTTP endpoint for the sequencer mempool",
+	}
+
+	RollupHistoricalRPCFlag = cli.StringFlag{
+		Name:  "rollup.historicalrpc",
+		Usage: "RPC endpoint for historical data.",
+	}
+
+	RollupHistoricalRPCTimeoutFlag = cli.StringFlag{
+		Name:  "rollup.historicalrpctimeout",
+		Usage: "Timeout for historical RPC requests.",
+		Value: "5s",
 	}
 
 	// Metrics flags
@@ -1592,6 +1610,16 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 			cfg.EthDiscoveryURLs = SplitAndTrim(urls)
 		}
 	}
+	// Only configure sequencer http flag if we're running in verifier mode i.e. --mine is disabled.
+	if ctx.IsSet(RollupSequencerHTTPFlag.Name) && !ctx.IsSet(MiningEnabledFlag.Name) {
+		cfg.RollupSequencerHTTP = ctx.String(RollupSequencerHTTPFlag.Name)
+	}
+	if ctx.IsSet(RollupHistoricalRPCFlag.Name) {
+		cfg.RollupHistoricalRPC = ctx.String(RollupHistoricalRPCFlag.Name)
+	}
+	if ctx.IsSet(RollupHistoricalRPCTimeoutFlag.Name) {
+		cfg.RollupHistoricalRPCTimeout = ctx.Duration(RollupHistoricalRPCTimeoutFlag.Name)
+	}
 	// Override any default configs for hard coded networks.
 	chain := ctx.String(ChainFlag.Name)
 
@@ -1640,6 +1668,7 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 
 		// Create a new developer genesis block or reuse existing one
 		cfg.Genesis = readGenesis(ctx.String(GenesisPathFlag.Name))
+		log.Info("@@@@@@", "bedrockBlock", cfg.Genesis.Config.BedrockBlock)
 		//log.Info("Using custom developer period", "seconds", cfg.Genesis.Config.Clique.Period)
 	}
 

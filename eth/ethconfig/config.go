@@ -246,6 +246,10 @@ type Config struct {
 	SentinelPort                uint64
 
 	OverrideShanghaiTime *big.Int `toml:",omitempty"`
+
+	RollupSequencerHTTP        string
+	RollupHistoricalRPC        string
+	RollupHistoricalRPCTimeout time.Duration
 }
 
 type Sync struct {

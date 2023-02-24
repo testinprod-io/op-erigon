@@ -119,7 +119,10 @@ type BaseAPI struct {
 	evmCallTimeout time.Duration
 }
 
-func NewBaseApi(f *rpchelper.Filters, stateCache kvcache.Cache, blockReader services.FullBlockReader, agg *libstate.AggregatorV3, singleNodeMode bool, evmCallTimeout time.Duration, engine consensus.EngineReader) *BaseAPI {
+func NewBaseApi(
+	f *rpchelper.Filters, stateCache kvcache.Cache, blockReader services.FullBlockReader, agg *libstate.AggregatorV3,
+	singleNodeMode bool, evmCallTimeout time.Duration, engine consensus.EngineReader, chainConfig *chain.Config,
+) *BaseAPI {
 	blocksLRUSize := 128 // ~32Mb
 	if !singleNodeMode {
 		blocksLRUSize = 512
@@ -129,7 +132,10 @@ func NewBaseApi(f *rpchelper.Filters, stateCache kvcache.Cache, blockReader serv
 		panic(err)
 	}
 
-	return &BaseAPI{filters: f, stateCache: stateCache, blocksLRU: blocksLRU, _blockReader: blockReader, _txnReader: blockReader, _agg: agg, evmCallTimeout: evmCallTimeout, _engine: engine}
+	return &BaseAPI{
+		filters: f, stateCache: stateCache, blocksLRU: blocksLRU, _blockReader: blockReader, _txnReader: blockReader,
+		_agg: agg, evmCallTimeout: evmCallTimeout, _engine: engine, _chainConfig: chainConfig,
+	}
 }
 
 func (api *BaseAPI) chainConfig(tx kv.Tx) (*chain.Config, error) {
@@ -271,30 +277,37 @@ func (api *BaseAPI) headerByRPCNumber(number rpc.BlockNumber, tx kv.Tx) (*types.
 // APIImpl is implementation of the EthAPI interface based on remote Db access
 type APIImpl struct {
 	*BaseAPI
-	ethBackend      rpchelper.ApiBackend
-	txPool          txpool.TxpoolClient
-	mining          txpool.MiningClient
-	gasCache        *GasPriceCache
-	db              kv.RoDB
-	GasCap          uint64
-	ReturnDataLimit int
+	ethBackend           rpchelper.ApiBackend
+	txPool               txpool.TxpoolClient
+	mining               txpool.MiningClient
+	gasCache             *GasPriceCache
+	db                   kv.RoDB
+	GasCap               uint64
+	ReturnDataLimit      int
+	seqRPCService        *rpc.Client
+	historicalRPCService *rpc.Client
 }
 
 // NewEthAPI returns APIImpl instance
-func NewEthAPI(base *BaseAPI, db kv.RoDB, eth rpchelper.ApiBackend, txPool txpool.TxpoolClient, mining txpool.MiningClient, gascap uint64, returnDataLimit int) *APIImpl {
+func NewEthAPI(
+	base *BaseAPI, db kv.RoDB, eth rpchelper.ApiBackend, txPool txpool.TxpoolClient, mining txpool.MiningClient,
+	gascap uint64, returnDataLimit int, seqRPCService *rpc.Client, histRPCService *rpc.Client,
+) *APIImpl {
 	if gascap == 0 {
 		gascap = uint64(math.MaxUint64 / 2)
 	}
 
 	return &APIImpl{
-		BaseAPI:         base,
-		db:              db,
-		ethBackend:      eth,
-		txPool:          txPool,
-		mining:          mining,
-		gasCache:        NewGasPriceCache(),
-		GasCap:          gascap,
-		ReturnDataLimit: returnDataLimit,
+		BaseAPI:              base,
+		db:                   db,
+		ethBackend:           eth,
+		txPool:               txPool,
+		mining:               mining,
+		gasCache:             NewGasPriceCache(),
+		GasCap:               gascap,
+		ReturnDataLimit:      returnDataLimit,
+		seqRPCService:        seqRPCService,
+		historicalRPCService: histRPCService,
 	}
 }
 

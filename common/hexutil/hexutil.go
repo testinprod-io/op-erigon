@@ -56,6 +56,14 @@ type decError struct{ msg string }
 
 func (err decError) Error() string { return err.msg }
 
+// Encode encodes b as a hex string with 0x prefix.
+func Encode(b []byte) string {
+	enc := make([]byte, len(b)*2+2)
+	copy(enc, "0x")
+	hex.Encode(enc[2:], b)
+	return string(enc)
+}
+
 // Decode decodes a hex string with 0x prefix.
 func Decode(input string) ([]byte, error) {
 	if len(input) == 0 {
