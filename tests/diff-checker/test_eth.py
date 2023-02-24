@@ -25,6 +25,7 @@ def test_eth_getBlockByNumber_prebedrock():
             erigon_block = dict(erigon.eth.get_block(target_block_number, full_transactions=full_transactions))
             geth_block = dict(geth.eth.get_block(target_block_number, full_transactions=full_transactions))
             
+            # TODO
             erigon_block.pop("totalDifficulty")
             geth_block.pop("totalDifficulty")
             
@@ -87,8 +88,8 @@ def test_eth_getTransactionCount_bedrock():
 
         assert erigon_addresses == geth_addresses
         for address in erigon_addresses:
-            erigon_tx_count = erigon.eth.get_transaction_count(address)
-            geth_tx_count = geth.eth.get_transaction_count(address)
+            erigon_tx_count = erigon.eth.get_transaction_count(address, block_identifier=target_block_number)
+            geth_tx_count = geth.eth.get_transaction_count(address, block_identifier=target_block_number)
             assert erigon_tx_count == geth_tx_count, (address, target_block_number)
 
 
@@ -106,6 +107,6 @@ def test_eth_getTransactionCount_prebedrock():
 
         assert erigon_addresses == geth_addresses
         for address in erigon_addresses:
-            erigon_tx_count = erigon.eth.get_transaction_count(address)
-            geth_tx_count = geth.eth.get_transaction_count(address)
+            erigon_tx_count = erigon.eth.get_transaction_count(address, block_identifier=target_block_number)
+            geth_tx_count = geth.eth.get_transaction_count(address, block_identifier=target_block_number)
             assert erigon_tx_count == geth_tx_count, (address, target_block_number)
