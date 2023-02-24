@@ -317,7 +317,7 @@ type RPCTransaction struct {
 	BlockNumber      *hexutil.Big       `json:"blockNumber"`
 	From             common.Address     `json:"from"`
 	Gas              hexutil.Uint64     `json:"gas"`
-	GasPrice         *hexutil.Big       `json:"gasPrice,omitempty"`
+	GasPrice         *hexutil.Big       `json:"gasPrice"`
 	Tip              *hexutil.Big       `json:"maxPriorityFeePerGas,omitempty"`
 	FeeCap           *hexutil.Big       `json:"maxFeePerGas,omitempty"`
 	Hash             common.Hash        `json:"hash"`
@@ -396,6 +396,7 @@ func newRPCTransaction(tx types.Transaction, blockHash common.Hash, blockNumber 
 		if t.Mint != nil {
 			result.Mint = (*hexutil.Big)(t.Mint.ToBig())
 		}
+		result.ChainID = nil
 		result.SourceHash = &t.SourceHash
 		result.IsSystemTx = &t.IsSystemTransaction
 	}
