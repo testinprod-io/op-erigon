@@ -29,16 +29,11 @@ func (api *APIImpl) GetBalance(ctx context.Context, address libcommon.Address, b
 	defer tx.Rollback()
 
 	// Handle pre-bedrock blocks
-	header, err := headerByNumberOrHash(ctx, tx, blockNrOrHash, api)
-	if err != nil {
-		return nil, err
-	}
-
-	//log.Warn("header info", "ctx", ctx, "tx", tx, "block", blockNrOrHash, "api", api, "header", header, "err", err)
-	log.Warn("chain config", "", api._chainConfig)
-
-	if api._chainConfig.IsOptimismPreBedrock(header.Number.Uint64()) {
+	blockNum := uint64(blockNrOrHash.BlockNumber.Int64())
+	log.Warn("INFO", "block", blockNrOrHash, "config", api._chainConfig.BedrockBlock, "blockNum", blockNum, "api.historicalRPCService", api.historicalRPCService)
+	if api._chainConfig.IsOptimismPreBedrock(blockNum) {
 		if api.historicalRPCService != nil {
+			log.Warn("HIST ETH_GETBALANCE")
 			var res hexutil.Big
 			err := api.historicalRPCService.CallContext(ctx, &res, "eth_getBalance", address, blockNrOrHash)
 			if err != nil {
@@ -87,14 +82,13 @@ func (api *APIImpl) GetTransactionCount(ctx context.Context, address libcommon.A
 	}
 	defer tx.Rollback()
 
-	// Handle pre-bedrock blocks
-	header, err := headerByNumberOrHash(ctx, tx, blockNrOrHash, api)
-	if err != nil {
-		return nil, err
-	}
+	log.Warn("INFO", "block", blockNrOrHash)
 
-	if api._chainConfig.IsOptimismPreBedrock(header.Number.Uint64()) {
+	// // Handle pre-bedrock blocks
+	blockNum := uint64(blockNrOrHash.BlockNumber.Int64())
+	if api._chainConfig.IsOptimismPreBedrock(blockNum) {
 		if api.historicalRPCService != nil {
+			log.Warn("HIST ETH_GETTRANSACTIONCOUNT")
 			var res hexutil.Uint64
 			err := api.historicalRPCService.CallContext(ctx, &res, "eth_getTransactionCount", address, blockNrOrHash)
 			if err != nil {
@@ -125,14 +119,13 @@ func (api *APIImpl) GetCode(ctx context.Context, address libcommon.Address, bloc
 		return nil, fmt.Errorf("getCode cannot open tx: %w", err1)
 	}
 
-	// Handle pre-bedrock blocks
-	header, err := headerByNumberOrHash(ctx, tx, blockNrOrHash, api)
-	if err != nil {
-		return nil, err
-	}
+	log.Warn("INFO", "block", blockNrOrHash)
 
-	if api._chainConfig.IsOptimismPreBedrock(header.Number.Uint64()) {
+	// Handle pre-bedrock blocks
+	blockNum := uint64(blockNrOrHash.BlockNumber.Int64())
+	if api._chainConfig.IsOptimismPreBedrock(blockNum) {
 		if api.historicalRPCService != nil {
+			log.Warn("HIST ETH_GETCODE")
 			var res hexutil.Bytes
 			err := api.historicalRPCService.CallContext(ctx, &res, "eth_getCode", address, blockNrOrHash)
 			if err != nil {
@@ -176,12 +169,9 @@ func (api *APIImpl) GetStorageAt(ctx context.Context, address libcommon.Address,
 	defer tx.Rollback()
 
 	// Handle pre-bedrock blocks
-	header, err := headerByNumberOrHash(ctx, tx, blockNrOrHash, api)
-	if err != nil {
-		return hexutility.Encode(common.LeftPadBytes(empty, 32)), err
-	}
-
-	if api._chainConfig.IsOptimismPreBedrock(header.Number.Uint64()) {
+	blockNum := uint64(blockNrOrHash.BlockNumber.Int64())
+	if api._chainConfig.IsOptimismPreBedrock(blockNum) {
+		log.Warn("HIST ETH_GETSTORAGEAT")
 		if api.historicalRPCService != nil {
 			var res hexutil.Bytes
 			err := api.historicalRPCService.CallContext(ctx, &res, "eth_getStorageAt", address, blockNrOrHash)

@@ -40,13 +40,10 @@ func (api *APIImpl) Call(ctx context.Context, args ethapi2.CallArgs, blockNrOrHa
 	defer tx.Rollback()
 
 	// Handle pre-bedrock blocks
-	header, err := headerByNumberOrHash(ctx, tx, blockNrOrHash, api)
-	if err != nil {
-		return nil, err
-	}
-
-	if api._chainConfig.IsOptimismPreBedrock(header.Number.Uint64()) {
+	blockNum := uint64(blockNrOrHash.BlockNumber.Int64())
+	if api._chainConfig.IsOptimismPreBedrock(blockNum) {
 		if api.historicalRPCService != nil {
+			log.Warn("HIST ETH_CALL")
 			var res hexutil.Bytes
 			err := api.historicalRPCService.CallContext(ctx, &res, "eth_call", args, blockNrOrHash, overrides)
 			if err != nil {
@@ -84,7 +81,7 @@ func (api *APIImpl) Call(ctx context.Context, args ethapi2.CallArgs, blockNrOrHa
 	if err != nil {
 		return nil, err
 	}
-	header = block.HeaderNoCopy()
+	header := block.HeaderNoCopy()
 	result, err := transactions.DoCall(ctx, engine, args, tx, blockNrOrHash, header, overrides, api.GasCap, chainConfig, stateReader, api._blockReader, api.evmCallTimeout)
 	if err != nil {
 		return nil, err
@@ -156,13 +153,10 @@ func (api *APIImpl) EstimateGas(ctx context.Context, argsOrNil *ethapi2.CallArgs
 	}
 
 	// Handle pre-bedrock blocks
-	header, err := headerByNumberOrHash(ctx, dbtx, bNrOrHash, api)
-	if err != nil {
-		return 0, err
-	}
-
-	if api._chainConfig.IsOptimismPreBedrock(header.Number.Uint64()) {
+	blockNum := uint64(blockNrOrHash.BlockNumber.Int64())
+	if api._chainConfig.IsOptimismPreBedrock(blockNum) {
 		if api.historicalRPCService != nil {
+			log.Warn("HIST ETH_ESTIMATEGAS")
 			var res hexutil.Uint64
 			err := api.historicalRPCService.CallContext(ctx, &res, "eth_estimateGas", args, blockNrOrHash)
 			if err != nil {
@@ -279,7 +273,7 @@ func (api *APIImpl) EstimateGas(ctx context.Context, argsOrNil *ethapi2.CallArgs
 	if err != nil {
 		return 0, err
 	}
-	header = block.HeaderNoCopy()
+	header := block.HeaderNoCopy()
 
 	caller, err := transactions.NewReusableCaller(engine, stateReader, nil, header, args, api.GasCap, latestNumOrHash, dbtx, api._blockReader, chainConfig, api.evmCallTimeout)
 	if err != nil {
@@ -379,13 +373,10 @@ func (api *APIImpl) CreateAccessList(ctx context.Context, args ethapi2.CallArgs,
 	defer tx.Rollback()
 
 	// Handle pre-bedrock blocks
-	header, err := headerByNumberOrHash(ctx, tx, bNrOrHash, api)
-	if err != nil {
-		return nil, err
-	}
-
-	if api._chainConfig.IsOptimismPreBedrock(header.Number.Uint64()) {
+	blockNum := uint64(blockNrOrHash.BlockNumber.Int64())
+	if api._chainConfig.IsOptimismPreBedrock(blockNum) {
 		if api.historicalRPCService != nil {
+			log.Warn("HIST ETH_CREATEACCESSLIST")
 			var res accessListResult
 			err := api.historicalRPCService.CallContext(ctx, &res, "eth_createAccessList", args, blockNrOrHash)
 			if err != nil {
@@ -428,7 +419,7 @@ func (api *APIImpl) CreateAccessList(ctx context.Context, args ethapi2.CallArgs,
 		}
 	}
 
-	header = block.Header()
+	header := block.Header()
 	// If the gas amount is not set, extract this as it will depend on access
 	// lists and we'll need to reestimate every time
 	nogas := args.Gas == nil

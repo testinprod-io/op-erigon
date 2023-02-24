@@ -1668,6 +1668,7 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 
 		// Create a new developer genesis block or reuse existing one
 		cfg.Genesis = readGenesis(ctx.String(GenesisPathFlag.Name))
+		log.Info("@@@@@@", "bedrockBlock", cfg.Genesis.Config.BedrockBlock)
 		//log.Info("Using custom developer period", "seconds", cfg.Genesis.Config.Clique.Period)
 	}
 

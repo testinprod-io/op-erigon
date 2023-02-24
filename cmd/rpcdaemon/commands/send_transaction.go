@@ -27,7 +27,9 @@ func (api *APIImpl) SendRawTransaction(ctx context.Context, encodedTx hexutil.By
 		return common.Hash{}, err
 	}
 
+	log.Warn("SEND RAW TRANSACTION HERE", "api.seqRPCService", api.seqRPCService)
 	if api.seqRPCService != nil {
+		log.Warn("SEQ ETH_SENDRAWTRANSACTION")
 		if err := api.seqRPCService.CallContext(ctx, nil, "eth_sendRawTransaction", hexutil.Encode(encodedTx)); err != nil {
 			return txn.Hash(), err
 		}
