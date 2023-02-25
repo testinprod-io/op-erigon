@@ -45,15 +45,22 @@ func (api *APIImpl) Call(ctx context.Context, args ethapi2.CallArgs, blockNrOrHa
 		blockNum = uint64(number)
 	} else if hash, ok := blockNrOrHash.Hash(); ok {
 		block, err := api.blockByHashWithSenders(tx, hash)
+		if block == nil {
+			return nil, fmt.Errorf("header not found")
+		}
 		if err != nil {
-			return nil, fmt.Errorf("invalid hash: %w", err)
+			return nil, err
 		}
 		blockNum = block.NumberU64()
 	} else {
 		return nil, fmt.Errorf("invalid block number of hash")
 	}
 
-	if api._chainConfig.IsOptimismPreBedrock(blockNum) {
+	chainConfig, err := api.chainConfig(tx)
+	if err != nil {
+		return nil, err
+	}
+	if chainConfig.IsOptimismPreBedrock(blockNum) {
 		if api.historicalRPCService != nil {
 			var res hexutil.Bytes
 			var err error
@@ -71,10 +78,6 @@ func (api *APIImpl) Call(ctx context.Context, args ethapi2.CallArgs, blockNrOrHa
 		}
 	}
 
-	chainConfig, err := api.chainConfig(tx)
-	if err != nil {
-		return nil, err
-	}
 	engine := api.engine()
 
 	if args.Gas == nil || uint64(*args.Gas) == 0 {
@@ -174,15 +177,22 @@ func (api *APIImpl) EstimateGas(ctx context.Context, argsOrNil *ethapi2.CallArgs
 		blockNum = uint64(number)
 	} else if hash, ok := blockNrOrHash.Hash(); ok {
 		block, err := api.blockByHashWithSenders(dbtx, hash)
+		if block == nil {
+			return 0, fmt.Errorf("header not found")
+		}
 		if err != nil {
-			return 0, fmt.Errorf("invalid hash: %w", err)
+			return 0, err
 		}
 		blockNum = block.NumberU64()
 	} else {
 		return 0, fmt.Errorf("invalid block number of hash")
 	}
 
-	if api._chainConfig.IsOptimismPreBedrock(blockNum) {
+	chainConfig, err := api.chainConfig(dbtx)
+	if err != nil {
+		return 0, err
+	}
+	if chainConfig.IsOptimismPreBedrock(blockNum) {
 		if api.historicalRPCService != nil {
 			var res hexutil.Uint64
 			err := api.historicalRPCService.CallContext(ctx, &res, "eth_estimateGas", args, fmt.Sprintf("0x%x", blockNum))
@@ -273,10 +283,6 @@ func (api *APIImpl) EstimateGas(ctx context.Context, argsOrNil *ethapi2.CallArgs
 	}
 	cap = hi
 
-	chainConfig, err := api.chainConfig(dbtx)
-	if err != nil {
-		return 0, err
-	}
 	engine := api.engine()
 
 	latestCanBlockNumber, latestCanHash, isLatest, err := rpchelper.GetCanonicalBlockNumber(latestNumOrHash, dbtx, api.filters) // DoCall cannot be executed on non-canonical blocks
@@ -405,15 +411,22 @@ func (api *APIImpl) CreateAccessList(ctx context.Context, args ethapi2.CallArgs,
 		blockNum = uint64(number)
 	} else if hash, ok := blockNrOrHash.Hash(); ok {
 		block, err := api.blockByHashWithSenders(tx, hash)
+		if block == nil {
+			return nil, fmt.Errorf("header not found")
+		}
 		if err != nil {
-			return nil, fmt.Errorf("invalid hash: %w", err)
+			return nil, err
 		}
 		blockNum = block.NumberU64()
 	} else {
 		return nil, fmt.Errorf("invalid block number of hash")
 	}
 
-	if api._chainConfig.IsOptimismPreBedrock(blockNum) {
+	chainConfig, err := api.chainConfig(tx)
+	if err != nil {
+		return nil, err
+	}
+	if chainConfig.IsOptimismPreBedrock(blockNum) {
 		if api.historicalRPCService != nil {
 			var res accessListResult
 			err := api.historicalRPCService.CallContext(ctx, &res, "eth_createAccessList", args, fmt.Sprintf("0x%x", blockNum))
@@ -428,10 +441,6 @@ func (api *APIImpl) CreateAccessList(ctx context.Context, args ethapi2.CallArgs,
 		}
 	}
 
-	chainConfig, err := api.chainConfig(tx)
-	if err != nil {
-		return nil, err
-	}
 	engine := api.engine()
 
 	blockNumber, hash, latest, err := rpchelper.GetCanonicalBlockNumber(bNrOrHash, tx, api.filters) // DoCall cannot be executed on non-canonical blocks
