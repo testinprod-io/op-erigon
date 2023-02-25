@@ -1,25 +1,28 @@
+import json
+
+import requests
 import web3
 from web3.middleware import geth_poa_middleware
-import json
-import requests
 
 
 class RPCMethod:
-    Call = 'eth_call'
-    GetLogs = 'eth_getLogs'
-    GetBlockByNumber = 'eth_getBlockByNumber'
-    GetBlockByHash = 'eth_getBlockByHash'
-    GetTransactionByHash = 'eth_getTransactionByHash'
-    GetTransactionByBlockHashAndIndex = 'eth_getTransactionByBlockHashAndIndex'
-    GetTransactionByBlockNumberAndIndex = 'eth_getTransactionByBlockNumberAndIndex'
-    GetTransactionReceipt = 'eth_getTransactionReceipt'
-    GetBalance = 'eth_getBalance'
-    BlockNumber = 'eth_blockNumber'
-    GetStorageAt = 'eth_getStorageAt'
+    Call = "eth_call"
+    EstimateGas = "eth_estimateGas"
+    GetLogs = "eth_getLogs"
+    GetBlockByNumber = "eth_getBlockByNumber"
+    GetBlockByHash = "eth_getBlockByHash"
+    GetTransactionByHash = "eth_getTransactionByHash"
+    GetTransactionByBlockHashAndIndex = "eth_getTransactionByBlockHashAndIndex"
+    GetTransactionByBlockNumberAndIndex = "eth_getTransactionByBlockNumberAndIndex"
+    GetTransactionReceipt = "eth_getTransactionReceipt"
+    GetBalance = "eth_getBalance"
+    BlockNumber = "eth_blockNumber"
+    GetStorageAt = "eth_getStorageAt"
 
 
 class RPCError(BaseException):
     pass
+
 
 class RPCClient:
     def __init__(self, url):
@@ -27,23 +30,23 @@ class RPCClient:
 
     def send_request(self, method, params=None, token=None, allow_error=False):
         headers = {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
         }
         if token is not None:
-            headers['Authorization'] = f'Bearer {token}'
+            headers["Authorization"] = f"Bearer {token}"
         data = {
-            'jsonrpc': '2.0',
-            'method': method,
-            'params': [] if params is None else params,
-            'id': 1
+            "jsonrpc": "2.0",
+            "method": method,
+            "params": [] if params is None else params,
+            "id": 1,
         }
         res = requests.post(self.url, json=data, headers=headers).json()
-        if 'error' in res:
+        if "error" in res:
             if allow_error:
-                return res['error']
+                return res["error"]
             else:
-                raise RPCError(res['error']['message'])
-        return res['result']
+                raise RPCError(res["error"]["message"])
+        return res["result"]
 
 
 with open("endpoint.json", "r") as f:

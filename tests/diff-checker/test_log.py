@@ -1,9 +1,10 @@
-from common import erigon, geth, erigon_client, geth_client, RPCMethod, compare_txs
-from constants import BEDROCK_START
 import random
+
 import pytest
 import web3
 
+from common import RPCMethod, compare_txs, erigon, erigon_client, geth, geth_client
+from constants import BEDROCK_START
 
 transfer_topic = web3.Web3.keccak(text="Transfer(address,address,uint256)").hex()
 approval_topic = web3.Web3.keccak(text="Approval(address,address,uint256)").hex()
@@ -13,7 +14,7 @@ mint_topic = web3.Web3.keccak(text="Mint(address,uint256)").hex()
 topics = [[transfer_topic, approval_topic, deposit_topic, withdrawal_topic, mint_topic]]
 
 
-@pytest.mark.parametrize('bedrock', [True, False])
+@pytest.mark.parametrize("bedrock", [True, False])
 def test_eth_getLogs(bedrock):
     max_block_number = None
     if bedrock:
@@ -27,24 +28,20 @@ def test_eth_getLogs(bedrock):
             RPCMethod.GetLogs,
             params=[
                 {
-                    'topics': topics,
-                    'fromBlock': hex(target_block_number),
-                    'toBlock': hex(target_block_number + 100)
+                    "topics": topics,
+                    "fromBlock": hex(target_block_number),
+                    "toBlock": hex(target_block_number + 100),
                 },
-            ]
+            ],
         )
         erigon_res = erigon_client.send_request(
             RPCMethod.GetLogs,
             params=[
                 {
-                    'topics': topics,
-                    'fromBlock': hex(target_block_number),
-                    'toBlock': hex(target_block_number + 100)
+                    "topics": topics,
+                    "fromBlock": hex(target_block_number),
+                    "toBlock": hex(target_block_number + 100),
                 },
-            ]
+            ],
         )
         assert geth_res == erigon_res
-
-
-
-
