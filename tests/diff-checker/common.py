@@ -9,6 +9,7 @@ class RPCMethod:
     GetBlockByHash = 'eth_getBlockByHash'
     GetTransactionByHash = 'eth_getTransactionByHash'
     GetTransactionByBlockHashAndIndex = 'eth_getTransactionByBlockHashAndIndex'
+    GetTransactionByBlockNumberAndIndex = 'eth_getTransactionByBlockNumberAndIndex'
     GetTransactionReceipt = 'eth_getTransactionReceipt'
     GetBalance = 'eth_getBalance'
     BlockNumber = 'eth_blockNumber'
@@ -56,3 +57,13 @@ geth.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 erigon_client = RPCClient(URL_OP_ERIGON)
 geth_client = RPCClient(URL_OP_GETH)
+
+
+def compare_txs(tx1, tx2):
+    for key in set(tx1.keys()) | set(tx2.keys()):
+        if key in tx1 and key in tx2:
+            assert tx1[key] == tx2[key]
+        elif key not in tx1:
+            assert tx2[key] == None
+        elif key not in tx2:
+            assert tx1[key] == None
