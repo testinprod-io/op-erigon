@@ -215,6 +215,7 @@ func NewReusableCaller(
 	}
 
 	blockCtx := NewEVMBlockContext(engine, header, blockNrOrHash.RequireCanonical, tx, headerReader)
+	blockCtx.L1CostFunc = types.NewL1CostFunc(chainConfig, ibs)
 	txCtx := core.NewEVMTxContext(msg)
 
 	evm := vm.NewEVM(blockCtx, txCtx, ibs, chainConfig, vm.Config{NoBaseFee: true})

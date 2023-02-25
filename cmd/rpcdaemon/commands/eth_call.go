@@ -173,9 +173,9 @@ func (api *APIImpl) EstimateGas(ctx context.Context, argsOrNil *ethapi2.CallArgs
 
 	// Handle pre-bedrock blocks
 	var blockNum uint64
-	if number, ok := blockNrOrHash.Number(); ok {
+	if number, ok := bNrOrHash.Number(); ok {
 		blockNum = uint64(number)
-	} else if hash, ok := blockNrOrHash.Hash(); ok {
+	} else if hash, ok := bNrOrHash.Hash(); ok {
 		block, err := api.blockByHashWithSenders(dbtx, hash)
 		if block == nil {
 			return 0, fmt.Errorf("header not found")
