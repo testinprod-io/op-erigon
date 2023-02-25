@@ -5,6 +5,8 @@ import requests
 
 
 class RPCMethod:
+    Call = 'eth_call'
+    GetLogs = 'eth_getLogs'
     GetBlockByNumber = 'eth_getBlockByNumber'
     GetBlockByHash = 'eth_getBlockByHash'
     GetTransactionByHash = 'eth_getTransactionByHash'
