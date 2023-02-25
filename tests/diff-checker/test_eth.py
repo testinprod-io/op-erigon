@@ -3,7 +3,8 @@ import random
 import pytest
 import web3
 
-from common import RPCMethod, compare_txs, erigon, erigon_client, geth, geth_client
+from common import (RPCMethod, compare_txs, erigon, erigon_client, geth,
+                    geth_client)
 from constants import BEDROCK_START
 
 
@@ -295,31 +296,80 @@ def test_eth_getCode_prebedrock():
             assert erigon_code == geth_code, (address, target_block_number)
 
 
-def test_eth_estimateGas():
+def test_eth_estimateGas_bedrock():
+    max_block_number = min(erigon.eth.block_number, geth.eth.block_number)
     # L2CrossDomainMessenger
     to_addr = "0x4200000000000000000000000000000000000007"
     selector = web3.Web3.keccak(text="messageNonce()")[:4].hex()
     for _ in range(16):
+        target_block_number = random.randint(BEDROCK_START, max_block_number)
         erigon_estimate = erigon_client.send_request(
             RPCMethod.EstimateGas,
             params=[
                 {
                     "to": to_addr,
-                    "gasPrice": 10000000000,
-                    "data": selector,
-                    "gas": 1000000,
-                }
+                    "gasPrice": "0x2710",
+                    "data": "0xecc70428",
+                    "gas": selector,
+                },
+                hex(target_block_number),
             ],
+            allow_error=True,
         )
         geth_estimate = geth_client.send_request(
             RPCMethod.EstimateGas,
             params=[
                 {
                     "to": to_addr,
-                    "gasPrice": "0x09184e72a000",
-                    "data": selector,
-                    "gas": "0xde0b6b3a7640000",
-                }
+                    "gasPrice": "0x2710",
+                    "data": "0xecc70428",
+                    "gas": selector,
+                },
+                hex(target_block_number),
             ],
+            allow_error=True,
         )
-        assert erigon_estimate == geth_estimate, (erigon_estimate, geth_estimate)
+        assert erigon_estimate == geth_estimate, (
+            erigon_estimate,
+            geth_estimate,
+            target_block_number,
+        )
+
+
+def test_eth_estimateGas_prebedrock():
+    # L2CrossDomainMessenger
+    to_addr = "0x4200000000000000000000000000000000000007"
+    selector = web3.Web3.keccak(text="messageNonce()")[:4].hex()
+    for _ in range(16):
+        target_block_number = random.randint(0, BEDROCK_START - 1)
+        erigon_estimate = erigon_client.send_request(
+            RPCMethod.EstimateGas,
+            params=[
+                {
+                    "to": to_addr,
+                    "gasPrice": "0x2710",
+                    "data": "0xecc70428",
+                    "gas": selector,
+                },
+                hex(target_block_number),
+            ],
+            allow_error=True,
+        )
+        geth_estimate = geth_client.send_request(
+            RPCMethod.EstimateGas,
+            params=[
+                {
+                    "to": to_addr,
+                    "gasPrice": "0x2710",
+                    "data": "0xecc70428",
+                    "gas": selector,
+                },
+                hex(target_block_number),
+            ],
+            allow_error=True,
+        )
+        assert erigon_estimate == geth_estimate, (
+            erigon_estimate,
+            geth_estimate,
+            target_block_number,
+        )

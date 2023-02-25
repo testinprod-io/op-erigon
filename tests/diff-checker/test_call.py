@@ -3,7 +3,8 @@ import random
 import pytest
 import web3
 
-from common import RPCMethod, compare_txs, erigon, erigon_client, geth, geth_client
+from common import (RPCMethod, compare_txs, erigon, erigon_client, geth,
+                    geth_client)
 from constants import BEDROCK_START
 
 
