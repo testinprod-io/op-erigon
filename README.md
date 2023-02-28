@@ -2,8 +2,6 @@
 
 A fork of Erigon that supports the Optimism Bedrock upgrade.
 
-Optimism bedrock node is consists of 
-
 [`testinprod-io/erigon-lib`](https://github.com/testinprod-io/erigon-lib) has minimal backwards-compatible changes to add Optimism engine-api fields on the `optimism` branch.
 
 [`testinprod-io/erigon-interfaces`](https://github.com/testinprod-io/erigon-interfaces) defines the protobuf changes for `erigon-lib` on the `optimism` branch.
