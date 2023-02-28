@@ -13,7 +13,7 @@ To build from the code, you can use the same command described below(`make erigo
 
 You can use every flag erigon has. But there are some required flags and newly added flags for Optimism.
 
-- `--dadtadir`: Erigon can not execute state transition before the bedrock update. So preconfigured data file, including blocks and states of pre-bedrock chain, is required to run the node.
+- `--datadir`: Erigon can not execute state transition before the bedrock update. So preconfigured data file, including blocks and states of pre-bedrock chain, is required to run the node.
 - `--externalcl, --authrpc.addr, --authrpc.port, --authrpc.jwtsecret`: Optimism node consists of consensus client(op-node) and execution client. So erigon should be run as external consensus client mode (`--externalcl`) and need to config engine API server.
 - `--rollup.sequencerhttp`: HTTP endpoint of the sequencer. op-geth will route eth_sendRawTransaction calls to this URL. Bedrock does not currently have a public mempool, so this is required if you want your node to support transaction submission. Consult the documentation for the network you are participating in to get the correct URL. (New flag)
 - `--rollup.historicalrpc`: Enables the historical RPC endpoint. This endpoint is used to fetch historical execution data from Legacy Geth. This flag is only necessary for upgraded networks. (New flag) [Optional]
