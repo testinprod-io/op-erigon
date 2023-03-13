@@ -219,7 +219,7 @@ func (api *APIImpl) GetStorageAt(ctx context.Context, address libcommon.Address,
 	} else if hash, ok := blockNrOrHash.Hash(); ok {
 		block, err := api.blockByHashWithSenders(tx, hash)
 		if block == nil {
-			return hexutility.Encode(common.LeftPadBytes(empty, 32)), fmt.Errorf("header not found")
+			return hexutility.Encode(common.LeftPadBytes(empty, 32)), fmt.Errorf("block %x not found", hash)
 		}
 		if err != nil {
 			return hexutility.Encode(common.LeftPadBytes(empty, 32)), err
