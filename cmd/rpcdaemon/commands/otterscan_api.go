@@ -570,6 +570,10 @@ func (api *OtterscanAPIImpl) GetBlockTransactions(ctx context.Context, number rp
 		return nil, err
 	}
 
+	if len(senders) != b.Transactions().Len() {
+		// fallback; set senders from inspecting tx
+		senders = b.Body().SendersFromTxs()
+	}
 	// Receipts
 	receipts, err := api.getReceipts(ctx, tx, chainConfig, b, senders)
 	if err != nil {
