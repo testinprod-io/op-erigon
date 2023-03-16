@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/ledgerwatch/erigon/eth/stagedsync/stages"
 	"math/big"
 	"time"
 
@@ -115,7 +116,26 @@ func SpawnMiningCreateBlockStage(s *StageState, tx kv.RwTx, cfg MiningCreateBloc
 	}
 
 	if cfg.blockBuilderParameters != nil && cfg.blockBuilderParameters.ParentHash != parent.Hash() {
-		return fmt.Errorf("wrong head block: %x (current) vs %x (requested)", parent.Hash(), cfg.blockBuilderParameters.ParentHash)
+		if cfg.chainConfig.IsOptimism() {
+			log.Warn("wrong head block", "current", parent.Hash(), "requested", cfg.blockBuilderParameters.ParentHash, "executionAt", executionAt)
+			exectedParent, err := rawdb.ReadHeaderByHash(tx, cfg.blockBuilderParameters.ParentHash)
+			if err != nil {
+				return err
+			}
+			executionAt = exectedParent.Number.Uint64()
+			err = s.Update(tx, executionAt)
+			if err != nil {
+				return err
+			}
+			parent = exectedParent
+
+			stages.SaveStageProgress(tx, stages.MiningExecution, executionAt)
+			stages.SaveStageProgress(tx, stages.HashState, executionAt)
+			stages.SaveStageProgress(tx, stages.IntermediateHashes, executionAt)
+			log.Info("updated executionAt", "executionAt", executionAt)
+		} else {
+			return fmt.Errorf("wrong head block: %x (current) vs %x (requested)", parent.Hash(), cfg.blockBuilderParameters.ParentHash)
+		}
 	}
 
 	if cfg.miner.MiningConfig.Etherbase == (libcommon.Address{}) {
