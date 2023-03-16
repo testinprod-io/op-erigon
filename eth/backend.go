@@ -240,6 +240,9 @@ func New(stack *node.Node, config *ethconfig.Config, logger log.Logger) (*Ethere
 	config.Snapshot.Enabled = config.Sync.UseSnapshots
 
 	log.Info("Initialised chain configuration", "config", chainConfig, "genesis", genesis.Hash())
+	if chainConfig.IsOptimism() && chainConfig.RegolithTime == nil {
+		log.Warn("Optimism RegolithTime has not been set")
+	}
 
 	// Apply special hacks for BSC params
 	if chainConfig.Parlia != nil {
