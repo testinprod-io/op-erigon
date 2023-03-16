@@ -425,6 +425,9 @@ func (api *OtterscanAPIImpl) SearchTransactionsAfter(ctx context.Context, addr c
 
 func (api *OtterscanAPIImpl) traceBlocks(ctx context.Context, addr common.Address, chainConfig *chain.Config, pageSize, resultCount uint16, callFromToProvider BlockProvider) ([]*TransactionsWithReceipts, bool, error) {
 	var wg sync.WaitGroup
+	errCh := make(chan error, 1)
+	traceCtx, traceCtxCancel := context.WithCancel(context.Background())
+	defer traceCtxCancel()
 
 	// Estimate the common case of user address having at most 1 interaction/block and
 	// trace N := remaining page matches as number of blocks to trace concurrently.
@@ -448,10 +451,12 @@ func (api *OtterscanAPIImpl) traceBlocks(ctx context.Context, addr common.Addres
 
 		wg.Add(1)
 		totalBlocksTraced++
-		go api.searchTraceBlock(ctx, &wg, addr, chainConfig, i, nextBlock, results)
+		go api.searchTraceBlock(ctx, traceCtx, traceCtxCancel, &wg, errCh, addr, chainConfig, i, nextBlock, results)
 	}
 	wg.Wait()
-
+	if traceCtx.Err() != nil && len(errCh) == 1 {
+		return nil, false, <-errCh
+	}
 	return results[:totalBlocksTraced], hasMore, nil
 }
 
