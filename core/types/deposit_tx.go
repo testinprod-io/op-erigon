@@ -466,6 +466,6 @@ func (tx *DepositTx) Sender(signer Signer) (libcommon.Address, error) {
 	return tx.From, nil
 }
 
-func (tx DepositTx) RollupDataGas() uint64 {
-	return 0
+func (tx DepositTx) RollupDataGas() RollupGasData {
+	return RollupGasData{}
 }

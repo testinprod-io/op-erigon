@@ -21,7 +21,6 @@ import (
 	"container/heap"
 	"errors"
 	"fmt"
-	"github.com/ledgerwatch/erigon/params"
 	"io"
 	"math/big"
 	"sync/atomic"
@@ -91,7 +90,7 @@ type Transaction interface {
 	GetSender() (libcommon.Address, bool)
 	SetSender(libcommon.Address)
 	IsContractDeploy() bool
-	RollupDataGas() uint64
+	RollupDataGas() RollupGasData
 }
 
 // TransactionMisc is collection of miscelaneous fields for transaction that is supposed to be embedded into concrete
@@ -123,29 +122,26 @@ func (r *rollupGasCounter) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-func (r *rollupGasCounter) RollupGas() uint64 {
-	zeroesGas := r.zeroes * params.TxDataZeroGas
-	onesGas := (r.ones + 68) * params.TxDataNonZeroGasEIP2028
-	return zeroesGas + onesGas
-}
-
 // computeRollupGas is a helper method to compute and cache the rollup gas cost for any tx type
 func (tm *TransactionMisc) computeRollupGas(tx interface {
 	MarshalBinary(w io.Writer) error
 	Type() byte
-}) uint64 {
+}) RollupGasData {
 	if tx.Type() == DepositTxType {
-		return 0
+		return RollupGasData{}
 	}
 	if v := tm.rollupGas.Load(); v != nil {
-		return v.(uint64)
+		return v.(RollupGasData)
 	}
 	var c rollupGasCounter
 	err := tx.MarshalBinary(&c)
 	if err != nil { // Silent error, invalid txs will not be marshalled/unmarshalled for batch submission anyway.
 		log.Error("failed to encode tx for L1 cost computation", "err", err)
 	}
-	total := c.RollupGas()
+	total := RollupGasData{
+		Zeroes: c.zeroes,
+		Ones:   c.ones,
+	}
 	tm.rollupGas.Store(total)
 	return total
 }
@@ -525,7 +521,7 @@ type Message struct {
 	isSystemTx  bool
 	isDepositTx bool
 	mint        *uint256.Int
-	l1CostGas   uint64
+	l1CostGas   RollupGasData
 }
 
 func NewMessage(from libcommon.Address, to *libcommon.Address, nonce uint64, amount *uint256.Int, gasLimit uint64, gasPrice *uint256.Int, feeCap, tip *uint256.Int, data []byte, accessList types2.AccessList, checkNonce bool, isFree bool) Message {
@@ -587,7 +583,7 @@ func (m *Message) ChangeGas(globalGasCap, desiredGas uint64) {
 	m.gasLimit = gas
 }
 
-func (m Message) IsSystemTx() bool      { return m.isSystemTx }
-func (m Message) IsDepositTx() bool     { return m.isDepositTx }
-func (m Message) Mint() *uint256.Int    { return m.mint }
-func (m Message) RollupDataGas() uint64 { return m.l1CostGas }
+func (m Message) IsSystemTx() bool             { return m.isSystemTx }
+func (m Message) IsDepositTx() bool            { return m.isDepositTx }
+func (m Message) Mint() *uint256.Int           { return m.mint }
+func (m Message) RollupDataGas() RollupGasData { return m.l1CostGas }
