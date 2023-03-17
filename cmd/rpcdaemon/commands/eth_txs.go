@@ -84,7 +84,9 @@ func (api *APIImpl) GetTransactionByHash(ctx context.Context, txnHash common.Has
 			return newRPCBorTransaction(borTx, txnHash, blockHash, blockNum, uint64(len(block.Transactions())), baseFee, chainConfig.ChainID), nil
 		}
 
-		return newRPCTransaction(txn, blockHash, blockNum, txnIndex, baseFee), nil
+		depositNonces := rawdb.ReadDepositNonces(tx, block.NumberU64())
+
+		return newRPCTransaction(txn, blockHash, blockNum, txnIndex, baseFee, depositNonces[txnIndex]), nil
 	}
 
 	curHeader := rawdb.ReadCurrentHeader(tx)
@@ -200,7 +202,9 @@ func (api *APIImpl) GetTransactionByBlockHashAndIndex(ctx context.Context, block
 		return newRPCBorTransaction(borTx, derivedBorTxHash, block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), chainConfig.ChainID), nil
 	}
 
-	return newRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee()), nil
+	depositNonces := rawdb.ReadDepositNonces(tx, block.NumberU64())
+
+	return newRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), depositNonces[txIndex]), nil
 }
 
 // GetRawTransactionByBlockHashAndIndex returns the bytes of the transaction for the given block hash and index.
@@ -264,7 +268,9 @@ func (api *APIImpl) GetTransactionByBlockNumberAndIndex(ctx context.Context, blo
 		return newRPCBorTransaction(borTx, derivedBorTxHash, block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), chainConfig.ChainID), nil
 	}
 
-	return newRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee()), nil
+	depositNonces := rawdb.ReadDepositNonces(tx, block.NumberU64())
+
+	return newRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), depositNonces[txIndex]), nil
 }
 
 // GetRawTransactionByBlockNumberAndIndex returns the bytes of the transaction for the given block number and index.

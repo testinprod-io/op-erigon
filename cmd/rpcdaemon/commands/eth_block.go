@@ -231,7 +231,8 @@ func (api *APIImpl) GetBlockByNumber(ctx context.Context, number rpc.BlockNumber
 		}
 	}
 
-	response, err := ethapi.RPCMarshalBlockEx(b, true, fullTx, borTx, borTxHash, additionalFields)
+	depositNonces := rawdb.ReadDepositNonces(tx, b.NumberU64())
+	response, err := ethapi.RPCMarshalBlockEx(b, true, fullTx, borTx, borTxHash, additionalFields, depositNonces)
 	if chainConfig.Bor != nil {
 		response["miner"], _ = ecrecover(b.Header(), chainConfig.Bor)
 	}
@@ -293,7 +294,8 @@ func (api *APIImpl) GetBlockByHash(ctx context.Context, numberOrHash rpc.BlockNu
 		}
 	}
 
-	response, err := ethapi.RPCMarshalBlockEx(block, true, fullTx, borTx, borTxHash, additionalFields)
+	depositNonces := rawdb.ReadDepositNonces(tx, number)
+	response, err := ethapi.RPCMarshalBlockEx(block, true, fullTx, borTx, borTxHash, additionalFields, depositNonces)
 
 	if chainConfig.Bor != nil {
 		response["miner"], _ = ecrecover(block.Header(), chainConfig.Bor)

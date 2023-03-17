@@ -288,11 +288,12 @@ func RPCMarshalHeader(head *types.Header) map[string]interface{} {
 // RPCMarshalBlock converts the given block to the RPC output which depends on fullTx. If inclTx is true transactions are
 // returned. When fullTx is true the returned block contains full transaction details, otherwise it will only contain
 // transaction hashes.
-func RPCMarshalBlockDeprecated(block *types.Block, inclTx bool, fullTx bool) (map[string]interface{}, error) {
-	return RPCMarshalBlockExDeprecated(block, inclTx, fullTx, nil, libcommon.Hash{})
+func RPCMarshalBlockDeprecated(block *types.Block, inclTx bool, fullTx bool, depositNonces []*uint64) (map[string]interface{}, error) {
+	return RPCMarshalBlockExDeprecated(block, inclTx, fullTx, nil, libcommon.Hash{}, depositNonces)
 }
 
-func RPCMarshalBlockExDeprecated(block *types.Block, inclTx bool, fullTx bool, borTx types.Transaction, borTxHash libcommon.Hash) (map[string]interface{}, error) {
+func RPCMarshalBlockExDeprecated(block *types.Block, inclTx bool, fullTx bool, borTx types.Transaction, borTxHash libcommon.Hash,
+	depositNonces []*uint64) (map[string]interface{}, error) {
 	fields := RPCMarshalHeader(block.Header())
 	fields["size"] = hexutil.Uint64(block.Size())
 	if _, ok := fields["transactions"]; !ok {
@@ -305,7 +306,7 @@ func RPCMarshalBlockExDeprecated(block *types.Block, inclTx bool, fullTx bool, b
 		}
 		if fullTx {
 			formatTx = func(tx types.Transaction, index int) (interface{}, error) {
-				return newRPCTransactionFromBlockAndTxGivenIndex(block, tx, uint64(index)), nil
+				return newRPCTransactionFromBlockAndTxGivenIndex(block, tx, uint64(index), depositNonces[index]), nil
 			}
 		}
 		txs := block.Transactions()
@@ -394,7 +395,8 @@ type RPCTransaction struct {
 
 // newRPCTransaction returns a transaction that will serialize to the RPC
 // representation, with the given location metadata set (if available).
-func newRPCTransaction(tx types.Transaction, blockHash libcommon.Hash, blockNumber uint64, index uint64, baseFee *big.Int) *RPCTransaction {
+func newRPCTransaction(tx types.Transaction, blockHash libcommon.Hash, blockNumber uint64, index uint64, baseFee *big.Int,
+	depositNonce *uint64) *RPCTransaction {
 	// Determine the signer. For replay-protected transactions, use the most permissive
 	// signer, because we assume that signers are backwards-compatible with old
 	// transactions. For non-protected transactions, the homestead signer signer is used
@@ -452,6 +454,9 @@ func newRPCTransaction(tx types.Transaction, blockHash libcommon.Hash, blockNumb
 		result.ChainID = nil
 		result.SourceHash = &t.SourceHash
 		result.IsSystemTx = &t.IsSystemTransaction
+		if depositNonce != nil {
+			result.Nonce = hexutil.Uint64(*depositNonce)
+		}
 	}
 	signer := types.LatestSignerForChainID(chainId.ToBig())
 	var err error
@@ -513,8 +518,8 @@ func newRPCTransactionFromBlockIndex(b *types.Block, index uint64) *RPCTransacti
 */
 
 // newRPCTransactionFromBlockAndTxGivenIndex returns a transaction that will serialize to the RPC representation.
-func newRPCTransactionFromBlockAndTxGivenIndex(b *types.Block, tx types.Transaction, index uint64) *RPCTransaction {
-	return newRPCTransaction(tx, b.Hash(), b.NumberU64(), index, b.BaseFee())
+func newRPCTransactionFromBlockAndTxGivenIndex(b *types.Block, tx types.Transaction, index uint64, depositNonce *uint64) *RPCTransaction {
+	return newRPCTransaction(tx, b.Hash(), b.NumberU64(), index, b.BaseFee(), depositNonce)
 }
 
 /*
