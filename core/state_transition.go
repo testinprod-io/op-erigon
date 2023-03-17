@@ -271,6 +271,10 @@ func (st *StateTransition) preCheck(gasBailout bool) error {
 		st.gas += st.msg.Gas() // Add gas here in order to be able to execute calls.
 		// Don't touch the gas pool for system transactions
 		if st.msg.IsSystemTx() {
+			if st.evm.ChainConfig().IsOptimismRegolith(st.evm.Context().Time) {
+				return fmt.Errorf("%w: address %v", ErrSystemTxNotSupported,
+					st.msg.From().Hex())
+			}
 			return nil
 		}
 		return st.gp.SubGas(st.msg.Gas()) // gas used by deposits may not be used by other txs
@@ -340,7 +344,9 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*Executi
 		// Record deposits as using all their gas (matches the gas pool)
 		// System Transactions are special & are not recorded as using any gas (anywhere)
 		gasUsed := st.msg.Gas()
-		if st.msg.IsSystemTx() {
+		// Regolith changes this behaviour so the actual gas used is reported.
+		// In this case the tx is invalid so is recorded as using all gas.
+		if st.msg.IsSystemTx() && !st.evm.ChainConfig().IsRegolith(st.evm.Context().Time) {
 			gasUsed = 0
 		}
 		result = &ExecutionResult{
@@ -454,7 +460,8 @@ func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*Ex
 		ret, st.gas, vmerr = st.evm.Call(sender, st.to(), st.data, st.gas, st.value, bailout)
 	}
 	// if deposit: skip refunds, skip tipping coinbase
-	if st.msg.IsDepositTx() {
+	// Regolith changes this behaviour to report the actual gasUsed instead of always reporting all gas used.
+	if st.msg.IsDepositTx() && !rules.IsOptimismRegolith {
 		// Record deposits as using all their gas (matches the gas pool)
 		// System Transactions are special & are not recorded as using any gas (anywhere)
 		gasUsed := st.msg.Gas()
@@ -467,6 +474,9 @@ func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*Ex
 			ReturnData: ret,
 		}, nil
 	}
+	// Note for deposit tx there is no ETH refunded for unused gas, but that's taken care of by the fact that gasPrice
+	// is always 0 for deposit tx. So calling refundGas will ensure the gasUsed accounting is correct without actually
+	// changing the sender's balance
 	if refunds {
 		if rules.IsLondon {
 			// After EIP-3529: refunds are capped to gasUsed / 5
@@ -475,6 +485,14 @@ func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*Ex
 			// Before EIP-3529: refunds were capped to gasUsed / 2
 			st.refundGas(params.RefundQuotient)
 		}
+	}
+	if st.msg.IsDepositTx() && rules.IsOptimismRegolith {
+		// Skip coinbase payments for deposit tx in Regolith
+		return &ExecutionResult{
+			UsedGas:    st.gasUsed(),
+			Err:        vmerr,
+			ReturnData: ret,
+		}, nil
 	}
 	effectiveTip := st.gasPrice
 	if rules.IsLondon {

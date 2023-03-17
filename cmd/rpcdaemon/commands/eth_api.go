@@ -341,7 +341,8 @@ type RPCTransaction struct {
 
 // newRPCTransaction returns a transaction that will serialize to the RPC
 // representation, with the given location metadata set (if available).
-func newRPCTransaction(tx types.Transaction, blockHash common.Hash, blockNumber uint64, index uint64, baseFee *big.Int) *RPCTransaction {
+func newRPCTransaction(tx types.Transaction, blockHash common.Hash, blockNumber uint64, index uint64, baseFee *big.Int,
+	depositNonce *uint64) *RPCTransaction {
 	// Determine the signer. For replay-protected transactions, use the most permissive
 	// signer, because we assume that signers are backwards-compatible with old
 	// transactions. For non-protected transactions, the homestead signer signer is used
@@ -399,6 +400,9 @@ func newRPCTransaction(tx types.Transaction, blockHash common.Hash, blockNumber 
 		result.ChainID = nil
 		result.SourceHash = &t.SourceHash
 		result.IsSystemTx = &t.IsSystemTransaction
+		if depositNonce != nil {
+			result.Nonce = hexutil.Uint64(*depositNonce)
+		}
 	}
 	signer := types.LatestSignerForChainID(chainId.ToBig())
 	result.From, _ = tx.Sender(*signer)
@@ -444,7 +448,7 @@ func newRPCPendingTransaction(tx types.Transaction, current *types.Header, confi
 	if current != nil {
 		baseFee = misc.CalcBaseFee(config, current)
 	}
-	return newRPCTransaction(tx, common.Hash{}, 0, 0, baseFee)
+	return newRPCTransaction(tx, common.Hash{}, 0, 0, baseFee, nil)
 }
 
 // newRPCRawTransactionFromBlockIndex returns the bytes of a transaction given a block and a transaction index.

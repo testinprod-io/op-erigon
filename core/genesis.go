@@ -235,6 +235,9 @@ func WriteGenesisBlock(db kv.RwTx, genesis *Genesis, overrideShanghaiTime *big.I
 		if overrideShanghaiTime != nil {
 			config.ShanghaiTime = overrideShanghaiTime
 		}
+		if config.IsOptimism() && config.ChainID != nil && config.ChainID.Cmp(params.OptimismGoerliChainConfig.ChainID) == 0 {
+			config.RegolithTime = params.OptimismGoerliChainConfig.RegolithTime
+		}
 	}
 
 	if (storedHash == libcommon.Hash{}) {
