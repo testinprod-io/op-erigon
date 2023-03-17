@@ -180,7 +180,11 @@ func SpawnMiningCreateBlockStage(s *StageState, tx kv.RwTx, cfg MiningCreateBloc
 		timestamp = cfg.blockBuilderParameters.Timestamp
 	}
 
-	header := core.MakeEmptyHeader(parent, &cfg.chainConfig, timestamp, &cfg.miner.MiningConfig.GasLimit)
+	targetGasLimit := &cfg.miner.MiningConfig.GasLimit
+	if cfg.chainConfig.IsOptimism() {
+		targetGasLimit = cfg.blockBuilderParameters.GasLimit
+	}
+	header := core.MakeEmptyHeader(parent, &cfg.chainConfig, timestamp, targetGasLimit)
 	header.Coinbase = coinbase
 	header.Extra = cfg.miner.MiningConfig.ExtraData
 
