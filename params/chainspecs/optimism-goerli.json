@@ -22,5 +22,6 @@
     "optimism": {
         "eip1559Elasticity": 10,
         "eip1559Denominator": 50
-    }
+    },
+    "regolithTime": 1679079600
 }
