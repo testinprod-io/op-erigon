@@ -509,7 +509,7 @@ func (rs Receipts) EncodeIndex(i int, w *bytes.Buffer) {
 
 // DeriveFields fills the receipts with their computed fields based on consensus
 // data and contextual infos like containing block and transactions.
-func (r Receipts) DeriveFields(config *chain.Config, hash libcommon.Hash, number uint64, txs Transactions, senders []libcommon.Address) error {
+func (r Receipts) DeriveFields(config *chain.Config, hash libcommon.Hash, number uint64, time uint64, txs Transactions, senders []libcommon.Address) error {
 	logIndex := uint(0) // logIdx is unique within the block and starts from 0
 	if len(txs) != len(r) {
 		return fmt.Errorf("transaction and receipt count mismatch, tx count = %d, receipts count = %d", len(txs), len(r))
@@ -564,9 +564,11 @@ func (r Receipts) DeriveFields(config *chain.Config, hash libcommon.Hash, number
 			feeScalar := new(big.Float).Quo(fscalar, fdivisor)
 			for i := 0; i < len(r); i++ {
 				if tx, ok := txs[i].(RollupMessage); ok && !tx.IsDepositTx() {
+					rollupDataGas := tx.RollupDataGas().DataGas(time, config) // Only fake txs for RPC view-calls are 0.
+
 					r[i].L1GasPrice = l1Basefee.ToBig()
-					r[i].L1GasUsed = new(big.Int).SetUint64(tx.RollupDataGas())
-					r[i].L1Fee = L1Cost(tx.RollupDataGas(), l1Basefee, overhead, scalar).ToBig()
+					r[i].L1GasUsed = new(big.Int).SetUint64(rollupDataGas)
+					r[i].L1Fee = L1Cost(rollupDataGas, l1Basefee, overhead, scalar).ToBig()
 					r[i].FeeScalar = feeScalar
 				}
 			}

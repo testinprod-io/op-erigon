@@ -554,6 +554,6 @@ func (tx *AccessListTx) Sender(signer Signer) (libcommon.Address, error) {
 	return addr, nil
 }
 
-func (tx *AccessListTx) RollupDataGas() uint64 {
+func (tx *AccessListTx) RollupDataGas() RollupGasData {
 	return tx.computeRollupGas(tx)
 }

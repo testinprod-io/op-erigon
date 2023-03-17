@@ -1001,7 +1001,7 @@ func ReadReceipts(config *chain.Config, db kv.Tx, block *types.Block, senders []
 	if len(senders) > 0 {
 		block.SendersToTxs(senders)
 	}
-	if err := receipts.DeriveFields(config, block.Hash(), block.NumberU64(), block.Transactions(), senders); err != nil {
+	if err := receipts.DeriveFields(config, block.Hash(), block.NumberU64(), block.Time(), block.Transactions(), senders); err != nil {
 		log.Error("Failed to derive block receipts fields", "hash", block.Hash(), "number", block.NumberU64(), "err", err, "stack", dbg.Stack())
 		return nil
 	}
