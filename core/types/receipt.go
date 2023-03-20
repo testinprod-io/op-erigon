@@ -20,10 +20,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/holiman/uint256"
-	"github.com/ledgerwatch/erigon-lib/chain"
 	"io"
 	"math/big"
+
+	"github.com/holiman/uint256"
+	"github.com/ledgerwatch/erigon-lib/chain"
 
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 
@@ -65,10 +66,6 @@ type Receipt struct {
 	ContractAddress libcommon.Address `json:"contractAddress" codec:"-"`
 	GasUsed         uint64            `json:"gasUsed" gencodec:"required" codec:"-"`
 
-	// DepositNonce was introduced in Regolith to store the actual nonce used by deposit transactions
-	// The state transition process ensures this is only set for Regolith deposit transactions.
-	DepositNonce *uint64 `json:"depositNonce,omitempty"`
-
 	// Inclusion information: These fields provide information about the inclusion of the
 	// transaction corresponding to this receipt.
 	BlockHash        libcommon.Hash `json:"blockHash,omitempty" codec:"-"`
@@ -80,6 +77,13 @@ type Receipt struct {
 	L1GasUsed  *big.Int   `json:"l1GasUsed,omitempty"`
 	L1Fee      *big.Int   `json:"l1Fee,omitempty"`
 	FeeScalar  *big.Float `json:"l1FeeScalar,omitempty"`
+
+	// DepositNonce was introduced in Regolith to store the actual nonce used by deposit transactions
+	// The state transition process ensures this is only set for Regolith deposit transactions.
+	DepositNonce *uint64 `json:"depositNonce,omitempty"`
+	// The position of DepositNonce variable must NOT be changed. If changed, cbor decoding will fail
+
+	// Further fields when added must be appended after the last variable. Watch out for cbor!
 }
 
 type receiptMarshaling struct {
