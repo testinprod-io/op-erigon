@@ -82,8 +82,9 @@ type Receipt struct {
 	// The state transition process ensures this is only set for Regolith deposit transactions.
 	DepositNonce *uint64 `json:"depositNonce,omitempty"`
 	// The position of DepositNonce variable must NOT be changed. If changed, cbor decoding will fail
+	// for the data following previous struct and leading to decoding error(triggering backward imcompatibility).
 
-	// Further fields when added must be appended after the last variable. Watch out for cbor!
+	// Further fields when added must be appended after the last variable. Watch out for cbor.
 }
 
 type receiptMarshaling struct {
