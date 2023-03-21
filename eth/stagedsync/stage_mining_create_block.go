@@ -123,15 +123,24 @@ func SpawnMiningCreateBlockStage(s *StageState, tx kv.RwTx, cfg MiningCreateBloc
 				return err
 			}
 			executionAt = exectedParent.Number.Uint64()
-			err = s.Update(tx, executionAt)
+			parent = exectedParent
+
+			err = stages.SaveStageProgress(tx, stages.MiningCreateBlock, executionAt)
 			if err != nil {
 				return err
 			}
-			parent = exectedParent
-
-			stages.SaveStageProgress(tx, stages.MiningExecution, executionAt)
-			stages.SaveStageProgress(tx, stages.HashState, executionAt)
-			stages.SaveStageProgress(tx, stages.IntermediateHashes, executionAt)
+			err = stages.SaveStageProgress(tx, stages.MiningExecution, executionAt)
+			if err != nil {
+				return err
+			}
+			err = stages.SaveStageProgress(tx, stages.HashState, executionAt)
+			if err != nil {
+				return err
+			}
+			err = stages.SaveStageProgress(tx, stages.IntermediateHashes, executionAt)
+			if err != nil {
+				return err
+			}
 			log.Info("updated executionAt", "executionAt", executionAt)
 		} else {
 			return fmt.Errorf("wrong head block: %x (current) vs %x (requested)", parent.Hash(), cfg.blockBuilderParameters.ParentHash)
