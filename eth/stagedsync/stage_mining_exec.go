@@ -95,7 +95,7 @@ func SpawnMiningExecStage(s *StageState, tx kv.RwTx, cfg MiningExecCfg, quit <-c
 	forceTxs := current.ForceTxs
 	noempty := true
 
-	stateReader := state.NewPlainStateReader(tx)
+	stateReader := state.NewPlainState(tx, current.Header.Number.Uint64(), systemcontracts.SystemContractCodeLookup[cfg.chainConfig.ChainName])
 	ibs := state.New(stateReader)
 	stateWriter := state.NewPlainStateWriter(tx, tx, current.Header.Number.Uint64())
 	if cfg.chainConfig.DAOForkSupport && cfg.chainConfig.DAOForkBlock != nil && cfg.chainConfig.DAOForkBlock.Cmp(current.Header.Number) == 0 {
