@@ -125,20 +125,16 @@ func SpawnMiningCreateBlockStage(s *StageState, tx kv.RwTx, cfg MiningCreateBloc
 			executionAt = exectedParent.Number.Uint64()
 			parent = exectedParent
 
-			err = stages.SaveStageProgress(tx, stages.MiningCreateBlock, executionAt)
-			if err != nil {
+			if err = stages.SaveStageProgress(tx, stages.MiningCreateBlock, executionAt); err != nil {
 				return err
 			}
-			err = stages.SaveStageProgress(tx, stages.MiningExecution, executionAt)
-			if err != nil {
+			if err = stages.SaveStageProgress(tx, stages.MiningExecution, executionAt); err != nil {
 				return err
 			}
-			err = stages.SaveStageProgress(tx, stages.HashState, executionAt)
-			if err != nil {
+			if err = stages.SaveStageProgress(tx, stages.HashState, executionAt); err != nil {
 				return err
 			}
-			err = stages.SaveStageProgress(tx, stages.IntermediateHashes, executionAt)
-			if err != nil {
+			if err = stages.SaveStageProgress(tx, stages.IntermediateHashes, executionAt); err != nil {
 				return err
 			}
 			log.Info("updated executionAt", "executionAt", executionAt)
