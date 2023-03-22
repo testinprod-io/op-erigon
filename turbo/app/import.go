@@ -88,6 +88,20 @@ var importStateCommand = cli.Command{
 The import command imports state from a json form`,
 }
 
+var importDifficultyCommand = cli.Command{
+	Action:    MigrateFlags(importDifficulty),
+	Name:      "import-difficulty",
+	Usage:     "Import a difficulty file",
+	ArgsUsage: "<filename> ",
+	Flags: []cli.Flag{
+		utils.DataDirFlag,
+		utils.ChainFlag,
+	},
+	Category: "BLOCKCHAIN COMMANDS",
+	Description: `
+The import command imports difficulty from an RLP-encoded form.`,
+}
+
 func importReceipts(ctx *cli.Context) error {
 	if len(ctx.Args()) < 1 {
 		utils.Fatalf("This command requires an argument.")
@@ -137,6 +151,31 @@ func importState(ctx *cli.Context) error {
 	}
 
 	if err := ImportState(ethereum, fn, uint64(blockNum)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func importDifficulty(ctx *cli.Context) error {
+	if len(ctx.Args()) < 1 {
+		utils.Fatalf("This command requires an argument.")
+	}
+
+	logger := log.New(ctx)
+
+	nodeCfg := turboNode.NewNodConfigUrfave(ctx)
+	ethCfg := turboNode.NewEthConfigUrfave(ctx, nodeCfg)
+
+	stack := makeConfigNode(nodeCfg)
+	defer stack.Close()
+
+	ethereum, err := eth.New(stack, ethCfg, logger)
+	if err != nil {
+		return err
+	}
+
+	if err := ImportDifficulty(ethereum, ethereum.ChainDB(), ctx.Args().First()); err != nil {
 		return err
 	}
 
@@ -410,6 +449,81 @@ func ImportReceipts(ethereum *eth.Ethereum, chainDB kv.RwDB, fn string) error {
 		}
 	}
 
+	return nil
+}
+
+func ImportDifficulty(ethereum *eth.Ethereum, chainDB kv.RwDB, fn string) error {
+	// Watch for Ctrl-C while the import is running.
+	// If a signal is received, the import will stop at the next batch.
+	interrupt := make(chan os.Signal, 1)
+	stop := make(chan struct{})
+	signal.Notify(interrupt, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(interrupt)
+	defer close(interrupt)
+	go func() {
+		if _, ok := <-interrupt; ok {
+			log.Info("Interrupted during import, stopping at next batch")
+		}
+		close(stop)
+	}()
+	checkInterrupt := func() bool {
+		select {
+		case <-stop:
+			return true
+		default:
+			return false
+		}
+	}
+
+	log.Info("Importing difficulty", "file", fn)
+
+	// Open the file handle and potentially unwrap the gzip stream
+	fh, err := os.Open(fn)
+	if err != nil {
+		return err
+	}
+	defer fh.Close()
+
+	var reader io.Reader = fh
+	if strings.HasSuffix(fn, ".gz") {
+		if reader, err = gzip.NewReader(reader); err != nil {
+			return err
+		}
+	}
+	stream := rlp.NewStream(reader, 0)
+
+	
+	n := 0
+	startNum := 0
+	for batch := 0; ; batch++ {
+		// Load a batch of RLP blocks.
+		if checkInterrupt() {
+			return fmt.Errorf("interrupted")
+		}
+		i := 0
+		var difficultyList []*big.Int
+		for ; i < importBatchSize; i++ {
+			var td *big.Int
+			if err := stream.Decode(&td); errors.Is(err, io.EOF) {
+				break
+			} else if err != nil {
+				return fmt.Errorf("at block %d: %v", n, err)
+			}	
+			difficultyList = append(difficultyList, td)	
+			n++
+		}
+		if i == 0 {
+			break
+		}
+		// Import the batch.
+		if checkInterrupt() {
+			return fmt.Errorf("interrupted")
+		}
+		if err := InsertDifficulty(ethereum, difficultyList, uint64(startNum)); err != nil {
+			return err
+		}
+		startNum += len(difficultyList)
+	}
 	return nil
 }
 
@@ -729,6 +843,31 @@ func InsertReceipts(ethereum *eth.Ethereum, receiptsList []*types.Receipts) erro
 			return errors.New("receipt trie root mismatch. aborting")
 		}
 
+	}
+	tx.Commit()
+
+	return nil
+}
+
+func InsertDifficulty(ethereum *eth.Ethereum, difficultyList []*big.Int, number uint64) error {
+	db := ethereum.ChainDB()
+	tx, err := db.BeginRw(ethereum.SentryCtx())
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	for i, difficulty := range difficultyList {
+		blockNum := number + uint64(i)
+		block, err := rawdb.ReadBlockByNumber(tx, blockNum)
+		if err != nil {
+			return errors.New("block not readable")
+		}
+		err = rawdb.WriteTd(tx, block.Hash(), blockNum, difficulty)
+		if err != nil {
+			log.Error(err.Error())
+			break
+		}
 	}
 	tx.Commit()
 
