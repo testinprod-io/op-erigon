@@ -52,6 +52,7 @@ type MiningExecCfg struct {
 	payloadId   uint64
 	txPool2     *txpool.TxPool
 	txPool2DB   kv.RoDB
+	noTxPool    bool
 }
 
 func StageMiningExecCfg(
@@ -66,6 +67,7 @@ func StageMiningExecCfg(
 	payloadId uint64,
 	txPool2 *txpool.TxPool,
 	txPool2DB kv.RoDB,
+	noTxPool bool,
 ) MiningExecCfg {
 	return MiningExecCfg{
 		db:          db,
@@ -80,6 +82,7 @@ func StageMiningExecCfg(
 		payloadId:   payloadId,
 		txPool2:     txPool2,
 		txPool2DB:   txPool2DB,
+		noTxPool:    noTxPool,
 	}
 }
 
@@ -129,7 +132,7 @@ func SpawnMiningExecStage(s *StageState, tx kv.RwTx, cfg MiningExecCfg, quit <-c
 				return err
 			}
 			NotifyPendingLogs(logPrefix, cfg.notifier, logs)
-		} else {
+		} else if !cfg.noTxPool {
 
 			yielded := mapset.NewSet[[32]byte]()
 			simulationTx := memdb.NewMemoryBatch(tx, cfg.tmpdir)
