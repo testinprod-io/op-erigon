@@ -598,7 +598,7 @@ func (rs Receipts) ProcessFieldsForValidation(block *Block) {
 				rs[i].Logs[j].Index = 0
 			} 
 		}
-		rs[i].Type = 0
+		rs[i].Type = block.Body().Transactions[i].Type()
 		rs[i].BlockHash = block.Hash()
 		rs[i].BlockNumber = block.Number()
 		rs[i].GasUsed = block.GasUsed()
