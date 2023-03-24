@@ -45,10 +45,10 @@ var recoverSendersCommand = cli.Command{
 The recover command recovers Senders table.`,
 }
 
-var recoverLogCommand = cli.Command{
-	Action:    MigrateFlags(recoverLog),
-	Name:      "recover-log",
-	Usage:     "Recover log",
+var recoverLogIndexCommand = cli.Command{
+	Action:    MigrateFlags(recoverLogIndex),
+	Name:      "recover-log-index",
+	Usage:     "Recover log index",
 	ArgsUsage: "<blockNumFirst> <blockNumLast>",
 	Flags: []cli.Flag{
 		&utils.DataDirFlag,
@@ -201,7 +201,7 @@ func RecoverSendersBatch(ethereum *eth.Ethereum, signer *types.Signer, start, en
 	return nil
 }
 
-func recoverLog(ctx *cli.Context) error {
+func recoverLogIndex(ctx *cli.Context) error {
 	if ctx.NArg() != 2 {
 		utils.Fatalf("This command requires an argument.")
 	}
@@ -232,14 +232,14 @@ func recoverLog(ctx *cli.Context) error {
 		return err
 	}
 
-	if err := RecoverLog(ethereum, uint64(first), uint64(last)); err != nil {
+	if err := RecoverLogIndex(ethereum, uint64(first), uint64(last)); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func RecoverLog(ethereum *eth.Ethereum, first, last uint64) error {
+func RecoverLogIndex(ethereum *eth.Ethereum, first, last uint64) error {
 	// Watch for Ctrl-C while the import is running.
 	// If a signal is received, the import will stop at the next batch.
 	interrupt := make(chan os.Signal, 1)
@@ -262,7 +262,7 @@ func RecoverLog(ethereum *eth.Ethereum, first, last uint64) error {
 		}
 	}
 
-	log.Info("Recovering Log")
+	log.Info("Recovering Log Index")
 	n := first
 	startTime, reportedTime := time.Now(), time.Now()
 	for batch := 0; ; batch++ {
@@ -274,7 +274,7 @@ func RecoverLog(ethereum *eth.Ethereum, first, last uint64) error {
 		if end > last {
 			end = last
 		}
-		if err := RecoverLogBatch(ethereum, start, end); err != nil {
+		if err := RecoverLogIndexBatch(ethereum, start, end); err != nil {
 			return err
 		}
 		if end == last {
@@ -283,14 +283,14 @@ func RecoverLog(ethereum *eth.Ethereum, first, last uint64) error {
 		n += recoverBatchSize
 
 		if time.Since(reportedTime) >= 8*time.Second {
-			log.Info("Recovering Log", "recovered", start, "elapsed", time.Duration(time.Since(startTime)))
+			log.Info("Recovering Log Index", "recovered", start, "elapsed", time.Duration(time.Since(startTime)))
 			reportedTime = time.Now()
 		}
 	}
 	return nil
 }
 
-func RecoverLogBatch(ethereum *eth.Ethereum, start, end uint64) error {
+func RecoverLogIndexBatch(ethereum *eth.Ethereum, start, end uint64) error {
 	db := ethereum.ChainDB()
 	tx, err := db.BeginRw(ethereum.SentryCtx())
 	if err != nil {
