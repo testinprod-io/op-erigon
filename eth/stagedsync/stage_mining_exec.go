@@ -622,32 +622,5 @@ func unwindMiningExecutionStage(u *UnwindState, s *StageState, tx kv.RwTx, ctx c
 		return err
 	}
 
-	//if err := rawdb.TruncateReceipts(tx, u.UnwindPoint+1); err != nil {
-	//	return fmt.Errorf("truncate receipts: %w", err)
-	//}
-	//if err := rawdb.TruncateBorReceipts(tx, u.UnwindPoint+1); err != nil {
-	//	return fmt.Errorf("truncate bor receipts: %w", err)
-	//}
-	//if err := rawdb.DeleteNewerEpochs(tx, u.UnwindPoint+1); err != nil {
-	//	return fmt.Errorf("delete newer epochs: %w", err)
-	//}
-	//
-	//// Truncate CallTraceSet
-	//keyStart := hexutility.EncodeTs(u.UnwindPoint + 1)
-	//c, err := tx.RwCursorDupSort(kv.CallTraceSet)
-	//if err != nil {
-	//	return err
-	//}
-	//defer c.Close()
-	//for k, _, err := c.Seek(keyStart); k != nil; k, _, err = c.NextNoDup() {
-	//	if err != nil {
-	//		return err
-	//	}
-	//	err = c.DeleteCurrentDuplicates()
-	//	if err != nil {
-	//		return err
-	//	}
-	//}
-
 	return nil
 }
