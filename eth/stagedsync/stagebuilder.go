@@ -49,8 +49,10 @@ func MiningStages(
 			Forward: func(firstCycle bool, badBlockUnwind bool, s *StageState, u Unwinder, tx kv.RwTx, quiet bool) error {
 				return SpawnMiningExecStage(s, tx, execCfg, ctx.Done())
 			},
-			Unwind: func(firstCycle bool, u *UnwindState, s *StageState, tx kv.RwTx) error { return nil },
-			Prune:  func(firstCycle bool, u *PruneState, tx kv.RwTx) error { return nil },
+			Unwind: func(firstCycle bool, u *UnwindState, s *StageState, tx kv.RwTx) error {
+				return UnwindMiningExecutionStage(u, s, tx, ctx, execCfg)
+			},
+			Prune: func(firstCycle bool, u *PruneState, tx kv.RwTx) error { return nil },
 		},
 		{
 			ID:          stages.HashState,
@@ -58,8 +60,10 @@ func MiningStages(
 			Forward: func(firstCycle bool, badBlockUnwind bool, s *StageState, u Unwinder, tx kv.RwTx, quiet bool) error {
 				return SpawnHashStateStage(s, tx, hashStateCfg, ctx, quiet)
 			},
-			Unwind: func(firstCycle bool, u *UnwindState, s *StageState, tx kv.RwTx) error { return nil },
-			Prune:  func(firstCycle bool, u *PruneState, tx kv.RwTx) error { return nil },
+			Unwind: func(firstCycle bool, u *UnwindState, s *StageState, tx kv.RwTx) error {
+				return UnwindHashStateStage(u, s, tx, hashStateCfg, ctx)
+			},
+			Prune: func(firstCycle bool, u *PruneState, tx kv.RwTx) error { return nil },
 		},
 		{
 			ID:          stages.IntermediateHashes,
@@ -72,8 +76,10 @@ func MiningStages(
 				createBlockCfg.miner.MiningBlock.Header.Root = stateRoot
 				return nil
 			},
-			Unwind: func(firstCycle bool, u *UnwindState, s *StageState, tx kv.RwTx) error { return nil },
-			Prune:  func(firstCycle bool, u *PruneState, tx kv.RwTx) error { return nil },
+			Unwind: func(firstCycle bool, u *UnwindState, s *StageState, tx kv.RwTx) error {
+				return UnwindIntermediateHashesStage(u, s, tx, trieCfg, ctx)
+			},
+			Prune: func(firstCycle bool, u *PruneState, tx kv.RwTx) error { return nil },
 		},
 		{
 			ID:          stages.MiningFinish,

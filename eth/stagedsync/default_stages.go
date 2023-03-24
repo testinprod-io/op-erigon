@@ -384,5 +384,9 @@ var DefaultPruneOrder = PruneOrder{
 	stages.Headers,
 }
 
-var MiningUnwindOrder = UnwindOrder{} // nothing to unwind in mining - because mining does not commit db changes
-var MiningPruneOrder = PruneOrder{}   // nothing to unwind in mining - because mining does not commit db changes
+var MiningUnwindOrder = UnwindOrder{
+	stages.HashState,
+	stages.IntermediateHashes,
+	stages.MiningExecution,
+}
+var MiningPruneOrder = PruneOrder{} // nothing to unwind in mining - because mining does not commit db changes
