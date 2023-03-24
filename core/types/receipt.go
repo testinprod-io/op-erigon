@@ -25,6 +25,7 @@ import (
 
 	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/erigon-lib/chain"
+	"github.com/ledgerwatch/erigon-lib/common"
 
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 
@@ -582,4 +583,26 @@ func (r Receipts) DeriveFields(config *chain.Config, hash libcommon.Hash, number
 		}
 	}
 	return nil
+}
+
+// ProcessFieldsForValidation drops and populates field for receipt trie root calculation
+func (rs Receipts) ProcessFieldsForValidation(block *Block) {
+	for i := 0; i < rs.Len(); i++ {
+		txHash := common.Hash{}
+		if len(rs[i].Logs) >= 1 {
+			txHash = rs[i].Logs[0].TxHash
+			for j := 0; j < len(rs[i].Logs); j++ {
+				rs[i].Logs[j].BlockNumber = 0
+				rs[i].Logs[j].TxHash = common.Hash{}
+				rs[i].Logs[j].TxIndex = 0
+				rs[i].Logs[j].Index = 0
+			} 
+		}
+		rs[i].Type = 0
+		rs[i].BlockHash = block.Hash()
+		rs[i].BlockNumber = block.Number()
+		rs[i].GasUsed = block.GasUsed()
+		rs[i].TxHash = txHash
+		rs[i].Bloom = BytesToBloom(LogsBloom(rs[i].Logs))
+	}
 }

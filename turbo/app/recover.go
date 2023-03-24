@@ -298,22 +298,20 @@ func RecoverLogBatch(ethereum *eth.Ethereum, start, end uint64) error {
 	}
 	defer tx.Rollback()
 
-	// receipt sanity check
-	// for nr := start; nr <= end; nr++ {
-	// 	block, err := rawdb.ReadBlockByNumber(tx, nr)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	receipts := rawdb.ReadRawReceipts(tx, nr)
-
-	// 	receiptHash := types.DeriveSha(receipts)
-	// 	if receiptHash != block.ReceiptHash() {
-	// 		log.Error("receipt root mismatch", "blockNum", nr, "receiptHash", receiptHash.Hex(), "newReceiptHash", block.ReceiptHash().Hex())
-	// 		return errors.New("receipt trie root mismatch. aborting")
-	// 	}
-	// }
-
-	return nil
+	// receipt sanity check before log recovery
+	for nr := start; nr <= end; nr++ {
+		block, err := rawdb.ReadBlockByNumber(tx, nr)
+		if err != nil {
+			return err
+		}
+		receipts := rawdb.ReadRawReceipts(tx, nr)
+		receipts.ProcessFieldsForValidation(block)
+		receiptHash := types.DeriveSha(receipts)
+		if receiptHash != block.ReceiptHash() {
+			log.Error("receipt root mismatch", "blockNum", nr, "receiptHash", receiptHash.Hex(), "newReceiptHash", block.ReceiptHash().Hex())
+			return fmt.Errorf("receipt trie root mismatch. blockNum = %d", nr)
+		}
+	}
 
 	pm := prune.DefaultMode
 	dirs := ethereum.Dirs()
