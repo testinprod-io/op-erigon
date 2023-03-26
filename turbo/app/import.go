@@ -339,21 +339,6 @@ func ImportState(ethereum *eth.Ethereum, fn string, blockNumber uint64) error {
 		if len(account.Code) > 0 || len(account.Storage) > 0 {
 			statedb.SetIncarnation(address, state.FirstContractIncarnation)
 		}
-
-		// TODO: check storage trie root
-		// newAccount, err := stateReader.ReadAccountData(address)
-		// if err != nil {
-		// 	return err
-		// }
-		// tempStorageRoot := newAccount.Root.Bytes()
-		// hexStorageRoot := account.Root
-		// storageRoot, err := hex.DecodeString(hexStorageRoot)
-		// if err != nil {
-		//  	return errors.New("storage root hexdecode failure")
-		// }
-		// if !bytes.Equal(tempStorageRoot, storageRoot) {
-		// 	return fmt.Errorf("storage root mismatch, expected %x, got %x", tempStorageRoot, storageRoot)
-		// }
 	}
 
 	if err := statedb.FinalizeTx(&params.Rules{}, w); err != nil {
@@ -392,7 +377,9 @@ func ImportState(ethereum *eth.Ethereum, fn string, blockNumber uint64) error {
 	}
 
 	// 4061224 block does not have tx, so no tx receipt
-	rawdb.WriteReceipts(tx, blockNumber, nil)
+	if err != rawdb.WriteReceipts(tx, blockNumber, nil) {
+		return err
+	}
 
 	if err := tx.Commit(); err != nil {
 		return err
