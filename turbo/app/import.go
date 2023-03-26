@@ -154,6 +154,10 @@ func importState(ctx *cli.Context) error {
 		return err
 	}
 
+	if err := SanityCheckStorageTrie(ethereum, fn, uint64(blockNum)); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -203,6 +207,66 @@ func (ia *ImportAlloc) UnmarshalJson(data []byte) error {
 	for addr, a := range m {
 		(*ia)[common.Address(addr)] = a
 	}
+	return nil
+}
+
+func SanityCheckStorageTrie(ethereum *eth.Ethereum, fn string, blockNumber uint64) error {
+	log.Info("Sanity check storage trie", "file", fn)
+	log.Info("Sanity check storage trie for block number", "blockNumber", blockNumber)
+	fh, err := os.Open(fn)
+	if err != nil {
+		return err
+	}
+
+	// TODO: make as json stream
+	decoder := json.NewDecoder(fh)
+	ia := make(ImportAlloc)
+
+	if err := decoder.Decode(&ia); err != nil {
+		return err
+	}
+
+	db := ethereum.ChainDB()
+	tx, err := db.BeginRw(ethereum.SentryCtx())
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	r := state.NewDbStateReader(tx)
+	statedb := state.New(r)
+
+	idx := 0
+	for address, account := range ia {
+		idx += 1
+		// fmt.Println(idx, address.Hex())
+
+		incarnation := statedb.GetIncarnation(address)
+		newStorageTrie := trie.New(common.Hash{})
+		if err := state.WalkAsOfStorage(tx,
+			address,
+			incarnation,
+			common.Hash{}, /* startLocation */
+			blockNumber + 1, /* do not know why adding one up, but it just works */
+			func(_, loc, vs []byte) (bool, error) {
+				h, _ := common.HashData(loc)
+				newStorageTrie.Update(h.Bytes(), common.CopyBytes(vs))
+				return true, nil
+			}); err != nil {
+			return fmt.Errorf("walking over storage for %x: %w", address, err)
+		}
+		newStorageTrieRoot := newStorageTrie.Root()
+		hexStorageRoot := account.Root
+		storageRoot, err := hex.DecodeString(hexStorageRoot)
+		
+		if err != nil {
+		 	return errors.New("storage root hexdecode failure")
+		}
+		if !bytes.Equal(newStorageTrieRoot, storageRoot) {
+			return fmt.Errorf("storage root mismatch, expected %x, got %x", newStorageTrieRoot, storageRoot)
+		}	
+	}
+	
 	return nil
 }
 
