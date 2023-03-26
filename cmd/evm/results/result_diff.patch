@@ -1,0 +1,20 @@
+2c2
+<  "stateRoot": "0xb371e32a77b2de3a2183811ed45cdcd2de4b3ca05a18558408cccb99fa429363",
+---
+>  "stateRoot": "0xd06de5cc8a41386d6ed2562e7de61e8177e883cb003dce74d5cf254e16f19c1a",
+4c4
+<  "receiptsRoot": "0x0e938975ed4922cda0937076b821bc9d4f75b72d13341873004219ddcf67cf3a",
+---
+>  "receiptsRoot": "0x942f51b00e01892f36606658b3c21150a666443a833c147c5a7ef7946af472c4",
+11c11
+<    "cumulativeGasUsed": "0x3fc0f",
+---
+>    "cumulativeGasUsed": "0x3b943",
+161c161
+<    "gasUsed": "0x3fc0f",
+---
+>    "gasUsed": "0x3b943",
+168c168
+<  "gasUsed": "0x3fc0f"
+---
+>  "gasUsed": "0x3b943"
