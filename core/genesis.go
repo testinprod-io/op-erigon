@@ -43,7 +43,6 @@ import (
 	"github.com/ledgerwatch/erigon/crypto"
 	"github.com/ledgerwatch/erigon/params"
 	"github.com/ledgerwatch/erigon/params/networkname"
-	"github.com/ledgerwatch/erigon/turbo/trie"
 	"github.com/ledgerwatch/log/v3"
 )
 
@@ -351,10 +350,10 @@ func (g *Genesis) ToBlock() (*types.Block, *state.IntraBlockState, error) {
 		if err := statedb.FinalizeTx(&params.Rules{}, w); err != nil {
 			panic(err)
 		}
-		root, err = trie.CalcRoot("genesis", tx)
-		if err != nil {
-			panic(err)
-		}
+		// override
+		// athough no alloc is present force state root to be updated
+		// taking care of not to interfere with bedrock states
+		root = common.HexToHash("0x9e6b478a1cd331a979c39e4bddf42c676bcf5a63382f898dc441fe3fe5eb0837")		
 	}()
 	wg.Wait()
 
