@@ -58,14 +58,14 @@ func sanityCheck(ctx *cli.Context) error {
 		utils.Fatalf("Export error in parsing parameters: block number not an integer\n")
 	}
 
-	if err := SanityCheckStorageTrie(ethereum, uint64(blockNum)); err != nil {
+	if err := SanityCheckWorldStateTrie(ethereum, uint64(blockNum)); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func SanityCheckStorageTrie(ethereum *eth.Ethereum, blockNumber uint64) error {
+func SanityCheckWorldStateTrie(ethereum *eth.Ethereum, blockNumber uint64) error {
 	log.Info("Sanity check for block number", "blockNumber", blockNumber)
 
 	startAddress := libcommon.Address{}
