@@ -20,11 +20,26 @@ import (
 	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/erigon-lib/chain"
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
+	"github.com/ledgerwatch/erigon/params"
 	"math/big"
 )
 
+type RollupGasData struct {
+	Zeroes, Ones uint64
+}
+
+func (r RollupGasData) DataGas(time uint64, cfg *chain.Config) (gas uint64) {
+	gas = r.Zeroes * params.TxDataZeroGas
+	if cfg.IsRegolith(time) {
+		gas += r.Ones * params.TxDataNonZeroGasEIP2028
+	} else {
+		gas += (r.Ones + 68) * params.TxDataNonZeroGasEIP2028
+	}
+	return gas
+}
+
 type RollupMessage interface {
-	RollupDataGas() uint64
+	RollupDataGas() RollupGasData
 	IsDepositTx() bool
 }
 
@@ -34,7 +49,7 @@ type StateGetter interface {
 
 // L1CostFunc is used in the state transition to determine the cost of a rollup message.
 // Returns nil if there is no cost.
-type L1CostFunc func(blockNum uint64, msg RollupMessage) *uint256.Int
+type L1CostFunc func(blockNum uint64, blockTime uint64, msg RollupMessage) *uint256.Int
 
 var (
 	L1BaseFeeSlot = libcommon.BigToHash(big.NewInt(1))
@@ -50,8 +65,8 @@ var L1BlockAddr = libcommon.HexToAddress("0x420000000000000000000000000000000000
 func NewL1CostFunc(config *chain.Config, statedb StateGetter) L1CostFunc {
 	cacheBlockNum := ^uint64(0)
 	var l1BaseFee, overhead, scalar uint256.Int
-	return func(blockNum uint64, msg RollupMessage) *uint256.Int {
-		rollupDataGas := msg.RollupDataGas() // Only fake txs for RPC view-calls are 0.
+	return func(blockNum uint64, blockTime uint64, msg RollupMessage) *uint256.Int {
+		rollupDataGas := msg.RollupDataGas().DataGas(blockTime, config) // Only fake txs for RPC view-calls are 0.
 		if config.Optimism == nil || msg.IsDepositTx() || rollupDataGas == 0 {
 			return nil
 		}

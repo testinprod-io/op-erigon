@@ -818,11 +818,15 @@ func marshalReceipt(receipt *types.Receipt, txn types.Transaction, chainConfig *
 		fields["contractAddress"] = receipt.ContractAddress
 	}
 
-	if chainConfig.Optimism != nil && txn.Type() != types.DepositTxType {
-		fields["l1GasPrice"] = hexutil.Big(*receipt.L1GasPrice)
-		fields["l1GasUsed"] = hexutil.Big(*receipt.L1GasUsed)
-		fields["l1Fee"] = hexutil.Big(*receipt.L1Fee)
-		fields["l1FeeScalar"] = receipt.FeeScalar
+	if chainConfig.IsOptimism() {
+		if txn.Type() != types.DepositTxType {
+			fields["l1GasPrice"] = hexutil.Big(*receipt.L1GasPrice)
+			fields["l1GasUsed"] = hexutil.Big(*receipt.L1GasUsed)
+			fields["l1Fee"] = hexutil.Big(*receipt.L1Fee)
+			fields["l1FeeScalar"] = receipt.FeeScalar
+		} else if receipt.DepositNonce != nil {
+			fields["depositNonce"] = hexutil.Uint64(*receipt.DepositNonce)
+		}
 	}
 
 	return fields

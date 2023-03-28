@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/ledgerwatch/erigon-lib/chain"
@@ -18,7 +19,7 @@ import (
 	"github.com/ledgerwatch/erigon/turbo/shards"
 )
 
-func (api *OtterscanAPIImpl) searchTraceBlock(ctx context.Context, wg *sync.WaitGroup, addr common.Address, chainConfig *chain.Config, idx int, bNum uint64, results []*TransactionsWithReceipts) {
+func (api *OtterscanAPIImpl) searchTraceBlock(ctx, traceCtx context.Context, traceCtxCancel context.CancelFunc, wg *sync.WaitGroup, errCh chan<- error, addr common.Address, chainConfig *chain.Config, idx int, bNum uint64, results []*TransactionsWithReceipts) {
 	defer wg.Done()
 
 	// Trace block for Txs
@@ -30,7 +31,19 @@ func (api *OtterscanAPIImpl) searchTraceBlock(ctx context.Context, wg *sync.Wait
 	}
 	defer newdbtx.Rollback()
 
-	_, result, err := api.traceBlock(newdbtx, ctx, bNum, addr, chainConfig)
+	found, result, err := api.traceBlock(newdbtx, ctx, bNum, addr, chainConfig)
+	if !found {
+		// tx execution result and callFromToProvider() result mismatch
+		err = fmt.Errorf("search trace failure: inconsistency at block %d", bNum)
+		select {
+		case <-traceCtx.Done():
+			return 
+		case errCh <- err:
+		default:
+		}
+		traceCtxCancel()
+		return 
+	}
 	if err != nil {
 		log.Error("Search trace error", "err", err)
 		results[idx] = nil
@@ -79,6 +92,7 @@ func (api *OtterscanAPIImpl) traceBlock(dbtx kv.Tx, ctx context.Context, blockNu
 	header := block.Header()
 	rules := chainConfig.Rules(block.NumberU64(), header.Time)
 	found := false
+	depositNonces := rawdb.ReadDepositNonces(dbtx, blockNum)
 	for idx, tx := range block.Transactions() {
 		ibs.Prepare(tx.Hash(), block.Hash(), idx)
 
@@ -86,6 +100,7 @@ func (api *OtterscanAPIImpl) traceBlock(dbtx kv.Tx, ctx context.Context, blockNu
 
 		tracer := NewTouchTracer(searchAddr)
 		BlockContext := core.NewEVMBlockContext(header, core.GetHashFn(header, getHeader), engine, nil)
+		BlockContext.L1CostFunc = types.NewL1CostFunc(chainConfig, ibs)
 		TxContext := core.NewEVMTxContext(msg)
 
 		vmenv := vm.NewEVM(BlockContext, TxContext, ibs, chainConfig, vm.Config{Debug: true, Tracer: tracer})
@@ -95,7 +110,7 @@ func (api *OtterscanAPIImpl) traceBlock(dbtx kv.Tx, ctx context.Context, blockNu
 		_ = ibs.FinalizeTx(rules, cachedWriter)
 
 		if tracer.Found {
-			rpcTx := newRPCTransaction(tx, block.Hash(), blockNum, uint64(idx), block.BaseFee())
+			rpcTx := newRPCTransaction(tx, block.Hash(), blockNum, uint64(idx), block.BaseFee(), depositNonces[idx])
 			mReceipt := marshalReceipt(blockReceipts[idx], tx, chainConfig, block.HeaderNoCopy(), tx.Hash(), true)
 			mReceipt["timestamp"] = block.Time()
 			rpcTxs = append(rpcTxs, rpcTx)

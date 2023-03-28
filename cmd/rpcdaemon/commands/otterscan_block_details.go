@@ -19,6 +19,10 @@ func (api *OtterscanAPIImpl) GetBlockDetails(ctx context.Context, number rpc.Blo
 	defer tx.Rollback()
 
 	b, senders, err := api.getBlockWithSenders(ctx, number, tx)
+	if len(senders) != b.Transactions().Len() {
+		// fallback; set senders from inspecting tx
+		senders = b.Body().SendersFromTxs()
+	}
 	if err != nil {
 		return nil, err
 	}

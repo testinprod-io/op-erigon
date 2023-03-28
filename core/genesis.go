@@ -235,6 +235,9 @@ func WriteGenesisBlock(db kv.RwTx, genesis *Genesis, overrideShanghaiTime *big.I
 		if overrideShanghaiTime != nil {
 			config.ShanghaiTime = overrideShanghaiTime
 		}
+		if config.IsOptimism() && config.ChainID != nil && config.ChainID.Cmp(params.OptimismGoerliChainConfig.ChainID) == 0 {
+			config.RegolithTime = params.OptimismGoerliChainConfig.RegolithTime
+		}
 	}
 
 	if (storedHash == libcommon.Hash{}) {
@@ -746,7 +749,7 @@ func DefaultOptimismGoerliGenesisBlock() *Genesis {
 		Config:     params.OptimismGoerliChainConfig,
 		Difficulty: big.NewInt(1),
 		Mixhash:    libcommon.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"),
-		ExtraData:  hexutil.MustDecode("0x000000000000000000000000000000000000000000000000000000000000000027770a9694e4b4b1e130ab91bc327c36855f612e0000000000000000000000000000000000000000000000000000"),
+		ExtraData:  hexutil.MustDecode("0x000000000000000000000000000000000000000000000000000000000000000027770a9694e4b4b1e130ab91bc327c36855f612e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
 		GasLimit:   15000000,
 		Alloc:      readPrealloc("allocs/optimism-goerli.json"),
 	}

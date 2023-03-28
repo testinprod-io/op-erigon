@@ -5,11 +5,13 @@ on:
       - devel
       - alpha
       - stable
+      - op-erigon
   pull_request:
     branches:
       - devel
       - alpha
       - stable
+      - op-erigon
     types:
       - opened
       - reopened

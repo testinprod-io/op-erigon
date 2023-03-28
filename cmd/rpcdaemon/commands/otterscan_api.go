@@ -318,7 +318,8 @@ func (api *OtterscanAPIImpl) searchTransactionsBeforeV3(tx kv.TemporalTx, ctx co
 		if err != nil {
 			return nil, err
 		}
-		rpcTx := newRPCTransaction(txn, blockHash, blockNum, uint64(txIndex), header.BaseFee)
+		depositNonces := rawdb.ReadDepositNonces(tx, blockNum)
+		rpcTx := newRPCTransaction(txn, blockHash, blockNum, uint64(txIndex), header.BaseFee, depositNonces[txIndex])
 		txs = append(txs, rpcTx)
 		receipt := &types.Receipt{
 			Type: txn.Type(), CumulativeGasUsed: res.UsedGas,
@@ -425,6 +426,9 @@ func (api *OtterscanAPIImpl) SearchTransactionsAfter(ctx context.Context, addr c
 
 func (api *OtterscanAPIImpl) traceBlocks(ctx context.Context, addr common.Address, chainConfig *chain.Config, pageSize, resultCount uint16, callFromToProvider BlockProvider) ([]*TransactionsWithReceipts, bool, error) {
 	var wg sync.WaitGroup
+	errCh := make(chan error, 1)
+	traceCtx, traceCtxCancel := context.WithCancel(context.Background())
+	defer traceCtxCancel()
 
 	// Estimate the common case of user address having at most 1 interaction/block and
 	// trace N := remaining page matches as number of blocks to trace concurrently.
@@ -448,10 +452,12 @@ func (api *OtterscanAPIImpl) traceBlocks(ctx context.Context, addr common.Addres
 
 		wg.Add(1)
 		totalBlocksTraced++
-		go api.searchTraceBlock(ctx, &wg, addr, chainConfig, i, nextBlock, results)
+		go api.searchTraceBlock(ctx, traceCtx, traceCtxCancel, &wg, errCh, addr, chainConfig, i, nextBlock, results)
 	}
 	wg.Wait()
-
+	if traceCtx.Err() != nil && len(errCh) == 1 {
+		return nil, false, <-errCh
+	}
 	return results[:totalBlocksTraced], hasMore, nil
 }
 
@@ -461,7 +467,8 @@ func (api *OtterscanAPIImpl) delegateGetBlockByNumber(tx kv.Tx, b *types.Block, 
 		return nil, err
 	}
 	additionalFields := make(map[string]interface{})
-	response, err := ethapi.RPCMarshalBlock(b, inclTx, inclTx, additionalFields)
+	depositNonces := rawdb.ReadDepositNonces(tx, uint64(number.Int64()))
+	response, err := ethapi.RPCMarshalBlock(b, inclTx, inclTx, additionalFields, depositNonces)
 	if !inclTx {
 		delete(response, "transactions") // workaround for https://github.com/ledgerwatch/erigon/issues/4989#issuecomment-1218415666
 	}
@@ -570,6 +577,10 @@ func (api *OtterscanAPIImpl) GetBlockTransactions(ctx context.Context, number rp
 		return nil, err
 	}
 
+	if len(senders) != b.Transactions().Len() {
+		// fallback; set senders from inspecting tx
+		senders = b.Body().SendersFromTxs()
+	}
 	// Receipts
 	receipts, err := api.getReceipts(ctx, tx, chainConfig, b, senders)
 	if err != nil {

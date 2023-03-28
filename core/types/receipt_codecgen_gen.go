@@ -68,7 +68,8 @@ func (x *Receipt) CodecEncodeSelf(e *codec1978.Encoder) {
 			var yyn8 bool = x.L1GasUsed == nil
 			var yyn9 bool = x.L1Fee == nil
 			var yyn10 bool = x.FeeScalar == nil
-			z.EncWriteArrayStart(8)
+			var yyn11 bool = x.DepositNonce == nil
+			z.EncWriteArrayStart(9)
 			z.EncWriteArrayElem()
 			r.EncodeUint(uint64(x.Type))
 			z.EncWriteArrayElem()
@@ -124,6 +125,14 @@ func (x *Receipt) CodecEncodeSelf(e *codec1978.Encoder) {
 				} else {
 					z.EncFallback(x.FeeScalar)
 				}
+			}
+			if yyn11 {
+				z.EncWriteArrayElem()
+				r.EncodeNil()
+			} else {
+				z.EncWriteArrayElem()
+				yy20 := *x.DepositNonce
+				r.EncodeUint(uint64(yy20))
 			}
 			z.EncWriteArrayEnd()
 		}
@@ -246,6 +255,17 @@ func (x *Receipt) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 					z.DecFallback(x.FeeScalar, false)
 				}
 			}
+		case "DepositNonce":
+			if r.TryNil() {
+				if x.DepositNonce != nil { // remove the if-true
+					x.DepositNonce = nil
+				}
+			} else {
+				if x.DepositNonce == nil {
+					x.DepositNonce = new(uint64)
+				}
+				*x.DepositNonce = (uint64)(r.DecodeUint64())
+			}
 		default:
 			z.DecStructFieldNotFound(-1, yys3)
 		} // end switch yys3
@@ -256,64 +276,64 @@ func (x *Receipt) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer2
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
-	var yyj17 int
-	var yyb17 bool
-	var yyhl17 bool = l >= 0
-	yyj17++
-	if yyhl17 {
-		yyb17 = yyj17 > l
+	var yyj19 int
+	var yyb19 bool
+	var yyhl19 bool = l >= 0
+	yyj19++
+	if yyhl19 {
+		yyb19 = yyj19 > l
 	} else {
-		yyb17 = z.DecCheckBreak()
+		yyb19 = z.DecCheckBreak()
 	}
-	if yyb17 {
+	if yyb19 {
 		z.DecReadArrayEnd()
 		return
 	}
 	z.DecReadArrayElem()
 	x.Type = (uint8)(z.C.UintV(r.DecodeUint64(), 8))
-	yyj17++
-	if yyhl17 {
-		yyb17 = yyj17 > l
+	yyj19++
+	if yyhl19 {
+		yyb19 = yyj19 > l
 	} else {
-		yyb17 = z.DecCheckBreak()
+		yyb19 = z.DecCheckBreak()
 	}
-	if yyb17 {
+	if yyb19 {
 		z.DecReadArrayEnd()
 		return
 	}
 	z.DecReadArrayElem()
 	x.PostState = r.DecodeBytes(([]byte)(x.PostState), false)
-	yyj17++
-	if yyhl17 {
-		yyb17 = yyj17 > l
+	yyj19++
+	if yyhl19 {
+		yyb19 = yyj19 > l
 	} else {
-		yyb17 = z.DecCheckBreak()
+		yyb19 = z.DecCheckBreak()
 	}
-	if yyb17 {
+	if yyb19 {
 		z.DecReadArrayEnd()
 		return
 	}
 	z.DecReadArrayElem()
 	x.Status = (uint64)(r.DecodeUint64())
-	yyj17++
-	if yyhl17 {
-		yyb17 = yyj17 > l
+	yyj19++
+	if yyhl19 {
+		yyb19 = yyj19 > l
 	} else {
-		yyb17 = z.DecCheckBreak()
+		yyb19 = z.DecCheckBreak()
 	}
-	if yyb17 {
+	if yyb19 {
 		z.DecReadArrayEnd()
 		return
 	}
 	z.DecReadArrayElem()
 	x.CumulativeGasUsed = (uint64)(r.DecodeUint64())
-	yyj17++
-	if yyhl17 {
-		yyb17 = yyj17 > l
+	yyj19++
+	if yyhl19 {
+		yyb19 = yyj19 > l
 	} else {
-		yyb17 = z.DecCheckBreak()
+		yyb19 = z.DecCheckBreak()
 	}
-	if yyb17 {
+	if yyb19 {
 		z.DecReadArrayEnd()
 		return
 	}
@@ -332,13 +352,13 @@ func (x *Receipt) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 			z.DecFallback(x.L1GasPrice, false)
 		}
 	}
-	yyj17++
-	if yyhl17 {
-		yyb17 = yyj17 > l
+	yyj19++
+	if yyhl19 {
+		yyb19 = yyj19 > l
 	} else {
-		yyb17 = z.DecCheckBreak()
+		yyb19 = z.DecCheckBreak()
 	}
-	if yyb17 {
+	if yyb19 {
 		z.DecReadArrayEnd()
 		return
 	}
@@ -357,13 +377,13 @@ func (x *Receipt) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 			z.DecFallback(x.L1GasUsed, false)
 		}
 	}
-	yyj17++
-	if yyhl17 {
-		yyb17 = yyj17 > l
+	yyj19++
+	if yyhl19 {
+		yyb19 = yyj19 > l
 	} else {
-		yyb17 = z.DecCheckBreak()
+		yyb19 = z.DecCheckBreak()
 	}
-	if yyb17 {
+	if yyb19 {
 		z.DecReadArrayEnd()
 		return
 	}
@@ -382,13 +402,13 @@ func (x *Receipt) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 			z.DecFallback(x.L1Fee, false)
 		}
 	}
-	yyj17++
-	if yyhl17 {
-		yyb17 = yyj17 > l
+	yyj19++
+	if yyhl19 {
+		yyb19 = yyj19 > l
 	} else {
-		yyb17 = z.DecCheckBreak()
+		yyb19 = z.DecCheckBreak()
 	}
-	if yyb17 {
+	if yyb19 {
 		z.DecReadArrayEnd()
 		return
 	}
@@ -407,18 +427,39 @@ func (x *Receipt) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 			z.DecFallback(x.FeeScalar, false)
 		}
 	}
-	for {
-		yyj17++
-		if yyhl17 {
-			yyb17 = yyj17 > l
-		} else {
-			yyb17 = z.DecCheckBreak()
+	yyj19++
+	if yyhl19 {
+		yyb19 = yyj19 > l
+	} else {
+		yyb19 = z.DecCheckBreak()
+	}
+	if yyb19 {
+		z.DecReadArrayEnd()
+		return
+	}
+	z.DecReadArrayElem()
+	if r.TryNil() {
+		if x.DepositNonce != nil { // remove the if-true
+			x.DepositNonce = nil
 		}
-		if yyb17 {
+	} else {
+		if x.DepositNonce == nil {
+			x.DepositNonce = new(uint64)
+		}
+		*x.DepositNonce = (uint64)(r.DecodeUint64())
+	}
+	for {
+		yyj19++
+		if yyhl19 {
+			yyb19 = yyj19 > l
+		} else {
+			yyb19 = z.DecCheckBreak()
+		}
+		if yyb19 {
 			break
 		}
 		z.DecReadArrayElem()
-		z.DecStructFieldNotFound(yyj17-1, "")
+		z.DecStructFieldNotFound(yyj19-1, "")
 	}
 }
 

@@ -298,6 +298,11 @@ func (api *OtterscanAPIImpl) GetContractCreator(ctx context.Context, addr common
 		return nil, err
 	}
 
+	// TODO: check if precompiled contract
+	if !tracer.Found() {
+		return nil, nil
+	}
+
 	return &ContractCreatorData{
 		Tx:      tracer.Tx.Hash(),
 		Creator: tracer.Creator,
