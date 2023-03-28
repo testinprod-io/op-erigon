@@ -60,10 +60,6 @@ def test_eth_getBlockByNumber_prebedrock():
                 )
             )
 
-            # TODO
-            erigon_block.pop("totalDifficulty")
-            geth_block.pop("totalDifficulty")
-
             assert erigon_block == geth_block, (erigon_block, geth_block)
 
 
@@ -128,10 +124,6 @@ def test_eth_getBlockByHash_prebedrock():
                 RPCMethod.GetBlockByHash,
                 params=[geth_block_hash, full_transactions],
             )
-
-            # TODO
-            erigon_block_by_hash.pop("totalDifficulty")
-            geth_block_by_hash.pop("totalDifficulty")
 
             assert erigon_block_by_hash == geth_block_by_hash, (
                 erigon_block_by_hash,
