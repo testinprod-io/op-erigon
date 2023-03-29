@@ -117,27 +117,28 @@ func SpawnMiningCreateBlockStage(s *StageState, tx kv.RwTx, cfg MiningCreateBloc
 
 	if cfg.blockBuilderParameters != nil && cfg.blockBuilderParameters.ParentHash != parent.Hash() {
 		if cfg.chainConfig.IsOptimism() {
+			// In Optimism, self re-org via engine_forkchoiceUpdatedV1 is allowed
 			log.Warn("wrong head block", "current", parent.Hash(), "requested", cfg.blockBuilderParameters.ParentHash, "executionAt", executionAt)
 			exectedParent, err := rawdb.ReadHeaderByHash(tx, cfg.blockBuilderParameters.ParentHash)
 			if err != nil {
 				return err
 			}
-			executionAt = exectedParent.Number.Uint64()
+			expectedExecutionAt := exectedParent.Number.Uint64()
+			hashStateProgress, err := stages.GetStageProgress(tx, stages.HashState)
+			if err != nil {
+				return err
+			}
+			// Trigger unwinding to target block
+			if hashStateProgress > expectedExecutionAt {
+				// MiningExecution stage progress should be updated to trigger unwinding
+				if err = stages.SaveStageProgress(tx, stages.MiningExecution, executionAt); err != nil {
+					return err
+				}
+				s.state.UnwindTo(expectedExecutionAt, libcommon.Hash{})
+				return nil
+			}
+			executionAt = expectedExecutionAt
 			parent = exectedParent
-
-			if err = stages.SaveStageProgress(tx, stages.MiningCreateBlock, executionAt); err != nil {
-				return err
-			}
-			if err = stages.SaveStageProgress(tx, stages.MiningExecution, executionAt); err != nil {
-				return err
-			}
-			if err = stages.SaveStageProgress(tx, stages.HashState, executionAt); err != nil {
-				return err
-			}
-			if err = stages.SaveStageProgress(tx, stages.IntermediateHashes, executionAt); err != nil {
-				return err
-			}
-			log.Info("updated executionAt", "executionAt", executionAt)
 		} else {
 			return fmt.Errorf("wrong head block: %x (current) vs %x (requested)", parent.Hash(), cfg.blockBuilderParameters.ParentHash)
 		}
