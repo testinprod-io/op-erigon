@@ -209,9 +209,15 @@ func (api *APIImpl) GetTransactionByBlockHashAndIndex(ctx context.Context, block
 		return newRPCBorTransaction(borTx, derivedBorTxHash, block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), chainConfig.ChainID), nil
 	}
 
-	depositNonces := rawdb.ReadDepositNonces(tx, block.NumberU64())
-
-	return newRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), depositNonces[txIndex]), nil
+	if chainConfig.IsOptimism() {
+		depositNonces := rawdb.ReadDepositNonces(tx, block.NumberU64())
+		if uint64(txIndex) >= uint64(len(depositNonces)) {
+			return nil, fmt.Errorf("depositNonce for tx %x not found", txs[txIndex].Hash())
+		} else {
+			return newRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), depositNonces[txIndex]), nil
+		}
+	}
+	return newRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), nil), nil
 }
 
 // GetRawTransactionByBlockHashAndIndex returns the bytes of the transaction for the given block hash and index.
@@ -274,10 +280,15 @@ func (api *APIImpl) GetTransactionByBlockNumberAndIndex(ctx context.Context, blo
 		derivedBorTxHash := types2.ComputeBorTxHash(block.NumberU64(), block.Hash())
 		return newRPCBorTransaction(borTx, derivedBorTxHash, block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), chainConfig.ChainID), nil
 	}
-
-	depositNonces := rawdb.ReadDepositNonces(tx, block.NumberU64())
-
-	return newRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), depositNonces[txIndex]), nil
+	if chainConfig.IsOptimism() {
+		depositNonces := rawdb.ReadDepositNonces(tx, blockNum)
+		if uint64(txIndex) >= uint64(len(depositNonces)) {
+			return nil, fmt.Errorf("depositNonce for tx %x not found", txs[txIndex].Hash())
+		} else {
+			return newRPCTransaction(txs[txIndex], block.Hash(), blockNum, uint64(txIndex), block.BaseFee(), depositNonces[txIndex]), nil
+		}
+	}
+	return newRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), nil), nil
 }
 
 // GetRawTransactionByBlockNumberAndIndex returns the bytes of the transaction for the given block number and index.

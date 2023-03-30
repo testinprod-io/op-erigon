@@ -318,8 +318,17 @@ func (api *OtterscanAPIImpl) searchTransactionsBeforeV3(tx kv.TemporalTx, ctx co
 		if err != nil {
 			return nil, err
 		}
-		depositNonces := rawdb.ReadDepositNonces(tx, blockNum)
-		rpcTx := newRPCTransaction(txn, blockHash, blockNum, uint64(txIndex), header.BaseFee, depositNonces[txIndex])
+		var rpcTx *RPCTransaction
+		if chainConfig.IsOptimism() {
+			depositNonces := rawdb.ReadDepositNonces(tx, blockNum)
+			if txIndex >= len(depositNonces) {
+				return nil, fmt.Errorf("depositNonce for tx %x not found", txn.Hash())
+			} else {
+				rpcTx = newRPCTransaction(txn, blockHash, blockNum, uint64(txIndex), header.BaseFee, depositNonces[txIndex])
+			}
+		} else {
+			rpcTx = newRPCTransaction(txn, blockHash, blockNum, uint64(txIndex), header.BaseFee, nil)
+		}
 		txs = append(txs, rpcTx)
 		receipt := &types.Receipt{
 			Type: txn.Type(), CumulativeGasUsed: res.UsedGas,
