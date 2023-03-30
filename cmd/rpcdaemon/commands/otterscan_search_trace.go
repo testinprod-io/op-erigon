@@ -31,18 +31,21 @@ func (api *OtterscanAPIImpl) searchTraceBlock(ctx, traceCtx context.Context, tra
 	}
 	defer newdbtx.Rollback()
 
+	// found will be false when CallTraceSet info and CallFromIndex/CallToIndex table info mismatch
+	// searchTraceBlock goroutine will sequentially search every block written in CallTraceSet
+	// when mismatch, causing cpu hike. To avoid this, when inconsistency found, early terminate.
 	found, result, err := api.traceBlock(newdbtx, ctx, bNum, addr, chainConfig)
 	if !found {
 		// tx execution result and callFromToProvider() result mismatch
 		err = fmt.Errorf("search trace failure: inconsistency at block %d", bNum)
 		select {
 		case <-traceCtx.Done():
-			return 
+			return
 		case errCh <- err:
 		default:
 		}
 		traceCtxCancel()
-		return 
+		return
 	}
 	if err != nil {
 		log.Error("Search trace error", "err", err)
