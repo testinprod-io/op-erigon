@@ -37,12 +37,12 @@ func (api *OtterscanAPIImpl) searchTraceBlock(ctx, traceCtx context.Context, tra
 		err = fmt.Errorf("search trace failure: inconsistency at block %d", bNum)
 		select {
 		case <-traceCtx.Done():
-			return 
+			return
 		case errCh <- err:
 		default:
 		}
 		traceCtxCancel()
-		return 
+		return
 	}
 	if err != nil {
 		log.Error("Search trace error", "err", err)
