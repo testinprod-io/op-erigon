@@ -41,7 +41,7 @@ jobs:
       - name: run hive and parse output
         run: |
           sudo mkdir -p /results-${{ github.run_id }}
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v ${{ github.workspace }}:/work testinprod/hive:latest --sim optimism --results-root=/work/results-${{ github.run_id }} --client go-ethereum,op-erigon,op-proposer,op-batcher,op-node --exit.fail=false
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v ${{ github.workspace }}:/work testinprod/hive:latest --sim optimism --results-root=/work/results-${{ github.run_id }} --client go-ethereum,op-erigon,op-proposer,op-batcher,op-node
           docker run --rm --pull always -v /var/run/docker.sock:/var/run/docker.sock -v ${{ github.workspace }}:/work --entrypoint /app/hivecioutput testinprod/hive:latest --resultsdir=/work/results-${{ github.run_id }} --outdir=/work/results-${{ github.run_id }} --exclusionsfile=/work/hive/exclusions.json
 
       - name: clean up containers
