@@ -4,15 +4,16 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
+	"math/big"
+	"sync/atomic"
+	"time"
+
 	"github.com/ledgerwatch/erigon-lib/common/length"
 	"github.com/ledgerwatch/erigon-lib/etl"
 	"github.com/ledgerwatch/erigon-lib/kv/temporal/historyv2"
 	"github.com/ledgerwatch/erigon/common/changeset"
 	"github.com/ledgerwatch/erigon/common/dbutils"
-	"io"
-	"math/big"
-	"sync/atomic"
-	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/holiman/uint256"
@@ -524,6 +525,7 @@ func NotifyPendingLogs(logPrefix string, notifier ChainEventNotifier, logs types
 	notifier.OnNewPendingLogs(logs)
 }
 
+// implemented by tweaking UnwindExecutionStage
 func UnwindMiningExecutionStage(u *UnwindState, s *StageState, tx kv.RwTx, ctx context.Context, cfg MiningExecCfg) (err error) {
 	if u.UnwindPoint >= s.BlockNumber {
 		return nil
@@ -625,5 +627,7 @@ func unwindMiningExecutionStage(u *UnwindState, s *StageState, tx kv.RwTx, ctx c
 		return err
 	}
 
+	// we do not have to delete receipt, epoch, callTraceSet because
+	// mining stage does not write anything to db.
 	return nil
 }
