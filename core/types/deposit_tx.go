@@ -83,7 +83,7 @@ func (tx DepositTx) GetData() []byte {
 }
 
 func (tx DepositTx) GetSender() (libcommon.Address, bool) {
-	return tx.From, false
+	return tx.From, true
 }
 
 func (tx DepositTx) SetSender(addr libcommon.Address) {
