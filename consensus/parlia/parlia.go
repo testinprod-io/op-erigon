@@ -1263,6 +1263,7 @@ func (p *Parlia) systemCall(from, contract libcommon.Address, data []byte, ibs *
 		nil, nil,
 		data, nil, false,
 		true, // isFree
+		false,
 	)
 	vmConfig := vm.Config{NoReceipts: true}
 	// Create a new context to be used in the EVM environment
