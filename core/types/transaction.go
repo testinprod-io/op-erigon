@@ -517,6 +517,7 @@ type Message struct {
 	accessList types2.AccessList
 	checkNonce bool
 	isFree     bool
+	isFake     bool
 
 	isSystemTx  bool
 	isDepositTx bool
@@ -524,7 +525,7 @@ type Message struct {
 	l1CostGas   RollupGasData
 }
 
-func NewMessage(from libcommon.Address, to *libcommon.Address, nonce uint64, amount *uint256.Int, gasLimit uint64, gasPrice *uint256.Int, feeCap, tip *uint256.Int, data []byte, accessList types2.AccessList, checkNonce bool, isFree bool) Message {
+func NewMessage(from libcommon.Address, to *libcommon.Address, nonce uint64, amount *uint256.Int, gasLimit uint64, gasPrice *uint256.Int, feeCap, tip *uint256.Int, data []byte, accessList types2.AccessList, checkNonce bool, isFree bool, isFake bool) Message {
 	m := Message{
 		from:       from,
 		to:         to,
@@ -535,6 +536,7 @@ func NewMessage(from libcommon.Address, to *libcommon.Address, nonce uint64, amo
 		accessList: accessList,
 		checkNonce: checkNonce,
 		isFree:     isFree,
+		isFake:     isFake,
 	}
 	if gasPrice != nil {
 		m.gasPrice.Set(gasPrice)
@@ -566,6 +568,7 @@ func (m Message) IsFree() bool { return m.isFree }
 func (m *Message) SetIsFree(isFree bool) {
 	m.isFree = isFree
 }
+func (m Message) IsFake() bool { return m.isFake }
 
 func (m *Message) ChangeGas(globalGasCap, desiredGas uint64) {
 	gas := globalGasCap

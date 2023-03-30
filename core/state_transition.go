@@ -22,7 +22,6 @@ import (
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/txpool"
 	types2 "github.com/ledgerwatch/erigon-lib/types"
-
 	"github.com/ledgerwatch/erigon/common"
 	cmath "github.com/ledgerwatch/erigon/common/math"
 	"github.com/ledgerwatch/erigon/common/u256"
@@ -99,6 +98,7 @@ type Message interface {
 	AccessList() types2.AccessList
 
 	IsFree() bool
+	IsFake() bool
 }
 
 // ExecutionResult includes all output after executing given evm
@@ -207,7 +207,7 @@ func (st *StateTransition) buyGas(gasBailout bool) error {
 		return fmt.Errorf("%w: address %v", ErrInsufficientFunds, st.msg.From().Hex())
 	}
 	var l1Cost *uint256.Int
-	if fn := st.evm.Context().L1CostFunc; fn != nil {
+	if fn := st.evm.Context().L1CostFunc; fn != nil && !st.msg.IsFake() {
 		l1Cost = fn(st.evm.Context().BlockNumber, st.evm.Context().Time, st.msg)
 	}
 	if l1Cost != nil {
