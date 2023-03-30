@@ -3,6 +3,7 @@ package commands
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"math/big"
 
 	"github.com/ledgerwatch/erigon-lib/common"
@@ -84,9 +85,15 @@ func (api *APIImpl) GetTransactionByHash(ctx context.Context, txnHash common.Has
 			return newRPCBorTransaction(borTx, txnHash, blockHash, blockNum, uint64(len(block.Transactions())), baseFee, chainConfig.ChainID), nil
 		}
 
-		depositNonces := rawdb.ReadDepositNonces(tx, block.NumberU64())
-
-		return newRPCTransaction(txn, blockHash, blockNum, txnIndex, baseFee, depositNonces[txnIndex]), nil
+		if chainConfig.IsOptimism() {
+			depositNonces := rawdb.ReadDepositNonces(tx, block.NumberU64())
+			if txnIndex >= uint64(len(depositNonces)) {
+				return nil, fmt.Errorf("depositNonce for tx %x not found", txnHash)
+			} else {
+				return newRPCTransaction(txn, blockHash, blockNum, txnIndex, baseFee, depositNonces[txnIndex]), nil
+			}
+		}
+		return newRPCTransaction(txn, blockHash, blockNum, txnIndex, baseFee, nil), nil
 	}
 
 	curHeader := rawdb.ReadCurrentHeader(tx)
