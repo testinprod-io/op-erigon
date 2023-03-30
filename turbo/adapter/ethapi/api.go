@@ -312,6 +312,7 @@ func RPCMarshalBlockExDeprecated(block *types.Block, inclTx bool, fullTx bool, b
 		txs := block.Transactions()
 		transactions := make([]interface{}, len(txs), len(txs)+1)
 		if depositNonces == nil {
+			// ensure that depositNonces is always initialized for formatTx
 			depositNonces = make([]*uint64, len(txs))
 		}
 		var err error
