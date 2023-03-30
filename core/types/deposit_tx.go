@@ -18,14 +18,15 @@ package types
 
 import (
 	"fmt"
-	"github.com/ledgerwatch/erigon-lib/chain"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	types2 "github.com/ledgerwatch/erigon-lib/types"
 	"io"
 	"math/big"
 	"math/bits"
 	"sync/atomic"
 	"time"
+
+	"github.com/ledgerwatch/erigon-lib/chain"
+	libcommon "github.com/ledgerwatch/erigon-lib/common"
+	types2 "github.com/ledgerwatch/erigon-lib/types"
 
 	"github.com/ledgerwatch/erigon/rlp"
 
@@ -86,7 +87,7 @@ func (tx DepositTx) GetSender() (libcommon.Address, bool) {
 	return tx.From, false
 }
 
-func (tx DepositTx) SetSender(addr libcommon.Address) {
+func (tx *DepositTx) SetSender(addr libcommon.Address) {
 	tx.From = addr
 }
 
