@@ -802,6 +802,7 @@ func (m callMsg) Value() *uint256.Int                { return m.CallMsg.Value }
 func (m callMsg) Data() []byte                       { return m.CallMsg.Data }
 func (m callMsg) AccessList() types2.AccessList      { return m.CallMsg.AccessList }
 func (m callMsg) IsFree() bool                       { return false }
+func (m callMsg) IsFake() bool                       { return true }
 func (m callMsg) Mint() *uint256.Int                 { return nil }
 func (m callMsg) RollupDataGas() types.RollupGasData { return types.RollupGasData{} }
 func (m callMsg) IsDepositTx() bool                  { return false }
