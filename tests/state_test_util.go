@@ -468,7 +468,7 @@ func toMessage(tx stTransactionMarshaling, ps stPostState, baseFee *big.Int) (co
 		accessList,
 		false, /* checkNonce */
 		false, /* isFree */
-		false,
+		false, /* isFake */
 	)
 
 	return msg, nil
