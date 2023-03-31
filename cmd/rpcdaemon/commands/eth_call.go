@@ -397,7 +397,6 @@ func (api *APIImpl) CreateAccessList(ctx context.Context, args ethapi2.CallArgs,
 		if api.historicalRPCService != nil {
 			var res accessListResult
 			err := api.historicalRPCService.CallContext(ctx, &res, "eth_createAccessList", args, fmt.Sprintf("0x%x", blockNum))
-			log.Warn("alr", "res", res)
 			if err != nil {
 				return nil, fmt.Errorf("historical backend error: %w", err)
 			}
