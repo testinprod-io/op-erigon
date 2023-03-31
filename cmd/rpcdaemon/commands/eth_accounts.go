@@ -46,7 +46,7 @@ func (api *APIImpl) GetBalance(ctx context.Context, address libcommon.Address, b
 
 	chainConfig, err := api.chainConfig(tx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("read chain config: %v", err)
 	}
 	if chainConfig.IsOptimismPreBedrock(blockNum) {
 		if api.historicalRPCService != nil {
@@ -117,7 +117,7 @@ func (api *APIImpl) GetTransactionCount(ctx context.Context, address libcommon.A
 
 	chainConfig, err := api.chainConfig(tx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("read chain config: %v", err)
 	}
 	if chainConfig.IsOptimismPreBedrock(blockNum) {
 		if api.historicalRPCService != nil {
@@ -171,7 +171,7 @@ func (api *APIImpl) GetCode(ctx context.Context, address libcommon.Address, bloc
 
 	chainConfig, err := api.chainConfig(tx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("read chain config: %v", err)
 	}
 	if chainConfig.IsOptimismPreBedrock(blockNum) {
 		if api.historicalRPCService != nil {
@@ -231,7 +231,7 @@ func (api *APIImpl) GetStorageAt(ctx context.Context, address libcommon.Address,
 
 	chainConfig, err := api.chainConfig(tx)
 	if err != nil {
-		return hexutility.Encode(common.LeftPadBytes(empty, 32)), err
+		return hexutility.Encode(common.LeftPadBytes(empty, 32)), fmt.Errorf("read chain config: %v", err)
 	}
 	if chainConfig.IsOptimismPreBedrock(blockNum) {
 		if api.historicalRPCService != nil {

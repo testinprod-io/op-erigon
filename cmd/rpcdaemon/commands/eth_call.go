@@ -58,7 +58,7 @@ func (api *APIImpl) Call(ctx context.Context, args ethapi2.CallArgs, blockNrOrHa
 
 	chainConfig, err := api.chainConfig(tx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("read chain config: %v", err)
 	}
 	if chainConfig.IsOptimismPreBedrock(blockNum) {
 		if api.historicalRPCService != nil {
@@ -190,7 +190,7 @@ func (api *APIImpl) EstimateGas(ctx context.Context, argsOrNil *ethapi2.CallArgs
 
 	chainConfig, err := api.chainConfig(dbtx)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("read chain config: %v", err)
 	}
 	if chainConfig.IsOptimismPreBedrock(blockNum) {
 		if api.historicalRPCService != nil {
