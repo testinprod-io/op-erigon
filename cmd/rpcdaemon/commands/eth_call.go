@@ -40,20 +40,9 @@ func (api *APIImpl) Call(ctx context.Context, args ethapi2.CallArgs, blockNrOrHa
 	defer tx.Rollback()
 
 	// Handle pre-bedrock blocks
-	var blockNum uint64
-	if number, ok := blockNrOrHash.Number(); ok {
-		blockNum = uint64(number)
-	} else if hash, ok := blockNrOrHash.Hash(); ok {
-		block, err := api.blockByHashWithSenders(tx, hash)
-		if block == nil {
-			return nil, fmt.Errorf("header not found")
-		}
-		if err != nil {
-			return nil, err
-		}
-		blockNum = block.NumberU64()
-	} else {
-		return nil, fmt.Errorf("invalid block number of hash")
+	blockNum, err := api.blockNumberByBlockNumberOrHash(tx, &blockNrOrHash)
+	if err != nil {
+		return nil, err
 	}
 
 	chainConfig, err := api.chainConfig(tx)
@@ -172,20 +161,9 @@ func (api *APIImpl) EstimateGas(ctx context.Context, argsOrNil *ethapi2.CallArgs
 	}
 
 	// Handle pre-bedrock blocks
-	var blockNum uint64
-	if number, ok := bNrOrHash.Number(); ok {
-		blockNum = uint64(number)
-	} else if hash, ok := bNrOrHash.Hash(); ok {
-		block, err := api.blockByHashWithSenders(dbtx, hash)
-		if block == nil {
-			return 0, fmt.Errorf("header not found")
-		}
-		if err != nil {
-			return 0, err
-		}
-		blockNum = block.NumberU64()
-	} else {
-		return 0, fmt.Errorf("invalid block number of hash")
+	blockNum, err := api.blockNumberByBlockNumberOrHash(dbtx, &bNrOrHash)
+	if err != nil {
+		return 0, err
 	}
 
 	chainConfig, err := api.chainConfig(dbtx)
@@ -406,20 +384,9 @@ func (api *APIImpl) CreateAccessList(ctx context.Context, args ethapi2.CallArgs,
 	defer tx.Rollback()
 
 	// Handle pre-bedrock blocks
-	var blockNum uint64
-	if number, ok := blockNrOrHash.Number(); ok {
-		blockNum = uint64(number)
-	} else if hash, ok := blockNrOrHash.Hash(); ok {
-		block, err := api.blockByHashWithSenders(tx, hash)
-		if block == nil {
-			return nil, fmt.Errorf("header not found")
-		}
-		if err != nil {
-			return nil, err
-		}
-		blockNum = block.NumberU64()
-	} else {
-		return nil, fmt.Errorf("invalid block number of hash")
+	blockNum, err := api.blockNumberByBlockNumberOrHash(tx, blockNrOrHash)
+	if err != nil {
+		return nil, err
 	}
 
 	chainConfig, err := api.chainConfig(tx)

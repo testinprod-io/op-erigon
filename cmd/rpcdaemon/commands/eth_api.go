@@ -3,6 +3,7 @@ package commands
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"math/big"
 	"sync"
 	"time"
@@ -177,6 +178,20 @@ func (api *BaseAPI) blockByHashWithSenders(tx kv.Tx, hash common.Hash) (*types.B
 	}
 
 	return api.blockWithSenders(tx, hash, *number)
+}
+
+func (api *BaseAPI) blockNumberByBlockNumberOrHash(tx kv.Tx, bnh *rpc.BlockNumberOrHash) (uint64, error) {
+	if number, ok := bnh.Number(); ok {
+		return uint64(number.Int64()), nil
+	}
+	if hash, ok := bnh.Hash(); ok {
+		number := rawdb.ReadHeaderNumber(tx, hash)
+		if number == nil {
+			return 0, fmt.Errorf("block not found for hash %x", hash)
+		}
+		return *number, nil
+	}
+	return 0, fmt.Errorf("invalid block number of hash")
 }
 
 func (api *BaseAPI) blockWithSenders(tx kv.Tx, hash common.Hash, number uint64) (*types.Block, error) {
