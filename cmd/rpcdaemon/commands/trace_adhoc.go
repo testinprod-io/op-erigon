@@ -1138,6 +1138,7 @@ func (api *TraceAPIImpl) doCallMany(ctx context.Context, dbtx kv.Tx, msgs []type
 		useParent = true
 	}
 
+	l1CostFunc := types.NewL1CostFunc(chainConfig, ibs)
 	for txIndex, msg := range msgs {
 		if err := libcommon.Stopped(ctx.Done()); err != nil {
 			return nil, err
@@ -1182,7 +1183,7 @@ func (api *TraceAPIImpl) doCallMany(ctx context.Context, dbtx kv.Tx, msgs []type
 			blockCtx.MaxGasLimit = true
 		}
 		ibs.Reset()
-		blockCtx.L1CostFunc = types.NewL1CostFunc(chainConfig, ibs)
+		blockCtx.L1CostFunc = l1CostFunc
 		// Create initial IntraBlockState, we will compare it with ibs (IntraBlockState after the transaction)
 
 		evm := vm.NewEVM(blockCtx, txCtx, ibs, chainConfig, vmConfig)
