@@ -150,6 +150,7 @@ func (api *APIImpl) GetCode(ctx context.Context, address libcommon.Address, bloc
 	if err1 != nil {
 		return nil, fmt.Errorf("getCode cannot open tx: %w", err1)
 	}
+	defer tx.Rollback()
 
 	// Handle pre-bedrock blocks
 	var blockNum uint64
@@ -185,7 +186,6 @@ func (api *APIImpl) GetCode(ctx context.Context, address libcommon.Address, bloc
 		}
 	}
 
-	defer tx.Rollback()
 	reader, err := rpchelper.CreateStateReader(ctx, tx, blockNrOrHash, 0, api.filters, api.stateCache, api.historyV3(tx), chainConfig.ChainName)
 	if err != nil {
 		return nil, err
