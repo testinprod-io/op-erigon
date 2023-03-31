@@ -167,7 +167,6 @@ func (tm TransactionMisc) From() *atomic.Value {
 
 func DecodeTransaction(s *rlp.Stream) (Transaction, error) {
 	kind, size, err := s.Kind()
-
 	if err != nil {
 		return nil, err
 	}
