@@ -44,27 +44,19 @@ func (api *APIImpl) Call(ctx context.Context, args ethapi2.CallArgs, blockNrOrHa
 	if err != nil {
 		return nil, err
 	}
-
 	chainConfig, err := api.chainConfig(tx)
 	if err != nil {
 		return nil, err
 	}
 	if chainConfig.IsOptimismPreBedrock(blockNum) {
-		if api.historicalRPCService != nil {
-			var res hexutil.Bytes
-			var err error
-			if overrides != nil {
-				err = api.historicalRPCService.CallContext(ctx, &res, "eth_call", args, fmt.Sprintf("0x%x", blockNum), overrides)
-			} else {
-				err = api.historicalRPCService.CallContext(ctx, &res, "eth_call", args, fmt.Sprintf("0x%x", blockNum))
-			}
-			if err != nil {
-				return nil, fmt.Errorf("historical backend error: %w", err)
-			}
-			return res, nil
-		} else {
+		if api.historicalRPCService == nil {
 			return nil, rpc.ErrNoHistoricalFallback
 		}
+		var result hexutil.Bytes
+		if err := api.relayToHistoricalBackend(ctx, &result, "eth_call", args, fmt.Sprintf("0x%x", blockNum)); err != nil {
+			return nil, fmt.Errorf("historical backend error: %w", err)
+		}
+		return result, nil
 	}
 
 	engine := api.engine()
@@ -165,22 +157,19 @@ func (api *APIImpl) EstimateGas(ctx context.Context, argsOrNil *ethapi2.CallArgs
 	if err != nil {
 		return 0, err
 	}
-
 	chainConfig, err := api.chainConfig(dbtx)
 	if err != nil {
 		return 0, err
 	}
 	if chainConfig.IsOptimismPreBedrock(blockNum) {
-		if api.historicalRPCService != nil {
-			var res hexutil.Uint64
-			err := api.historicalRPCService.CallContext(ctx, &res, "eth_estimateGas", args, fmt.Sprintf("0x%x", blockNum))
-			if err != nil {
-				return 0, fmt.Errorf("historical backend error: %w", err)
-			}
-			return res, nil
-		} else {
+		if api.historicalRPCService == nil {
 			return 0, rpc.ErrNoHistoricalFallback
 		}
+		var result hexutil.Uint64
+		if err := api.relayToHistoricalBackend(ctx, &result, "eth_estimateGas", args, fmt.Sprintf("0x%x", blockNum)); err != nil {
+			return 0, fmt.Errorf("historical backend error: %w", err)
+		}
+		return result, nil
 	}
 
 	// Determine the highest gas limit can be used during the estimation.
@@ -388,23 +377,19 @@ func (api *APIImpl) CreateAccessList(ctx context.Context, args ethapi2.CallArgs,
 	if err != nil {
 		return nil, err
 	}
-
 	chainConfig, err := api.chainConfig(tx)
 	if err != nil {
 		return nil, err
 	}
 	if chainConfig.IsOptimismPreBedrock(blockNum) {
-		if api.historicalRPCService != nil {
-			var res accessListResult
-			err := api.historicalRPCService.CallContext(ctx, &res, "eth_createAccessList", args, fmt.Sprintf("0x%x", blockNum))
-			if err != nil {
-				return nil, fmt.Errorf("historical backend error: %w", err)
-			}
-			return &res, nil
-			//return nil, nil
-		} else {
+		if api.historicalRPCService == nil {
 			return nil, rpc.ErrNoHistoricalFallback
 		}
+		var result accessListResult
+		if err := api.relayToHistoricalBackend(ctx, &result, "eth_createAccessList", args, fmt.Sprintf("0x%x", blockNum)); err != nil {
+			return nil, fmt.Errorf("historical backend error: %w", err)
+		}
+		return &result, nil
 	}
 
 	engine := api.engine()

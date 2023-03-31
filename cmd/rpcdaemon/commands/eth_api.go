@@ -326,6 +326,10 @@ func NewEthAPI(
 	}
 }
 
+func (api *APIImpl) relayToHistoricalBackend(ctx context.Context, result interface{}, method string, args ...interface{}) error {
+	return api.historicalRPCService.CallContext(ctx, &result, method, args)
+}
+
 // RPCTransaction represents a transaction that will serialize to the RPC representation of a transaction
 type RPCTransaction struct {
 	BlockHash        *common.Hash       `json:"blockHash"`
