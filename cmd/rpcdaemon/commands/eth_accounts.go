@@ -184,7 +184,7 @@ func (api *APIImpl) GetStorageAt(ctx context.Context, address libcommon.Address,
 			return hexutility.Encode(common.LeftPadBytes(empty, 32)), rpc.ErrNoHistoricalFallback
 		}
 		var result hexutil.Bytes
-		if err := api.relayToHistoricalBackend(ctx, &result, "eth_getStorageAt", address, fmt.Sprintf("0x%x", blockNum)); err != nil {
+		if err := api.relayToHistoricalBackend(ctx, &result, "eth_getStorageAt", address, index, fmt.Sprintf("0x%x", blockNum)); err != nil {
 			return hexutility.Encode(common.LeftPadBytes(empty, 32)), fmt.Errorf("historical backend error: %w", err)
 		}
 		return hexutility.Encode(common.LeftPadBytes(result, 32)), nil
