@@ -187,7 +187,7 @@ func (api *BaseAPI) blockNumberByBlockNumberOrHash(tx kv.Tx, bnh *rpc.BlockNumbe
 	if hash, ok := bnh.Hash(); ok {
 		number := rawdb.ReadHeaderNumber(tx, hash)
 		if number == nil {
-			return 0, fmt.Errorf("block not found for hash %x", hash)
+			return 0, fmt.Errorf("block %x not found", hash)
 		}
 		return *number, nil
 	}
