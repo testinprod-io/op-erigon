@@ -53,7 +53,7 @@ func (api *APIImpl) Call(ctx context.Context, args ethapi2.CallArgs, blockNrOrHa
 			return nil, rpc.ErrNoHistoricalFallback
 		}
 		var result hexutil.Bytes
-		if err := api.relayToHistoricalBackend(ctx, &result, "eth_call", args, fmt.Sprintf("0x%x", blockNum)); err != nil {
+		if err := api.relayToHistoricalBackend(ctx, &result, "eth_call", args, hexutil.EncodeUint64(blockNum)); err != nil {
 			return nil, fmt.Errorf("historical backend error: %w", err)
 		}
 		return result, nil
@@ -166,7 +166,7 @@ func (api *APIImpl) EstimateGas(ctx context.Context, argsOrNil *ethapi2.CallArgs
 			return 0, rpc.ErrNoHistoricalFallback
 		}
 		var result hexutil.Uint64
-		if err := api.relayToHistoricalBackend(ctx, &result, "eth_estimateGas", args, fmt.Sprintf("0x%x", blockNum)); err != nil {
+		if err := api.relayToHistoricalBackend(ctx, &result, "eth_estimateGas", args, hexutil.EncodeUint64(blockNum)); err != nil {
 			return 0, fmt.Errorf("historical backend error: %w", err)
 		}
 		return result, nil
@@ -386,7 +386,7 @@ func (api *APIImpl) CreateAccessList(ctx context.Context, args ethapi2.CallArgs,
 			return nil, rpc.ErrNoHistoricalFallback
 		}
 		var result accessListResult
-		if err := api.relayToHistoricalBackend(ctx, &result, "eth_createAccessList", args, fmt.Sprintf("0x%x", blockNum)); err != nil {
+		if err := api.relayToHistoricalBackend(ctx, &result, "eth_createAccessList", args, hexutil.EncodeUint64(blockNum)); err != nil {
 			return nil, fmt.Errorf("historical backend error: %w", err)
 		}
 		return &result, nil

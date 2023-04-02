@@ -41,7 +41,7 @@ func (api *APIImpl) GetBalance(ctx context.Context, address libcommon.Address, b
 			return nil, rpc.ErrNoHistoricalFallback
 		}
 		var result hexutil.Big
-		if err := api.relayToHistoricalBackend(ctx, &result, "eth_getBalance", address, fmt.Sprintf("0x%x", blockNum)); err != nil {
+		if err := api.relayToHistoricalBackend(ctx, &result, "eth_getBalance", address, hexutil.EncodeUint64(blockNum)); err != nil {
 			return nil, fmt.Errorf("historical backend error: %w", err)
 		}
 		return &result, nil
@@ -98,7 +98,7 @@ func (api *APIImpl) GetTransactionCount(ctx context.Context, address libcommon.A
 			return nil, rpc.ErrNoHistoricalFallback
 		}
 		var result hexutil.Uint64
-		if err := api.relayToHistoricalBackend(ctx, &result, "eth_getTransactionCount", address, fmt.Sprintf("0x%x", blockNum)); err != nil {
+		if err := api.relayToHistoricalBackend(ctx, &result, "eth_getTransactionCount", address, hexutil.EncodeUint64(blockNum)); err != nil {
 			return nil, fmt.Errorf("historical backend error: %w", err)
 		}
 		return &result, nil
@@ -137,7 +137,7 @@ func (api *APIImpl) GetCode(ctx context.Context, address libcommon.Address, bloc
 			return nil, rpc.ErrNoHistoricalFallback
 		}
 		var result hexutil.Bytes
-		if err := api.relayToHistoricalBackend(ctx, &result, "eth_getCode", address, fmt.Sprintf("0x%x", blockNum)); err != nil {
+		if err := api.relayToHistoricalBackend(ctx, &result, "eth_getCode", address, hexutil.EncodeUint64(blockNum)); err != nil {
 			return nil, fmt.Errorf("historical backend error: %w", err)
 		}
 		return result, nil
@@ -184,7 +184,7 @@ func (api *APIImpl) GetStorageAt(ctx context.Context, address libcommon.Address,
 			return hexutility.Encode(common.LeftPadBytes(empty, 32)), rpc.ErrNoHistoricalFallback
 		}
 		var result hexutil.Bytes
-		if err := api.relayToHistoricalBackend(ctx, &result, "eth_getStorageAt", address, index, fmt.Sprintf("0x%x", blockNum)); err != nil {
+		if err := api.relayToHistoricalBackend(ctx, &result, "eth_getStorageAt", address, index, hexutil.EncodeUint64(blockNum)); err != nil {
 			return hexutility.Encode(common.LeftPadBytes(empty, 32)), fmt.Errorf("historical backend error: %w", err)
 		}
 		return hexutility.Encode(common.LeftPadBytes(result, 32)), nil
