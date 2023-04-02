@@ -180,7 +180,7 @@ func (api *BaseAPI) blockByHashWithSenders(tx kv.Tx, hash common.Hash) (*types.B
 	return api.blockWithSenders(tx, hash, *number)
 }
 
-func (api *BaseAPI) blockNumberByBlockNumberOrHash(tx kv.Tx, bnh *rpc.BlockNumberOrHash) (uint64, error) {
+func (api *BaseAPI) blockNumberFromBlockNumberOrHash(tx kv.Tx, bnh *rpc.BlockNumberOrHash) (uint64, error) {
 	if number, ok := bnh.Number(); ok {
 		return uint64(number.Int64()), nil
 	}

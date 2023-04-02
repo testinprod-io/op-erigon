@@ -28,7 +28,7 @@ func (api *APIImpl) GetBalance(ctx context.Context, address libcommon.Address, b
 	defer tx.Rollback()
 
 	// Handle pre-bedrock blocks
-	blockNum, err := api.blockNumberByBlockNumberOrHash(tx, &blockNrOrHash)
+	blockNum, err := api.blockNumberFromBlockNumberOrHash(tx, &blockNrOrHash)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (api *APIImpl) GetTransactionCount(ctx context.Context, address libcommon.A
 	defer tx.Rollback()
 
 	// Handle pre-bedrock blocks
-	blockNum, err := api.blockNumberByBlockNumberOrHash(tx, &blockNrOrHash)
+	blockNum, err := api.blockNumberFromBlockNumberOrHash(tx, &blockNrOrHash)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func (api *APIImpl) GetCode(ctx context.Context, address libcommon.Address, bloc
 	}
 
 	// Handle pre-bedrock blocks
-	blockNum, err := api.blockNumberByBlockNumberOrHash(tx, &blockNrOrHash)
+	blockNum, err := api.blockNumberFromBlockNumberOrHash(tx, &blockNrOrHash)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +171,7 @@ func (api *APIImpl) GetStorageAt(ctx context.Context, address libcommon.Address,
 	defer tx.Rollback()
 
 	// Handle pre-bedrock blocks
-	blockNum, err := api.blockNumberByBlockNumberOrHash(tx, &blockNrOrHash)
+	blockNum, err := api.blockNumberFromBlockNumberOrHash(tx, &blockNrOrHash)
 	if err != nil {
 		return hexutility.Encode(common.LeftPadBytes(empty, 32)), err
 	}

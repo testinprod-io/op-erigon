@@ -40,7 +40,7 @@ func (api *APIImpl) Call(ctx context.Context, args ethapi2.CallArgs, blockNrOrHa
 	defer tx.Rollback()
 
 	// Handle pre-bedrock blocks
-	blockNum, err := api.blockNumberByBlockNumberOrHash(tx, &blockNrOrHash)
+	blockNum, err := api.blockNumberFromBlockNumberOrHash(tx, &blockNrOrHash)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +153,7 @@ func (api *APIImpl) EstimateGas(ctx context.Context, argsOrNil *ethapi2.CallArgs
 	}
 
 	// Handle pre-bedrock blocks
-	blockNum, err := api.blockNumberByBlockNumberOrHash(dbtx, &bNrOrHash)
+	blockNum, err := api.blockNumberFromBlockNumberOrHash(dbtx, &bNrOrHash)
 	if err != nil {
 		return 0, err
 	}
@@ -373,7 +373,7 @@ func (api *APIImpl) CreateAccessList(ctx context.Context, args ethapi2.CallArgs,
 	defer tx.Rollback()
 
 	// Handle pre-bedrock blocks
-	blockNum, err := api.blockNumberByBlockNumberOrHash(tx, blockNrOrHash)
+	blockNum, err := api.blockNumberFromBlockNumberOrHash(tx, blockNrOrHash)
 	if err != nil {
 		return nil, err
 	}
