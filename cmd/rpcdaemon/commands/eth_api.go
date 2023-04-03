@@ -118,11 +118,16 @@ type BaseAPI struct {
 	_engine      consensus.EngineReader
 
 	evmCallTimeout time.Duration
+
+	// Optimism specific field
+	seqRPCService        *rpc.Client
+	historicalRPCService *rpc.Client
 }
 
 func NewBaseApi(
 	f *rpchelper.Filters, stateCache kvcache.Cache, blockReader services.FullBlockReader, agg *libstate.AggregatorV3,
 	singleNodeMode bool, evmCallTimeout time.Duration, engine consensus.EngineReader,
+	seqRPCService *rpc.Client, historicalRPCService *rpc.Client,
 ) *BaseAPI {
 	blocksLRUSize := 128 // ~32Mb
 	if !singleNodeMode {
@@ -136,6 +141,7 @@ func NewBaseApi(
 	return &BaseAPI{
 		filters: f, stateCache: stateCache, blocksLRU: blocksLRU, _blockReader: blockReader, _txnReader: blockReader,
 		_agg: agg, evmCallTimeout: evmCallTimeout, _engine: engine,
+		seqRPCService: seqRPCService, historicalRPCService: historicalRPCService,
 	}
 }
 
@@ -299,14 +305,12 @@ type APIImpl struct {
 	db                   kv.RoDB
 	GasCap               uint64
 	ReturnDataLimit      int
-	seqRPCService        *rpc.Client
-	historicalRPCService *rpc.Client
 }
 
 // NewEthAPI returns APIImpl instance
 func NewEthAPI(
 	base *BaseAPI, db kv.RoDB, eth rpchelper.ApiBackend, txPool txpool.TxpoolClient, mining txpool.MiningClient,
-	gascap uint64, returnDataLimit int, seqRPCService *rpc.Client, histRPCService *rpc.Client,
+	gascap uint64, returnDataLimit int,
 ) *APIImpl {
 	if gascap == 0 {
 		gascap = uint64(math.MaxUint64 / 2)
@@ -321,8 +325,6 @@ func NewEthAPI(
 		gasCache:             NewGasPriceCache(),
 		GasCap:               gascap,
 		ReturnDataLimit:      returnDataLimit,
-		seqRPCService:        seqRPCService,
-		historicalRPCService: histRPCService,
 	}
 }
 
