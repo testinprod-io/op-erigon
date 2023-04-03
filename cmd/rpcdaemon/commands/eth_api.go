@@ -298,13 +298,13 @@ func (api *BaseAPI) headerByRPCNumber(number rpc.BlockNumber, tx kv.Tx) (*types.
 // APIImpl is implementation of the EthAPI interface based on remote Db access
 type APIImpl struct {
 	*BaseAPI
-	ethBackend           rpchelper.ApiBackend
-	txPool               txpool.TxpoolClient
-	mining               txpool.MiningClient
-	gasCache             *GasPriceCache
-	db                   kv.RoDB
-	GasCap               uint64
-	ReturnDataLimit      int
+	ethBackend      rpchelper.ApiBackend
+	txPool          txpool.TxpoolClient
+	mining          txpool.MiningClient
+	gasCache        *GasPriceCache
+	db              kv.RoDB
+	GasCap          uint64
+	ReturnDataLimit int
 }
 
 // NewEthAPI returns APIImpl instance
@@ -317,14 +317,14 @@ func NewEthAPI(
 	}
 
 	return &APIImpl{
-		BaseAPI:              base,
-		db:                   db,
-		ethBackend:           eth,
-		txPool:               txPool,
-		mining:               mining,
-		gasCache:             NewGasPriceCache(),
-		GasCap:               gascap,
-		ReturnDataLimit:      returnDataLimit,
+		BaseAPI:         base,
+		db:              db,
+		ethBackend:      eth,
+		txPool:          txPool,
+		mining:          mining,
+		gasCache:        NewGasPriceCache(),
+		GasCap:          gascap,
+		ReturnDataLimit: returnDataLimit,
 	}
 }
 
