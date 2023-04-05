@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"time"
@@ -159,6 +160,22 @@ func (api *PrivateDebugAPIImpl) TraceTransaction(ctx context.Context, hash commo
 	}
 	if !ok {
 		stream.WriteNil()
+		return nil
+	}
+	if chainConfig.IsOptimismPreBedrock(blockNum) {
+		if api.historicalRPCService == nil {
+			return rpc.ErrNoHistoricalFallback
+		}
+		treeResult := &GethTrace{}
+		if err := api.relayToHistoricalBackend(ctx, treeResult, "debug_traceTransaction", hash, config); err != nil {
+			return fmt.Errorf("historical backend error: %w", err)
+		}
+		// stream out relayed response
+		result, err := json.Marshal(treeResult)
+		if err != nil {
+			return err
+		}
+		stream.WriteRaw(string(result))
 		return nil
 	}
 	// Private API returns 0 if transaction is not found.
