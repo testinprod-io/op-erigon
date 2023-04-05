@@ -29,15 +29,15 @@ import (
 
 // TraceBlockByNumber implements debug_traceBlockByNumber. Returns Geth style block traces.
 func (api *PrivateDebugAPIImpl) TraceBlockByNumber(ctx context.Context, blockNum rpc.BlockNumber, config *tracers.TraceConfig, stream *jsoniter.Stream) error {
-	return api.traceBlock(ctx, rpc.BlockNumberOrHashWithNumber(blockNum), config, stream, true)
+	return api.traceBlock(ctx, rpc.BlockNumberOrHashWithNumber(blockNum), config, stream)
 }
 
 // TraceBlockByHash implements debug_traceBlockByHash. Returns Geth style block traces.
 func (api *PrivateDebugAPIImpl) TraceBlockByHash(ctx context.Context, hash common.Hash, config *tracers.TraceConfig, stream *jsoniter.Stream) error {
-	return api.traceBlock(ctx, rpc.BlockNumberOrHashWithHash(hash, true), config, stream, false)
+	return api.traceBlock(ctx, rpc.BlockNumberOrHashWithHash(hash, true), config, stream)
 }
 
-func (api *PrivateDebugAPIImpl) traceBlock(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash, config *tracers.TraceConfig, stream *jsoniter.Stream, byNumber bool) error {
+func (api *PrivateDebugAPIImpl) traceBlock(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash, config *tracers.TraceConfig, stream *jsoniter.Stream) error {
 	tx, err := api.db.BeginRo(ctx)
 	if err != nil {
 		stream.WriteNil()
