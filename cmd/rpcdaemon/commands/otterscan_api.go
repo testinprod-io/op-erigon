@@ -118,7 +118,7 @@ func (api *OtterscanAPIImpl) relayToHistoricalBackend(ctx context.Context, resul
 	return api.historicalRPCService.CallContext(ctx, result, method, args...)
 }
 
-func (api *OtterscanAPIImpl) translateCaptureStart(gethTrace *GethTrace, tracer vm.EVMLogger) error {
+func (api *OtterscanAPIImpl) translateCaptureStart(gethTrace *GethTrace, tracer vm.EVMLogger, vmenv *vm.EVM) error {
 	from := common.HexToAddress(gethTrace.From)
 	to := common.HexToAddress(gethTrace.To)
 	input, err := hexutil.Decode(gethTrace.Input)
@@ -140,11 +140,10 @@ func (api *OtterscanAPIImpl) translateCaptureStart(gethTrace *GethTrace, tracer 
 	if err != nil {
 		return err
 	}
-	// dummy vmenv
-	vmenv := vm.NewEVM(evmtypes.BlockContext{}, evmtypes.TxContext{}, nil, &chain.Config{}, vm.Config{})
+	_, isPrecompile := vmenv.Precompile(to)
 	// dummy code
 	code := []byte{}
-	tracer.CaptureStart(vmenv, from, to, false, false, input, gas, value, code)
+	tracer.CaptureStart(vmenv, from, to, isPrecompile, false, input, gas, value, code)
 	return nil
 }
 
@@ -169,7 +168,7 @@ func (api *OtterscanAPIImpl) translateOpcode(typStr string) (vm.OpCode, error) {
 	return vm.INVALID, fmt.Errorf("unable to translate %s", typStr)
 }
 
-func (api *OtterscanAPIImpl) translateCaptureEnter(gethTrace *GethTrace, tracer vm.EVMLogger) error {
+func (api *OtterscanAPIImpl) translateCaptureEnter(gethTrace *GethTrace, tracer vm.EVMLogger, vmenv *vm.EVM) error {
 	from := common.HexToAddress(gethTrace.From)
 	to := common.HexToAddress(gethTrace.To)
 	input, err := hexutil.Decode(gethTrace.Input)
@@ -196,7 +195,8 @@ func (api *OtterscanAPIImpl) translateCaptureEnter(gethTrace *GethTrace, tracer 
 	if err != nil {
 		return err
 	}
-	tracer.CaptureEnter(typ, from, to, false, false, input, gas, value, nil)
+	_, isPrecompile := vmenv.Precompile(to)
+	tracer.CaptureEnter(typ, from, to, isPrecompile, false, input, gas, value, nil)
 	return nil
 }
 
@@ -217,7 +217,8 @@ func (api *OtterscanAPIImpl) translateCaptureExit(gethTrace *GethTrace, tracer v
 	return nil
 }
 
-func (api *OtterscanAPIImpl) translateRelayTraceResult(gethTrace *GethTrace, tracer vm.EVMLogger) error {
+func (api *OtterscanAPIImpl) translateRelayTraceResult(gethTrace *GethTrace, tracer vm.EVMLogger, chainConfig *chain.Config) error {
+	vmenv := vm.NewEVM(evmtypes.BlockContext{}, evmtypes.TxContext{}, nil, chainConfig, vm.Config{})
 	type traceWithIndex struct {
 		gethTrace *GethTrace
 		idx       int // children index
@@ -233,11 +234,11 @@ func (api *OtterscanAPIImpl) translateRelayTraceResult(gethTrace *GethTrace, tra
 			callStacks = append(callStacks, &traceWithIndex{trace, rootIndex})
 			if !started {
 				started = true
-				if err := api.translateCaptureStart(trace, tracer); err != nil {
+				if err := api.translateCaptureStart(trace, tracer, vmenv); err != nil {
 					return err
 				}
 			} else {
-				if err := api.translateCaptureEnter(trace, tracer); err != nil {
+				if err := api.translateCaptureEnter(trace, tracer, vmenv); err != nil {
 					return err
 				}
 			}
@@ -297,7 +298,7 @@ func (api *OtterscanAPIImpl) runTracer(ctx context.Context, tx kv.Tx, hash commo
 			return nil, fmt.Errorf("historical backend error: %w", err)
 		}
 		if tracer != nil {
-			err := api.translateRelayTraceResult(treeResult, tracer)
+			err := api.translateRelayTraceResult(treeResult, tracer, chainConfig)
 			if err != nil {
 				return nil, err
 			}
