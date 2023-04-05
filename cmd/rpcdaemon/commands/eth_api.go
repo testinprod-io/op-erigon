@@ -3,6 +3,7 @@ package commands
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"math/big"
 	"sync"
 	"time"
@@ -179,6 +180,20 @@ func (api *BaseAPI) blockByHashWithSenders(tx kv.Tx, hash common.Hash) (*types.B
 	return api.blockWithSenders(tx, hash, *number)
 }
 
+func (api *BaseAPI) blockNumberFromBlockNumberOrHash(tx kv.Tx, bnh *rpc.BlockNumberOrHash) (uint64, error) {
+	if number, ok := bnh.Number(); ok {
+		return uint64(number.Int64()), nil
+	}
+	if hash, ok := bnh.Hash(); ok {
+		number := rawdb.ReadHeaderNumber(tx, hash)
+		if number == nil {
+			return 0, fmt.Errorf("block %x not found", hash)
+		}
+		return *number, nil
+	}
+	return 0, fmt.Errorf("invalid block number of hash")
+}
+
 func (api *BaseAPI) blockWithSenders(tx kv.Tx, hash common.Hash, number uint64) (*types.Block, error) {
 	if api.blocksLRU != nil {
 		if it, ok := api.blocksLRU.Get(hash); ok && it != nil {
@@ -309,6 +324,10 @@ func NewEthAPI(
 		seqRPCService:        seqRPCService,
 		historicalRPCService: histRPCService,
 	}
+}
+
+func (api *APIImpl) relayToHistoricalBackend(ctx context.Context, result interface{}, method string, args ...interface{}) error {
+	return api.historicalRPCService.CallContext(ctx, result, method, args...)
 }
 
 // RPCTransaction represents a transaction that will serialize to the RPC representation of a transaction
