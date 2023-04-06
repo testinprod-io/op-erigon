@@ -269,6 +269,12 @@ func (st *StateTransition) preCheck(gasBailout bool) error {
 		// Gas is free, but no refunds!
 		st.initialGas = st.msg.Gas()
 		st.gas += st.msg.Gas() // Add gas here in order to be able to execute calls.
+		// gas used by deposits may not be used by other txs
+		if err := st.gp.SubGas(st.msg.Gas()); err != nil {
+			if !gasBailout {
+				return err
+			}
+		}
 		// Don't touch the gas pool for system transactions
 		if st.msg.IsSystemTx() {
 			if st.evm.ChainConfig().IsOptimismRegolith(st.evm.Context().Time) {
@@ -277,7 +283,7 @@ func (st *StateTransition) preCheck(gasBailout bool) error {
 			}
 			return nil
 		}
-		return st.gp.SubGas(st.msg.Gas()) // gas used by deposits may not be used by other txs
+		return nil
 	}
 	// Make sure this transaction's nonce is correct.
 	if st.msg.CheckNonce() {
