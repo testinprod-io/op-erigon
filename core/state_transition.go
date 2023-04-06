@@ -18,6 +18,7 @@ package core
 
 import (
 	"fmt"
+
 	"github.com/holiman/uint256"
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/txpool"
@@ -280,7 +281,7 @@ func (st *StateTransition) preCheck(gasBailout bool) error {
 		return st.gp.SubGas(st.msg.Gas()) // gas used by deposits may not be used by other txs
 	}
 	// Make sure this transaction's nonce is correct.
-	if st.msg.CheckNonce() {
+	if st.msg.CheckNonce() && !st.msg.IsFake() {
 		stNonce := st.state.GetNonce(st.msg.From())
 		if msgNonce := st.msg.Nonce(); stNonce < msgNonce {
 			return fmt.Errorf("%w: address %v, tx: %d state: %d", ErrNonceTooHigh,
