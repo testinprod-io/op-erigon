@@ -18,6 +18,7 @@ package core
 
 import (
 	"fmt"
+
 	"github.com/holiman/uint256"
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/txpool"
@@ -265,6 +266,15 @@ func CheckEip1559TxGasFeeCap(from libcommon.Address, gasFeeCap, tip, baseFee *ui
 // DESCRIBED: docs/programmers_guide/guide.md#nonce
 func (st *StateTransition) preCheck(gasBailout bool) error {
 	if st.msg.IsDepositTx() {
+		// Check clause 6: caller has enough balance to cover asset transfer for **topmost** call
+		// buyGas method originally handled balance check, but deposit tx does not use it
+		// Therefore explicit check required for separating consensus error and evm internal error.
+		// If not check it here, it will trigger evm internal error and break consensus.
+		if have, want := st.state.GetBalance(st.msg.From()), st.msg.Value(); have.Cmp(want) < 0 {
+			if !gasBailout {
+				return fmt.Errorf("%w: address %v have %v want %v", ErrInsufficientFunds, st.msg.From().Hex(), have, want)
+			}
+		}
 		// No fee fields to check, no nonce to check, and no need to check if EOA (L1 already verified it for us)
 		// Gas is free, but no refunds!
 		st.initialGas = st.msg.Gas()
@@ -343,7 +353,7 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*Executi
 	result, err := st.innerTransitionDb(refunds, gasBailout)
 	// Failed deposits must still be included. Unless we cannot produce the block at all due to the gas limit.
 	// On deposit failure, we rewind any state changes from after the minting, and increment the nonce.
-	if ((result != nil && result.Err != nil) || (err != nil && err != ErrGasLimitReached)) && st.msg.IsDepositTx() {
+	if err != nil && err != ErrGasLimitReached && st.msg.IsDepositTx() {
 		st.state.RevertToSnapshot(snap)
 		// Even though we revert the state changes, always increment the nonce for the next deposit transaction
 		st.state.SetNonce(st.msg.From(), st.state.GetNonce(st.msg.From())+1)
