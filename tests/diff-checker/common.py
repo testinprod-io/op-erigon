@@ -18,6 +18,8 @@ class RPCMethod:
     GetBalance = "eth_getBalance"
     BlockNumber = "eth_blockNumber"
     GetStorageAt = "eth_getStorageAt"
+    TraceTransaction = "debug_traceTransaction"
+    OtterscanTraceTransaction = "ots_traceTransaction"
 
 
 class RPCError(BaseException):
