@@ -17,7 +17,7 @@ You can use every flag erigon has. But there are some required flags and newly a
 **[Required]**
 op-erigon cannot execute state transition before the bedrock update. So preconfigured data file is required to run the node. It includes blocks and states of the pre-bedrock chain.
 
-You can download the latest chain data of Optimism Goerli Testnet from [https://backup.goerli.op-erigon.testinprod.io](https://backup.goerli.op-erigon.testinprod.io)
+You can download the latest chain data of Optimism Goerli Testnet from [https://backup.goerli.op-erigon.testinprod.io](https://backup.goerli.op-erigon.testinprod.io).
 
 ### `--externalcl`, `--authrpc.addr`, `--authrpc.port`, `--authrpc.jwtsecret`
 **[Required]** 
@@ -30,11 +30,12 @@ An Optimism node needs a consensus client(op-node) and an execution client. op-e
 HTTP endpoint of the sequencer. op-erigon will route `eth_sendRawTransaction` calls to this URL. This is **required** for transaction submission since Bedrock does not currently have a public mempool. Refer to the documentation for the network you are participating in to get the correct URL.
 
 For the Optimism Goerli Testnet, set the sequencer endpoint: `https://goerli-sequencer.optimism.io`
+
 ### `--rollup.historicalrpc`
 **[New flag / Optional]** 
 The historical RPC endpoint. op-erigon queries historical execution data that op-erigon does not support to historical RPC—for example, pre-bedrock executions. For Optimism Goerli Testnet, please set this value to the Legacy Geth endpoint.
 
-For more information about legacy geth, refer the [Optimism's node operator guide](https://community.optimism.io/docs/developers/bedrock/node-operator-guide/#legacy-geth)
+For more information about legacy geth, refer the [Optimism's node operator guide](https://community.optimism.io/docs/developers/bedrock/node-operator-guide/#legacy-geth).
 
 ### `--maxpeers=0`, `--nodiscover`
 **[Optional]** 
@@ -42,7 +43,7 @@ Disable P2P. Execution-layer peering is currently not supported in the Optimism 
 
 ## Example: An Optimism Goerli Testnet Node
 ### 1. Download and decompress the chain data
-You can download the latest preconfigured chain data from [https://backup.goerli.op-erigon.testinprod.io](https://backup.goerli.op-erigon.testinprod.io)
+You can download the latest preconfigured chain data from [https://backup.goerli.op-erigon.testinprod.io](https://backup.goerli.op-erigon.testinprod.io).
 ```bash
 curl -L -o "backup.tar.gz" https://backup.goerli.op-erigon.testinprod.io
 tar -zcvf backup.tar.gz
@@ -71,11 +72,11 @@ $ ./build/bin/erigon \
     --rollup.historicalrpc=$HISTORICAL_RPC_ENDPOINT \
     --nodiscover
 ```
-2. Use the Docker image: You can get the official Docker image from [testinprod/op-erigon](https://hub.docker.com/r/testinprod/op-erigon)
-3. Use the Helm chart: If you want to deploy op-erigon to the K8S cluster, you can use our [Helm chart](https://artifacthub.io/packages/helm/op-charts/erigon)
+2. Use the Docker image: You can get the official Docker image from [testinprod/op-erigon](https://hub.docker.com/r/testinprod/op-erigon).
+3. Use the Helm chart: If you want to deploy op-erigon to the K8S cluster, you can use our [Helm chart](https://artifacthub.io/packages/helm/op-charts/erigon).
 
 ### 3. Configuring op-node
-op-node is a consensus engine of OP stack. You can also build from the source, use official Docker image(`us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node`), or [our Helm chart](https://artifacthub.io/packages/helm/op-charts/op-node)
+op-node is a consensus engine of OP stack. You can also build from the source, use official Docker image(`us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node`), or [our Helm chart](https://artifacthub.io/packages/helm/op-charts/op-node).
 
 ```bash
 (example execution command)
@@ -87,7 +88,7 @@ $ op-node \
     --rpc.addr=0.0.0.0 \
     --rpc.port=9545
 ```
-For more information for op-node, refer the [Optimism's node operator guide](https://community.optimism.io/docs/developers/bedrock/node-operator-guide/#configuring-op-node)
+For more information for op-node, refer the [Optimism's node operator guide](https://community.optimism.io/docs/developers/bedrock/node-operator-guide/#configuring-op-node).
 
 ## Known Limitations and Caveats
 
