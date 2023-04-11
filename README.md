@@ -15,30 +15,32 @@ You can use every flag erigon has. But there are some required flags and newly a
 
 ### `--datadir`
 **[Required]**
-Erigon can not execute state transition before the bedrock update. So preconfigured data file, including blocks and states of pre-bedrock chain, is required to run the node.
+op-erigon cannot execute state transition before the bedrock update. So preconfigured data file is required to run the node. It includes blocks and states of the pre-bedrock chain.
 
 You can download the latest chain data of Optimism Goerli Testnet from [https://backup.goerli.op-erigon.testinprod.io](https://backup.goerli.op-erigon.testinprod.io)
 
 ### `--externalcl`, `--authrpc.addr`, `--authrpc.port`, `--authrpc.jwtsecret`
 **[Required]** 
-Optimism node consists of consensus client(op-node) and execution client. So erigon should be run as external consensus client mode (`--externalcl`) and need to config engine API server.
+An Optimism node needs a consensus client(op-node) and an execution client. op-erigon is intended to have an external consensus client though Erigon has its own consensus client. 
+
+`--externalcl` option specifies that Erigon will have an external consensus client. `--authrpc.addr`, `--authrpc.port`, and `--authrpc.jwtsecret` options specify engine API connection info for the consensus client.
 
 ### `--rollup.sequencerhttp`
 **[New flag / Optional]** 
-HTTP endpoint of the sequencer. op-erigon will route `eth_sendRawTransaction` calls to this URL. Bedrock does not currently have a public mempool, so this is **required** if you want your node to support transaction submission. Consult the documentation for the network you are participating in to get the correct URL.
+HTTP endpoint of the sequencer. op-erigon will route `eth_sendRawTransaction` calls to this URL. This is **required** for transaction submission since Bedrock does not currently have a public mempool. Refer to the documentation for the network you are participating in to get the correct URL.
 
 For the Optimism Goerli Testnet, set the sequencer endpoint: `https://goerli-sequencer.optimism.io`
 ### `--rollup.historicalrpc`
 **[New flag / Optional]** 
-Enables the historical RPC endpoint. If you need to fetch historical execution data from upgraded networks, like Optimism Goerli Testnet, you have to set Legacy Geth endpoint.
+The historical RPC endpoint. op-erigon queries historical execution data that op-erigon does not support to historical RPC—for example, pre-bedrock executions. For Optimism Goerli Testnet, please set this value to the Legacy Geth endpoint.
 
 For more information about legacy geth, refer the [Optimism's node operator guide](https://community.optimism.io/docs/developers/bedrock/node-operator-guide/#legacy-geth)
 
 ### `--maxpeers=0`, `--nodiscover`
 **[Optional]** 
-Disable P2P. Execution-layer peering is currently unsupported. This is not required, but it's usful to set these flags since TX pool gossip is currently unsupported.
+Disable P2P. Execution-layer peering is currently not supported in the Optimism protocol. Though this is not required, it saves resources since TX pool gossip is currently not available.
 
-## Example: Running Optimism Goerli Testnet node
+## Example: An Optimism Goerli Testnet Node
 ### 1. Download and decompress the chain data
 You can download the latest preconfigured chain data from [https://backup.goerli.op-erigon.testinprod.io](https://backup.goerli.op-erigon.testinprod.io)
 ```bash
@@ -46,7 +48,7 @@ curl -L -o "backup.tar.gz" https://backup.goerli.op-erigon.testinprod.io
 tar -zcvf backup.tar.gz
 ```
 ### 2. Configuring op-erigon
-There are three options to run op-erigon. You have to set required flags described above.
+There are three options to run op-erigon. Please refer to the preceding descriptions for the required flags.
 1. Build from the source
 ```bash
 (build from the source)
@@ -70,10 +72,10 @@ $ ./build/bin/erigon \
     --nodiscover
 ```
 2. Use the Docker image: You can get the official Docker image from [testinprod/op-erigon](https://hub.docker.com/r/testinprod/op-erigon)
-3. Use the Helm chart: If you want to deploy op-erigon to K8S cluster, you can use the official [Helm chart](https://artifacthub.io/packages/helm/op-charts/erigon)
+3. Use the Helm chart: If you want to deploy op-erigon to the K8S cluster, you can use our [Helm chart](https://artifacthub.io/packages/helm/op-charts/erigon)
 
 ### 3. Configuring op-node
-op-node is a consensus engine of OP stack. You can also build from the source, use official Docker image(`us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node`), or [Helm chart](https://artifacthub.io/packages/helm/op-charts/op-node)
+op-node is a consensus engine of OP stack. You can also build from the source, use official Docker image(`us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node`), or [our Helm chart](https://artifacthub.io/packages/helm/op-charts/op-node)
 
 ```bash
 (example execution command)
@@ -89,17 +91,17 @@ For more information for op-node, refer the [Optimism's node operator guide](htt
 
 ## Known Limitations and Caveats
 
-Optimistic Erigon is still under development, and some features still need to be implemented or fully tested. The following aspects have been confirmed to work correctly:
-- Synchronizing with the Optimism Goerli Testnet, operating with op-node
+Optimistic Erigon is still under development, and some features are not implemented or fully tested. The following list has been confirmed to work correctly:
+- Synchronizing to the Optimism Goerli Testnet with op-node
 - Ethereum standard JSON-RPC API
 - JSON-RPC API for Otterscan
 - Currently, only the All-in-One binary mode is supported
 
-The following aspects have yet to be confirmed to work or have yet to be fully tested:
+The following list is yet to be confirmed or fully tested:
 - Block producing as a sequencer of the OP stack chain
 - Operating as a proposer of the OP stack chain
-- Disable P2P transaction gossip feature
-- Running Erigon services as separated processes
+- Disable the P2P transaction gossip feature
+- Running Erigon services as separate processes
 - Erigon Snapshot
 
 ---
