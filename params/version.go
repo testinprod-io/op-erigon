@@ -29,6 +29,7 @@ var (
 	GitTag    string
 )
 
+// Version is the version of upstream erigon
 // see https://calver.org
 const (
 	VersionMajor       = 2        // Major version component of the current release
@@ -39,36 +40,58 @@ const (
 	VersionKeyFinished = "ErigonVersionFinished"
 )
 
+// OPVersion is the version of op-erigon
+const (
+	OPVersionMajor    = 0          // Major version component of the current release
+	OPVersionMinor    = 1          // Minor version component of the current release
+	OPVersionMicro    = 0          // Patch version component of the current release
+	OPVersionModifier = "unstable" // Version metadata to append to the version string
+)
+
 func withModifier(vsn string) string {
 	if !isStable() {
-		vsn += "-" + VersionModifier
+		vsn += "-" + OPVersionModifier
 	}
 	return vsn
 }
 
 func isStable() bool {
-	return VersionModifier == "stable"
+	return OPVersionModifier == "stable"
 }
 
 func isRelease() bool {
-	return isStable() || VersionModifier == "alpha" || VersionModifier == "beta"
+	return isStable() || OPVersionModifier == "alpha" || OPVersionModifier == "beta"
 }
 
 // Version holds the textual version string.
 var Version = func() string {
-	return fmt.Sprintf("%d.%02d.%d", VersionMajor, VersionMinor, VersionMicro)
+	return fmt.Sprintf("%d.%02d.%d", OPVersionMajor, OPVersionMinor, OPVersionMicro)
 }()
 
 // VersionWithMeta holds the textual version string including the metadata.
 var VersionWithMeta = func() string {
 	v := Version
+	if OPVersionModifier != "" {
+		v += "-" + OPVersionModifier
+	}
+	return v
+}()
+
+// ErigonVersion holds the textual erigon version string.
+var ErigonVersion = func() string {
+	return fmt.Sprintf("%d.%d.%d", VersionMajor, VersionMinor, VersionMicro)
+}()
+
+// ErigonVersionWithMeta holds the textual erigon version string including the metadata.
+var ErigonVersionWithMeta = func() string {
+	v := ErigonVersion
 	if VersionModifier != "" {
 		v += "-" + VersionModifier
 	}
 	return v
 }()
 
-// ArchiveVersion holds the textual version string used for Geth archives.
+// ArchiveVersion holds the textual version string used for op-erigon archives.
 // e.g. "1.8.11-dea1ce05" for stable releases, or
 //
 //	"1.8.13-unstable-21c059b6" for unstable releases
