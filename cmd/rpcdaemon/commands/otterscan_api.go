@@ -225,6 +225,8 @@ func (api *OtterscanAPIImpl) translateRelayTraceResult(gethTrace *GethTrace, tra
 	}
 	callStacks := make([]*traceWithIndex, 0)
 	started := false
+	// Each call stack can call and trigger sub call stack.
+	// rootIndex indicates the index of child for current inspected parent node trace.
 	rootIndex := 0
 	var trace *GethTrace = gethTrace
 	// iterative postorder traversal
@@ -256,6 +258,7 @@ func (api *OtterscanAPIImpl) translateRelayTraceResult(gethTrace *GethTrace, tra
 		if err := api.translateCaptureExit(top.gethTrace, tracer); err != nil {
 			return err
 		}
+		// pop back callstack repeatly until popped element is last children of top of the callstack
 		for len(callStacks) > 0 && top.idx == len(callStacks[len(callStacks)-1].gethTrace.Calls)-1 {
 			// pop back
 			top = callStacks[len(callStacks)-1]
