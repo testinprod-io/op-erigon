@@ -41,7 +41,7 @@ For more information about legacy geth, refer the [Optimism's node operator guid
 **[Optional]** 
 Disable P2P. Execution-layer peering is currently not supported in the Optimism protocol. Though this is not required, it saves resources since TX pool gossip is currently not available.
 
-## Example: An Optimism Goerli Testnet Node
+## Example: Running An Optimism Goerli Testnet Node
 ### 1. Download and decompress the chain data
 You can download the latest preconfigured chain data from [https://backup.goerli.op-erigon.testinprod.io](https://backup.goerli.op-erigon.testinprod.io).
 ```bash
@@ -73,10 +73,10 @@ $ ./build/bin/erigon \
     --nodiscover
 ```
 2. Use the Docker image: You can get the official Docker image from [testinprod/op-erigon](https://hub.docker.com/r/testinprod/op-erigon).
-3. Use the Helm chart: If you want to deploy op-erigon to the K8S cluster, you can use our [Helm chart](https://artifacthub.io/packages/helm/op-charts/erigon).
+3. Use the Helm chart: If you want to deploy op-erigon to the K8S cluster, you can use [Helm chart](https://artifacthub.io/packages/helm/op-charts/erigon).
 
 ### 3. Configuring op-node
-op-node is a consensus engine of OP stack. You can also build from the source, use official Docker image(`us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node`), or [our Helm chart](https://artifacthub.io/packages/helm/op-charts/op-node).
+op-node is a consensus engine of OP stack. You can also build from the source, use official Docker image(`us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node`), or [Helm chart](https://artifacthub.io/packages/helm/op-charts/op-node).
 
 ```bash
 (example execution command)
