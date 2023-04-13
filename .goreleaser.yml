@@ -1,4 +1,4 @@
-project_name: erigon
+project_name: op-erigon
 
 release:
   disable: false
