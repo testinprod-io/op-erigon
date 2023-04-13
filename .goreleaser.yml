@@ -73,7 +73,7 @@ snapshot:
 
 dockers:
   - image_templates:
-      - thorax/{{ .ProjectName }}:{{ .Version }}-amd64
+      - testinprod/{{ .ProjectName }}:{{ .Version }}-amd64
     dockerfile: Dockerfile.release
     use: buildx
     goarch: amd64
@@ -83,7 +83,7 @@ dockers:
       - --platform=linux/amd64
 
   - image_templates:
-      - thorax/{{ .ProjectName }}:{{ .Version }}-arm64
+      - testinprod/{{ .ProjectName }}:{{ .Version }}-arm64
     dockerfile: Dockerfile.release
     use: buildx
     goarch: arm64
@@ -93,15 +93,15 @@ dockers:
       - --platform=linux/arm64/v8
 
 docker_manifests:
-  - name_template: thorax/{{ .ProjectName }}:{{ .Version }}
+  - name_template: testinprod/{{ .ProjectName }}:{{ .Version }}
     image_templates:
-      - thorax/{{ .ProjectName }}:{{ .Version }}-amd64
-      - thorax/{{ .ProjectName }}:{{ .Version }}-arm64
+      - testinprod/{{ .ProjectName }}:{{ .Version }}-amd64
+      - testinprod/{{ .ProjectName }}:{{ .Version }}-arm64
 
-  - name_template: thorax/{{ .ProjectName }}:latest
+  - name_template: testinprod/{{ .ProjectName }}:latest
     image_templates:
-    - thorax/{{ .ProjectName }}:{{ .Version }}-amd64
-    - thorax/{{ .ProjectName }}:{{ .Version }}-arm64
+    - testinprod/{{ .ProjectName }}:{{ .Version }}-amd64
+    - testinprod/{{ .ProjectName }}:{{ .Version }}-arm64
 
 announce:
   slack:
