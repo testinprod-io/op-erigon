@@ -1,4 +1,6 @@
 # Optimistic Erigon
+[![CI](https://github.com/testinprod-io/op-erigon/actions/workflows/ci.yml/badge.svg)](https://github.com/testinprod-io/op-erigon/actions/workflows/ci.yml) [![Integration tests](https://github.com/testinprod-io/op-erigon/actions/workflows/test-integration.yml/badge.svg)](https://github.com/testinprod-io/op-erigon/actions/workflows/test-integration.yml) [![Hive](https://github.com/testinprod-io/op-erigon/actions/workflows/hive.yml/badge.svg)](https://github.com/testinprod-io/op-erigon/actions/workflows/hive.yml)
+
 A fork of [Erigon](https://github.com/ledgerwatch/erigon) that supports the [execution engine](https://github.com/ethereum-optimism/optimism/blob/develop/specs/exec-engine.md) of [OP stack](https://stack.optimism.io). Check out the fork status here: [https://op-erigon.testinprod.io](https://op-erigon.testinprod.io)
 
 [`testinprod-io/erigon-lib`](https://github.com/testinprod-io/erigon-lib) has minimal backwards-compatible changes to add Optimism engine-api fields on the `op-erigon` branch.
