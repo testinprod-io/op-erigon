@@ -7,8 +7,8 @@ A fork of [Erigon](https://github.com/ledgerwatch/erigon) that supports the [exe
 
 [`testinprod-io/erigon-interfaces`](https://github.com/testinprod-io/erigon-interfaces) defines the protobuf changes for `erigon-lib` on the `op-erigon` branch.
 - [Optimistic Erigon Project Status](#optimistic-erigon-project-status)
-  + [Feature Status](#feature-status)
-  + [Test Status](#test-status)
+  + [Features that work correctly](#features-that-work-correctly)
+  + [Features that don't work (or yet to be confirmed)](#features-that-dont-work-or-yet-to-be-confirmed)
 - [Getting started with Optimism](#getting-started-with-optimism)
 - [Example: Running An Optimism Goerli Testnet Node](#example-running-an-optimism-goerli-testnet-node)
 - [Original Erigon README.md](#erigon)
