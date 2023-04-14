@@ -1,4 +1,4 @@
-name: Hive (Nightly)
+name: Hive
 
 on:
   push:
