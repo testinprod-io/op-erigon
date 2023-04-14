@@ -397,11 +397,17 @@ func (tx *DepositTx) UnmarshalJSON(input []byte) error {
 	if err := json.Unmarshal(input, &dec); err != nil {
 		return err
 	}
-	if dec.AccessList != nil || dec.V != nil || dec.R != nil || dec.S != nil || dec.FeeCap != nil ||
-		dec.Tip != nil || dec.GasPrice != nil || (dec.Nonce != nil && *dec.Nonce != 0) {
+	if dec.AccessList != nil || dec.FeeCap != nil || dec.Tip != nil {
 		return errors.New("unexpected field(s) in deposit transaction")
 	}
-
+	if dec.GasPrice != nil && dec.GasPrice.ToInt().Cmp(libcommon.Big0) != 0 {
+		return errors.New("deposit transaction GasPrice must be 0")
+	}
+	if (dec.V != nil && dec.V.ToInt().Cmp(libcommon.Big0) != 0) ||
+		(dec.R != nil && dec.R.ToInt().Cmp(libcommon.Big0) != 0) ||
+		(dec.S != nil && dec.S.ToInt().Cmp(libcommon.Big0) != 0) {
+		return errors.New("deposit transaction signature must be 0 or unset")
+	}
 	if dec.To != nil {
 		tx.To = dec.To
 	}
@@ -435,5 +441,6 @@ func (tx *DepositTx) UnmarshalJSON(input []byte) error {
 	if dec.IsSystemTx != nil {
 		tx.IsSystemTransaction = *dec.IsSystemTx
 	}
+	// nonce is not checked becaues depositTx has no nonce field.
 	return nil
 }

@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 
+	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/log/v3"
 
 	"github.com/ledgerwatch/erigon/common/debug"
@@ -260,6 +261,10 @@ func (api *APIImpl) Logs(ctx context.Context, crit filters.FilterCriteria) (*rpc
 			select {
 			case h, ok := <-logs:
 				if h != nil {
+					// avoid null json array for topics
+					if h.Topics == nil {
+						h.Topics = []libcommon.Hash{}
+					}
 					err := notifier.Notify(rpcSub.ID, h)
 					if err != nil {
 						log.Warn("error while notifying subscription", "err", err)

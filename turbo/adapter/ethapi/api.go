@@ -460,10 +460,17 @@ func newRPCTransaction(tx types.Transaction, blockHash libcommon.Hash, blockNumb
 		}
 		result.ChainID = nil
 		result.SourceHash = &t.SourceHash
-		result.IsSystemTx = &t.IsSystemTransaction
+		if t.IsSystemTransaction {
+			result.IsSystemTx = &t.IsSystemTransaction
+		}
 		if depositNonce != nil {
 			result.Nonce = hexutil.Uint64(*depositNonce)
 		}
+		result.GasPrice = (*hexutil.Big)(libcommon.Big0)
+		// must contain v, r, s values for backwards compatibility.
+		result.V = (*hexutil.Big)(libcommon.Big0)
+		result.R = (*hexutil.Big)(libcommon.Big0)
+		result.S = (*hexutil.Big)(libcommon.Big0)
 	}
 	signer := types.LatestSignerForChainID(chainId.ToBig())
 	var err error

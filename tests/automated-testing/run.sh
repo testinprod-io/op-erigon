@@ -34,7 +34,7 @@ echo "BUILD_ERIGON=$BUILD_ERIGON"
 
 if [ "$BUILD_ERIGON" = 1 ] ; then
     echo "building erigon..."
-    cd ../../ && DOCKER_TAG=thorax/erigon:$ERIGON_TAG  DOCKER_UID=$(id -u) DOCKER_GID=$(id -g) make docker
+    cd ../../ && DOCKER_TAG=testinprod/op-erigon:$ERIGON_TAG  DOCKER_UID=$(id -u) DOCKER_GID=$(id -g) make docker
 fi
 
 # move back to the script directory

@@ -4,7 +4,7 @@ services:
   erigon:
     profiles:
       - first
-    image: thorax/erigon:$ERIGON_TAG   
+    image: testinprod/op-erigon:$ERIGON_TAG   
     command: |
       erigon --datadir=/home/erigon/.local/share/erigon --chain=dev --private.api.addr=0.0.0.0:9090 --mine --log.dir.path=/logs/node1
     ports:
@@ -19,7 +19,7 @@ services:
   erigon-node2:
       profiles:
         - second
-      image: thorax/erigon:$ERIGON_TAG
+      image: testinprod/op-erigon:$ERIGON_TAG
       command: |
         erigon --datadir=/home/erigon/.local/share/erigon --chain=dev --private.api.addr=0.0.0.0:9090 --staticpeers=$ENODE --log.dir.path=/logs/node2
       volumes:
@@ -32,7 +32,7 @@ services:
   rpcdaemon:
     profiles:
       - first
-    image: thorax/erigon:$ERIGON_TAG
+    image: testinprod/op-erigon:$ERIGON_TAG
     command: |
        rpcdaemon --private.api.addr=erigon:9090 --http.api=admin,eth,erigon,web3,net,debug,trace,txpool,parity --http.addr=0.0.0.0 --http.vhosts=* --http.corsdomain=* --http.port=8545 --log.dir.path=/logs/node1
     volumes:
@@ -43,7 +43,7 @@ services:
   rpcdaemon-node2:
     profiles:
       - second
-    image: thorax/erigon:$ERIGON_TAG
+    image: testinprod/op-erigon:$ERIGON_TAG
     command: |
         rpcdaemon --private.api.addr=erigon-node2:9090 --http.api=admin,eth,erigon,web3,net,debug,trace,txpool,parity --http.addr=0.0.0.0 --http.vhosts=* --http.corsdomain=* --http.port=8545 --log.dir.path=/logs/node2
     volumes:
