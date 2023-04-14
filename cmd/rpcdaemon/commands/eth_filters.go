@@ -261,6 +261,7 @@ func (api *APIImpl) Logs(ctx context.Context, crit filters.FilterCriteria) (*rpc
 			select {
 			case h, ok := <-logs:
 				if h != nil {
+					// avoid null json array for topics
 					if h.Topics == nil {
 						h.Topics = []libcommon.Hash{}
 					}
