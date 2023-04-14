@@ -19,17 +19,17 @@ import (
 
 // GethTrace The trace as received from the existing Geth javascript tracer 'callTracer'
 type GethTrace struct {
-	Type    string     `json:"type"`
-	Error   string     `json:"error"`
-	From    string     `json:"from"`
-	To      string     `json:"to"`
-	Value   string     `json:"value"`
-	Gas     string     `json:"gas"`
-	GasUsed string     `json:"gasUsed"`
-	Input   string     `json:"input"`
-	Output  string     `json:"output"`
-	Time    string     `json:"time"`
-	Calls   GethTraces `json:"calls"`
+	Type    string     `json:"type,omitempty"`
+	Error   string     `json:"error,omitempty"`
+	From    string     `json:"from,omitempty"`
+	To      string     `json:"to,omitempty"`
+	Value   string     `json:"value,omitempty"`
+	Gas     string     `json:"gas,omitempty"`
+	GasUsed string     `json:"gasUsed,omitempty"`
+	Input   string     `json:"input,omitempty"`
+	Output  string     `json:"output,omitempty"`
+	Time    string     `json:"time,omitempty"`
+	Calls   GethTraces `json:"calls,omitempty"`
 }
 
 // GethTraces an array of GethTraces

@@ -15,6 +15,8 @@ import (
 	"github.com/ledgerwatch/erigon-lib/kv/order"
 	"github.com/ledgerwatch/erigon-lib/kv/rawdbv3"
 	"github.com/ledgerwatch/erigon/core/state/temporal"
+	"github.com/ledgerwatch/erigon/core/vm/evmtypes"
+	"github.com/ledgerwatch/erigon/eth/tracers"
 	"github.com/ledgerwatch/log/v3"
 
 	"github.com/ledgerwatch/erigon/common/hexutil"
@@ -112,6 +114,167 @@ func (api *OtterscanAPIImpl) getTransactionByHash(ctx context.Context, tx kv.Tx,
 	return txn, block, blockHash, blockNum, txnIndex, nil
 }
 
+func (api *OtterscanAPIImpl) relayToHistoricalBackend(ctx context.Context, result interface{}, method string, args ...interface{}) error {
+	return api.historicalRPCService.CallContext(ctx, result, method, args...)
+}
+
+func (api *OtterscanAPIImpl) translateCaptureStart(gethTrace *GethTrace, tracer vm.EVMLogger, vmenv *vm.EVM) error {
+	from := common.HexToAddress(gethTrace.From)
+	to := common.HexToAddress(gethTrace.To)
+	input, err := hexutil.Decode(gethTrace.Input)
+	if err != nil {
+		if err != hexutil.ErrEmptyString {
+			return err
+		}
+		input = []byte{}
+	}
+	valueBig, err := hexutil.DecodeBig(gethTrace.Value)
+	if err != nil {
+		if err != hexutil.ErrEmptyString {
+			return err
+		}
+		valueBig = big.NewInt(0)
+	}
+	value, _ := uint256.FromBig(valueBig)
+	gas, err := hexutil.DecodeUint64(gethTrace.Gas)
+	if err != nil {
+		return err
+	}
+	_, isPrecompile := vmenv.Precompile(to)
+	// dummy code
+	code := []byte{}
+	tracer.CaptureStart(vmenv, from, to, isPrecompile, false, input, gas, value, code)
+	return nil
+}
+
+func (api *OtterscanAPIImpl) translateOpcode(typStr string) (vm.OpCode, error) {
+	switch typStr {
+	default:
+	case "CALL":
+		return vm.CALL, nil
+	case "STATICCALL":
+		return vm.STATICCALL, nil
+	case "DELEGATECALL":
+		return vm.DELEGATECALL, nil
+	case "CALLCODE":
+		return vm.CALLCODE, nil
+	case "CREATE":
+		return vm.CREATE, nil
+	case "CREATE2":
+		return vm.CREATE2, nil
+	case "SELFDESTRUCT":
+		return vm.SELFDESTRUCT, nil
+	}
+	return vm.INVALID, fmt.Errorf("unable to translate %s", typStr)
+}
+
+func (api *OtterscanAPIImpl) translateCaptureEnter(gethTrace *GethTrace, tracer vm.EVMLogger, vmenv *vm.EVM) error {
+	from := common.HexToAddress(gethTrace.From)
+	to := common.HexToAddress(gethTrace.To)
+	input, err := hexutil.Decode(gethTrace.Input)
+	if err != nil {
+		if err != hexutil.ErrEmptyString {
+			return err
+		}
+		input = []byte{}
+	}
+	valueBig, err := hexutil.DecodeBig(gethTrace.Value)
+	if err != nil {
+		if err != hexutil.ErrEmptyString {
+			return err
+		}
+		valueBig = big.NewInt(0)
+	}
+	value, _ := uint256.FromBig(valueBig)
+	gas, err := hexutil.DecodeUint64(gethTrace.Gas)
+	if err != nil {
+		return err
+	}
+	typStr := gethTrace.Type
+	typ, err := api.translateOpcode(typStr)
+	if err != nil {
+		return err
+	}
+	_, isPrecompile := vmenv.Precompile(to)
+	tracer.CaptureEnter(typ, from, to, isPrecompile, false, input, gas, value, nil)
+	return nil
+}
+
+func (api *OtterscanAPIImpl) translateCaptureExit(gethTrace *GethTrace, tracer vm.EVMLogger) error {
+	usedGas, err := hexutil.DecodeUint64(gethTrace.GasUsed)
+	if err != nil {
+		return err
+	}
+	output, err := hexutil.Decode(gethTrace.Output)
+	if err != nil {
+		if err != hexutil.ErrEmptyString {
+			return err
+		}
+		output = []byte{}
+	}
+	err = errors.New(gethTrace.Error)
+	tracer.CaptureExit(output, usedGas, err)
+	return nil
+}
+
+func (api *OtterscanAPIImpl) translateRelayTraceResult(gethTrace *GethTrace, tracer vm.EVMLogger, chainConfig *chain.Config) error {
+	vmenv := vm.NewEVM(evmtypes.BlockContext{}, evmtypes.TxContext{}, nil, chainConfig, vm.Config{})
+	type traceWithIndex struct {
+		gethTrace *GethTrace
+		idx       int // children index
+	}
+	callStacks := make([]*traceWithIndex, 0)
+	started := false
+	// Each call stack can call and trigger sub call stack.
+	// rootIndex indicates the index of child for current inspected parent node trace.
+	rootIndex := 0
+	var trace *GethTrace = gethTrace
+	// iterative postorder traversal
+	for trace != nil || len(callStacks) > 0 {
+		if trace != nil {
+			// push back
+			callStacks = append(callStacks, &traceWithIndex{trace, rootIndex})
+			if !started {
+				started = true
+				if err := api.translateCaptureStart(trace, tracer, vmenv); err != nil {
+					return err
+				}
+			} else {
+				if err := api.translateCaptureEnter(trace, tracer, vmenv); err != nil {
+					return err
+				}
+			}
+			rootIndex = 0
+			if len(trace.Calls) > 0 {
+				trace = trace.Calls[0]
+			} else {
+				trace = nil
+			}
+			continue
+		}
+		// pop back
+		top := callStacks[len(callStacks)-1]
+		callStacks = callStacks[:len(callStacks)-1]
+		if err := api.translateCaptureExit(top.gethTrace, tracer); err != nil {
+			return err
+		}
+		// pop back callstack repeatly until popped element is last children of top of the callstack
+		for len(callStacks) > 0 && top.idx == len(callStacks[len(callStacks)-1].gethTrace.Calls)-1 {
+			// pop back
+			top = callStacks[len(callStacks)-1]
+			callStacks = callStacks[:len(callStacks)-1]
+			if err := api.translateCaptureExit(top.gethTrace, tracer); err != nil {
+				return err
+			}
+		}
+		if len(callStacks) > 0 {
+			trace = callStacks[len(callStacks)-1].gethTrace.Calls[top.idx+1]
+			rootIndex = top.idx + 1
+		}
+	}
+	return nil
+}
+
 func (api *OtterscanAPIImpl) runTracer(ctx context.Context, tx kv.Tx, hash common.Hash, tracer vm.EVMLogger) (*core.ExecutionResult, error) {
 	txn, block, _, _, txIndex, err := api.getTransactionByHash(ctx, tx, hash)
 	if err != nil {
@@ -125,6 +288,43 @@ func (api *OtterscanAPIImpl) runTracer(ctx context.Context, tx kv.Tx, hash commo
 	if err != nil {
 		return nil, err
 	}
+
+	blockNum := block.NumberU64()
+	if chainConfig.IsOptimismPreBedrock(blockNum) {
+		if api.historicalRPCService == nil {
+			return nil, rpc.ErrNoHistoricalFallback
+		}
+		// geth returns nested json so we have to flatten
+		treeResult := &GethTrace{}
+		callTracer := "callTracer"
+		if err := api.relayToHistoricalBackend(ctx, treeResult, "debug_traceTransaction", hash, &tracers.TraceConfig{Tracer: &callTracer}); err != nil {
+			return nil, fmt.Errorf("historical backend error: %w", err)
+		}
+		if tracer != nil {
+			err := api.translateRelayTraceResult(treeResult, tracer, chainConfig)
+			if err != nil {
+				return nil, err
+			}
+		}
+		usedGas, err := hexutil.DecodeUint64(treeResult.GasUsed)
+		if err != nil {
+			return nil, err
+		}
+		returnData, err := hexutil.Decode(treeResult.Output)
+		if err != nil {
+			if err != hexutil.ErrEmptyString {
+				return nil, err
+			}
+			returnData = []byte{}
+		}
+		result := &core.ExecutionResult{
+			UsedGas:    usedGas,
+			Err:        errors.New(treeResult.Error),
+			ReturnData: returnData,
+		}
+		return result, nil
+	}
+
 	engine := api.engine()
 
 	msg, blockCtx, txCtx, ibs, _, err := transactions.ComputeTxEnv(ctx, engine, block, chainConfig, api._blockReader, tx, int(txIndex), api.historyV3(tx))
