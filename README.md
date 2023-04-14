@@ -1,6 +1,6 @@
 # Optimistic Erigon
 
-A fork of Erigon that supports the [execution engine](https://github.com/ethereum-optimism/optimism/blob/develop/specs/exec-engine.md) of [OP stack](https://stack.optimism.io).
+A fork of [Erigon](https://github.com/ledgerwatch/erigon) that supports the [execution engine](https://github.com/ethereum-optimism/optimism/blob/develop/specs/exec-engine.md) of [OP stack](https://stack.optimism.io).
 
 [`testinprod-io/erigon-lib`](https://github.com/testinprod-io/erigon-lib) has minimal backwards-compatible changes to add Optimism engine-api fields on the `op-erigon` branch.
 

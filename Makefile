@@ -10,7 +10,7 @@ ERIGON_USER ?= erigon
 # if using volume-mounting data dir, then must exist on host OS
 DOCKER_UID ?= $(shell id -u)
 DOCKER_GID ?= $(shell id -g)
-DOCKER_TAG ?= thorax/erigon:latest
+DOCKER_TAG ?= testinprod/op-erigon:latest
 
 # Variables below for building on host OS, and are ignored for docker
 #
@@ -29,7 +29,7 @@ CGO_CFLAGS := CGO_CFLAGS="$(CGO_CFLAGS)"
 DBG_CGO_CFLAGS += -DMDBX_DEBUG=1
 
 BUILD_TAGS = nosqlite,noboltdb,disable_libutp
-PACKAGE = github.com/ledgerwatch/erigon
+PACKAGE = github.com/testinprod-io/op-erigon
 
 GO_FLAGS += -trimpath -tags $(BUILD_TAGS) -buildvcs=false
 GO_FLAGS += -ldflags "-X ${PACKAGE}/params.GitCommit=${GIT_COMMIT} -X ${PACKAGE}/params.GitBranch=${GIT_BRANCH} -X ${PACKAGE}/params.GitTag=${GIT_TAG}"
@@ -218,7 +218,7 @@ git-submodules:
 	@git submodule sync --quiet --recursive || true
 	@git submodule update --quiet --init --recursive --force || true
 
-PACKAGE_NAME          := github.com/ledgerwatch/erigon
+PACKAGE_NAME          := github.com/testinprod-io/op-erigon
 GOLANG_CROSS_VERSION  ?= v1.19.1
 
 .PHONY: release-dry-run
@@ -289,9 +289,9 @@ coverage:
 ## hive:                              run hive test suite locally using docker e.g. OUTPUT_DIR=~/results/hive SIM=ethereum/engine make hive
 .PHONY: hive
 hive:
-	DOCKER_TAG=thorax/erigon:ci-local make docker
-	docker pull thorax/hive:latest
-	docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(OUTPUT_DIR):/work thorax/hive:latest --sim $(SIM) --results-root=/work/results --client erigon_ci-local # run erigon
+	DOCKER_TAG=testinprod/op-erigon:ci-local make docker
+	docker pull testinprod/hive:latest
+	docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(OUTPUT_DIR):/work testinprod/hive:latest --sim $(SIM) --results-root=/work/results --client erigon_ci-local # run erigon
 
 ## automated-tests                    run automated tests (BUILD_ERIGON=0 to prevent erigon build with local image tag)
 .PHONY: automated-tests
