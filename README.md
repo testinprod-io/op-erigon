@@ -17,13 +17,13 @@ A fork of [Erigon](https://github.com/ledgerwatch/erigon) that supports the [exe
 ## Optimistic Erigon Project Status
 Optimistic Erigon is still under development. Please note that some features are not fully implemented or tested.
  
-### Features that works correctly
+### Features that work correctly
 - Validator mode (Synchronizing to the Optimism Goerli Testnet with op-node)
 - Ethereum standard JSON-RPC API
 - JSON-RPC API for Otterscan
 - All-in-One binary mode
 
-### Features that doesn't work (or yet to confirmed)
+### Features that don't work (or yet to be confirmed)
 - Block producing
 - Sequencer and proposer mode
 - P2P transaction gossip
@@ -119,8 +119,8 @@ For more information for op-node, refer the [Optimism's node operator guide](htt
 
 ## Thanks
 - Erigon team for building this amazing, super fast, and cutting-edge efficient client.
-- Willian for building awesome open-sourced block explorer, Otterscan.
-- Optimism Collective and OP Labs for huge supports, and buliding this amazing technology stack.
+- Willian for building an awesome open-sourced block explorer, Otterscan.
+- Optimism Collective and OP Labs for the huge support and for building this amazing technology stack.
 - Kelvin and Proto for guiding and helping us a lot. Also, forkdiff is amazing.
 - and Ethereum ❤️
 
