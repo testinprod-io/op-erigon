@@ -11,7 +11,6 @@ import (
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/erigon-lib/common"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	types2 "github.com/ledgerwatch/erigon-lib/types"
 	"github.com/ledgerwatch/log/v3"
 
@@ -430,11 +429,11 @@ func newRPCTransaction(tx types.Transaction, blockHash common.Hash, blockNumber 
 		if depositNonce != nil {
 			result.Nonce = hexutil.Uint64(*depositNonce)
 		}
-		result.GasPrice = (*hexutil.Big)(libcommon.Big0)
+		result.GasPrice = (*hexutil.Big)(common.Big0)
 		// must contain v, r, s values for backwards compatibility.
-		result.V = (*hexutil.Big)(libcommon.Big0)
-		result.R = (*hexutil.Big)(libcommon.Big0)
-		result.S = (*hexutil.Big)(libcommon.Big0)
+		result.V = (*hexutil.Big)(common.Big0)
+		result.R = (*hexutil.Big)(common.Big0)
+		result.S = (*hexutil.Big)(common.Big0)
 	}
 	signer := types.LatestSignerForChainID(chainId.ToBig())
 	result.From, _ = tx.Sender(*signer)
