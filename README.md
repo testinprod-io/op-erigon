@@ -1,13 +1,38 @@
 # Optimistic Erigon
-
-A fork of Erigon that supports the [execution engine](https://github.com/ethereum-optimism/optimism/blob/develop/specs/exec-engine.md) of [OP stack](https://stack.optimism.io).
+A fork of Erigon that supports the [execution engine](https://github.com/ethereum-optimism/optimism/blob/develop/specs/exec-engine.md) of [OP stack](https://stack.optimism.io). Check out the fork status here: [https://op-erigon.testinprod.io](https://op-erigon.testinprod.io)
 
 [`testinprod-io/erigon-lib`](https://github.com/testinprod-io/erigon-lib) has minimal backwards-compatible changes to add Optimism engine-api fields on the `op-erigon` branch.
 
 [`testinprod-io/erigon-interfaces`](https://github.com/testinprod-io/erigon-interfaces) defines the protobuf changes for `erigon-lib` on the `op-erigon` branch.
+- [Optimistic Erigon Project Status](#optimistic-erigon-project-status)
+  + [Feature Status](#feature-status)
+  + [Test Status](#test-status)
+- [Getting started with Optimism](#getting-started-with-optimism)
+- [Example: Running An Optimism Goerli Testnet Node](#example-running-an-optimism-goerli-testnet-node)
+- [Original Erigon README.md](#erigon)
+- [Thanks](#thanks)
+ 
+## Optimistic Erigon Project Status
+Optimistic Erigon is still under development. Please note that some features are not fully implemented or tested.
+ 
+### Features that works correctly
+- Validator mode (Synchronizing to the Optimism Goerli Testnet with op-node)
+- Ethereum standard JSON-RPC API
+- JSON-RPC API for Otterscan
+- All-in-One binary mode
 
-![Coverage](https://gist.githubusercontent.com/revitteth/ee38e9beb22353eef6b88f2ad6ed7aa9/raw/badge.svg)
+### Features that doesn't work (or yet to confirmed)
+- Block producing
+- Sequencer and proposer mode
+- P2P transaction gossip
+- Running Erigon services as separate processes
+- Erigon Snapshot
 
+### Stability (dogfooding)
+- [![Hive](https://github.com/testinprod-io/op-erigon/actions/workflows/hive.yml/badge.svg)](https://github.com/testinprod-io/op-erigon/actions/workflows/hive.yml)
+- We've been running an op-erigon public RPC here: [https://op-erigon.goerli.testinprod.io/](https://op-erigon.goerli.testinprod.io/)
+- Our Otterscan (block explorer) uses our public RPC: [https://otterscan.goerli.testinprod.io/](https://otterscan.goerli.testinprod.io/) 
+ 
 ## Getting started with Optimism
 To build from the code, you can use the same command described below(`make erigon`)
 
@@ -90,22 +115,28 @@ $ op-node \
 ```
 For more information for op-node, refer the [Optimism's node operator guide](https://community.optimism.io/docs/developers/bedrock/node-operator-guide/#configuring-op-node).
 
-## Known Limitations and Caveats
+## Thanks
+- Erigon team for building this amazing, super fast, and cutting-edge efficient client.
+- Willian for building awesome open-sourced block explorer, Otterscan.
+- Optimism Collective and OP Labs for huge supports, and buliding this amazing technology stack.
+- Kelvin and Proto for guiding and helping us a lot. Also, forkdiff is amazing.
+- and Ethereum ❤️
 
-Optimistic Erigon is still under development, and some features are not implemented or fully tested. The following list has been confirmed to work correctly:
-- Synchronizing to the Optimism Goerli Testnet with op-node
-- Ethereum standard JSON-RPC API
-- JSON-RPC API for Otterscan
-- Currently, only the All-in-One binary mode is supported
-
-The following list is yet to be confirmed or fully tested:
-- Block producing as a sequencer of the OP stack chain
-- Operating as a proposer of the OP stack chain
-- Disable the P2P transaction gossip feature
-- Running Erigon services as separate processes
-- Erigon Snapshot
+_Let's stay Optimistic_ 🔴
 
 ---
+
+<!-- Original Erigon README starts. -->
+
+# Erigon
+
+Erigon is an implementation of Ethereum (execution client with light client for consensus layer), on the efficiency
+frontier. [Archive Node](https://ethereum.org/en/developers/docs/nodes-and-clients/archive-nodes/#what-is-an-archive-node)
+by default.
+
+![Build status](https://github.com/ledgerwatch/erigon/actions/workflows/ci.yml/badge.svg)
+
+![Coverage](https://gist.githubusercontent.com/revitteth/ee38e9beb22353eef6b88f2ad6ed7aa9/raw/badge.svg)
 
 <!--ts-->
 
