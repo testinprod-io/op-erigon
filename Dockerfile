@@ -99,5 +99,5 @@ LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.name="Erigon" \
       org.label-schema.schema-version="1.0" \
       org.label-schema.vcs-ref=$VCS_REF \
-      org.label-schema.vcs-url="https://github.com/testinprod-io/erigon.git" \
+      org.label-schema.vcs-url="https://github.com/testinprod-io/op-erigon.git" \
       org.label-schema.version=$VERSION
