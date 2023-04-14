@@ -86,6 +86,7 @@ def:
             - "core/block_builder_parameters.go"
             - "params/mining.go"
             - "core/chain_makers.go"
+            - "eth/stagedsync/stage_mining_exec_test.go"
         - title: "Tx-pool tx cost updates"
           description: |
             Transaction queueing and inclusion needs to account for the L1 cost component.
@@ -104,6 +105,11 @@ def:
               globs:
                 - "cmd/utils/flags.go"
                 - "turbo/cli/default_flags.go"
+            - title: "Versioning"
+              description: |
+                List the op-geth and upstream go-ethereum versions.
+              globs:
+                - "params/version.go"
         - title: "Node config"
           globs:
             - "eth/ethconfig/config.go"
