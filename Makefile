@@ -238,6 +238,14 @@ release-dry-run: git-submodules
 
 .PHONY: release
 release: git-submodules
+	@echo $${VERSION}
+	@echo ${VERSION}
+	@echo $${VERSION} | cut -c 2-
+	@echo ${VERSION} | cut -c 2- 
+	@echo $$(echo ${VERSION} | cut -c 2- )
+
+	@exit 1
+
 	@docker run \
 		--rm \
 		--privileged \
@@ -251,6 +259,9 @@ release: git-submodules
 		ghcr.io/goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
 		--skip-validate
 
+	@docker manifest create testinprod/op-erigon:latest \
+		--amend testinprod/op-erigon:$${VERSION:1}-amd64
+		--amend testinprod/op-erigon:$${VERSION:1}-arm64
 	@docker manifest push testinprod/op-erigon:latest
 	@docker image push --all-tags testinprod/op-erigon
 
