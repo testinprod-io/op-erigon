@@ -251,6 +251,7 @@ release: git-submodules
 		ghcr.io/goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
 		--skip-validate
 
+	@docker image tag testinprod/op-erigon:${VERSION:1}-amd64 testinprod/op-erigon:latest
 	@docker image push --all-tags testinprod/op-erigon
 
 
