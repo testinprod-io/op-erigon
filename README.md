@@ -119,7 +119,7 @@ $ op-node \
 For more information for op-node, refer the [Optimism's node operator guide](https://community.optimism.io/docs/developers/bedrock/node-operator-guide/#configuring-op-node).
 
 ## Need any help?
-If you need help or find a bug, please share it with our discord! [![](https://dcbadge.vercel.app/api/server/42DFTeZwUZ?style=flat&compact=true)](https://discord.gg/42DFTeZwUZ)
+[![](https://dcbadge.vercel.app/api/server/42DFTeZwUZ?style=flat&compact=true)](https://discord.gg/42DFTeZwUZ) If you need help or find a bug, please share it with our discord!
 
 ## Thanks
 - Erigon team for building this amazing, super fast, and cutting-edge efficient client.
