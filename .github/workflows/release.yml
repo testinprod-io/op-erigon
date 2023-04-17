@@ -23,6 +23,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: dockerhub-login
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB }}
+          password: ${{ secrets.DOCKERHUB_KEY }}
+
       - name: Set up Go
         uses: actions/setup-go@master
         with:
