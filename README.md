@@ -1,13 +1,41 @@
 # Optimistic Erigon
+[![CI](https://github.com/testinprod-io/op-erigon/actions/workflows/ci.yml/badge.svg)](https://github.com/testinprod-io/op-erigon/actions/workflows/ci.yml) [![Integration tests](https://github.com/testinprod-io/op-erigon/actions/workflows/test-integration.yml/badge.svg)](https://github.com/testinprod-io/op-erigon/actions/workflows/test-integration.yml) [![Hive](https://github.com/testinprod-io/op-erigon/actions/workflows/hive.yml/badge.svg)](https://github.com/testinprod-io/op-erigon/actions/workflows/hive.yml) [![](https://dcbadge.vercel.app/api/server/42DFTeZwUZ?style=flat&compact=true)](https://discord.gg/42DFTeZwUZ)
 
-A fork of [Erigon](https://github.com/ledgerwatch/erigon) that supports the [execution engine](https://github.com/ethereum-optimism/optimism/blob/develop/specs/exec-engine.md) of [OP stack](https://stack.optimism.io).
+A fork of [Erigon](https://github.com/ledgerwatch/erigon) that supports the [execution engine](https://github.com/ethereum-optimism/optimism/blob/develop/specs/exec-engine.md) of [OP stack](https://stack.optimism.io). Check out the fork status here: [https://op-erigon.testinprod.io](https://op-erigon.testinprod.io)
 
 [`testinprod-io/erigon-lib`](https://github.com/testinprod-io/erigon-lib) has minimal backwards-compatible changes to add Optimism engine-api fields on the `op-erigon` branch.
 
 [`testinprod-io/erigon-interfaces`](https://github.com/testinprod-io/erigon-interfaces) defines the protobuf changes for `erigon-lib` on the `op-erigon` branch.
+- [Optimistic Erigon Project Status](#optimistic-erigon-project-status)
+  + [Features that work correctly](#features-that-work-correctly)
+  + [Features that don't work (or yet to be confirmed)](#features-that-dont-work-or-yet-to-be-confirmed)
+- [Getting started with Optimism](#getting-started-with-optimism)
+- [Example: Running An Optimism Goerli Testnet Node](#example-running-an-optimism-goerli-testnet-node)
+- [Need any help?](#need-any-help)
+- [Thanks](#thanks)
+- [Original Erigon README.md](#erigon)
+ 
+## Optimistic Erigon Project Status
+Optimistic Erigon is still under development. Please note that some features are not fully implemented or tested.
+ 
+### Features that work correctly
+- Validator mode (Synchronizing to the Optimism Goerli Testnet with op-node)
+- Ethereum standard JSON-RPC API
+- JSON-RPC API for Otterscan
+- All-in-One binary mode
 
-![Coverage](https://gist.githubusercontent.com/revitteth/ee38e9beb22353eef6b88f2ad6ed7aa9/raw/badge.svg)
+### Features that don't work (or yet to be confirmed)
+- Block producing as a Sequencer
+- Sequencer and proposer mode
+- P2P transaction gossip
+- Running Erigon services as separate processes
+- Erigon Snapshot
 
+### Stability (dogfooding)
+- [![Hive](https://github.com/testinprod-io/op-erigon/actions/workflows/hive.yml/badge.svg)](https://github.com/testinprod-io/op-erigon/actions/workflows/hive.yml)
+- We've been running an op-erigon public RPC here: [https://op-erigon.goerli.testinprod.io/](https://op-erigon.goerli.testinprod.io/)
+- Our Otterscan (block explorer) uses our public RPC: [https://otterscan.goerli.testinprod.io/](https://otterscan.goerli.testinprod.io/) 
+ 
 ## Getting started with Optimism
 To build from the code, you can use the same command described below(`make erigon`)
 
@@ -17,7 +45,7 @@ You can use every flag erigon has. But there are some required flags and newly a
 **[Required]**
 op-erigon cannot execute state transition before the bedrock update. So preconfigured data file is required to run the node. It includes blocks and states of the pre-bedrock chain.
 
-You can download the latest chain data of Optimism Goerli Testnet from [https://backup.goerli.op-erigon.testinprod.io](https://backup.goerli.op-erigon.testinprod.io).
+You can download the latest chain data of Optimism Goerli Testnet from [https://op-erigon-backup.goerli.testinprod.io](https://backup.goerli.op-erigon.testinprod.io).
 
 ### `--externalcl`, `--authrpc.addr`, `--authrpc.port`, `--authrpc.jwtsecret`
 **[Required]** 
@@ -41,7 +69,7 @@ For more information about legacy geth, refer the [Optimism's node operator guid
 **[Optional]** 
 Disable P2P. Execution-layer peering is currently not supported in the Optimism protocol. Though this is not required, it saves resources since TX pool gossip is currently not available.
 
-## Example: An Optimism Goerli Testnet Node
+## Example: Running An Optimism Goerli Testnet Node
 ### 1. Download and decompress the chain data
 You can download the latest preconfigured chain data from [https://backup.goerli.op-erigon.testinprod.io](https://backup.goerli.op-erigon.testinprod.io).
 ```bash
@@ -73,10 +101,10 @@ $ ./build/bin/erigon \
     --nodiscover
 ```
 2. Use the Docker image: You can get the official Docker image from [testinprod/op-erigon](https://hub.docker.com/r/testinprod/op-erigon).
-3. Use the Helm chart: If you want to deploy op-erigon to the K8S cluster, you can use our [Helm chart](https://artifacthub.io/packages/helm/op-charts/erigon).
+3. Use the Helm chart: If you want to deploy op-erigon to the K8S cluster, you can use [Helm chart](https://artifacthub.io/packages/helm/op-charts/erigon).
 
 ### 3. Configuring op-node
-op-node is a consensus engine of OP stack. You can also build from the source, use official Docker image(`us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node`), or [our Helm chart](https://artifacthub.io/packages/helm/op-charts/op-node).
+op-node is a consensus engine of OP stack. You can also build from the source, use official Docker image(`us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node`), or [Helm chart](https://artifacthub.io/packages/helm/op-charts/op-node).
 
 ```bash
 (example execution command)
@@ -90,22 +118,31 @@ $ op-node \
 ```
 For more information for op-node, refer the [Optimism's node operator guide](https://community.optimism.io/docs/developers/bedrock/node-operator-guide/#configuring-op-node).
 
-## Known Limitations and Caveats
+## Need any help?
+[![](https://dcbadge.vercel.app/api/server/42DFTeZwUZ?style=flat&compact=true)](https://discord.gg/42DFTeZwUZ) If you need help or find a bug, please share it with our discord!
 
-Optimistic Erigon is still under development, and some features are not implemented or fully tested. The following list has been confirmed to work correctly:
-- Synchronizing to the Optimism Goerli Testnet with op-node
-- Ethereum standard JSON-RPC API
-- JSON-RPC API for Otterscan
-- Currently, only the All-in-One binary mode is supported
+## Thanks
+- Erigon team for building this amazing, super fast, and cutting-edge efficient client.
+- Willian for building an awesome open-sourced block explorer, Otterscan.
+- Optimism Collective and OP Labs for the huge support and for building this amazing technology stack.
+- Kelvin, Proto, and Lindsay for guiding and helping us a lot. Also, forkdiff is amazing.
+- and Ethereum ❤️
 
-The following list is yet to be confirmed or fully tested:
-- Block producing as a sequencer of the OP stack chain
-- Operating as a proposer of the OP stack chain
-- Disable the P2P transaction gossip feature
-- Running Erigon services as separate processes
-- Erigon Snapshot
+_Let's stay Optimistic_ 🔴
 
 ---
+
+<!-- Original Erigon README starts. -->
+
+# Erigon
+
+Erigon is an implementation of Ethereum (execution client with light client for consensus layer), on the efficiency
+frontier. [Archive Node](https://ethereum.org/en/developers/docs/nodes-and-clients/archive-nodes/#what-is-an-archive-node)
+by default.
+
+![Build status](https://github.com/ledgerwatch/erigon/actions/workflows/ci.yml/badge.svg)
+
+![Coverage](https://gist.githubusercontent.com/revitteth/ee38e9beb22353eef6b88f2ad6ed7aa9/raw/badge.svg)
 
 <!--ts-->
 
