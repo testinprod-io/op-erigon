@@ -219,7 +219,7 @@ git-submodules:
 	@git submodule update --quiet --init --recursive --force || true
 
 PACKAGE_NAME          := github.com/testinprod-io/op-erigon
-GOLANG_CROSS_VERSION  ?= v1.20.2
+GOLANG_CROSS_VERSION  ?= v1.19.1
 
 .PHONY: release-dry-run
 release-dry-run: git-submodules
@@ -249,7 +249,7 @@ release: git-submodules
 		-v `pwd`:/go/src/$(PACKAGE_NAME) \
 		-w /go/src/$(PACKAGE_NAME) \
 		ghcr.io/goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
-		--clean --skip-validate
+		--skip-validate
 
 	@docker image push --all-tags testinprod/erigon
 
