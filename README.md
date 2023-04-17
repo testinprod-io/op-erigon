@@ -1,5 +1,5 @@
 # Optimistic Erigon
-[![CI](https://github.com/testinprod-io/op-erigon/actions/workflows/ci.yml/badge.svg)](https://github.com/testinprod-io/op-erigon/actions/workflows/ci.yml) [![Integration tests](https://github.com/testinprod-io/op-erigon/actions/workflows/test-integration.yml/badge.svg)](https://github.com/testinprod-io/op-erigon/actions/workflows/test-integration.yml) [![Hive](https://github.com/testinprod-io/op-erigon/actions/workflows/hive.yml/badge.svg)](https://github.com/testinprod-io/op-erigon/actions/workflows/hive.yml)
+[![CI](https://github.com/testinprod-io/op-erigon/actions/workflows/ci.yml/badge.svg)](https://github.com/testinprod-io/op-erigon/actions/workflows/ci.yml) [![Integration tests](https://github.com/testinprod-io/op-erigon/actions/workflows/test-integration.yml/badge.svg)](https://github.com/testinprod-io/op-erigon/actions/workflows/test-integration.yml) [![Hive](https://github.com/testinprod-io/op-erigon/actions/workflows/hive.yml/badge.svg)](https://github.com/testinprod-io/op-erigon/actions/workflows/hive.yml) [![](https://dcbadge.vercel.app/api/server/42DFTeZwUZ?style=flat&compact=true)](https://discord.gg/42DFTeZwUZ)
 
 A fork of [Erigon](https://github.com/ledgerwatch/erigon) that supports the [execution engine](https://github.com/ethereum-optimism/optimism/blob/develop/specs/exec-engine.md) of [OP stack](https://stack.optimism.io). Check out the fork status here: [https://op-erigon.testinprod.io](https://op-erigon.testinprod.io)
 
@@ -11,8 +11,9 @@ A fork of [Erigon](https://github.com/ledgerwatch/erigon) that supports the [exe
   + [Features that don't work (or yet to be confirmed)](#features-that-dont-work-or-yet-to-be-confirmed)
 - [Getting started with Optimism](#getting-started-with-optimism)
 - [Example: Running An Optimism Goerli Testnet Node](#example-running-an-optimism-goerli-testnet-node)
-- [Original Erigon README.md](#erigon)
+- [Need any help?](#)
 - [Thanks](#thanks)
+- [Original Erigon README.md](#erigon)
  
 ## Optimistic Erigon Project Status
 Optimistic Erigon is still under development. Please note that some features are not fully implemented or tested.
@@ -24,7 +25,7 @@ Optimistic Erigon is still under development. Please note that some features are
 - All-in-One binary mode
 
 ### Features that don't work (or yet to be confirmed)
-- Block producing
+- Block producing as a Sequencer
 - Sequencer and proposer mode
 - P2P transaction gossip
 - Running Erigon services as separate processes
@@ -44,7 +45,7 @@ You can use every flag erigon has. But there are some required flags and newly a
 **[Required]**
 op-erigon cannot execute state transition before the bedrock update. So preconfigured data file is required to run the node. It includes blocks and states of the pre-bedrock chain.
 
-You can download the latest chain data of Optimism Goerli Testnet from [https://backup.goerli.op-erigon.testinprod.io](https://backup.goerli.op-erigon.testinprod.io).
+You can download the latest chain data of Optimism Goerli Testnet from [https://op-erigon-backup.goerli.testinprod.io](https://backup.goerli.op-erigon.testinprod.io).
 
 ### `--externalcl`, `--authrpc.addr`, `--authrpc.port`, `--authrpc.jwtsecret`
 **[Required]** 
@@ -117,11 +118,16 @@ $ op-node \
 ```
 For more information for op-node, refer the [Optimism's node operator guide](https://community.optimism.io/docs/developers/bedrock/node-operator-guide/#configuring-op-node).
 
+## Need any help?
+[![](https://dcbadge.vercel.app/api/server/42DFTeZwUZ?style=flat&compact=true)](https://discord.gg/42DFTeZwUZ) 
+
+If you need help or find a bug, please share it with our discord!
+
 ## Thanks
 - Erigon team for building this amazing, super fast, and cutting-edge efficient client.
 - Willian for building an awesome open-sourced block explorer, Otterscan.
 - Optimism Collective and OP Labs for the huge support and for building this amazing technology stack.
-- Kelvin and Proto for guiding and helping us a lot. Also, forkdiff is amazing.
+- Kelvin, Proto, and Lindsay for guiding and helping us a lot. Also, forkdiff is amazing.
 - and Ethereum ❤️
 
 _Let's stay Optimistic_ 🔴
