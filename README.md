@@ -11,7 +11,7 @@ A fork of [Erigon](https://github.com/ledgerwatch/erigon) that supports the [exe
   + [Features that don't work (or yet to be confirmed)](#features-that-dont-work-or-yet-to-be-confirmed)
 - [Getting started with Optimism](#getting-started-with-optimism)
 - [Example: Running An Optimism Goerli Testnet Node](#example-running-an-optimism-goerli-testnet-node)
-- [Need any help?](#)
+- [Need any help?](#need-any-help)
 - [Thanks](#thanks)
 - [Original Erigon README.md](#erigon)
  
