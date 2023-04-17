@@ -251,7 +251,7 @@ release: git-submodules
 		ghcr.io/goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
 		--skip-validate
 
-	@docker image push --all-tags testinprod/erigon
+	@docker image push --all-tags testinprod/op-erigon
 
 
 # since DOCKER_UID, DOCKER_GID are default initialized to the current user uid/gid,
