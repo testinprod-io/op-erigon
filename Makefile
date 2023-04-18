@@ -248,8 +248,14 @@ release: git-submodules
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v `pwd`:/go/src/$(PACKAGE_NAME) \
 		-w /go/src/$(PACKAGE_NAME) \
-		goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
-		--rm-dist --skip-validate
+		ghcr.io/goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
+		--skip-validate
+
+	@docker image push --all-tags testinprod/op-erigon
+	@docker manifest create testinprod/op-erigon:latest \
+		--amend testinprod/op-erigon:$$(echo ${VERSION} | cut -c 2- )-amd64 \
+		--amend testinprod/op-erigon:$$(echo ${VERSION} | cut -c 2- )-arm64
+	@docker manifest push testinprod/op-erigon:latest
 
 # since DOCKER_UID, DOCKER_GID are default initialized to the current user uid/gid,
 # we need separate envvars to facilitate creation of the erigon user on the host OS.
