@@ -76,7 +76,7 @@ You can download the latest preconfigured chain data from [https://backup.goerli
 curl -L -o "backup.tar.gz" https://backup.goerli.op-erigon.testinprod.io
 tar -zcvf backup.tar.gz
 ```
-After untaring, you will get a folder named `chaindata` which contains two files: `mdbx.dat` and `mdbx.lck`. Move `chaindata` to your folder and use your folder as datadir(`$DATADIR`) for erigon. For example,
+After untaring, you will get a folder named `chaindata` which contains two files: `mdbx.dat` and `mdbx.lck`. Create a directory, move `chaindata` to the directory, and use the directory as a datadir(`$DATADIR`) for erigon. For example,
 ```bash
 mkdir database
 mv chaindata database/
