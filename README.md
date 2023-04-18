@@ -74,7 +74,7 @@ Disable P2P. Execution-layer peering is currently not supported in the Optimism 
 You can download the latest preconfigured chain data from [https://backup.goerli.op-erigon.testinprod.io](https://backup.goerli.op-erigon.testinprod.io).
 ```bash
 curl -L -o "backup.tar.gz" https://backup.goerli.op-erigon.testinprod.io
-tar -zcvf backup.tar.gz
+tar -zxvf backup.tar.gz
 ```
 ### 2. Configuring op-erigon
 There are three options to run op-erigon. Please refer to the preceding descriptions for the required flags.
