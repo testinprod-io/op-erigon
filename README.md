@@ -76,6 +76,13 @@ You can download the latest preconfigured chain data from [https://backup.goerli
 curl -L -o "backup.tar.gz" https://backup.goerli.op-erigon.testinprod.io
 tar -zxvf backup.tar.gz
 ```
+After untaring, you will get a folder named `chaindata` which contains two files: `mdbx.dat` and `mdbx.lck`. Create a directory, move `chaindata` to the directory, and use the directory as a datadir(`$DATADIR`) for erigon. For example,
+```bash
+mkdir database
+mv chaindata database/
+export DATA_DIR=`pwd`/database
+```
+
 ### 2. Configuring op-erigon
 There are three options to run op-erigon. Please refer to the preceding descriptions for the required flags.
 1. Build from the source
