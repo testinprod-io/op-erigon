@@ -167,6 +167,10 @@ func NewReceipt(failed bool, cumulativeGasUsed uint64) *Receipt {
 	return r
 }
 
+func (r Receipt) IsDepositTxReceipt() bool {
+	return r.Type == DepositTxType
+}
+
 // EncodeRLP implements rlp.Encoder, and flattens the consensus fields of a receipt
 // into an RLP stream. If no post state is present, byzantium fork is assumed.
 func (r Receipt) EncodeRLP(w io.Writer) error {
