@@ -43,7 +43,7 @@ func (api *OtterscanAPIImpl) GetBlockDetails(ctx context.Context, number rpc.Blo
 	if err != nil {
 		return nil, err
 	}
-	feesRes, err := api.delegateBlockFees(ctx, tx, b, senders, chainConfig)
+	feesRes, gasUsedDepositTxRes, err := api.delegateBlockFees(ctx, tx, b, senders, chainConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -52,6 +52,9 @@ func (api *OtterscanAPIImpl) GetBlockDetails(ctx context.Context, number rpc.Blo
 	response["block"] = getBlockRes
 	response["issuance"] = getIssuanceRes
 	response["totalFees"] = hexutil.Uint64(feesRes)
+	if chainConfig.IsOptimism() {
+		response["gasUsedDepositTx"] = hexutil.Uint64(gasUsedDepositTxRes)
+	}
 	return response, nil
 }
 
@@ -89,7 +92,7 @@ func (api *OtterscanAPIImpl) GetBlockDetailsByHash(ctx context.Context, hash com
 	if err != nil {
 		return nil, err
 	}
-	feesRes, err := api.delegateBlockFees(ctx, tx, b, senders, chainConfig)
+	feesRes, gasUsedDepositTxRes, err := api.delegateBlockFees(ctx, tx, b, senders, chainConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -98,5 +101,8 @@ func (api *OtterscanAPIImpl) GetBlockDetailsByHash(ctx context.Context, hash com
 	response["block"] = getBlockRes
 	response["issuance"] = getIssuanceRes
 	response["totalFees"] = hexutil.Uint64(feesRes)
+	if chainConfig.IsOptimism() {
+		response["gasUsedDepositTx"] = hexutil.Uint64(gasUsedDepositTxRes)
+	}
 	return response, nil
 }
