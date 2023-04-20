@@ -724,12 +724,13 @@ func (api *OtterscanAPIImpl) delegateIssuance(tx kv.Tx, block *types.Block, chai
 	return ret, nil
 }
 
-func (api *OtterscanAPIImpl) delegateBlockFees(ctx context.Context, tx kv.Tx, block *types.Block, senders []common.Address, chainConfig *chain.Config) (uint64, error) {
+func (api *OtterscanAPIImpl) delegateBlockFees(ctx context.Context, tx kv.Tx, block *types.Block, senders []common.Address, chainConfig *chain.Config) (uint64, uint64, error) {
 	receipts, err := api.getReceipts(ctx, tx, chainConfig, block, senders)
 	if err != nil {
-		return 0, fmt.Errorf("getReceipts error: %v", err)
+		return 0, 0, fmt.Errorf("getReceipts error: %v", err)
 	}
 
+	gasUsedDepositTx := uint64(0)
 	fees := uint64(0)
 	for _, receipt := range receipts {
 		txn := block.Transactions()[receipt.TransactionIndex]
@@ -738,13 +739,18 @@ func (api *OtterscanAPIImpl) delegateBlockFees(ctx context.Context, tx kv.Tx, bl
 			effectiveGasPrice = txn.GetPrice().Uint64()
 		} else {
 			baseFee, _ := uint256.FromBig(block.BaseFee())
+			if chainConfig.IsOptimism() && receipt.IsDepositTxReceipt() {
+				// if depositTx, no fee consumption
+				gasUsedDepositTx += receipt.GasUsed
+				continue
+			}
 			gasPrice := new(big.Int).Add(block.BaseFee(), txn.GetEffectiveGasTip(baseFee).ToBig())
 			effectiveGasPrice = gasPrice.Uint64()
 		}
 		fees += effectiveGasPrice * receipt.GasUsed
 	}
 
-	return fees, nil
+	return fees, gasUsedDepositTx, nil
 }
 
 func (api *OtterscanAPIImpl) getBlockWithSenders(ctx context.Context, number rpc.BlockNumber, tx kv.Tx) (*types.Block, []common.Address, error) {
