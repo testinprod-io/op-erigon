@@ -11,7 +11,7 @@ import (
 type TraceConfig struct {
 	*logger.LogConfig
 	Tracer         *string                `json:"tracer"`
-	TracerConfig   *json.RawMessage       `json:"-"`
+	TracerConfig   *json.RawMessage       `json:"tracerConfig,omitempty"`
 	Timeout        *string                `json:"timeout,omitempty"`
 	Reexec         *uint64                `json:"reexec,omitempty"`
 	NoRefunds      *bool                  `json:"-"` // Turns off gas refunds when tracing
