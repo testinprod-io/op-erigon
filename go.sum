@@ -509,8 +509,6 @@ github.com/kr/text v0.2.0/go.mod h1:eLer722TekiGuMkidMxC/pM04lWEeraHUUmBw8l2grE=
 github.com/kylelemons/godebug v0.0.0-20170224010052-a616ab194758 h1:0D5M2HQSGD3PYPwICLl+/9oulQauOuETfgFvhBDffs0=
 github.com/leanovate/gopter v0.2.9 h1:fQjYxZaynp97ozCzfOyOuAGOU4aU/z37zf/tOujFk7c=
 github.com/leanovate/gopter v0.2.9/go.mod h1:U2L/78B+KVFIx2VmW6onHJQzXtFb+p5y3y2Sh+Jxxv8=
-github.com/ledgerwatch/erigon-lib v0.0.0-20230217023654-c9efa3d6946e h1:NdLctgiQEIMKf8EsekKg5GPrphd4F5zjEzYPF52OZxI=
-github.com/ledgerwatch/erigon-lib v0.0.0-20230217023654-c9efa3d6946e/go.mod h1:K2zoMM6ZeLopITKZDrOvzJBtApmw9bPz2RnhxW6jqSc=
 github.com/ledgerwatch/erigon-snapshot v1.1.1-0.20230215122237-5e33484e9be4 h1:KH4/JnCdg52tcTqBfv4dVwa3jryncGXjSByrzkNUXxc=
 github.com/ledgerwatch/erigon-snapshot v1.1.1-0.20230215122237-5e33484e9be4/go.mod h1:3AuPxZc85jkehh/HA9h8gabv5MSi3kb/ddtzBsTVJFo=
 github.com/ledgerwatch/log/v3 v3.7.0 h1:aFPEZdwZx4jzA3+/Pf8wNDN5tCI0cIolq/kfvgcM+og=
@@ -895,6 +893,8 @@ github.com/supranational/blst v0.3.10/go.mod h1:jZJtfjgudtNl4en1tzwPIV3KjUnQUvG3
 github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07/go.mod h1:kDXzergiv9cbyO7IOYJZWg1U88JhDg3PB6klq9Hg2pA=
 github.com/tendermint/go-amino v0.14.1 h1:o2WudxNfdLNBwMyl2dqOJxiro5rfrEaU0Ugs6offJMk=
 github.com/tendermint/go-amino v0.14.1/go.mod h1:i/UKE5Uocn+argJJBb12qTZsCDBcAYMbR92AaJVmKso=
+github.com/testinprod-io/erigon-lib v0.0.0-20230425004815-31d9d276c242 h1:NvA3txSh74Nc0FCRHHHRoBcc2J6uICvGb1FTFjrX/j0=
+github.com/testinprod-io/erigon-lib v0.0.0-20230425004815-31d9d276c242/go.mod h1:8nEOd6uSbVLBINh/rPrwsu5bkfomxCJTSmtbsU23my0=
 github.com/thomaso-mirodin/intmath v0.0.0-20160323211736-5dc6d854e46e h1:cR8/SYRgyQCt5cNCMniB/ZScMkhI9nk8U5C7SbISXjo=
 github.com/thomaso-mirodin/intmath v0.0.0-20160323211736-5dc6d854e46e/go.mod h1:Tu4lItkATkonrYuvtVjG0/rhy15qrNGNTjPdaphtZ/8=
 github.com/tidwall/btree v1.5.0 h1:iV0yVY/frd7r6qGBXfEYs7DH0gTDgrKTrDjS7xt/IyQ=
