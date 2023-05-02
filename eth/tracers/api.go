@@ -16,4 +16,7 @@ type TraceConfig struct {
 	Reexec         *uint64                `json:"reexec,omitempty"`
 	NoRefunds      *bool                  `json:"-"` // Turns off gas refunds when tracing
 	StateOverrides *ethapi.StateOverrides `json:"-"`
+
+	BorTraceEnabled *bool `json:"-"`
+	BorTx           *bool `json:"-"`
 }
