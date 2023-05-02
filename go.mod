@@ -71,7 +71,7 @@ require (
 	github.com/protolambda/eth2-shuffle v1.1.0
 	github.com/prysmaticlabs/fastssz v0.0.0-20220628121656-93dfe28febab
 	github.com/prysmaticlabs/go-bitfield v0.0.0-20210809151128-385d8c5e3fb7
-	github.com/prysmaticlabs/gohashtree v0.0.2-alpha
+	github.com/prysmaticlabs/gohashtree v0.0.3-alpha
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22
 	github.com/rs/cors v1.8.3
 	github.com/spf13/cobra v1.6.1
