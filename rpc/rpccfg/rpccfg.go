@@ -37,3 +37,5 @@ var DefaultHTTPTimeouts = HTTPTimeouts{
 }
 
 const DefaultEvmCallTimeout = 5 * time.Minute
+
+const DefaultHistoricalRPCTimeout = 5 * time.Second
