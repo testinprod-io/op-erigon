@@ -101,6 +101,7 @@ var Defaults = Config{
 		KeepBlocks: false,
 		Produce:    true,
 	},
+	DropUselessPeers: false,
 }
 
 func init() {
@@ -253,6 +254,8 @@ type Config struct {
 	RollupSequencerHTTP        string
 	RollupHistoricalRPC        string
 	RollupHistoricalRPCTimeout time.Duration
+
+	DropUselessPeers bool
 }
 
 type Sync struct {

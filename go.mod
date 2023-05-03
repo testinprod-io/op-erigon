@@ -9,7 +9,7 @@ replace github.com/ledgerwatch/erigon-lib v0.0.0-20230305180029-3d69e5177fc4 => 
 //replace github.com/ledgerwatch/erigon-lib v0.0.0-20230305180029-3d69e5177fc4 => ../erigon-lib
 
 require (
-	github.com/ledgerwatch/erigon-lib v0.0.0-20230305180029-3d69e5177fc4
+	github.com/ledgerwatch/erigon-lib v0.0.0-20230306114514-2c4c92fd1fce
 	github.com/ledgerwatch/erigon-snapshot v1.1.1-0.20230306083105-1391330d62a3
 	github.com/ledgerwatch/log/v3 v3.7.0
 	github.com/ledgerwatch/secp256k1 v1.0.0
