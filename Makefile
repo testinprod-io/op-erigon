@@ -144,14 +144,12 @@ db-tools:
 devnet-up:
 	./build/bin/erigon --datadir=.dev --chain=op-dev --private.api.addr=localhost:9090 --mine --http.port=8545 --externalcl --log.console.verbosity=4 --genesis.path=./genesis-l2.json
 
-## test:                              run unit tests with a 50s timeout
-test-state:
-	$(CGO_CFLAGS) GODEBUG=cgocheck=0 $(GO) test $(GO_FLAGS) --timeout 30m ./tests -tags $(BUILD_TAGS),integration -run TestState -v
+## test:                              run unit tests with a 100s timeout
 test:
-	$(GOTEST) --timeout 50s
+	$(GOTEST) --timeout 100s
 
 test3:
-	$(GOTEST) --timeout 50s -tags $(BUILD_TAGS),erigon3
+	$(GOTEST) --timeout 100s -tags $(BUILD_TAGS),erigon3
 
 ## test-integration:                  run integration tests with a 30m timeout
 test-integration:

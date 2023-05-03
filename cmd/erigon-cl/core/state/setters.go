@@ -59,11 +59,11 @@ func (b *BeaconState) SetHistoricalRootAt(index int, root [32]byte) {
 
 func (b *BeaconState) SetValidatorAt(index int, validator *cltypes.Validator) error {
 	if index >= len(b.validators) {
-		return InvalidValidatorIndex
+		return ErrInvalidValidatorIndex
 	}
 	b.validators[index] = validator
+	b.touchedLeaves[ValidatorsLeafIndex] = true
 	// change in validator set means cache purging
-	b.activeValidatorsCache.Purge()
 	b.totalActiveBalanceCache = nil
 	return nil
 }
@@ -96,14 +96,13 @@ func (b *BeaconState) SetValidators(validators []*cltypes.Validator) error {
 }
 
 func (b *BeaconState) AddValidator(validator *cltypes.Validator, balance uint64) {
-	b.touchedLeaves[ValidatorsLeafIndex] = true
 	b.validators = append(b.validators, validator)
 	b.balances = append(b.balances, balance)
+	b.touchedLeaves[ValidatorsLeafIndex] = true
+	b.touchedLeaves[BalancesLeafIndex] = true
 	b.publicKeyIndicies[validator.PublicKey] = uint64(len(b.validators)) - 1
 	// change in validator set means cache purging
-	b.activeValidatorsCache.Purge()
 	b.totalActiveBalanceCache = nil
-
 }
 
 func (b *BeaconState) SetBalances(balances []uint64) {
@@ -114,7 +113,7 @@ func (b *BeaconState) SetBalances(balances []uint64) {
 
 func (b *BeaconState) SetValidatorBalance(index int, balance uint64) error {
 	if index >= len(b.balances) {
-		return InvalidValidatorIndex
+		return ErrInvalidValidatorIndex
 	}
 
 	b.touchedLeaves[BalancesLeafIndex] = true
@@ -204,7 +203,7 @@ func (b *BeaconState) AddInactivityScore(score uint64) {
 
 func (b *BeaconState) SetValidatorInactivityScore(index int, score uint64) error {
 	if index >= len(b.inactivityScores) {
-		return InvalidValidatorIndex
+		return ErrInvalidValidatorIndex
 	}
 	b.touchedLeaves[InactivityScoresLeafIndex] = true
 	b.inactivityScores[index] = score

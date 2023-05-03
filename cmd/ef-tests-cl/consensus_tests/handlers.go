@@ -1,13 +1,14 @@
-package main
+package consensustests
 
 import (
 	"fmt"
 	"path"
 )
 
-type testFunc func() error
+type testFunc func(context testContext) error
 
 var (
+	operationsDivision      = "operations"
 	epochProcessingDivision = "epoch_processing"
 )
 
@@ -26,6 +27,17 @@ var (
 	caseSlashingsReset               = "slashings_reset"
 )
 
+// Operations cases
+var (
+	caseAttestation      = "attestation"
+	caseAttesterSlashing = "attester_slashing"
+	caseProposerSlashing = "proposer_slashing"
+	caseBlockHeader      = "block_header"
+	caseDeposit          = "deposit"
+	caseVoluntaryExit    = "voluntary_exit"
+	caseSyncAggregate    = "sync_aggregate"
+)
+
 // transitionCoreTest
 var finality = "finality/finality"
 
@@ -33,13 +45,17 @@ var finality = "finality/finality"
 var sanityBlocks = "sanity/blocks"
 var sanitySlots = "sanity/slots"
 
+// random
+var random = "random/random"
+
+// Stays here bc debugging >:-(
 func placeholderTest() error {
 	fmt.Println("hallo")
 	return nil
 }
 
 // Following is just a map for all tests to their execution.
-var TestCollection map[string]testFunc = map[string]testFunc{
+var handlers map[string]testFunc = map[string]testFunc{
 	path.Join(epochProcessingDivision, caseEffectiveBalanceUpdates):      effectiveBalancesUpdateTest,
 	path.Join(epochProcessingDivision, caseEth1DataReset):                eth1DataResetTest,
 	path.Join(epochProcessingDivision, caseHistoricalRootsUpdate):        historicalRootsUpdateTest,
@@ -51,6 +67,15 @@ var TestCollection map[string]testFunc = map[string]testFunc{
 	path.Join(epochProcessingDivision, caseRewardsAndPenalties):          rewardsAndPenaltiesTest,
 	path.Join(epochProcessingDivision, caseSlashings):                    slashingsTest,
 	path.Join(epochProcessingDivision, caseSlashingsReset):               slashingsResetTest,
+	path.Join(operationsDivision, caseAttestation):                       operationAttestationHandler,
+	path.Join(operationsDivision, caseAttesterSlashing):                  operationAttesterSlashingHandler,
+	path.Join(operationsDivision, caseProposerSlashing):                  operationProposerSlashingHandler,
+	path.Join(operationsDivision, caseBlockHeader):                       operationBlockHeaderHandler,
+	path.Join(operationsDivision, caseDeposit):                           operationDepositHandler,
+	path.Join(operationsDivision, caseSyncAggregate):                     operationSyncAggregateHandler,
+	path.Join(operationsDivision, caseVoluntaryExit):                     operationVoluntaryExitHandler,
 	sanityBlocks: testSanityFunction,
+	sanitySlots:  testSanityFunctionSlot,
 	finality:     finalityTestFunction,
+	random:       testSanityFunction, // Same as sanity handler.
 }
