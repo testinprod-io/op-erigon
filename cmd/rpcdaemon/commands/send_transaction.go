@@ -29,8 +29,9 @@ func (api *APIImpl) SendRawTransaction(ctx context.Context, encodedTx hexutil.By
 
 	if api.seqRPCService != nil {
 		if err := api.seqRPCService.CallContext(ctx, nil, "eth_sendRawTransaction", hexutil.Encode(encodedTx)); err != nil {
-			return txn.Hash(), err
+			return common.Hash{}, err
 		}
+		return txn.Hash(), nil
 	}
 
 	// If the transaction fee cap is already specified, ensure the
