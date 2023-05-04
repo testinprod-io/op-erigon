@@ -393,6 +393,10 @@ func setEmbeddedRpcDaemon(ctx *cli.Context, cfg *nodecfg.Config) {
 		TxPoolApiAddr: ctx.String(utils.TxpoolApiAddrFlag.Name),
 
 		StateCache: kvcache.DefaultCoherentConfig,
+
+		RollupSequencerHTTP:        ctx.String(utils.RollupSequencerHTTPFlag.Name),
+		RollupHistoricalRPC:        ctx.String(utils.RollupHistoricalRPCFlag.Name),
+		RollupHistoricalRPCTimeout: ctx.Duration(utils.RollupHistoricalRPCTimeoutFlag.Name),
 	}
 	if ctx.IsSet(utils.HttpCompressionFlag.Name) {
 		c.HttpCompression = ctx.Bool(utils.HttpCompressionFlag.Name)
