@@ -28,7 +28,7 @@ func TestMiningExec(t *testing.T) {
 		err = UnwindMiningExecutionStage(u, s, tx2, ctx, cfg)
 		require.NoError(err)
 
-		compareCurrentState(t, tx1, tx2, kv.PlainState, kv.PlainContractCode, kv.ContractTEVMCode)
+		compareCurrentState(t, newAgg(t), tx1, tx2, kv.PlainState, kv.PlainContractCode, kv.ContractTEVMCode)
 	})
 	t.Run("UnwindMiningExecutionStagePlainWithIncarnationChanges", func(t *testing.T) {
 		require, tx1, tx2 := require.New(t), memdb.BeginRw(t, db1), memdb.BeginRw(t, db2)
@@ -44,7 +44,7 @@ func TestMiningExec(t *testing.T) {
 		err = UnwindMiningExecutionStage(u, s, tx2, ctx, cfg)
 		require.NoError(err)
 
-		compareCurrentState(t, tx1, tx2, kv.PlainState, kv.PlainContractCode)
+		compareCurrentState(t, newAgg(t), tx1, tx2, kv.PlainState, kv.PlainContractCode)
 	})
 	t.Run("UnwindMiningExecutionStagePlainWithCodeChanges", func(t *testing.T) {
 		t.Skip("not supported yet, to be restored")
@@ -62,6 +62,6 @@ func TestMiningExec(t *testing.T) {
 		err = UnwindMiningExecutionStage(u, s, tx2, ctx, cfg)
 		require.NoError(err)
 
-		compareCurrentState(t, tx1, tx2, kv.PlainState, kv.PlainContractCode)
+		compareCurrentState(t, newAgg(t), tx1, tx2, kv.PlainState, kv.PlainContractCode)
 	})
 }

@@ -439,5 +439,5 @@ func (txw BlobTxWrapper) EncodeRLP(w io.Writer) error {
 }
 
 func (txw *BlobTxWrapper) RollupDataGas() RollupGasData {
-	return txw.RollupDataGas()
+	return txw.Tx.RollupDataGas()
 }
