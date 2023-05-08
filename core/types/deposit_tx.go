@@ -470,3 +470,8 @@ func (tx *DepositTx) Sender(signer Signer) (libcommon.Address, error) {
 func (tx DepositTx) RollupDataGas() RollupGasData {
 	return RollupGasData{}
 }
+
+func (tx *DepositTx) GetDataHashes() []libcommon.Hash {
+	// Only blob txs have data hashes
+	return []libcommon.Hash{}
+}
