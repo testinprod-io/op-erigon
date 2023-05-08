@@ -110,7 +110,7 @@ func (tx DepositTx) MarshalJSON() ([]byte, error) {
 	enc.ChainID = (*hexutil.Big)(libcommon.Big0)
 	enc.Gas = (*hexutil.Uint64)(&tx.Gas)
 	enc.Value = (*hexutil.Big)(tx.Value.ToBig())
-	enc.Data = (*hexutil.Bytes)(&tx.Data)
+	enc.Data = (*hexutility.Bytes)(&tx.Data)
 	enc.To = tx.To
 	// DepositTx fields
 	enc.SourceHash = &tx.SourceHash
