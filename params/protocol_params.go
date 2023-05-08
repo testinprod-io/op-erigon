@@ -21,9 +21,7 @@ import (
 	"math/big"
 )
 
-// GasLimitBoundDivisor it can be changed by BSC
 var (
-	GasLimitBoundDivisor uint64 = 1024 // The bound divisor of the gas limit, used in update calculations.
 	// The base fee portion of the transaction fee accumulates at this predeploy
 	OptimismBaseFeeRecipient = libcommon.HexToAddress("0x4200000000000000000000000000000000000019")
 	// The L1 portion of the transaction fee accumulates at this predeploy
@@ -31,9 +29,10 @@ var (
 )
 
 const (
-	MinGasLimit     uint64 = 5000               // Minimum the gas limit may ever be.
-	MaxGasLimit     uint64 = 0x7fffffffffffffff // Maximum the gas limit may ever be.
-	GenesisGasLimit uint64 = 4712388            // Gas limit of the Genesis block.
+	GasLimitBoundDivisor uint64 = 1024               // The bound divisor of the gas limit, used in update calculations.
+	MinGasLimit          uint64 = 5000               // Minimum the gas limit may ever be.
+	MaxGasLimit          uint64 = 0x7fffffffffffffff // Maximum the gas limit may ever be.
+	GenesisGasLimit      uint64 = 4712388            // Gas limit of the Genesis block.
 
 	MaximumExtraDataSize  uint64 = 32    // Maximum size extra data may be after Genesis.
 	CallValueTransferGas  uint64 = 9000  // Paid for CALL when the value transfer is non-zero.
@@ -172,6 +171,19 @@ const (
 	// up to half the consumed gas could be refunded. Redefined as 1/5th in EIP-3529
 	RefundQuotient        uint64 = 2
 	RefundQuotientEIP3529 uint64 = 5
+
+	// stuff from EIP-4844
+	FieldElementsPerBlob       = 4096 // each field element is 32 bytes
+	MaxDataGasPerBlock         = 1 << 19
+	DataGasPerBlob             = 1 << 17
+	TargetDataGasPerBlock      = 1 << 18
+	MinDataGasPrice            = 1
+	DataGasPriceUpdateFraction = 2225652
+	MaxBlobsPerBlock           = MaxDataGasPerBlock / DataGasPerBlob
+
+	BlobVerificationGas      uint64 = 1800000
+	BlobCommitmentVersionKZG uint8  = 0x01
+	PointEvaluationGas       uint64 = 50000
 )
 
 // Gas discount table for BLS12-381 G1 and G2 multi exponentiation operations
@@ -183,7 +195,3 @@ var (
 	MinimumDifficulty      = big.NewInt(131072) // The minimum that the difficulty may ever be.
 	DurationLimit          = big.NewInt(13)     // The decision boundary on the blocktime duration used to determine whether difficulty should go up or not.
 )
-
-func ApplyBinanceSmartChainParams() {
-	GasLimitBoundDivisor = 256
-}

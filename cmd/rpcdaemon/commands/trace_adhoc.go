@@ -9,10 +9,12 @@ import (
 	"strings"
 
 	"github.com/holiman/uint256"
+	"github.com/ledgerwatch/log/v3"
+
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
+	"github.com/ledgerwatch/erigon-lib/common/hexutility"
 	"github.com/ledgerwatch/erigon-lib/kv"
 	types2 "github.com/ledgerwatch/erigon-lib/types"
-	"github.com/ledgerwatch/log/v3"
 
 	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/common/hexutil"
@@ -50,8 +52,9 @@ type TraceCallParam struct {
 	GasPrice             *hexutil.Big       `json:"gasPrice"`
 	MaxPriorityFeePerGas *hexutil.Big       `json:"maxPriorityFeePerGas"`
 	MaxFeePerGas         *hexutil.Big       `json:"maxFeePerGas"`
+	MaxFeePerDataGas     *hexutil.Big       `json:"maxFeePerDataGas"`
 	Value                *hexutil.Big       `json:"value"`
-	Data                 hexutil.Bytes      `json:"data"`
+	Data                 hexutility.Bytes   `json:"data"`
 	AccessList           *types2.AccessList `json:"accessList"`
 	txHash               *libcommon.Hash
 	traceTypes           []string
@@ -59,7 +62,7 @@ type TraceCallParam struct {
 
 // TraceCallResult is the response to `trace_call` method
 type TraceCallResult struct {
-	Output          hexutil.Bytes                           `json:"output"`
+	Output          hexutility.Bytes                        `json:"output"`
 	StateDiff       map[libcommon.Address]*StateDiffAccount `json:"stateDiff"`
 	Trace           []*ParityTrace                          `json:"trace"`
 	VmTrace         *VmTrace                                `json:"vmTrace"`
@@ -80,8 +83,8 @@ type StateDiffBalance struct {
 }
 
 type StateDiffCode struct {
-	From hexutil.Bytes `json:"from"`
-	To   hexutil.Bytes `json:"to"`
+	From hexutility.Bytes `json:"from"`
+	To   hexutility.Bytes `json:"to"`
 }
 
 type StateDiffNonce struct {
@@ -96,8 +99,8 @@ type StateDiffStorage struct {
 
 // VmTrace is the part of `trace_call` response that is under "vmTrace" tag
 type VmTrace struct {
-	Code hexutil.Bytes `json:"code"`
-	Ops  []*VmTraceOp  `json:"ops"`
+	Code hexutility.Bytes `json:"code"`
+	Ops  []*VmTraceOp     `json:"ops"`
 }
 
 // VmTraceOp is one element of the vmTrace ops trace
@@ -148,9 +151,10 @@ func (args *TraceCallParam) ToMessage(globalGasCap uint64, baseFee *uint256.Int)
 		gas = globalGasCap
 	}
 	var (
-		gasPrice  *uint256.Int
-		gasFeeCap *uint256.Int
-		gasTipCap *uint256.Int
+		gasPrice         *uint256.Int
+		gasFeeCap        *uint256.Int
+		gasTipCap        *uint256.Int
+		maxFeePerDataGas *uint256.Int
 	)
 	if baseFee == nil {
 		// If there's no basefee, then it must be a non-1559 execution
@@ -198,6 +202,9 @@ func (args *TraceCallParam) ToMessage(globalGasCap uint64, baseFee *uint256.Int)
 				gasFeeCap, gasTipCap = gasPrice, gasPrice
 			}
 		}
+		if args.MaxFeePerDataGas != nil {
+			maxFeePerDataGas.SetFromBig(args.MaxFeePerDataGas.ToInt())
+		}
 	}
 	value := new(uint256.Int)
 	if args.Value != nil {
@@ -214,7 +221,7 @@ func (args *TraceCallParam) ToMessage(globalGasCap uint64, baseFee *uint256.Int)
 	if args.AccessList != nil {
 		accessList = *args.AccessList
 	}
-	msg := types.NewMessage(addr, args.To, 0, value, gas, gasPrice, gasFeeCap, gasTipCap, data, accessList, false /* checkNonce */, false /* isFree */, true /* isFake */)
+	msg := types.NewMessage(addr, args.To, 0, value, gas, gasPrice, gasFeeCap, gasTipCap, data, accessList, false /* checkNonce */, false /* isFree */, true /* isFake */, maxFeePerDataGas)
 	return msg, nil
 }
 
@@ -659,7 +666,7 @@ func (sd *StateDiff) CompareStates(initialIbs, ibs *state.IntraBlockState) {
 					accountDiff.Balance = m
 				}
 				{
-					m := make(map[string]hexutil.Bytes)
+					m := make(map[string]hexutility.Bytes)
 					m["-"] = initialIbs.GetCode(addr)
 					accountDiff.Code = m
 				}
@@ -676,7 +683,7 @@ func (sd *StateDiff) CompareStates(initialIbs, ibs *state.IntraBlockState) {
 				accountDiff.Balance = m
 			}
 			{
-				m := make(map[string]hexutil.Bytes)
+				m := make(map[string]hexutility.Bytes)
 				m["+"] = ibs.GetCode(addr)
 				accountDiff.Code = m
 			}
@@ -700,7 +707,10 @@ func (sd *StateDiff) CompareStates(initialIbs, ibs *state.IntraBlockState) {
 	}
 }
 
-func (api *TraceAPIImpl) ReplayTransaction(ctx context.Context, txHash libcommon.Hash, traceTypes []string) (*TraceCallResult, error) {
+func (api *TraceAPIImpl) ReplayTransaction(ctx context.Context, txHash libcommon.Hash, traceTypes []string, gasBailOut *bool) (*TraceCallResult, error) {
+	if gasBailOut == nil {
+		gasBailOut = new(bool) // false by default
+	}
 	tx, err := api.kv.BeginRo(ctx)
 	if err != nil {
 		return nil, err
@@ -744,15 +754,8 @@ func (api *TraceAPIImpl) ReplayTransaction(ctx context.Context, txHash libcommon
 		}
 	}
 
-	bn := hexutil.Uint64(blockNum)
-
-	parentNr := bn
-	if parentNr > 0 {
-		parentNr -= 1
-	}
-
 	// Returns an array of trace arrays, one trace array for each transaction
-	traces, err := api.callManyTransactions(ctx, tx, block.Transactions(), traceTypes, block.ParentHash(), rpc.BlockNumber(parentNr), block.Header(), int(txnIndex), types.MakeSigner(chainConfig, blockNum), chainConfig.Rules(blockNum, block.Time()))
+	traces, err := api.callManyTransactions(ctx, tx, block, traceTypes, int(txnIndex), *gasBailOut, types.MakeSigner(chainConfig, blockNum), chainConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -792,7 +795,10 @@ func (api *TraceAPIImpl) ReplayTransaction(ctx context.Context, txHash libcommon
 	return result, nil
 }
 
-func (api *TraceAPIImpl) ReplayBlockTransactions(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash, traceTypes []string) ([]*TraceCallResult, error) {
+func (api *TraceAPIImpl) ReplayBlockTransactions(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash, traceTypes []string, gasBailOut *bool) ([]*TraceCallResult, error) {
+	if gasBailOut == nil {
+		gasBailOut = new(bool) // false by default
+	}
 	tx, err := api.kv.BeginRo(ctx)
 	if err != nil {
 		return nil, err
@@ -808,10 +814,6 @@ func (api *TraceAPIImpl) ReplayBlockTransactions(ctx context.Context, blockNrOrH
 		return nil, err
 	}
 
-	parentNr := blockNumber
-	if parentNr > 0 {
-		parentNr -= 1
-	}
 	// Extract transactions from block
 	block, bErr := api.blockByNumberWithSenders(tx, blockNumber)
 	if bErr != nil {
@@ -835,7 +837,7 @@ func (api *TraceAPIImpl) ReplayBlockTransactions(ctx context.Context, blockNrOrH
 	}
 
 	// Returns an array of trace arrays, one trace array for each transaction
-	traces, err := api.callManyTransactions(ctx, tx, block.Transactions(), traceTypes, block.ParentHash(), rpc.BlockNumber(parentNr), block.Header(), -1 /* all tx indices */, types.MakeSigner(chainConfig, blockNumber), chainConfig.Rules(blockNumber, block.Time()))
+	traces, err := api.callManyTransactions(ctx, tx, block, traceTypes, -1 /* all tx indices */, *gasBailOut, types.MakeSigner(chainConfig, blockNumber), chainConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -1061,10 +1063,10 @@ func (api *TraceAPIImpl) CallMany(ctx context.Context, calls json.RawMessage, pa
 	if err != nil {
 		return nil, err
 	}
-	parentHeader := parentBlock.Header()
-	if parentHeader == nil {
-		return nil, fmt.Errorf("parent header %d(%x) not found", blockNumber, hash)
+	if parentBlock == nil {
+		return nil, fmt.Errorf("parent block %d(%x) not found", blockNumber, hash)
 	}
+	parentHeader := parentBlock.Header()
 	if parentHeader != nil && parentHeader.BaseFee != nil {
 		var overflow bool
 		baseFee, overflow = uint256.FromBig(parentHeader.BaseFee)

@@ -11,7 +11,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-var supportedVersions = []string{"altair", "bellatrix"}
+var supportedVersions = []string{"phase0", "altair", "bellatrix", "capella"}
 
 type ConsensusTester struct {
 	// parameters
@@ -70,7 +70,7 @@ func (c *ConsensusTester) iterateOverTests(dir, p string, depth int) {
 		// Depth 1 means that we are setting the version
 		if depth == 1 {
 			if !slices.Contains(supportedVersions, childName) {
-				return
+				continue
 			}
 			c.context.version = stringToClVersion(childName)
 		}
@@ -81,12 +81,15 @@ func (c *ConsensusTester) iterateOverTests(dir, p string, depth int) {
 			// depth 3 we find the specific
 			c.context.caseName = childName
 		}
+
 		// If we found a non-directory then it is a test folder.
 		if !childDir.IsDir() {
 			// Check if it matches case specified.
 			if *c.pattern != "" && !strings.Contains(p, *c.pattern) {
 				return
 			}
+			log.Debug("Executing", "name", p)
+
 			// If yes execute it.
 			if implemented, err := c.executeTest(p); err != nil {
 				log.Warn("Test Failed", "err", err, "test", p)
@@ -94,6 +97,7 @@ func (c *ConsensusTester) iterateOverTests(dir, p string, depth int) {
 			} else if implemented {
 				// Mark it as passed only if the test was actually implemented had no errors were found.
 				c.passed++
+				log.Debug("Test passed", "name", p)
 			}
 
 			return

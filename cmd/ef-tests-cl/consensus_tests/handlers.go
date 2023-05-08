@@ -3,6 +3,10 @@ package consensustests
 import (
 	"fmt"
 	"path"
+
+	"github.com/ledgerwatch/erigon/cl/clparams"
+	"github.com/ledgerwatch/erigon/cl/cltypes"
+	"github.com/ledgerwatch/erigon/cmd/erigon-cl/core/state"
 )
 
 type testFunc func(context testContext) error
@@ -10,6 +14,7 @@ type testFunc func(context testContext) error
 var (
 	operationsDivision      = "operations"
 	epochProcessingDivision = "epoch_processing"
+	sszDivision             = "ssz_static"
 )
 
 // Epoch processing cases
@@ -25,6 +30,7 @@ var (
 	caseRewardsAndPenalties          = "rewards_and_penalties"
 	caseSlashings                    = "slashings"
 	caseSlashingsReset               = "slashings_reset"
+	caseParticipationRecords         = "participation_record_updates"
 )
 
 // Operations cases
@@ -36,10 +42,15 @@ var (
 	caseDeposit          = "deposit"
 	caseVoluntaryExit    = "voluntary_exit"
 	caseSyncAggregate    = "sync_aggregate"
+	caseWithdrawal       = "withdrawals"
+	caseBlsChange        = "bls_to_execution_change"
 )
 
 // transitionCoreTest
 var finality = "finality/finality"
+
+// fork
+var fork = "fork/fork"
 
 // sanity
 var sanityBlocks = "sanity/blocks"
@@ -47,6 +58,23 @@ var sanitySlots = "sanity/slots"
 
 // random
 var random = "random/random"
+
+// transitionCore
+var transitionCore = "transition/core"
+
+// ssz_static cases
+
+var (
+	validatorCase         = "Validator"
+	beaconStateCase       = "BeaconState"
+	checkpointCase        = "Checkpoint"
+	depositCase           = "Deposit"
+	depositDataCase       = "DepositData"
+	signedBeaconBlockCase = "SignedBeaconBlock"
+	beaconBlockCase       = "BeaconBlock"
+	beaconBodyCase        = "BeaconBody"
+	// If you wanna do the rest go ahead but the important ones are all covered. also each of the above include all other encodings.
+)
 
 // Stays here bc debugging >:-(
 func placeholderTest() error {
@@ -67,6 +95,7 @@ var handlers map[string]testFunc = map[string]testFunc{
 	path.Join(epochProcessingDivision, caseRewardsAndPenalties):          rewardsAndPenaltiesTest,
 	path.Join(epochProcessingDivision, caseSlashings):                    slashingsTest,
 	path.Join(epochProcessingDivision, caseSlashingsReset):               slashingsResetTest,
+	path.Join(epochProcessingDivision, caseParticipationRecords):         recordsResetTest,
 	path.Join(operationsDivision, caseAttestation):                       operationAttestationHandler,
 	path.Join(operationsDivision, caseAttesterSlashing):                  operationAttesterSlashingHandler,
 	path.Join(operationsDivision, caseProposerSlashing):                  operationProposerSlashingHandler,
@@ -74,8 +103,21 @@ var handlers map[string]testFunc = map[string]testFunc{
 	path.Join(operationsDivision, caseDeposit):                           operationDepositHandler,
 	path.Join(operationsDivision, caseSyncAggregate):                     operationSyncAggregateHandler,
 	path.Join(operationsDivision, caseVoluntaryExit):                     operationVoluntaryExitHandler,
-	sanityBlocks: testSanityFunction,
-	sanitySlots:  testSanityFunctionSlot,
-	finality:     finalityTestFunction,
-	random:       testSanityFunction, // Same as sanity handler.
+	path.Join(operationsDivision, caseWithdrawal):                        operationWithdrawalHandler,
+	path.Join(operationsDivision, caseBlsChange):                         operationSignedBlsChangeHandler,
+	path.Join(sszDivision, validatorCase):                                getSSZStaticConsensusTest(&cltypes.Validator{}),
+	path.Join(sszDivision, beaconStateCase):                              getSSZStaticConsensusTest(state.New(&clparams.MainnetBeaconConfig)),
+	path.Join(sszDivision, checkpointCase):                               getSSZStaticConsensusTest(&cltypes.Checkpoint{}),
+	path.Join(sszDivision, depositCase):                                  getSSZStaticConsensusTest(&cltypes.Deposit{}),
+	path.Join(sszDivision, depositDataCase):                              getSSZStaticConsensusTest(&cltypes.DepositData{}),
+	path.Join(sszDivision, depositDataCase):                              getSSZStaticConsensusTest(&cltypes.DepositData{}),
+	path.Join(sszDivision, signedBeaconBlockCase):                        getSSZStaticConsensusTest(&cltypes.SignedBeaconBlock{}),
+	path.Join(sszDivision, beaconBlockCase):                              getSSZStaticConsensusTest(&cltypes.BeaconBlock{}),
+	path.Join(sszDivision, beaconBodyCase):                               getSSZStaticConsensusTest(&cltypes.BeaconBody{}),
+	fork:                                                                 forkTest,
+	transitionCore:                                                       transitionTestFunction,
+	sanityBlocks:                                                         testSanityFunction,
+	sanitySlots:                                                          testSanityFunctionSlot,
+	finality:                                                             finalityTestFunction,
+	random:                                                               testSanityFunction, // Same as sanity handler.
 }

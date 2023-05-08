@@ -4,15 +4,18 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon/cmd/devnet/models"
-	"github.com/ledgerwatch/erigon/cmd/rpctest/rpctest"
-	"github.com/ledgerwatch/erigon/common/hexutil"
-	"github.com/ledgerwatch/erigon/crypto"
 	"math/big"
 	"os/exec"
 	"strconv"
 	"strings"
+
+	libcommon "github.com/ledgerwatch/erigon-lib/common"
+	"github.com/ledgerwatch/erigon-lib/common/hexutility"
+
+	"github.com/ledgerwatch/erigon/cmd/devnet/models"
+	"github.com/ledgerwatch/erigon/cmd/rpctest/rpctest"
+	"github.com/ledgerwatch/erigon/common/hexutil"
+	"github.com/ledgerwatch/erigon/crypto"
 )
 
 // ClearDevDB cleans up the dev folder used for the operations
@@ -115,7 +118,7 @@ func HashSlicesAreEqual(s1, s2 []libcommon.Hash) bool {
 	return true
 }
 
-func BuildLog(hash libcommon.Hash, blockNum string, address libcommon.Address, topics []libcommon.Hash, data hexutil.Bytes, txIndex hexutil.Uint, blockHash libcommon.Hash, index hexutil.Uint, removed bool) rpctest.Log {
+func BuildLog(hash libcommon.Hash, blockNum string, address libcommon.Address, topics []libcommon.Hash, data hexutility.Bytes, txIndex hexutil.Uint, blockHash libcommon.Hash, index hexutil.Uint, removed bool) rpctest.Log {
 	return rpctest.Log{
 		Address:     address,
 		Topics:      topics,

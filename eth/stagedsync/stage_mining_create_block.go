@@ -1,7 +1,6 @@
 package stagedsync
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"github.com/ledgerwatch/erigon/eth/stagedsync/stages"
@@ -245,12 +244,7 @@ func SpawnMiningCreateBlockStage(s *StageState, tx kv.RwTx, cfg MiningCreateBloc
 		// Check whether the block is among the fork extra-override range
 		limit := new(big.Int).Add(daoBlock, params.DAOForkExtraRange)
 		if header.Number.Cmp(daoBlock) >= 0 && header.Number.Cmp(limit) < 0 {
-			// Depending whether we support or oppose the fork, override differently
-			if cfg.chainConfig.DAOForkSupport {
-				header.Extra = libcommon.Copy(params.DAOForkBlockExtra)
-			} else if bytes.Equal(header.Extra, params.DAOForkBlockExtra) {
-				header.Extra = []byte{} // If miner opposes, don't let it use the reserved extra-data
-			}
+			header.Extra = libcommon.Copy(params.DAOForkBlockExtra)
 		}
 	}
 

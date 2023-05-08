@@ -6,14 +6,17 @@ import (
 	"fmt"
 	"math/big"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/holiman/uint256"
-	"go.uber.org/atomic"
+	"github.com/ledgerwatch/log/v3"
 
 	"github.com/ledgerwatch/erigon-lib/chain"
 	"github.com/ledgerwatch/erigon-lib/common"
+	"github.com/ledgerwatch/erigon-lib/common/datadir"
+	"github.com/ledgerwatch/erigon-lib/common/hexutility"
 	"github.com/ledgerwatch/erigon-lib/gointerfaces/txpool"
 	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon-lib/kv/kvcache"
@@ -27,13 +30,13 @@ import (
 	"github.com/ledgerwatch/erigon/consensus/misc"
 	"github.com/ledgerwatch/erigon/core/rawdb"
 	"github.com/ledgerwatch/erigon/core/types"
+	"github.com/ledgerwatch/erigon/core/types/accounts"
 	ethFilters "github.com/ledgerwatch/erigon/eth/filters"
 	"github.com/ledgerwatch/erigon/ethdb/prune"
 	"github.com/ledgerwatch/erigon/rpc"
 	ethapi2 "github.com/ledgerwatch/erigon/turbo/adapter/ethapi"
 	"github.com/ledgerwatch/erigon/turbo/rpchelper"
 	"github.com/ledgerwatch/erigon/turbo/services"
-	"github.com/ledgerwatch/log/v3"
 )
 
 // EthAPI is a collection of functions that are exposed in the
@@ -48,9 +51,9 @@ type EthAPI interface {
 	GetTransactionByHash(ctx context.Context, hash common.Hash) (*RPCTransaction, error)
 	GetTransactionByBlockHashAndIndex(ctx context.Context, blockHash common.Hash, txIndex hexutil.Uint64) (*RPCTransaction, error)
 	GetTransactionByBlockNumberAndIndex(ctx context.Context, blockNr rpc.BlockNumber, txIndex hexutil.Uint) (*RPCTransaction, error)
-	GetRawTransactionByBlockNumberAndIndex(ctx context.Context, blockNr rpc.BlockNumber, index hexutil.Uint) (hexutil.Bytes, error)
-	GetRawTransactionByBlockHashAndIndex(ctx context.Context, blockHash common.Hash, index hexutil.Uint) (hexutil.Bytes, error)
-	GetRawTransactionByHash(ctx context.Context, hash common.Hash) (hexutil.Bytes, error)
+	GetRawTransactionByBlockNumberAndIndex(ctx context.Context, blockNr rpc.BlockNumber, index hexutil.Uint) (hexutility.Bytes, error)
+	GetRawTransactionByBlockHashAndIndex(ctx context.Context, blockHash common.Hash, index hexutil.Uint) (hexutility.Bytes, error)
+	GetRawTransactionByHash(ctx context.Context, hash common.Hash) (hexutility.Bytes, error)
 
 	// Receipt related (see ./eth_receipts.go)
 	GetTransactionReceipt(ctx context.Context, hash common.Hash) (map[string]interface{}, error)
@@ -76,7 +79,7 @@ type EthAPI interface {
 	GetBalance(ctx context.Context, address common.Address, blockNrOrHash rpc.BlockNumberOrHash) (*hexutil.Big, error)
 	GetTransactionCount(ctx context.Context, address common.Address, blockNrOrHash rpc.BlockNumberOrHash) (*hexutil.Uint64, error)
 	GetStorageAt(ctx context.Context, address common.Address, index string, blockNrOrHash rpc.BlockNumberOrHash) (string, error)
-	GetCode(ctx context.Context, address common.Address, blockNrOrHash rpc.BlockNumberOrHash) (hexutil.Bytes, error)
+	GetCode(ctx context.Context, address common.Address, blockNrOrHash rpc.BlockNumberOrHash) (hexutility.Bytes, error)
 
 	// System related (see ./eth_system.go)
 	BlockNumber(ctx context.Context) (hexutil.Uint64, error)
@@ -86,13 +89,13 @@ type EthAPI interface {
 	GasPrice(_ context.Context) (*hexutil.Big, error)
 
 	// Sending related (see ./eth_call.go)
-	Call(ctx context.Context, args ethapi2.CallArgs, blockNrOrHash rpc.BlockNumberOrHash, overrides *ethapi2.StateOverrides) (hexutil.Bytes, error)
+	Call(ctx context.Context, args ethapi2.CallArgs, blockNrOrHash rpc.BlockNumberOrHash, overrides *ethapi2.StateOverrides) (hexutility.Bytes, error)
 	EstimateGas(ctx context.Context, argsOrNil *ethapi2.CallArgs, blockNrOrHash *rpc.BlockNumberOrHash) (hexutil.Uint64, error)
-	SendRawTransaction(ctx context.Context, encodedTx hexutil.Bytes) (common.Hash, error)
+	SendRawTransaction(ctx context.Context, encodedTx hexutility.Bytes) (common.Hash, error)
 	SendTransaction(_ context.Context, txObject interface{}) (common.Hash, error)
-	Sign(ctx context.Context, _ common.Address, _ hexutil.Bytes) (hexutil.Bytes, error)
+	Sign(ctx context.Context, _ common.Address, _ hexutility.Bytes) (hexutility.Bytes, error)
 	SignTransaction(_ context.Context, txObject interface{}) (common.Hash, error)
-	GetProof(ctx context.Context, address common.Address, storageKeys []string, blockNr rpc.BlockNumber) (*interface{}, error)
+	GetProof(ctx context.Context, address common.Address, storageKeys []common.Hash, blockNr rpc.BlockNumberOrHash) (*accounts.AccProofResult, error)
 	CreateAccessList(ctx context.Context, args ethapi2.CallArgs, blockNrOrHash *rpc.BlockNumberOrHash, optimizeGas *bool) (*accessListResult, error)
 
 	// Mining related (see ./eth_mining.go)
@@ -119,6 +122,7 @@ type BaseAPI struct {
 	_engine      consensus.EngineReader
 
 	evmCallTimeout time.Duration
+	dirs           datadir.Dirs
 
 	// Optimism specific field
 	seqRPCService        *rpc.Client
@@ -127,7 +131,7 @@ type BaseAPI struct {
 
 func NewBaseApi(
 	f *rpchelper.Filters, stateCache kvcache.Cache, blockReader services.FullBlockReader, agg *libstate.AggregatorV3,
-	singleNodeMode bool, evmCallTimeout time.Duration, engine consensus.EngineReader,
+	singleNodeMode bool, evmCallTimeout time.Duration, engine consensus.EngineReader, dirs datadir.Dirs,
 	seqRPCService *rpc.Client, historicalRPCService *rpc.Client,
 ) *BaseAPI {
 	blocksLRUSize := 128 // ~32Mb
@@ -141,7 +145,7 @@ func NewBaseApi(
 
 	return &BaseAPI{
 		filters: f, stateCache: stateCache, blocksLRU: blocksLRU, _blockReader: blockReader, _txnReader: blockReader,
-		_agg: agg, evmCallTimeout: evmCallTimeout, _engine: engine,
+		_agg: agg, evmCallTimeout: evmCallTimeout, _engine: engine, dirs: dirs,
 		seqRPCService: seqRPCService, historicalRPCService: historicalRPCService,
 	}
 }
@@ -380,7 +384,7 @@ type RPCTransaction struct {
 	Tip              *hexutil.Big       `json:"maxPriorityFeePerGas,omitempty"`
 	FeeCap           *hexutil.Big       `json:"maxFeePerGas,omitempty"`
 	Hash             common.Hash        `json:"hash"`
-	Input            hexutil.Bytes      `json:"input"`
+	Input            hexutility.Bytes   `json:"input"`
 	Nonce            hexutil.Uint64     `json:"nonce"`
 	To               *common.Address    `json:"to,omitempty"`
 	TransactionIndex *hexutil.Uint64    `json:"transactionIndex"`
@@ -411,7 +415,7 @@ func newRPCTransaction(tx types.Transaction, blockHash common.Hash, blockNumber 
 		Type:  hexutil.Uint64(tx.Type()),
 		Gas:   hexutil.Uint64(tx.GetGas()),
 		Hash:  tx.Hash(),
-		Input: hexutil.Bytes(tx.GetData()),
+		Input: hexutility.Bytes(tx.GetData()),
 		Nonce: hexutil.Uint64(tx.GetNonce()),
 		To:    tx.GetTo(),
 		Value: (*hexutil.Big)(tx.GetValue().ToBig()),
@@ -493,7 +497,7 @@ func newRPCBorTransaction(opaqueTx types.Transaction, txHash common.Hash, blockH
 		GasPrice: (*hexutil.Big)(tx.GasPrice.ToBig()),
 		Gas:      hexutil.Uint64(tx.GetGas()),
 		Hash:     txHash,
-		Input:    hexutil.Bytes(tx.GetData()),
+		Input:    hexutility.Bytes(tx.GetData()),
 		Nonce:    hexutil.Uint64(tx.GetNonce()),
 		From:     common.Address{},
 		To:       tx.GetTo(),
@@ -521,7 +525,7 @@ func newRPCPendingTransaction(tx types.Transaction, current *types.Header, confi
 }
 
 // newRPCRawTransactionFromBlockIndex returns the bytes of a transaction given a block and a transaction index.
-func newRPCRawTransactionFromBlockIndex(b *types.Block, index uint64) (hexutil.Bytes, error) {
+func newRPCRawTransactionFromBlockIndex(b *types.Block, index uint64) (hexutility.Bytes, error) {
 	txs := b.Transactions()
 	if index >= uint64(len(txs)) {
 		return nil, nil
