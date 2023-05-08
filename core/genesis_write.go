@@ -408,8 +408,8 @@ func BorDevnetGenesisBlock() *types.Genesis {
 	}
 }
 
-func DefaultOptimismGoerliGenesisBlock() *Genesis {
-	return &Genesis{
+func DefaultOptimismGoerliGenesisBlock() *types.Genesis {
+	return &types.Genesis{
 		Config:     params.OptimismGoerliChainConfig,
 		Difficulty: big.NewInt(1),
 		Mixhash:    libcommon.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"),

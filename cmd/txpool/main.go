@@ -78,7 +78,7 @@ func init() {
 	rootCmd.PersistentFlags().Uint64Var(&accountSlots, "txpool.accountslots", txpoolcfg.DefaultConfig.AccountSlots, "Minimum number of executable transaction slots guaranteed per account")
 	rootCmd.PersistentFlags().Uint64Var(&priceBump, "txpool.pricebump", txpoolcfg.DefaultConfig.PriceBump, "Price bump percentage to replace an already existing transaction")
 	rootCmd.PersistentFlags().DurationVar(&commitEvery, utils.TxPoolCommitEveryFlag.Name, utils.TxPoolCommitEveryFlag.Value, utils.TxPoolCommitEveryFlag.Usage)
-	rootCmd.PersistentFlags().BoolVar(&optimism, "txpool.optimism", txpool.DefaultConfig.Optimism, "Enable Optimism Bedrock to make txpool account for L1 cost of transactions")
+	rootCmd.PersistentFlags().BoolVar(&optimism, "txpool.optimism", txpoolcfg.DefaultConfig.Optimism, "Enable Optimism Bedrock to make txpool account for L1 cost of transactions")
 	rootCmd.Flags().StringSliceVar(&traceSenders, utils.TxPoolTraceSendersFlag.Name, []string{}, utils.TxPoolTraceSendersFlag.Usage)
 }
 

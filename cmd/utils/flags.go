@@ -50,6 +50,7 @@ import (
 	"github.com/ledgerwatch/erigon/cmd/downloader/downloadernat"
 	"github.com/ledgerwatch/erigon/common/paths"
 	"github.com/ledgerwatch/erigon/core"
+	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/crypto"
 	"github.com/ledgerwatch/erigon/eth/ethconfig"
 	"github.com/ledgerwatch/erigon/eth/protocols/eth"
@@ -1478,7 +1479,7 @@ func CheckExclusive(ctx *cli.Context, args ...interface{}) {
 
 // readGenesis will read the given JSON format genesis file and return
 // the initialized Genesis structure
-func readGenesis(genesisPath string) *core.Genesis {
+func readGenesis(genesisPath string) *types.Genesis {
 	// Make sure we have a valid genesis JSON
 	if len(genesisPath) == 0 {
 		Fatalf("Must supply path to genesis JSON file")
@@ -1494,7 +1495,7 @@ func readGenesis(genesisPath string) *core.Genesis {
 		}
 	}(file)
 
-	genesis := new(core.Genesis)
+	genesis := new(types.Genesis)
 	if err := json.NewDecoder(file).Decode(genesis); err != nil {
 		Fatalf("invalid genesis file: %v", err)
 	}

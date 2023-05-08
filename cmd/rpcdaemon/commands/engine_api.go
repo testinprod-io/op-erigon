@@ -73,9 +73,9 @@ type PayloadAttributes struct {
 	Withdrawals           []*types.Withdrawal `json:"withdrawals"`
 
 	// optimism
-	NoTxPool     bool            `json:"noTxPool,omitempty"       gencodec:"optional"`
-	Transactions []hexutil.Bytes `json:"transactions,omitempty"   gencodec:"optional"`
-	GasLimit     *hexutil.Uint64 `json:"gasLimit,omitempty"       gencodec:"optional"`
+	NoTxPool     bool               `json:"noTxPool,omitempty"       gencodec:"optional"`
+	Transactions []hexutility.Bytes `json:"transactions,omitempty"   gencodec:"optional"`
+	GasLimit     *hexutil.Uint64    `json:"gasLimit,omitempty"       gencodec:"optional"`
 }
 
 // TransitionConfiguration represents the correct configurations of the CL and the EL
