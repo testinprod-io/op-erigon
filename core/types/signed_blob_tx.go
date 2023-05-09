@@ -596,5 +596,7 @@ func (stx *SignedBlobTx) FixedLength() uint64 {
 }
 
 func (stx *SignedBlobTx) RollupDataGas() RollupGasData {
-	return RollupGasData{}
+	// RollupDataGas is a method for calculating L1 cost on L2.
+	// Because blob TX is not supported on L2, this method must not be called.
+	panic("BlobTx is not supported on L2")
 }
