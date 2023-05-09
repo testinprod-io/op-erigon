@@ -32,11 +32,11 @@ jobs:
           fetch-depth: 0 # fetch git tags for "git describe"
 
       - name: build erigon image
-        run: DOCKER_TAG=op-erigon:latest DOCKER_UID=$(id -u) DOCKER_GID=$(id -g) make docker
+        run: DOCKER_TAG=testinprod/op-erigon:latest DOCKER_UID=$(id -u) DOCKER_GID=$(id -g) make docker
 
       # check with root permissions, should be cached from previous build
       - name: build erigon image (root permissions)
-        run: sudo DOCKER_TAG=op-erigon:latest DOCKER_UID=$(id -u) DOCKER_GID=$(id -g) make docker
+        run: sudo DOCKER_TAG=testinprod/op-erigon:latest DOCKER_UID=$(id -u) DOCKER_GID=$(id -g) make docker
 
       - name: run hive and parse output
         run: |
