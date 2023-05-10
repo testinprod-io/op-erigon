@@ -47,11 +47,15 @@ op-erigon cannot execute state transition before the bedrock update. So preconfi
 
 You can download the latest chain data of Optimism Goerli Testnet from [https://op-erigon-backup.goerli.testinprod.io](https://backup.goerli.op-erigon.testinprod.io).
 
+### `--externalcl`
+**[Deprecated]**
+An Optimism node needs a consensus client(op-node) and an execution client. op-erigon is intended to have an external consensus client though Erigon has its own consensus client.
+
+This option specifies that Erigon will have an external consensus client. This is **required up to version `v2.39.0-0.1.1`**. In subsequent versions, this behavior has been made the default, and **using the flag will result in an error**.
+
 ### `--authrpc.addr`, `--authrpc.port`, `--authrpc.jwtsecret`
 **[Required]** 
-An Optimism node needs a consensus client(op-node) and an execution client. op-erigon is intended to have an external consensus client though Erigon has its own consensus client. 
-
-`--authrpc.addr`, `--authrpc.port`, and `--authrpc.jwtsecret` options specify engine API connection info for the consensus client.
+Authenticated RPC configs that specify engine API connection info for the consensus client.
 
 ### `--rollup.sequencerhttp`
 **[New flag / Optional]** 
