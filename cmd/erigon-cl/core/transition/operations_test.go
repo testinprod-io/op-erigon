@@ -78,7 +78,7 @@ func getSuccessfulAttesterSlashing() *cltypes.AttesterSlashing {
 
 func TestProcessProposerSlashing(t *testing.T) {
 	unchangingState := getTestState(t)
-	unchangingState.SetValidatorAt(propInd, &cltypes.Validator{
+	unchangingState.SetValidatorAtIndex(propInd, &cltypes.Validator{
 		Slashed:           false,
 		ActivationEpoch:   0,
 		WithdrawableEpoch: 10000,
@@ -86,7 +86,7 @@ func TestProcessProposerSlashing(t *testing.T) {
 	})
 
 	successState := getTestState(t)
-	successState.SetValidatorAt(propInd, &cltypes.Validator{
+	successState.SetValidatorAtIndex(propInd, &cltypes.Validator{
 		Slashed:           false,
 		ActivationEpoch:   0,
 		WithdrawableEpoch: 10000,
@@ -187,13 +187,13 @@ func TestProcessProposerSlashing(t *testing.T) {
 
 func TestProcessAttesterSlashing(t *testing.T) {
 	unchangingState := getTestState(t)
-	unchangingState.SetValidatorAt(0, &cltypes.Validator{
+	unchangingState.SetValidatorAtIndex(0, &cltypes.Validator{
 		Slashed:           false,
 		ActivationEpoch:   0,
 		WithdrawableEpoch: 10000,
 		PublicKey:         testPublicKeySlashing,
 	})
-	unchangingState.SetValidatorAt(1, &cltypes.Validator{
+	unchangingState.SetValidatorAtIndex(1, &cltypes.Validator{
 		Slashed:           false,
 		ActivationEpoch:   0,
 		WithdrawableEpoch: 10000,
@@ -201,13 +201,13 @@ func TestProcessAttesterSlashing(t *testing.T) {
 	})
 
 	successState := getTestState(t)
-	successState.SetValidatorAt(0, &cltypes.Validator{
+	successState.SetValidatorAtIndex(0, &cltypes.Validator{
 		Slashed:           false,
 		ActivationEpoch:   0,
 		WithdrawableEpoch: 10000,
 		PublicKey:         testPublicKeySlashing,
 	})
-	successState.SetValidatorAt(1, &cltypes.Validator{
+	successState.SetValidatorAtIndex(1, &cltypes.Validator{
 		Slashed:           false,
 		ActivationEpoch:   0,
 		WithdrawableEpoch: 10000,
@@ -349,30 +349,4 @@ func TestProcessVoluntaryExits(t *testing.T) {
 	require.NoError(t, ProcessVoluntaryExit(state, exit, false), "Could not process exits")
 	newRegistry := state.Validators()
 	require.Equal(t, newRegistry[0].ExitEpoch, uint64(266))
-}
-
-func TestProcessAttestationAggBitsInvalid(t *testing.T) {
-	beaconState := state.GetEmptyBeaconState()
-	beaconState.SetSlot(beaconState.Slot() + clparams.MainnetBeaconConfig.MinAttestationInclusionDelay)
-	for i := 0; i < 64; i++ {
-		beaconState.AddValidator(&cltypes.Validator{
-			EffectiveBalance:  clparams.MainnetBeaconConfig.MaxEffectiveBalance,
-			ExitEpoch:         clparams.MainnetBeaconConfig.FarFutureEpoch,
-			WithdrawableEpoch: clparams.MainnetBeaconConfig.FarFutureEpoch,
-		}, clparams.MainnetBeaconConfig.MaxEffectiveBalance)
-		beaconState.AddCurrentEpochParticipationFlags(cltypes.ParticipationFlags(0))
-	}
-
-	aggBits := []byte{7}
-	r, err := beaconState.GetBlockRootAtSlot(0)
-	require.NoError(t, err)
-	att := &cltypes.Attestation{
-		Data: &cltypes.AttestationData{
-			BeaconBlockHash: r,
-			Source:          &cltypes.Checkpoint{},
-			Target:          &cltypes.Checkpoint{},
-		},
-		AggregationBits: aggBits,
-	}
-	require.Error(t, ProcessAttestations(beaconState, []*cltypes.Attestation{att}, false))
 }

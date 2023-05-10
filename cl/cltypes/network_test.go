@@ -8,7 +8,7 @@ import (
 
 	"github.com/ledgerwatch/erigon/cl/clparams"
 	"github.com/ledgerwatch/erigon/cl/cltypes"
-	"github.com/ledgerwatch/erigon/cl/cltypes/ssz_utils"
+	"github.com/ledgerwatch/erigon/cl/cltypes/ssz"
 )
 
 var testMetadata = &cltypes.Metadata{
@@ -49,70 +49,23 @@ var testHeader = &cltypes.BeaconBlockHeader{
 	BodyRoot:      libcommon.HexToHash("ad"),
 }
 
-var testLcHeader = (&cltypes.LightClientHeader{
-	HeaderEth1: getTestEth1Block().Header,
-	HeaderEth2: testHeader,
-}).WithVersion(clparams.CapellaVersion)
-
-var testLcUpdate = (&cltypes.LightClientUpdate{
-	AttestedHeader: testLcHeader,
-	NextSyncCommitee: &cltypes.SyncCommittee{
-		PubKeys: make([][48]byte, 512),
-	},
-	NextSyncCommitteeBranch: make([]libcommon.Hash, 5),
-	FinalizedHeader:         testLcHeader,
-	FinalityBranch:          make([]libcommon.Hash, 6),
-	SyncAggregate:           &cltypes.SyncAggregate{},
-	SignatureSlot:           294,
-}).WithVersion(clparams.CapellaVersion)
-
-var testLcUpdateFinality = (&cltypes.LightClientFinalityUpdate{
-	AttestedHeader:  testLcHeader,
-	FinalizedHeader: testLcHeader,
-	FinalityBranch:  make([]libcommon.Hash, 6),
-	SyncAggregate:   &cltypes.SyncAggregate{},
-	SignatureSlot:   294,
-}).WithVersion(clparams.CapellaVersion)
-
-var testLcUpdateOptimistic = (&cltypes.LightClientOptimisticUpdate{
-	AttestedHeader: testLcHeader,
-	SyncAggregate:  &cltypes.SyncAggregate{},
-	SignatureSlot:  294,
-}).WithVersion(clparams.CapellaVersion)
-
-var testLcBootstrap = (&cltypes.LightClientBootstrap{
-	Header: testLcHeader,
-	CurrentSyncCommittee: &cltypes.SyncCommittee{
-		PubKeys: make([][48]byte, 512),
-	},
-	CurrentSyncCommitteeBranch: make([]libcommon.Hash, 5),
-}).WithVersion(clparams.CapellaVersion)
-
 func TestMarshalNetworkTypes(t *testing.T) {
-	cases := []ssz_utils.EncodableSSZ{
+	cases := []ssz.EncodableSSZ{
 		testMetadata,
 		testPing,
 		testSingleRoot,
 		testLcRangeRequest,
 		testBlockRangeRequest,
 		testStatus,
-		testLcUpdate,
-		testLcUpdateFinality,
-		testLcUpdateOptimistic,
-		testLcBootstrap,
 	}
 
-	unmarshalDestinations := []ssz_utils.EncodableSSZ{
+	unmarshalDestinations := []ssz.EncodableSSZ{
 		&cltypes.Metadata{},
 		&cltypes.Ping{},
 		&cltypes.SingleRoot{},
 		&cltypes.LightClientUpdatesByRangeRequest{},
 		&cltypes.BeaconBlocksByRangeRequest{},
 		&cltypes.Status{},
-		&cltypes.LightClientUpdate{},
-		&cltypes.LightClientFinalityUpdate{},
-		&cltypes.LightClientOptimisticUpdate{},
-		&cltypes.LightClientBootstrap{},
 	}
 	for i, tc := range cases {
 		marshalledBytes, err := tc.EncodeSSZ(nil)

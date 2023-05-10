@@ -17,7 +17,9 @@
 package nodecfg
 
 import (
+	"github.com/c2h5oh/datasize"
 	"github.com/ledgerwatch/erigon-lib/common/datadir"
+	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon/common/paths"
 	"github.com/ledgerwatch/erigon/p2p"
 	"github.com/ledgerwatch/erigon/p2p/nat"
@@ -52,4 +54,6 @@ var DefaultConfig = Config{
 		MaxPendingPeers: 1000,
 		NAT:             nat.Any(),
 	},
+	MdbxPageSize:    datasize.ByteSize(kv.DefaultPageSize()),
+	MdbxDBSizeLimit: 7 * datasize.TB,
 }

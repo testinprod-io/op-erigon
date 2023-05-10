@@ -28,7 +28,7 @@ CGO_CFLAGS += -Wno-error=strict-prototypes # for Clang15, remove it when can htt
 CGO_CFLAGS := CGO_CFLAGS="$(CGO_CFLAGS)"
 DBG_CGO_CFLAGS += -DMDBX_DEBUG=1
 
-BUILD_TAGS = nosqlite,noboltdb
+BUILD_TAGS = nosqlite,noboltdb,netgo # about netgo see: https://github.com/golang/go/issues/30310#issuecomment-471669125
 PACKAGE = github.com/testinprod-io/op-erigon
 
 GO_FLAGS += -trimpath -tags $(BUILD_TAGS) -buildvcs=false
@@ -42,8 +42,8 @@ default: all
 
 ## go-version:                        print and verify go version
 go-version:
-	@if [ $(shell $(GO) version | cut -c 16-17) -lt 18 ]; then \
-		echo "minimum required Golang version is 1.18"; \
+	@if [ $(shell $(GO) version | cut -c 16-17) -lt 19 ]; then \
+		echo "minimum required Golang version is 1.19"; \
 		exit 1 ;\
 	fi
 
@@ -120,9 +120,9 @@ COMMANDS += state
 COMMANDS += txpool
 COMMANDS += verkle
 COMMANDS += evm
-COMMANDS += lightclient
 COMMANDS += sentinel
-COMMANDS += erigon-el
+COMMANDS += erigon-el 
+COMMANDS += caplin-phase1
 
 # build each command using %.cmd rule
 $(COMMANDS): %: %.cmd
@@ -136,13 +136,14 @@ db-tools:
 
 	go mod vendor
 	cd vendor/github.com/torquem-ch/mdbx-go && MDBX_BUILD_TIMESTAMP=unknown make tools
+	mkdir -p $(GOBIN)
 	cd vendor/github.com/torquem-ch/mdbx-go/mdbxdist && cp mdbx_chk $(GOBIN) && cp mdbx_copy $(GOBIN) && cp mdbx_dump $(GOBIN) && cp mdbx_drop $(GOBIN) && cp mdbx_load $(GOBIN) && cp mdbx_stat $(GOBIN)
 	rm -rf vendor
 	@echo "Run \"$(GOBIN)/mdbx_stat -h\" to get info about mdbx db file."
 
 ## devnet:
 devnet-up:
-	./build/bin/erigon --datadir=.dev --chain=op-dev --private.api.addr=localhost:9090 --mine --http.port=8545 --externalcl --log.console.verbosity=4 --genesis.path=./genesis-l2.json
+	./build/bin/erigon --datadir=.dev --chain=op-dev --private.api.addr=localhost:9090 --mine --http.port=8545 --log.console.verbosity=4 --genesis.path=./genesis-l2.json
 
 ## test:                              run unit tests with a 100s timeout
 test:
@@ -170,7 +171,7 @@ lintci:
 ## lintci-deps:                       (re)installs golangci-lint to build/bin/golangci-lint
 lintci-deps:
 	rm -f ./build/bin/golangci-lint
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./build/bin v1.51.1
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./build/bin v1.52.2
 
 ## clean:                             cleans the go cache, build dir, libmdbx db dir
 clean:
@@ -185,10 +186,10 @@ devtools:
 	# Notice! If you adding new binary - add it also to cmd/hack/binary-deps/main.go file
 	$(GOBUILD) -o $(GOBIN)/go-bindata github.com/kevinburke/go-bindata/go-bindata
 	$(GOBUILD) -o $(GOBIN)/gencodec github.com/fjl/gencodec
-	$(GOBUILD) -o $(GOBIN)/codecgen github.com/ugorji/go/codec/codecgen
 	$(GOBUILD) -o $(GOBIN)/abigen ./cmd/abigen
+	$(GOBUILD) -o $(GOBIN)/codecgen github.com/ugorji/go/codec/codecgen
 	PATH=$(GOBIN):$(PATH) go generate ./common
-	PATH=$(GOBIN):$(PATH) go generate ./core/types
+#	PATH=$(GOBIN):$(PATH) go generate ./core/types
 	PATH=$(GOBIN):$(PATH) go generate ./consensus/aura/...
 	#PATH=$(GOBIN):$(PATH) go generate ./eth/ethconfig/...
 	@type "npm" 2> /dev/null || echo 'Please install node.js and npm'
@@ -218,7 +219,7 @@ git-submodules:
 	@git submodule update --quiet --init --recursive --force || true
 
 PACKAGE_NAME          := github.com/testinprod-io/op-erigon
-GOLANG_CROSS_VERSION  ?= v1.19.5
+GOLANG_CROSS_VERSION  ?= v1.20.2
 
 .PHONY: release-dry-run
 release-dry-run: git-submodules

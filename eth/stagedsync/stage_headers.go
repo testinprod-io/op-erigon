@@ -118,15 +118,15 @@ func SpawnStageHeaders(
 		preProgress = s.BlockNumber
 	}
 
-	notBorAndParlia := cfg.chainConfig.Bor == nil && cfg.chainConfig.Parlia == nil
+	notBor := cfg.chainConfig.Bor == nil
 
 	unsettledForkChoice, headHeight := cfg.hd.GetUnsettledForkChoice()
-	if notBorAndParlia && unsettledForkChoice != nil { // some work left to do after unwind
+	if notBor && unsettledForkChoice != nil { // some work left to do after unwind
 		return finishHandlingForkChoice(unsettledForkChoice, headHeight, s, tx, cfg, useExternalTx)
 	}
 
 	transitionedToPoS := cfg.chainConfig.TerminalTotalDifficultyPassed
-	if notBorAndParlia && !transitionedToPoS {
+	if notBor && !transitionedToPoS {
 		var err error
 		transitionedToPoS, err = rawdb.Transitioned(tx, preProgress, cfg.chainConfig.TerminalTotalDifficulty)
 		if err != nil {
@@ -1147,26 +1147,6 @@ func (cr ChainReaderImpl) GetTd(hash libcommon.Hash, number uint64) *big.Int {
 		return nil
 	}
 	return td
-}
-
-type EpochReaderImpl struct {
-	tx kv.RwTx
-}
-
-func (cr EpochReaderImpl) GetEpoch(hash libcommon.Hash, number uint64) ([]byte, error) {
-	return rawdb.ReadEpoch(cr.tx, number, hash)
-}
-func (cr EpochReaderImpl) PutEpoch(hash libcommon.Hash, number uint64, proof []byte) error {
-	return rawdb.WriteEpoch(cr.tx, number, hash, proof)
-}
-func (cr EpochReaderImpl) GetPendingEpoch(hash libcommon.Hash, number uint64) ([]byte, error) {
-	return rawdb.ReadPendingEpoch(cr.tx, number, hash)
-}
-func (cr EpochReaderImpl) PutPendingEpoch(hash libcommon.Hash, number uint64, proof []byte) error {
-	return rawdb.WritePendingEpoch(cr.tx, number, hash, proof)
-}
-func (cr EpochReaderImpl) FindBeforeOrEqualNumber(number uint64) (blockNum uint64, blockHash libcommon.Hash, transitionProof []byte, err error) {
-	return rawdb.FindEpochBeforeOrEqualNumber(cr.tx, number)
 }
 
 func HeadersPrune(p *PruneState, tx kv.RwTx, cfg HeadersCfg, ctx context.Context) (err error) {

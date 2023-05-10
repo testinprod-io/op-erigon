@@ -37,18 +37,10 @@ var emptyCodeHash = crypto.Keccak256Hash(nil)
 func (evm *EVM) precompile(addr libcommon.Address) (PrecompiledContract, bool) {
 	var precompiles map[libcommon.Address]PrecompiledContract
 	switch {
-	case evm.chainRules.IsMoran:
-		precompiles = PrecompiledContractsIsMoran
-	case evm.chainRules.IsNano:
-		precompiles = PrecompiledContractsNano
 	case evm.chainRules.IsBerlin:
 		precompiles = PrecompiledContractsBerlin
 	case evm.chainRules.IsIstanbul:
-		if evm.chainRules.IsParlia {
-			precompiles = PrecompiledContractsIstanbulForBSC
-		} else {
-			precompiles = PrecompiledContractsIstanbul
-		}
+		precompiles = PrecompiledContractsIstanbul
 	case evm.chainRules.IsByzantium:
 		precompiles = PrecompiledContractsByzantium
 	default:
@@ -169,11 +161,13 @@ func (evm *EVM) Interpreter() Interpreter {
 }
 
 func (evm *EVM) call(typ OpCode, caller ContractRef, addr libcommon.Address, input []byte, gas uint64, value *uint256.Int, bailout bool) (ret []byte, leftOverGas uint64, err error) {
-	if evm.config.NoRecursion && evm.interpreter.Depth() > 0 {
+	depth := evm.interpreter.Depth()
+
+	if evm.config.NoRecursion && depth > 0 {
 		return nil, gas, nil
 	}
 	// Fail if we're trying to execute above the call depth limit
-	if evm.interpreter.Depth() > int(params.CallCreateDepth) {
+	if depth > int(params.CallCreateDepth) {
 		return nil, gas, ErrDepth
 	}
 	if typ == CALL || typ == CALLCODE {
@@ -201,16 +195,12 @@ func (evm *EVM) call(typ OpCode, caller ContractRef, addr libcommon.Address, inp
 						v = nil
 					}
 					// Calling a non existing account, don't do anything, but ping the tracer
-					if evm.interpreter.Depth() == 0 {
+					if depth == 0 {
 						evm.config.Tracer.CaptureStart(evm, caller.Address(), addr, isPrecompile, false /* create */, input, gas, v, code)
-						defer func(startGas uint64) { // Lazy evaluation of the parameters
-							evm.config.Tracer.CaptureEnd(ret, 0, err)
-						}(gas)
+						evm.config.Tracer.CaptureEnd(ret, 0, nil)
 					} else {
 						evm.config.Tracer.CaptureEnter(typ, caller.Address(), addr, isPrecompile, false /* create */, input, gas, v, code)
-						defer func(startGas uint64) { // Lazy evaluation of the parameters
-							evm.config.Tracer.CaptureExit(ret, 0, err)
-						}(gas)
+						evm.config.Tracer.CaptureExit(ret, 0, nil)
 					}
 				}
 				return nil, gas, nil
@@ -230,7 +220,7 @@ func (evm *EVM) call(typ OpCode, caller ContractRef, addr libcommon.Address, inp
 		if typ == STATICCALL {
 			v = nil
 		}
-		if evm.interpreter.Depth() == 0 {
+		if depth == 0 {
 			evm.config.Tracer.CaptureStart(evm, caller.Address(), addr, isPrecompile, false /* create */, input, gas, v, code)
 			defer func(startGas uint64) { // Lazy evaluation of the parameters
 				evm.config.Tracer.CaptureEnd(ret, startGas-gas, err)
@@ -342,9 +332,10 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	var ret []byte
 	var err error
 	var gasConsumption uint64
+	depth := evm.interpreter.Depth()
 
 	if evm.config.Debug {
-		if evm.interpreter.Depth() == 0 {
+		if depth == 0 {
 			evm.config.Tracer.CaptureStart(evm, caller.Address(), address, false /* precompile */, true /* create */, codeAndHash.code, gas, value, nil)
 			defer func() {
 				evm.config.Tracer.CaptureEnd(ret, gasConsumption, err)
@@ -359,7 +350,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 
 	// Depth check execution. Fail if we're trying to execute above the
 	// limit.
-	if evm.interpreter.Depth() > int(params.CallCreateDepth) {
+	if depth > int(params.CallCreateDepth) {
 		err = ErrDepth
 		return nil, libcommon.Address{}, gas, err
 	}
@@ -399,7 +390,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	contract := NewContract(caller, AccountRef(address), value, gas, evm.config.SkipAnalysis)
 	contract.SetCodeOptionalHash(&address, codeAndHash)
 
-	if evm.config.NoRecursion && evm.interpreter.Depth() > 0 {
+	if evm.config.NoRecursion && depth > 0 {
 		return nil, address, gas, nil
 	}
 

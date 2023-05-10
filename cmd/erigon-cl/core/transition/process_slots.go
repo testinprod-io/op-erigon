@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/Giulio2002/bls"
+	"github.com/ledgerwatch/erigon/cl/clparams"
 	"github.com/ledgerwatch/erigon/cl/cltypes"
 	"github.com/ledgerwatch/erigon/cl/fork"
 	"github.com/ledgerwatch/erigon/cl/merkle_tree"
@@ -22,7 +23,7 @@ func TransitionState(state *state.BeaconState, block *cltypes.SignedBeaconBlock,
 	if err := ProcessSlots(state, currentBlock.Slot); err != nil {
 		return err
 	}
-	// Write the block root to the cache
+
 	if fullValidation {
 		valid, err := verifyBlockSignature(state, block)
 		if err != nil {
@@ -69,10 +70,11 @@ func transitionSlot(state *state.BeaconState) error {
 	latestBlockHeader := state.LatestBlockHeader()
 	if latestBlockHeader.Root == [32]byte{} {
 		latestBlockHeader.Root = previousStateRoot
-		state.SetLatestBlockHeader(latestBlockHeader)
+		state.SetLatestBlockHeader(&latestBlockHeader)
 	}
+	blockHeader := state.LatestBlockHeader()
 
-	previousBlockRoot, err := state.LatestBlockHeader().HashSSZ()
+	previousBlockRoot, err := (&blockHeader).HashSSZ()
 	if err != nil {
 		return err
 	}
@@ -81,6 +83,7 @@ func transitionSlot(state *state.BeaconState) error {
 }
 
 func ProcessSlots(state *state.BeaconState, slot uint64) error {
+	beaconConfig := state.BeaconConfig()
 	stateSlot := state.Slot()
 	if slot <= stateSlot {
 		return fmt.Errorf("new slot: %d not greater than state slot: %d", slot, stateSlot)
@@ -92,22 +95,40 @@ func ProcessSlots(state *state.BeaconState, slot uint64) error {
 			return fmt.Errorf("unable to process slot transition: %v", err)
 		}
 		// TODO(Someone): Add epoch transition.
-		if (stateSlot+1)%state.BeaconConfig().SlotsPerEpoch == 0 {
+		if (stateSlot+1)%beaconConfig.SlotsPerEpoch == 0 {
 			start := time.Now()
 			if err := ProcessEpoch(state); err != nil {
 				return err
 			}
-			log.Info("Processed new epoch successfully", "epoch", state.Epoch(), "process_epoch_elpsed", time.Since(start))
+			log.Debug("Processed new epoch successfully", "epoch", state.Epoch(), "process_epoch_elpsed", time.Since(start))
 		}
 		// TODO: add logic to process epoch updates.
 		stateSlot += 1
 		state.SetSlot(stateSlot)
+		if stateSlot%beaconConfig.SlotsPerEpoch != 0 {
+			continue
+		}
+		if state.Epoch() == beaconConfig.AltairForkEpoch {
+			if err := state.UpgradeToAltair(); err != nil {
+				return err
+			}
+		}
+		if state.Epoch() == beaconConfig.BellatrixForkEpoch {
+			if err := state.UpgradeToBellatrix(); err != nil {
+				return err
+			}
+		}
+		if state.Epoch() == beaconConfig.CapellaForkEpoch {
+			if err := state.UpgradeToCapella(); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }
 
 func verifyBlockSignature(state *state.BeaconState, block *cltypes.SignedBeaconBlock) (bool, error) {
-	proposer, err := state.ValidatorAt(int(block.Block.ProposerIndex))
+	proposer, err := state.ValidatorForValidatorIndex(int(block.Block.ProposerIndex))
 	if err != nil {
 		return false, err
 	}
@@ -122,26 +143,38 @@ func verifyBlockSignature(state *state.BeaconState, block *cltypes.SignedBeaconB
 	return bls.Verify(block.Signature[:], sigRoot[:], proposer.PublicKey[:])
 }
 
+// ProcessHistoricalRootsUpdate updates the historical root data structure by computing a new historical root batch when it is time to do so.
 func ProcessHistoricalRootsUpdate(state *state.BeaconState) error {
-	var (
-		nextEpoch    = state.Epoch() + 1
-		beaconConfig = state.BeaconConfig()
-		blockRoots   = state.BlockRoots()
-		stateRoots   = state.StateRoots()
-	)
+	nextEpoch := state.Epoch() + 1
+	beaconConfig := state.BeaconConfig()
+	blockRoots := state.BlockRoots()
+	stateRoots := state.StateRoots()
 
-	if nextEpoch%(beaconConfig.SlotsPerHistoricalRoot/beaconConfig.SlotsPerEpoch) == 0 {
-		// Compute historical root batch.
-		blockRootsLeaf, err := merkle_tree.ArraysRoot(utils.PreparateRootsForHashing(blockRoots[:]), state_encoding.BlockRootsLength)
-		if err != nil {
-			return err
-		}
-		stateRootsLeaf, err := merkle_tree.ArraysRoot(utils.PreparateRootsForHashing(stateRoots[:]), state_encoding.StateRootsLength)
-		if err != nil {
-			return err
-		}
-
-		state.AddHistoricalRoot(utils.Keccak256(blockRootsLeaf[:], stateRootsLeaf[:]))
+	// Check if it's time to compute the historical root batch.
+	if nextEpoch%(beaconConfig.SlotsPerHistoricalRoot/beaconConfig.SlotsPerEpoch) != 0 {
+		return nil
 	}
+
+	// Compute historical root batch.
+	blockRootsLeaf, err := merkle_tree.ArraysRoot(utils.PreparateRootsForHashing(blockRoots[:]), state_encoding.BlockRootsLength)
+	if err != nil {
+		return err
+	}
+	stateRootsLeaf, err := merkle_tree.ArraysRoot(utils.PreparateRootsForHashing(stateRoots[:]), state_encoding.StateRootsLength)
+	if err != nil {
+		return err
+	}
+
+	// Add the historical summary or root to the state.
+	if state.Version() >= clparams.CapellaVersion {
+		state.AddHistoricalSummary(&cltypes.HistoricalSummary{
+			BlockSummaryRoot: blockRootsLeaf,
+			StateSummaryRoot: stateRootsLeaf,
+		})
+	} else {
+		historicalRoot := utils.Keccak256(blockRootsLeaf[:], stateRootsLeaf[:])
+		state.AddHistoricalRoot(historicalRoot)
+	}
+
 	return nil
 }
