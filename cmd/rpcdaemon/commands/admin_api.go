@@ -57,5 +57,8 @@ func (api *AdminAPIImpl) AddPeer(ctx context.Context, url string) (bool, error) 
 	if err != nil {
 		return false, err
 	}
+	if result == nil {
+		return false, errors.New("nil addPeer response")
+	}
 	return result.Success, nil
 }
