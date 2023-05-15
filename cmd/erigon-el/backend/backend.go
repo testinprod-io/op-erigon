@@ -928,9 +928,9 @@ func (s *Ethereum) Peers(ctx context.Context) (*remote.PeersReply, error) {
 
 func (s *Ethereum) AddPeer(ctx context.Context, req *remote.AddPeerRequest) (*remote.AddPeerReply, error) {
 	for _, sentryClient := range s.sentriesClient.Sentries() {
-		result, err := sentryClient.AddPeer(ctx, &proto_sentry.AddPeerRequest{Url: req.Url})
+		_, err := sentryClient.AddPeer(ctx, &proto_sentry.AddPeerRequest{Url: req.Url})
 		if err != nil {
-			return &remote.AddPeerReply{Success: result.Success}, fmt.Errorf("ethereum backend MultiClient.AddPeers error: %w", err)
+			return nil, fmt.Errorf("ethereum backend MultiClient.AddPeers error: %w", err)
 		}
 	}
 	return &remote.AddPeerReply{Success: true}, nil
