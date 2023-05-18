@@ -1,18 +1,18 @@
 title: "op-erigon"  # Define the HTML page title
 footer: |  # define the footer with markdown
-  Fork-diff overview of [op-erigon](https://github.com/testinprod-io/erigon), a fork of [erigon](https://github.com/ledgerwatch/erigon). and execution-engine of the [OP Stack](https://github.com/ethereum-optimism/optimism).
+  Fork-diff overview of [op-erigon](https://github.com/testinprod-io/op-erigon), a fork of [erigon](https://github.com/ledgerwatch/erigon). and execution-engine of the [OP-stack](https://github.com/ethereum-optimism/optimism).
 base:
   name: ledgerwatch/erigon
   url: https://github.com/ledgerwatch/erigon
-  ref: refs/tags/v2.38.1
+  ref: refs/tags/v2.43.0
 fork:
   name: testinprod-io/erigon
-  url: https://github.com/testinprod-io/erigon
+  url: https://github.com/testinprod-io/op-erigon
   ref: refs/heads/op-erigon
 def:
   title: "op-erigon"
   description: | # description in markdown
-    This is an overview of the changes in [op-erigon](https://github.com/testinprod-io/erigon), a fork of [erigon](https://github.com/ledgerwatch/erigon), part of the OP Stack.
+    This is an overview of the changes in [op-erigon](https://github.com/testinprod-io/op-erigon), a fork of [erigon](https://github.com/ledgerwatch/erigon), part of the OP-stack.
     
     There are two more forks of erigon dependencies:
     
