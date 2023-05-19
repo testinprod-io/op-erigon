@@ -50,16 +50,18 @@ func readChainSpec(filename string) *chain.Config {
 
 // Genesis hashes to enforce below configs on.
 var (
-	MainnetGenesisHash        = libcommon.HexToHash("0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3")
-	SepoliaGenesisHash        = libcommon.HexToHash("0x25a5cc106eea7138acab33231d7160d69cb777ee0c2c553fcddf5138993e6dd9")
-	RinkebyGenesisHash        = libcommon.HexToHash("0x6341fd3daf94b748c72ced5a5b26028f2474f5f00d824504e4fa37a75767e177")
-	GoerliGenesisHash         = libcommon.HexToHash("0xbf7e331f7f7c1dd2e05159666b3bf8bc7a8a3a9eb1d518969eab529dd9b88c1a")
-	MumbaiGenesisHash         = libcommon.HexToHash("0x7b66506a9ebdbf30d32b43c5f15a3b1216269a1ec3a75aa3182b86176a2b1ca7")
-	BorMainnetGenesisHash     = libcommon.HexToHash("0xa9c28ce2141b56c474f1dc504bee9b01eb1bd7d1a507580d5519d4437a97de1b")
-	BorDevnetGenesisHash      = libcommon.HexToHash("0x5a06b25b0c6530708ea0b98a3409290e39dce6be7f558493aeb6e4b99a172a87")
-	GnosisGenesisHash         = libcommon.HexToHash("0x4f1dd23188aab3a76b463e4af801b52b1248ef073c648cbdc4c9333d3da79756")
-	ChiadoGenesisHash         = libcommon.HexToHash("0xada44fd8d2ecab8b08f256af07ad3e777f17fb434f8f8e678b312f576212ba9a")
-	OptimismGoerliGenesisHash = libcommon.HexToHash("0xc1fc15cd51159b1f1e5cbc4b82e85c1447ddfa33c52cf1d98d14fba0d6354be1")
+	MainnetGenesisHash         = libcommon.HexToHash("0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3")
+	SepoliaGenesisHash         = libcommon.HexToHash("0x25a5cc106eea7138acab33231d7160d69cb777ee0c2c553fcddf5138993e6dd9")
+	RinkebyGenesisHash         = libcommon.HexToHash("0x6341fd3daf94b748c72ced5a5b26028f2474f5f00d824504e4fa37a75767e177")
+	GoerliGenesisHash          = libcommon.HexToHash("0xbf7e331f7f7c1dd2e05159666b3bf8bc7a8a3a9eb1d518969eab529dd9b88c1a")
+	MumbaiGenesisHash          = libcommon.HexToHash("0x7b66506a9ebdbf30d32b43c5f15a3b1216269a1ec3a75aa3182b86176a2b1ca7")
+	BorMainnetGenesisHash      = libcommon.HexToHash("0xa9c28ce2141b56c474f1dc504bee9b01eb1bd7d1a507580d5519d4437a97de1b")
+	BorDevnetGenesisHash       = libcommon.HexToHash("0x5a06b25b0c6530708ea0b98a3409290e39dce6be7f558493aeb6e4b99a172a87")
+	GnosisGenesisHash          = libcommon.HexToHash("0x4f1dd23188aab3a76b463e4af801b52b1248ef073c648cbdc4c9333d3da79756")
+	ChiadoGenesisHash          = libcommon.HexToHash("0xada44fd8d2ecab8b08f256af07ad3e777f17fb434f8f8e678b312f576212ba9a")
+	OptimismMainnetGenesisHash = libcommon.HexToHash("0x7ca38a1916c42007829c55e69d3e9a73265554b586a499015373241b8a3fa48b")
+	OptimismGoerliGenesisHash  = libcommon.HexToHash("0xc1fc15cd51159b1f1e5cbc4b82e85c1447ddfa33c52cf1d98d14fba0d6354be1")
+	OptimismDevnetGenesisHash  = libcommon.HexToHash("0xc1fc15cd51159b1f1e5cbc4b82e85c1447ddfa33c52cf1d98d14fba0d6354be1")
 )
 
 var (
@@ -127,7 +129,11 @@ var (
 
 	BorDevnetChainConfig = readChainSpec("chainspecs/bor-devnet.json")
 
+	OptimismMainnetChainConfig = readChainSpec("chainspecs/optimism-mainnet.json")
+
 	OptimismGoerliChainConfig = readChainSpec("chainspecs/optimism-goerli.json")
+
+	OptimismDevnetChainConfig = readChainSpec("chainspecs/optimism-devnet.json")
 
 	GnosisChainConfig = readChainSpec("chainspecs/gnosis.json")
 
@@ -209,8 +215,12 @@ func ChainConfigByChainName(chain string) *chain.Config {
 		return BorMainnetChainConfig
 	case networkname.BorDevnetChainName:
 		return BorDevnetChainConfig
+	case networkname.OptimismMainnetChainName:
+		return OptimismMainnetChainConfig
 	case networkname.OptimismGoerliChainName:
 		return OptimismGoerliChainConfig
+	case networkname.OptimismDevnetChainName:
+		return OptimismDevnetChainConfig
 	case networkname.GnosisChainName:
 		return GnosisChainConfig
 	case networkname.ChiadoChainName:
@@ -236,8 +246,12 @@ func GenesisHashByChainName(chain string) *libcommon.Hash {
 		return &BorMainnetGenesisHash
 	case networkname.BorDevnetChainName:
 		return &BorDevnetGenesisHash
+	case networkname.OptimismMainnetChainName:
+		return &OptimismMainnetGenesisHash
 	case networkname.OptimismGoerliChainName:
 		return &OptimismGoerliGenesisHash
+	case networkname.OptimismDevnetChainName:
+		return &OptimismDevnetGenesisHash
 	case networkname.GnosisChainName:
 		return &GnosisGenesisHash
 	case networkname.ChiadoChainName:

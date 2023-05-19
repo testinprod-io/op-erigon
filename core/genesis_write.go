@@ -408,14 +408,37 @@ func BorDevnetGenesisBlock() *types.Genesis {
 	}
 }
 
-func DefaultOptimismGoerliGenesisBlock() *types.Genesis {
+func OptimismMainnetGenesisBlock() *types.Genesis {
+	return &types.Genesis{
+		Config:     params.OptimismMainnetChainConfig,
+		Difficulty: big.NewInt(1),
+		Mixhash:    libcommon.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"),
+		ExtraData:  hexutil.MustDecode("0x000000000000000000000000000000000000000000000000000000000000000000000398232e2064f896018496b4b44b3d62751f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+		GasLimit:   15000000,
+		Alloc:      readPrealloc("allocs/optimism_mainnet.json"),
+	}
+}
+
+func OptimismGoerliGenesisBlock() *types.Genesis {
 	return &types.Genesis{
 		Config:     params.OptimismGoerliChainConfig,
 		Difficulty: big.NewInt(1),
 		Mixhash:    libcommon.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"),
 		ExtraData:  hexutil.MustDecode("0x000000000000000000000000000000000000000000000000000000000000000027770a9694e4b4b1e130ab91bc327c36855f612e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
 		GasLimit:   15000000,
-		Alloc:      readPrealloc("allocs/optimism-goerli.json"),
+		Alloc:      readPrealloc("allocs/optimism_goerli.json"),
+	}
+}
+
+func OptimismDevnetGenesisBlock() *types.Genesis {
+	// copy of optimism goerli spec
+	return &types.Genesis{
+		Config:     params.OptimismDevnetChainConfig,
+		Difficulty: big.NewInt(1),
+		Mixhash:    libcommon.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"),
+		ExtraData:  hexutil.MustDecode("0x000000000000000000000000000000000000000000000000000000000000000027770a9694e4b4b1e130ab91bc327c36855f612e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+		GasLimit:   15000000,
+		Alloc:      readPrealloc("allocs/optimism_devnet.json"),
 	}
 }
 
@@ -630,8 +653,12 @@ func GenesisBlockByChainName(chain string) *types.Genesis {
 		return BorMainnetGenesisBlock()
 	case networkname.BorDevnetChainName:
 		return BorDevnetGenesisBlock()
+	case networkname.OptimismMainnetChainName:
+		return OptimismMainnetGenesisBlock()
 	case networkname.OptimismGoerliChainName:
-		return DefaultOptimismGoerliGenesisBlock()
+		return OptimismGoerliGenesisBlock()
+	case networkname.OptimismDevnetChainName:
+		return OptimismDevnetGenesisBlock()
 	case networkname.GnosisChainName:
 		return GnosisGenesisBlock()
 	case networkname.ChiadoChainName:
