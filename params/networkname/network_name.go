@@ -29,4 +29,6 @@ var All = []string{
 	OptimismGoerliChainName,
 	OptimismDevnetChainName,
 }
-// OptimismMainnetChainName is excluded due to genesis alloc mismatch
+
+// OptimismMainnetChainName is excluded due to genesis alloc mismatch:
+// core/allocs/optimism_mainnet.json is empty because its size is too big > 300MB
