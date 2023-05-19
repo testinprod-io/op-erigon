@@ -11,7 +11,7 @@ const (
 	BorDevnetChainName       = "bor-devnet"
 	GnosisChainName          = "gnosis"
 	ChiadoChainName          = "chiado"
-	OptimismDevnetChainName  = "op-dev"
+	OptimismDevnetChainName  = "optimism-devnet"
 	OptimismMainnetChainName = "optimism-mainnet"
 	OptimismGoerliChainName  = "optimism-goerli"
 )
