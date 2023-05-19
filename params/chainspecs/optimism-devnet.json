@@ -1,6 +1,6 @@
 {
-    "ChainName": "optimism-goerli",
-    "chainId": 420,
+    "ChainName": "op-dev",
+    "chainId": 1337,
     "homesteadBlock": 0,
     "eip150Block": 0,
     "eip155Block": 0,
@@ -11,16 +11,16 @@
     "istanbulBlock": 0,
     "muirGlacierBlock": 0,
     "berlinBlock": 0,
-    "londonBlock": 4061224,
-    "arrowGlacierBlock": 4061224,
-    "grayGlacierBlock": 4061224,
-    "mergeNetsplitBlock": 4061224,
-    "bedrockBlock": 4061224,
+    "londonBlock": 0,
+    "arrowGlacierBlock": 0,
+    "grayGlacierBlock": 0,
+    "mergeNetsplitBlock": 0,
+    "bedrockBlock": 0,
     "terminalTotalDifficulty": 0,
     "terminalTotalDifficultyPassed": true,
     "optimism": {
         "eip1559Elasticity": 10,
         "eip1559Denominator": 50
     },
-    "regolithTime": 1679079600
+    "regolithTime": 0
 }
