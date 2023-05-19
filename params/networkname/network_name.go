@@ -26,7 +26,7 @@ var All = []string{
 	BorDevnetChainName,
 	GnosisChainName,
 	ChiadoChainName,
-	OptimismMainnetChainName,
 	OptimismGoerliChainName,
 	OptimismDevnetChainName,
 }
+// OptimismMainnetChainName is excluded due to genesis alloc mismatch
