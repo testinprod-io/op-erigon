@@ -434,10 +434,11 @@ func OptimismDevnetGenesisBlock() *types.Genesis {
 	// copy of optimism goerli spec
 	return &types.Genesis{
 		Config:     params.OptimismDevnetChainConfig,
-		Difficulty: big.NewInt(1),
+		Difficulty: big.NewInt(0),
 		Mixhash:    libcommon.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"),
-		ExtraData:  hexutil.MustDecode("0x000000000000000000000000000000000000000000000000000000000000000027770a9694e4b4b1e130ab91bc327c36855f612e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-		GasLimit:   15000000,
+		ExtraData:  hexutil.MustDecode("0x424544524f434b"), // BEDROCK
+		GasLimit:   30000000,
+		GasUsed:    0,
 		Alloc:      readPrealloc("allocs/optimism_devnet.json"),
 	}
 }

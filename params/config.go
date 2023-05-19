@@ -61,7 +61,7 @@ var (
 	ChiadoGenesisHash          = libcommon.HexToHash("0xada44fd8d2ecab8b08f256af07ad3e777f17fb434f8f8e678b312f576212ba9a")
 	OptimismMainnetGenesisHash = libcommon.HexToHash("0x7ca38a1916c42007829c55e69d3e9a73265554b586a499015373241b8a3fa48b")
 	OptimismGoerliGenesisHash  = libcommon.HexToHash("0xc1fc15cd51159b1f1e5cbc4b82e85c1447ddfa33c52cf1d98d14fba0d6354be1")
-	OptimismDevnetGenesisHash  = libcommon.HexToHash("0xc1fc15cd51159b1f1e5cbc4b82e85c1447ddfa33c52cf1d98d14fba0d6354be1")
+	OptimismDevnetGenesisHash  = libcommon.HexToHash("0x1c16b5a055ff0197544b96f1375bf6be35ec478e23a95093cfe01902d821c22a")
 )
 
 var (
