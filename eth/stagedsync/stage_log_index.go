@@ -100,6 +100,10 @@ func SpawnLogIndex(s *StageState, tx kv.RwTx, cfg LogIndexCfg, ctx context.Conte
 	return nil
 }
 
+func PromoteLogIndex(logPrefix string, tx kv.RwTx, start uint64, endBlock uint64, cfg LogIndexCfg, ctx context.Context) error {
+	return promoteLogIndex(logPrefix, tx, start, endBlock, cfg, ctx)
+}
+
 func promoteLogIndex(logPrefix string, tx kv.RwTx, start uint64, endBlock uint64, cfg LogIndexCfg, ctx context.Context) error {
 	quit := ctx.Done()
 	logEvery := time.NewTicker(30 * time.Second)
