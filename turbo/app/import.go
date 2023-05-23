@@ -20,6 +20,7 @@ import (
 	"github.com/ledgerwatch/erigon/core/rawdb"
 	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/eth"
+	stageSync "github.com/ledgerwatch/erigon/eth/stagedsync/stages"
 	"github.com/ledgerwatch/erigon/rlp"
 	turboNode "github.com/ledgerwatch/erigon/turbo/node"
 	"github.com/ledgerwatch/erigon/turbo/stages"
@@ -67,14 +68,14 @@ func importChain(ctx *cli.Context) error {
 		return err
 	}
 
-	if err := ImportChain(ethereum, ethereum.ChainDB(), ctx.Args().First()); err != nil {
+	if err := ImportChain(ethereum, ethereum.ChainDB(), ctx.Args().First(), ethCfg.ImportExecution); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func ImportChain(ethereum *eth.Ethereum, chainDB kv.RwDB, fn string) error {
+func ImportChain(ethereum *eth.Ethereum, chainDB kv.RwDB, fn string, execute bool) error {
 	// Watch for Ctrl-C while the import is running.
 	// If a signal is received, the import will stop at the next batch.
 	interrupt := make(chan os.Signal, 1)
@@ -98,6 +99,7 @@ func ImportChain(ethereum *eth.Ethereum, chainDB kv.RwDB, fn string) error {
 	}
 
 	log.Info("Importing blockchain", "file", fn)
+	log.Info("Blockchain execution", "execute", execute)
 
 	// Open the file handle and potentially unwrap the gzip stream
 	fh, err := os.Open(fn)
@@ -158,8 +160,14 @@ func ImportChain(ethereum *eth.Ethereum, chainDB kv.RwDB, fn string) error {
 			TopBlock: missing[len(missing)-1],
 		}
 
-		if err := InsertChain(ethereum, missingChain); err != nil {
-			return err
+		if execute {
+			if err := InsertChain(ethereum, missingChain); err != nil {
+				return err
+			}
+		} else {
+			if err := InsertChainWithoutExecution(ethereum, missingChain); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -216,6 +224,63 @@ func InsertChain(ethereum *eth.Ethereum, chain *core.ChainPack) error {
 	_, err := stages.StageLoopStep(ethereum.SentryCtx(), ethereum.ChainConfig(), ethereum.ChainDB(), ethereum.StagedSync(), ethereum.Notifications(), initialCycle, sentryControlServer.UpdateHead)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func InsertChainWithoutExecution(ethereum *eth.Ethereum, chain *core.ChainPack) error {
+	db := ethereum.ChainDB()
+	tx, err := db.BeginRw(ethereum.SentryCtx())
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	for i := 0; i < chain.Length(); i++ {
+		block := chain.Blocks[i]
+		if i == 0 {
+			log.Info("Write", "blockNum", block.Number().String())
+		}
+		WriteBlockWithoutExecution(ethereum, tx, block)
+	}
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// may rename to without execution
+func WriteBlockWithoutExecution(ethereum *eth.Ethereum, tx kv.RwTx, block *types.Block) error {
+	if err := rawdb.WriteBlock(tx, block); err != nil {
+		return err
+	}
+	if err := rawdb.WriteHeaderNumber(tx, block.Hash(), block.NumberU64()); err != nil {
+		return err
+	}
+	if err := rawdb.WriteCanonicalHash(tx, block.Hash(), block.NumberU64()); err != nil {
+		return err
+	}
+	if err := rawdb.WriteHeadHeaderHash(tx, block.Hash()); err != nil {
+		return err
+	}
+	rawdb.WriteForkchoiceHead(tx, block.Hash())
+	rawdb.WriteForkchoiceSafe(tx, block.Hash())
+	rawdb.WriteForkchoiceFinalized(tx, block.Hash())
+
+	rawdb.WriteTxLookupEntries(tx, block)
+
+	// mark every stage as done
+	for _, stage := range stageSync.AllStages {
+		if err := stageSync.SaveStageProgress(tx, stage, block.NumberU64()); err != nil {
+			return err
+		}
+	}
+
+	txHash := types.DeriveSha(block.Transactions())
+	if txHash != block.TxHash() {
+		return errors.New("tx trie root mismatch. aborting")
 	}
 
 	return nil
