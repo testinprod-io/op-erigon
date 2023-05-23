@@ -33,7 +33,7 @@ func MakeApp(action cli.ActionFunc, cliFlags []cli.Flag) *cli.App {
 	}
 	app.Commands = []*cli.Command{&initCommand,
 		&importCommand, &importReceiptCommand, &importTotalDifficultyCommand, &importStateCommand,
-		&recoverSendersCommand,
+		&recoverSendersCommand, &recoverLogIndexCommand,
 		&snapshotCommand, &supportCommand}
 	return app
 }
