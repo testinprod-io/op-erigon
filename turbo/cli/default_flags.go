@@ -168,5 +168,6 @@ var DefaultFlags = []cli.Flag{
 	&utils.SentinelAddrFlag,
 	&utils.SentinelPortFlag,
 
+	&utils.ImportExecutionFlag,
 	&utils.GenesisPathFlag,
 }

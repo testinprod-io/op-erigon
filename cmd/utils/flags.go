@@ -796,6 +796,10 @@ var (
 		Usage: "Port for sentinel",
 		Value: 7777,
 	}
+	ImportExecutionFlag = cli.BoolFlag{
+		Name:  "import.execution",
+		Usage: "Execution when importing chain",
+	}
 	GenesisPathFlag = cli.StringFlag{
 		Name:  "genesis.path",
 		Usage: "Genesis JSON file path",
@@ -1666,6 +1670,7 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 	if ctx.IsSet(SentryDropUselessPeers.Name) {
 		cfg.DropUselessPeers = ctx.Bool(SentryDropUselessPeers.Name)
 	}
+	cfg.ImportExecution = ctx.IsSet(ImportExecutionFlag.Name)
 }
 
 // SetDNSDiscoveryDefaults configures DNS discovery with the given URL if
