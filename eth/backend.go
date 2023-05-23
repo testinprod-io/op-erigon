@@ -920,7 +920,8 @@ func (s *Ethereum) StartMining(ctx context.Context, db kv.RwDB, mining *stagedsy
 	return nil
 }
 
-func (s *Ethereum) IsMining() bool { return s.config.Miner.Enabled }
+func (s *Ethereum) IsMining() bool     { return s.config.Miner.Enabled }
+func (s *Ethereum) Dirs() datadir.Dirs { return s.config.Dirs }
 
 func (s *Ethereum) ChainKV() kv.RwDB            { return s.chainDB }
 func (s *Ethereum) NetVersion() (uint64, error) { return s.networkID, nil }
