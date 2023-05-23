@@ -299,7 +299,9 @@ func InsertChainWithoutExecution(ethereum *eth.Ethereum, chain *core.ChainPack) 
 		if i == 0 {
 			log.Info("Write", "blockNum", block.Number().String())
 		}
-		WriteBlockWithoutExecution(ethereum, tx, block)
+		if err := WriteBlockWithoutExecution(ethereum, tx, block); err != nil {
+			return err
+		}
 	}
 	if err := tx.Commit(); err != nil {
 		return err
