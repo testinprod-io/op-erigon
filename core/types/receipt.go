@@ -25,6 +25,7 @@ import (
 
 	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/erigon-lib/chain"
+	"github.com/ledgerwatch/erigon-lib/common"
 
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/hexutility"
@@ -86,6 +87,34 @@ type Receipt struct {
 	// for the data following previous struct and leading to decoding error(triggering backward imcompatibility).
 
 	// Further fields when added must be appended after the last variable. Watch out for cbor.
+}
+
+type HackReceipt struct {
+	// Consensus fields: These fields are defined by the Yellow Paper
+	Type              uint8  `json:"type,omitempty"`
+	PostState         []byte `json:"root" codec:"1"`
+	Status            uint64 `json:"status" codec:"2"`
+	CumulativeGasUsed uint64 `json:"cumulativeGasUsed" gencodec:"required" codec:"3"`
+	Bloom             Bloom  `json:"logsBloom"         gencodec:"required" codec:"-"`
+	Logs              Logs   `json:"logs"              gencodec:"required" codec:"-"`
+
+	// Implementation fields: These fields are added by geth when processing a transaction.
+	// They are stored in the chain database.
+	TxHash          common.Hash    `json:"transactionHash" gencodec:"required" codec:"-"`
+	ContractAddress common.Address `json:"contractAddress" codec:"-"`
+	GasUsed         uint64         `json:"gasUsed" gencodec:"required" codec:"-"`
+
+	// Inclusion information: These fields provide information about the inclusion of the
+	// transaction corresponding to this receipt.
+	BlockHash        common.Hash `json:"blockHash,omitempty" codec:"-"`
+	BlockNumber      *big.Int    `json:"blockNumber,omitempty" codec:"-"`
+	TransactionIndex uint        `json:"transactionIndex" codec:"-"`
+
+	// OVM legacy: extend receipts with their L1 price (if a rollup tx)
+	L1GasPrice *big.Int `json:"l1GasPrice,omitempty"`
+	L1GasUsed  *big.Int `json:"l1GasUsed,omitempty"`
+	L1Fee      *big.Int `json:"l1Fee,omitempty"`
+	FeeScalar  string   `json:"l1FeeScalar,omitempty"`
 }
 
 type receiptMarshaling struct {
@@ -481,6 +510,9 @@ func decodeV3StoredReceiptRLP(r *ReceiptForStorage, blob []byte) error {
 
 // Receipts implements DerivableList for receipts.
 type Receipts []*Receipt
+type ReceiptsList []*Receipts
+
+type HackReceipts []*HackReceipt
 
 // Len returns the number of receipts in this list.
 func (rs Receipts) Len() int { return len(rs) }
