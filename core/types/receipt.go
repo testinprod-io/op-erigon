@@ -514,6 +514,39 @@ type ReceiptsList []*Receipts
 
 type HackReceipts []*HackReceipt
 
+func (hrs HackReceipts) ConvertToReceipts() (*Receipts, error) {
+	var receipts Receipts
+	for _, hackReceipt := range hrs {
+		feeScalar := new(big.Float)
+		_, success := feeScalar.SetString(hackReceipt.FeeScalar)
+		if !success {
+			return nil, fmt.Errorf("feeScalar convert error")
+		}
+		receipt := Receipt{
+			Type:              hackReceipt.Type,
+			PostState:         hackReceipt.PostState,
+			Status:            hackReceipt.Status,
+			CumulativeGasUsed: hackReceipt.CumulativeGasUsed,
+			Bloom:             hackReceipt.Bloom,
+			Logs:              hackReceipt.Logs,
+			TxHash:            hackReceipt.TxHash,
+			ContractAddress:   hackReceipt.ContractAddress,
+			GasUsed:           hackReceipt.GasUsed,
+			BlockHash:         hackReceipt.BlockHash,
+			BlockNumber:       hackReceipt.BlockNumber,
+			TransactionIndex:  hackReceipt.TransactionIndex,
+			L1GasPrice:        hackReceipt.L1GasPrice,
+			L1GasUsed:         hackReceipt.L1GasUsed,
+			L1Fee:             hackReceipt.L1Fee,
+			FeeScalar:         feeScalar,
+			// no depositnonce before bedrock
+			DepositNonce: nil,
+		}
+		receipts = append(receipts, &receipt)
+	}
+	return &receipts, nil
+}
+
 // Len returns the number of receipts in this list.
 func (rs Receipts) Len() int { return len(rs) }
 

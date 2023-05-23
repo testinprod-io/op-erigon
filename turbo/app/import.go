@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math/big"
 	"os"
 	"os/signal"
 	"strings"
@@ -419,40 +418,17 @@ func ImportReceipts(ethereum *eth.Ethereum, chainDB kv.RwDB, fn string) error {
 		i := 0
 		for ; i < importBatchSize; i++ {
 			var hackreceipts types.HackReceipts
+			// hack assuming that default rlp will work
 			if err := stream.Decode(&hackreceipts); errors.Is(err, io.EOF) {
 				break
 			} else if err != nil {
 				return fmt.Errorf("at block %d: %v", n, err)
 			}
-
-			// hack assuming that default rlp will work
-			var receipts types.Receipts
-			for _, hackReceipt := range hackreceipts {
-				feeScalar := new(big.Float)
-				feeScalar.SetString(hackReceipt.FeeScalar)
-				receipt := types.Receipt{
-					Type:              hackReceipt.Type,
-					PostState:         hackReceipt.PostState,
-					Status:            hackReceipt.Status,
-					CumulativeGasUsed: hackReceipt.CumulativeGasUsed,
-					Bloom:             hackReceipt.Bloom,
-					Logs:              hackReceipt.Logs,
-					TxHash:            hackReceipt.TxHash,
-					ContractAddress:   hackReceipt.ContractAddress,
-					GasUsed:           hackReceipt.GasUsed,
-					BlockHash:         hackReceipt.BlockHash,
-					BlockNumber:       hackReceipt.BlockNumber,
-					TransactionIndex:  hackReceipt.TransactionIndex,
-					L1GasPrice:        hackReceipt.L1GasPrice,
-					L1GasUsed:         hackReceipt.L1GasUsed,
-					L1Fee:             hackReceipt.L1Fee,
-					FeeScalar:         feeScalar,
-					// no depositnonce before bedrock
-					DepositNonce: nil,
-				}
-				receipts = append(receipts, &receipt)
+			receipts, err := hackreceipts.ConvertToReceipts()
+			if err != nil {
+				return fmt.Errorf("at block %d: %v", n, err)
 			}
-			receiptsList[i] = &receipts
+			receiptsList[i] = receipts
 			n++
 		}
 		if i == 0 {
