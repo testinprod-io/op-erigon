@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/erigon-lib/chain"
@@ -172,7 +173,10 @@ func ImportChain(ethereum *eth.Ethereum, chainDB kv.RwDB, fn string, execute boo
 
 	// Run actual the import.
 	blocks := make(types.Blocks, importBatchSize)
+
 	n := 0
+	quit := statusReporter("Import blockchain", &n)
+
 	for batch := 0; ; batch++ {
 		// Load a batch of RLP blocks.
 		if checkInterrupt() {
@@ -224,6 +228,8 @@ func ImportChain(ethereum *eth.Ethereum, chainDB kv.RwDB, fn string, execute boo
 			}
 		}
 	}
+	close(quit)
+
 	return nil
 }
 
@@ -502,7 +508,10 @@ func ImportReceipts(ethereum *eth.Ethereum, chainDB kv.RwDB, fn string) error {
 
 	// Run actual the import.
 	receiptsList := make(types.ReceiptsList, importBatchSize)
+
 	n := 0
+	quit := statusReporter("Import receipts", &n)
+
 	for batch := 0; ; batch++ {
 		// Load a batch of RLP blocks.
 		if checkInterrupt() {
@@ -542,6 +551,7 @@ func ImportReceipts(ethereum *eth.Ethereum, chainDB kv.RwDB, fn string) error {
 			return err
 		}
 	}
+	close(quit)
 
 	return nil
 }
@@ -624,6 +634,8 @@ func ImportTotalDifficulty(ethereum *eth.Ethereum, chainDB kv.RwDB, fn string) e
 	stream := rlp.NewStream(reader, 0)
 
 	n := 0
+	quit := statusReporter("Import total difficulty", &n)
+
 	startNum := 0
 	for batch := 0; ; batch++ {
 		// Load a batch of RLP blocks.
@@ -654,6 +666,8 @@ func ImportTotalDifficulty(ethereum *eth.Ethereum, chainDB kv.RwDB, fn string) e
 		}
 		startNum += len(difficultyList)
 	}
+	close(quit)
+
 	return nil
 }
 
@@ -733,7 +747,11 @@ func ImportState(ethereum *eth.Ethereum, fn string, blockNumber uint64) error {
 	r, w := state.NewDbStateReader(tx), state.NewDbStateWriter(tx, blockNumber)
 	statedb := state.New(r)
 
+	idx := 0
+	quit := statusReporter("Import state", &idx)
+
 	for address, account := range ia {
+		idx += 1
 		balanceBigInt, ok := new(big.Int).SetString(account.Balance, 10)
 		if !ok {
 			return errors.New("balance bigint conversion failure")
@@ -773,6 +791,7 @@ func ImportState(ethereum *eth.Ethereum, fn string, blockNumber uint64) error {
 			statedb.SetIncarnation(address, state.FirstContractIncarnation)
 		}
 	}
+	close(quit)
 
 	if err := statedb.FinalizeTx(&chain.Rules{}, w); err != nil {
 		return err
@@ -847,7 +866,11 @@ func SanityCheckStorageTrie(ethereum *eth.Ethereum, fn string, blockNumber uint6
 	r := state.NewDbStateReader(tx)
 	statedb := state.New(r)
 
+	idx := 0
+	quit := statusReporter("Sanity check storage trie", &idx)
+
 	for address, account := range ia {
+		idx += 1
 		incarnation := statedb.GetIncarnation(address)
 		newStorageTrie := trie.New(libcommon.Hash{})
 		if err := state.WalkAsOfStorage(tx,
@@ -873,6 +896,28 @@ func SanityCheckStorageTrie(ethereum *eth.Ethereum, fn string, blockNumber uint6
 			return fmt.Errorf("storage root mismatch, expected %x, got %x", newStorageTrieRoot, storageRoot)
 		}
 	}
+	close(quit)
 
 	return nil
+}
+
+func statusReporter(msg string, idx *int) chan struct{} {
+	startTime := time.Now()
+	ticker := time.NewTicker(8 * time.Second)
+	quit := make(chan struct{})
+
+	go func(index *int) {
+		for {
+			select {
+			case <-ticker.C:
+				log.Info(msg, "index", *index, "elapsed", time.Duration(time.Since(startTime)))
+			case <-quit:
+				log.Info(msg, "index", *index, "elapsed", time.Duration(time.Since(startTime)))
+				ticker.Stop()
+				return
+			}
+		}
+	}(idx)
+
+	return quit
 }
