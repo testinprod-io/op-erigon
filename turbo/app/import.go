@@ -340,9 +340,6 @@ func InsertChainWithoutExecution(ethereum *eth.Ethereum, chain *core.ChainPack) 
 
 	for i := 0; i < chain.Length(); i++ {
 		block := chain.Blocks[i]
-		if i == 0 {
-			log.Info("Write", "blockNum", block.Number().String())
-		}
 		if err := WriteBlockWithoutExecution(ethereum, tx, block); err != nil {
 			return err
 		}
@@ -570,7 +567,6 @@ func InsertReceipts(ethereum *eth.Ethereum, receiptsList []*types.Receipts) erro
 		}
 		firstReceipt := []*types.Receipt(*receipts)[0]
 		blockNumber := firstReceipt.BlockNumber.Uint64()
-		// log.Info("Write receipt", "block", blockNumber)
 		block := rawdb.ReadBlock(tx, firstReceipt.BlockHash, blockNumber)
 
 		var receiptsVal types.Receipts = *receipts
