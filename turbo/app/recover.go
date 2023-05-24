@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -11,12 +12,15 @@ import (
 
 	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/erigon-lib/common"
+	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon/cmd/utils"
 	"github.com/ledgerwatch/erigon/core/rawdb"
 	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/eth"
 	"github.com/ledgerwatch/erigon/eth/stagedsync"
 	"github.com/ledgerwatch/erigon/ethdb/prune"
+	"github.com/ledgerwatch/erigon/params"
+	"github.com/ledgerwatch/erigon/params/networkname"
 	turboNode "github.com/ledgerwatch/erigon/turbo/node"
 	"github.com/ledgerwatch/log/v3"
 	"github.com/urfave/cli/v2"
@@ -55,6 +59,19 @@ var recoverLogIndexCommand = cli.Command{
 	Category: "BLOCKCHAIN COMMANDS",
 	Description: `
 The recover command recovers LogTopicIndex table and LogAddressIndex table.`,
+}
+
+var recoverRegenesisCommand = cli.Command{
+	Action: MigrateFlags(recoverRegenesis),
+	Name:   "recover-regenesis",
+	Usage:  "Recovery for regenesis",
+	Flags: []cli.Flag{
+		&utils.DataDirFlag,
+		&utils.ChainFlag,
+	},
+	Category: "BLOCKCHAIN COMMANDS",
+	Description: `
+The recover command corrects chain config and genesis for bedrock regenesis.`,
 }
 
 func recoverSenders(ctx *cli.Context) error {
@@ -319,6 +336,85 @@ func RecoverLogIndexBatch(ethereum *eth.Ethereum, start, end uint64) error {
 	if err := tx.Commit(); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func recoverRegenesis(ctx *cli.Context) error {
+	nodeCfg := turboNode.NewNodConfigUrfave(ctx)
+	ethCfg := turboNode.NewEthConfigUrfave(ctx, nodeCfg)
+
+	stack := makeConfigNode(nodeCfg)
+	defer stack.Close()
+
+	ethereum, err := eth.New(stack, ethCfg)
+	if err != nil {
+		return err
+	}
+
+	if err := RecoverRegenesis(ethereum); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func RecoverRegenesis(ethereum *eth.Ethereum) error {
+	db := ethereum.ChainDB()
+	tx, err := db.BeginRw(ethereum.SentryCtx())
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	genesisHeader := rawdb.ReadHeaderByNumber(tx, 0)
+	genesisHash := genesisHeader.Hash()
+	genesisBody, _, _ := rawdb.ReadBody(tx, genesisHash, 0)
+	if genesisBody == nil {
+		return errors.New("genesis block body nil")
+	}
+	config, err := rawdb.ReadChainConfig(tx, genesisHash)
+	if err != nil {
+		return err
+	}
+	if err := rawdb.DeleteChainConfig(tx, genesisHash); err != nil {
+		return err
+	}
+
+	var targetGenesisHash libcommon.Hash
+	switch config.ChainName {
+	case networkname.OptimismGoerliChainName:
+		genesisHeader.Root = params.OptimismGoerliStateRoot
+		targetGenesisHash = params.OptimismGoerliGenesisHash
+	case networkname.MainnetChainName:
+		genesisHeader.Root = params.OptimismMainnetStateRoot
+		targetGenesisHash = params.OptimismMainnetGenesisHash
+	default:
+		return fmt.Errorf("%s chain not supported for regenesis", config.ChainName)
+	}
+	newGenesisHash := genesisHeader.Hash()
+	if newGenesisHash != targetGenesisHash {
+		return fmt.Errorf("regenesis header hash mismatch")
+	}
+
+	// body did not change
+	if err := rawdb.WriteBody(tx, newGenesisHash, 0, genesisBody); err != nil {
+		return err
+	}
+	// update new header and hash->number mapping
+	rawdb.WriteHeader(tx, genesisHeader)
+	if err := rawdb.WriteCanonicalHash(tx, newGenesisHash, 0); err != nil {
+		return err
+	}
+	if err := rawdb.WriteChainConfig(tx, newGenesisHash, config); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	log.Info("Successfully wrote regenesis state", "hash", newGenesisHash.Hex(), "root", genesisHeader.Root.Hex())
 
 	return nil
 }
