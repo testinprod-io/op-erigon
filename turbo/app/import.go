@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/erigon-lib/chain"
@@ -803,16 +804,20 @@ func ImportState(ethereum *eth.Ethereum, fn string, blockNumber uint64) error {
 	}
 	log.Info("newly calculated root", "root", root.Hex())
 
+	startTime := time.Now()
 	blockWriter := state.NewPlainStateWriter(tx, tx, blockNumber)
 	if err := statedb.CommitBlock(&chain.Rules{}, blockWriter); err != nil {
 		return fmt.Errorf("cannot write state: %w", err)
 	}
+	log.Info("commit block", "elapsed", time.Duration(time.Since(startTime)))
 	if err := blockWriter.WriteChangeSets(); err != nil {
 		return fmt.Errorf("cannot write change sets: %w", err)
 	}
+	log.Info("write change sets", "elapsed", time.Duration(time.Since(startTime)))
 	if err := blockWriter.WriteHistory(); err != nil {
 		return fmt.Errorf("cannot write history: %w", err)
 	}
+	log.Info("write history", "elapsed", time.Duration(time.Since(startTime)))
 
 	blockHash, err := rawdb.ReadCanonicalHash(tx, blockNumber)
 	if err != nil {
