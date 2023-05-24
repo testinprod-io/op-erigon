@@ -65,7 +65,7 @@ func dbSanityCheck(ctx *cli.Context) error {
 }
 
 func DbSanityCheck(ethereum *eth.Ethereum, blockNumber uint64, checkEmpty bool) error {
-	log.Info("Database sanity check for block number", "blockNumber", blockNumber)
+	log.Info("Database sanity check for block number", "blockNumber", blockNumber, "checkEmpty", checkEmpty)
 
 	startAddress := libcommon.Address{}
 

@@ -452,6 +452,10 @@ func importState(ctx *cli.Context) error {
 		utils.Fatalf("Export error in parsing parameters: block number not an integer\n")
 	}
 
+	// make sure state trie is empty before import
+	if err := DbSanityCheck(ethereum, uint64(blockNum), true); err != nil {
+		return err
+	}
 	if err := ImportState(ethereum, fn, uint64(blockNum)); err != nil {
 		return err
 	}
