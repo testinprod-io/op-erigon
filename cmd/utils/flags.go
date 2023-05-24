@@ -800,6 +800,11 @@ var (
 		Name:  "import.execution",
 		Usage: "Execution when importing chain",
 	}
+	ImportStateStreamFlag = cli.BoolFlag{
+		Name:  "import.stream",
+		Usage: "Stream data for State import using jsonl form. (default = true)",
+		Value: true,
+	}
 	GenesisPathFlag = cli.StringFlag{
 		Name:  "genesis.path",
 		Usage: "Genesis JSON file path",
@@ -1670,6 +1675,7 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 	if ctx.IsSet(SentryDropUselessPeers.Name) {
 		cfg.DropUselessPeers = ctx.Bool(SentryDropUselessPeers.Name)
 	}
+	cfg.ImportStateStream = ctx.Bool(ImportStateStreamFlag.Name)
 	cfg.ImportExecution = ctx.IsSet(ImportExecutionFlag.Name)
 }
 

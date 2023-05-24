@@ -182,8 +182,9 @@ type Config struct {
 	Prune     prune.Mode
 	BatchSize datasize.ByteSize // Batch size for execution stage
 
-	ImportMode      bool
-	ImportExecution bool
+	ImportMode        bool
+	ImportStateStream bool
+	ImportExecution   bool
 
 	BadBlockHash common.Hash // hash of the block marked as bad
 
