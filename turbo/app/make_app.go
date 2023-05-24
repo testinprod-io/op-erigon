@@ -35,6 +35,7 @@ func MakeApp(action cli.ActionFunc, cliFlags []cli.Flag) *cli.App {
 		&importCommand, &importReceiptCommand, &importTotalDifficultyCommand, &importStateCommand,
 		&recoverSendersCommand, &recoverLogIndexCommand,
 		&dropLogIndexCommand,
+		&dbSanityCheckCommand,
 		&snapshotCommand, &supportCommand}
 	return app
 }
