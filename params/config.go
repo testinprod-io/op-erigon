@@ -279,8 +279,12 @@ func ChainConfigByGenesisHash(genesisHash libcommon.Hash) *chain.Config {
 		return BorMainnetChainConfig
 	case genesisHash == BorDevnetGenesisHash:
 		return BorDevnetChainConfig
+	case genesisHash == OptimismMainnetGenesisHash:
+		return OptimismMainnetChainConfig
 	case genesisHash == OptimismGoerliGenesisHash:
 		return OptimismGoerliChainConfig
+	case genesisHash == OptimismDevnetGenesisHash:
+		return OptimismDevnetChainConfig
 	case genesisHash == GnosisGenesisHash:
 		return GnosisChainConfig
 	case genesisHash == ChiadoGenesisHash:
