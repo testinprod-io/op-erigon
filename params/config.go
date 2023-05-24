@@ -65,8 +65,10 @@ var (
 )
 
 var (
-	GnosisGenesisStateRoot = libcommon.HexToHash("0x40cf4430ecaa733787d1a65154a3b9efb560c95d9e324a23b97f0609b539133b")
-	ChiadoGenesisStateRoot = libcommon.HexToHash("0x9ec3eaf4e6188dfbdd6ade76eaa88289b57c63c9a2cde8d35291d5a29e143d31")
+	GnosisGenesisStateRoot   = libcommon.HexToHash("0x40cf4430ecaa733787d1a65154a3b9efb560c95d9e324a23b97f0609b539133b")
+	ChiadoGenesisStateRoot   = libcommon.HexToHash("0x9ec3eaf4e6188dfbdd6ade76eaa88289b57c63c9a2cde8d35291d5a29e143d31")
+	OptimismMainnetStateRoot = libcommon.HexToHash("0xeddb4c1786789419153a27c4c80ff44a2226b6eda04f7e22ce5bae892ea568eb")
+	OptimismGoerliStateRoot  = libcommon.HexToHash("0x9e6b478a1cd331a979c39e4bddf42c676bcf5a63382f898dc441fe3fe5eb0837")
 )
 
 var (
