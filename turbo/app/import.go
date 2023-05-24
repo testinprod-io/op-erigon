@@ -15,7 +15,6 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
-	"time"
 
 	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/erigon-lib/chain"
@@ -175,7 +174,7 @@ func ImportChain(ethereum *eth.Ethereum, chainDB kv.RwDB, fn string, execute boo
 	blocks := make(types.Blocks, importBatchSize)
 
 	n := 0
-	quit := statusReporter("Import blockchain", &n)
+	quit := StatusReporter("Import blockchain", &n)
 
 	for batch := 0; ; batch++ {
 		// Load a batch of RLP blocks.
@@ -507,7 +506,7 @@ func ImportReceipts(ethereum *eth.Ethereum, chainDB kv.RwDB, fn string) error {
 	receiptsList := make(types.ReceiptsList, importBatchSize)
 
 	n := 0
-	quit := statusReporter("Import receipts", &n)
+	quit := StatusReporter("Import receipts", &n)
 
 	for batch := 0; ; batch++ {
 		// Load a batch of RLP blocks.
@@ -630,7 +629,7 @@ func ImportTotalDifficulty(ethereum *eth.Ethereum, chainDB kv.RwDB, fn string) e
 	stream := rlp.NewStream(reader, 0)
 
 	n := 0
-	quit := statusReporter("Import total difficulty", &n)
+	quit := StatusReporter("Import total difficulty", &n)
 
 	startNum := 0
 	for batch := 0; ; batch++ {
@@ -744,7 +743,7 @@ func ImportState(ethereum *eth.Ethereum, fn string, blockNumber uint64) error {
 	statedb := state.New(r)
 
 	idx := 0
-	quit := statusReporter("Import state", &idx)
+	quit := StatusReporter("Import state", &idx)
 
 	for address, account := range ia {
 		idx += 1
@@ -863,7 +862,7 @@ func SanityCheckStorageTrie(ethereum *eth.Ethereum, fn string, blockNumber uint6
 	statedb := state.New(r)
 
 	idx := 0
-	quit := statusReporter("Sanity check storage trie", &idx)
+	quit := StatusReporter("Sanity check storage trie", &idx)
 
 	for address, account := range ia {
 		idx += 1
@@ -895,25 +894,4 @@ func SanityCheckStorageTrie(ethereum *eth.Ethereum, fn string, blockNumber uint6
 	close(quit)
 
 	return nil
-}
-
-func statusReporter(msg string, idx *int) chan struct{} {
-	startTime := time.Now()
-	ticker := time.NewTicker(8 * time.Second)
-	quit := make(chan struct{})
-
-	go func(index *int) {
-		for {
-			select {
-			case <-ticker.C:
-				log.Info(msg, "index", *index, "elapsed", time.Duration(time.Since(startTime)))
-			case <-quit:
-				log.Info(msg, "index", *index, "elapsed", time.Duration(time.Since(startTime)))
-				ticker.Stop()
-				return
-			}
-		}
-	}(idx)
-
-	return quit
 }
