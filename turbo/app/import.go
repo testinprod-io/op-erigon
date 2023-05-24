@@ -867,12 +867,12 @@ func SanityCheckStorageTrie(ethereum *eth.Ethereum, fn string, blockNumber uint6
 	for address, account := range ia {
 		idx += 1
 		incarnation := statedb.GetIncarnation(address)
-		newStorageTrie := trie.New(libcommon.Hash{})
+		newStorageTrie := trie.New(emptyHash)
 		if err := state.WalkAsOfStorage(tx,
 			address,
 			incarnation,
-			libcommon.Hash{}, /* startLocation */
-			blockNumber+1,    /* do not know why adding one up, but it just works */
+			emptyHash,     /* startLocation */
+			blockNumber+1, /* do not know why adding one up, but it just works */
 			func(_, loc, vs []byte) (bool, error) {
 				h, _ := common.HashData(loc)
 				newStorageTrie.Update(h.Bytes(), common.CopyBytes(vs))

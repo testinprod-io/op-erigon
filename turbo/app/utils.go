@@ -3,8 +3,13 @@ package app
 import (
 	"time"
 
+	libcommon "github.com/ledgerwatch/erigon-lib/common"
+	"github.com/ledgerwatch/erigon/crypto"
 	"github.com/ledgerwatch/log/v3"
 )
+
+var emptyCodeHash = crypto.Keccak256Hash(nil)
+var emptyHash = libcommon.Hash{}
 
 func StatusReporter(msg string, idx *int) chan struct{} {
 	startTime := time.Now()
