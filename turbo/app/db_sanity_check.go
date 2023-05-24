@@ -57,14 +57,14 @@ func dbSanityCheck(ctx *cli.Context) error {
 		utils.Fatalf("Export error in parsing parameters: block number not an integer\n")
 	}
 
-	if err := DbSanityCheck(ethereum, uint64(blockNum)); err != nil {
+	if err := DbSanityCheck(ethereum, uint64(blockNum), false); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func DbSanityCheck(ethereum *eth.Ethereum, blockNumber uint64) error {
+func DbSanityCheck(ethereum *eth.Ethereum, blockNumber uint64, checkEmpty bool) error {
 	log.Info("Database sanity check for block number", "blockNumber", blockNumber)
 
 	startAddress := libcommon.Address{}
@@ -176,23 +176,31 @@ func DbSanityCheck(ethereum *eth.Ethereum, blockNumber uint64) error {
 	startTime := time.Now()
 	stateRoot := worldStateTrie.Hash()
 	log.Info("World State Trie Root Calculation", "elapsed", time.Duration(time.Since(startTime)))
-	blockHash, err := rawdb.ReadCanonicalHash(tx, blockNumber)
-	if err != nil {
-		return err
-	}
 
-	header := rawdb.ReadHeader(tx, blockHash, blockNumber)
-	if header == nil {
-		return fmt.Errorf("header for block %d not found", blockNumber)
-	}
-
-	stateRootFromHeader := header.Root
-	log.Info("state root stored at blockheader", "root", stateRootFromHeader.Hex())
-
-	if bytes.Equal(stateRoot.Bytes(), stateRootFromHeader.Bytes()) {
-		log.Info("state root consistent with block header's state root")
+	var targetRoot libcommon.Hash
+	if checkEmpty {
+		log.Info("State trie must by empty")
+		targetRoot = types.EmptyRootHash
 	} else {
-		return fmt.Errorf("state trie root mismatch, expected %x, got %x", stateRootFromHeader, stateRoot)
+		blockHash, err := rawdb.ReadCanonicalHash(tx, blockNumber)
+		if err != nil {
+			return err
+		}
+
+		header := rawdb.ReadHeader(tx, blockHash, blockNumber)
+		if header == nil {
+			return fmt.Errorf("header for block %d not found", blockNumber)
+		}
+
+		stateRootFromHeader := header.Root
+		log.Info("state root stored at blockheader", "root", stateRootFromHeader.Hex())
+		targetRoot = stateRootFromHeader
+	}
+
+	if bytes.Equal(stateRoot.Bytes(), targetRoot.Bytes()) {
+		log.Info("state root consistent with target root")
+	} else {
+		return fmt.Errorf("state trie root mismatch, expected %x, got %x", targetRoot, stateRoot)
 	}
 
 	return nil
