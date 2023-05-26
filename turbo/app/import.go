@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bufio"
 	"bytes"
 	"compress/gzip"
 	"context"
@@ -457,13 +458,21 @@ func importState(ctx *cli.Context) error {
 	if err := DbSanityCheck(ethereum, uint64(blockNum), true); err != nil {
 		return err
 	}
-	if err := ImportState(ethereum, fn, uint64(blockNum)); err != nil {
-		return err
+	if ethCfg.ImportStateStream {
+		if err := ImportStateStream(ethereum, fn, uint64(blockNum)); err != nil {
+			return err
+		}
+		if err := SanityCheckStorageTrieStream(ethereum, fn, uint64(blockNum)); err != nil {
+			return err
+		}
+	} else {
+		if err := ImportState(ethereum, fn, uint64(blockNum)); err != nil {
+			return err
+		}
+		if err := SanityCheckStorageTrie(ethereum, fn, uint64(blockNum)); err != nil {
+			return err
+		}
 	}
-	if err := SanityCheckStorageTrie(ethereum, fn, uint64(blockNum)); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -705,9 +714,14 @@ type ImportAccount struct {
 	CodeHash string                    `json:"codeHash"`
 	Code     string                    `json:"code,omitempty"`
 	Storage  map[libcommon.Hash]string `json:"storage,omitempty"`
+	Address  libcommon.Address         `json:"address,omitempty"`
 }
 
 type ImportAlloc map[libcommon.Address]ImportAccount
+
+type ImportStreamHeader struct {
+	Root libcommon.Hash `json:"root"`
+}
 
 func (ia *ImportAlloc) UnmarshalJson(data []byte) error {
 	m := make(ImportAlloc)
@@ -721,6 +735,146 @@ func (ia *ImportAlloc) UnmarshalJson(data []byte) error {
 	return nil
 }
 
+func ImportStateStream(ethereum *eth.Ethereum, fn string, blockNumber uint64) error {
+	log.Info("Importing state as stream", "file", fn)
+	log.Info("Importing state as stream for block number", "blockNumber", blockNumber)
+	fh, err := os.Open(fn)
+	if err != nil {
+		return err
+	}
+	defer fh.Close()
+
+	db := ethereum.ChainDB()
+	tx, err := db.BeginRw(ethereum.SentryCtx())
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	r, w := state.NewDbStateReader(tx), state.NewDbStateWriter(tx, blockNumber)
+	statedb := state.New(r)
+
+	reader := bufio.NewReader(fh)
+	delimiter := byte('\n')
+	var importStreamHeader ImportStreamHeader
+
+	idx := 0
+	quit := StatusReporter("Import state as stream", &idx)
+
+	headerConsumed := false
+	for {
+		line, err := reader.ReadBytes(delimiter)
+		if errors.Is(err, io.EOF) {
+			break
+		} else if err != nil {
+			return err
+		}
+		if !headerConsumed {
+			if err := json.Unmarshal(line, &importStreamHeader); err != nil {
+				return err
+			}
+			log.Info("state root from header", "root", importStreamHeader.Root.Hex())
+			headerConsumed = true
+			continue
+		}
+		var account ImportAccount
+		if err := json.Unmarshal(line, &account); err != nil {
+			return err
+		}
+		idx += 1
+		address := account.Address
+		balanceBigInt, ok := new(big.Int).SetString(account.Balance, 10)
+		if !ok {
+			return errors.New("balance bigint conversion failure")
+		}
+		balance, overflow := uint256.FromBig(balanceBigInt)
+		if overflow {
+			return errors.New("balance overflow")
+		}
+		statedb.AddBalance(address, balance)
+		hexCode := strings.TrimPrefix(account.Code, "0x")
+		code, err := hex.DecodeString(hexCode)
+		if err != nil {
+			return fmt.Errorf("code hexdecode failure, %s", hexCode)
+		}
+		hexCodeHash := strings.TrimPrefix(account.CodeHash, "0x")
+		codeHash, err := hex.DecodeString(hexCodeHash)
+		if err != nil {
+			return fmt.Errorf("codehash hexdecode failure, %s", hexCodeHash)
+		}
+		tempCodeHash := crypto.Keccak256(code)
+		if !bytes.Equal(tempCodeHash, codeHash) {
+			return fmt.Errorf("codehash mismatch, expected %x, got %x", codeHash, tempCodeHash)
+		}
+		statedb.SetCode(address, code)
+		statedb.SetNonce(address, account.Nonce)
+		for key, hexValue := range account.Storage {
+			key := key
+			value, err := hex.DecodeString(hexValue)
+			if err != nil {
+				return errors.New("value hexdecode failure")
+			}
+			val := uint256.NewInt(0).SetBytes(value)
+			statedb.SetState(address, &key, *val)
+		}
+
+		if len(account.Code) > 0 || len(account.Storage) > 0 {
+			statedb.SetIncarnation(address, state.FirstContractIncarnation)
+		}
+	}
+	close(quit)
+
+	if err := statedb.FinalizeTx(&chain.Rules{}, w); err != nil {
+		return err
+	}
+
+	root, err := trie.CalcRoot("regenesis", tx)
+	if err != nil {
+		log.Info("root calculation failed")
+		return err
+	}
+	log.Info("newly calculated root", "root", root.Hex())
+
+	startTime := time.Now()
+	blockWriter := state.NewPlainStateWriter(tx, tx, blockNumber)
+	if err := statedb.CommitBlock(&chain.Rules{}, blockWriter); err != nil {
+		return fmt.Errorf("cannot write state: %w", err)
+	}
+	log.Info("commit block", "elapsed", time.Duration(time.Since(startTime)))
+	if err := blockWriter.WriteChangeSets(); err != nil {
+		return fmt.Errorf("cannot write change sets: %w", err)
+	}
+	log.Info("write change sets", "elapsed", time.Duration(time.Since(startTime)))
+	if err := blockWriter.WriteHistory(); err != nil {
+		return fmt.Errorf("cannot write history: %w", err)
+	}
+	log.Info("write history", "elapsed", time.Duration(time.Since(startTime)))
+
+	blockHash, err := rawdb.ReadCanonicalHash(tx, blockNumber)
+	if err != nil {
+		return err
+	}
+
+	header := rawdb.ReadHeader(tx, blockHash, blockNumber)
+	log.Info("state root stored at blockheader", "root", header.Root.Hex())
+
+	if bytes.Equal(root.Bytes(), header.Root.Bytes()) {
+		log.Info("state root consistent with block header's state root")
+	} else {
+		return fmt.Errorf("state trie root mismatch, expected %x, got %x", header.Root, root)
+	}
+
+	// first bedrock block does not have tx, so no tx receipt
+	if err != rawdb.WriteReceipts(tx, blockNumber, nil) {
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func ImportState(ethereum *eth.Ethereum, fn string, blockNumber uint64) error {
 	log.Info("Importing state", "file", fn)
 	log.Info("Importing state for block number", "blockNumber", blockNumber)
@@ -728,8 +882,8 @@ func ImportState(ethereum *eth.Ethereum, fn string, blockNumber uint64) error {
 	if err != nil {
 		return err
 	}
+	defer fh.Close()
 
-	// TODO: make as jsonl stream
 	decoder := json.NewDecoder(fh)
 	ia := make(ImportAlloc)
 
@@ -761,12 +915,12 @@ func ImportState(ethereum *eth.Ethereum, fn string, blockNumber uint64) error {
 			return errors.New("balance overflow")
 		}
 		statedb.AddBalance(address, balance)
-		hexCode := account.Code
+		hexCode := strings.TrimPrefix(account.Code, "0x")
 		code, err := hex.DecodeString(hexCode)
 		if err != nil {
 			return fmt.Errorf("code hexdecode failure, %s", hexCode)
 		}
-		hexCodeHash := account.CodeHash
+		hexCodeHash := strings.TrimPrefix(account.CodeHash, "0x")
 		codeHash, err := hex.DecodeString(hexCodeHash)
 		if err != nil {
 			return fmt.Errorf("codehash hexdecode failure, %s", hexCodeHash)
@@ -851,8 +1005,8 @@ func SanityCheckStorageTrie(ethereum *eth.Ethereum, fn string, blockNumber uint6
 	if err != nil {
 		return err
 	}
+	defer fh.Close()
 
-	// TODO: make as jsonl stream
 	decoder := json.NewDecoder(fh)
 	ia := make(ImportAlloc)
 
@@ -890,7 +1044,85 @@ func SanityCheckStorageTrie(ethereum *eth.Ethereum, fn string, blockNumber uint6
 			return fmt.Errorf("walking over storage for %x: %w", address, err)
 		}
 		newStorageTrieRoot := newStorageTrie.Root()
-		hexStorageRoot := account.Root
+		hexStorageRoot := strings.TrimPrefix(account.Root, "0x")
+		storageRoot, err := hex.DecodeString(hexStorageRoot)
+
+		if err != nil {
+			return errors.New("storage root hexdecode failure")
+		}
+		if !bytes.Equal(newStorageTrieRoot, storageRoot) {
+			return fmt.Errorf("storage root mismatch, expected %x, got %x", newStorageTrieRoot, storageRoot)
+		}
+	}
+	close(quit)
+
+	return nil
+}
+
+func SanityCheckStorageTrieStream(ethereum *eth.Ethereum, fn string, blockNumber uint64) error {
+	log.Info("Sanity check storage trie stream", "file", fn)
+	log.Info("Sanity check storage trie stream for block number", "blockNumber", blockNumber)
+	fh, err := os.Open(fn)
+	if err != nil {
+		return err
+	}
+	defer fh.Close()
+
+	db := ethereum.ChainDB()
+	tx, err := db.BeginRw(ethereum.SentryCtx())
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	r := state.NewDbStateReader(tx)
+	statedb := state.New(r)
+
+	reader := bufio.NewReader(fh)
+	delimiter := byte('\n')
+	var importStreamHeader ImportStreamHeader
+
+	idx := 0
+	quit := StatusReporter("Sanity check storage trie using stream", &idx)
+
+	headerConsumed := false
+	for {
+		line, err := reader.ReadBytes(delimiter)
+		if errors.Is(err, io.EOF) {
+			break
+		} else if err != nil {
+			return err
+		}
+		if !headerConsumed {
+			if err := json.Unmarshal(line, &importStreamHeader); err != nil {
+				return err
+			}
+			log.Info("state root from header", "root", importStreamHeader.Root.Hex())
+			headerConsumed = true
+			continue
+		}
+		var account ImportAccount
+		if err := json.Unmarshal(line, &account); err != nil {
+			return err
+		}
+		idx += 1
+		address := account.Address
+		incarnation := statedb.GetIncarnation(address)
+		newStorageTrie := trie.New(emptyHash)
+		if err := state.WalkAsOfStorage(tx,
+			address,
+			incarnation,
+			emptyHash,     /* startLocation */
+			blockNumber+1, /* do not know why adding one up, but it just works */
+			func(_, loc, vs []byte) (bool, error) {
+				h, _ := common.HashData(loc)
+				newStorageTrie.Update(h.Bytes(), common.CopyBytes(vs))
+				return true, nil
+			}); err != nil {
+			return fmt.Errorf("walking over storage for %x: %w", address, err)
+		}
+		newStorageTrieRoot := newStorageTrie.Root()
+		hexStorageRoot := strings.TrimPrefix(account.Root, "0x")
 		storageRoot, err := hex.DecodeString(hexStorageRoot)
 
 		if err != nil {
