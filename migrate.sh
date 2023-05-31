@@ -53,6 +53,7 @@ fi
 EXTRA_FLAGS="--no-downloader --nodiscover --maxpeers=0 --txpool.disable"
 EXTRA_FLAGS="$EXTRA_FLAGS --log.console.verbosity=3"
 EXTRA_FLAGS="$EXTRA_FLAGS --chain=$CHAIN"
+EXTRA_FLAGS="$EXTRA_FLAGS --metrics"
 
 banner "Import Genesis"
 time ./build/bin/erigon $EXTRA_FLAGS --datadir=$ERIGON_DATA_DIR --log.dir.path=$LOG_DIR/init_genesis init init/"$CHAIN".json 2> /dev/null
