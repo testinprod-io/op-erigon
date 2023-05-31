@@ -830,6 +830,7 @@ func ImportState(ethereum *eth.Ethereum, fn string, blockNumber uint64, stream b
 		for address, account := range ia {
 			idx += 1
 			account.Address = address
+			//nolint:all
 			if err := storeAccount(statedb, &account); err != nil {
 				return err
 			}
@@ -953,6 +954,7 @@ func SanityCheckStorageTrie(ethereum *eth.Ethereum, fn string, blockNumber uint6
 		for address, account := range ia {
 			idx += 1
 			account.Address = address
+			//nolint:all
 			if err := sanityCheckStorageTrie(statedb, tx, &account, blockNumber); err != nil {
 				return err
 			}

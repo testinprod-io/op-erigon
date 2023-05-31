@@ -175,7 +175,7 @@ func DbSanityCheck(ethereum *eth.Ethereum, blockNumber uint64, checkEmpty bool) 
 
 	startTime := time.Now()
 	stateRoot := worldStateTrie.Hash()
-	log.Info("World State Trie Root Calculation", "elapsed", time.Duration(time.Since(startTime)))
+	log.Info("World State Trie Root Calculation", "elapsed", time.Since(startTime))
 
 	var targetRoot libcommon.Hash
 	if checkEmpty {

@@ -515,7 +515,7 @@ type ReceiptsList []*Receipts
 type HackReceipts []*HackReceipt
 
 func (hrs HackReceipts) ConvertToReceipts() (*Receipts, error) {
-	var receipts Receipts
+	receipts := make(Receipts, 0)
 	for _, hackReceipt := range hrs {
 		feeScalar := new(big.Float)
 		_, success := feeScalar.SetString(hackReceipt.FeeScalar)

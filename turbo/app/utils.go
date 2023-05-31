@@ -20,9 +20,9 @@ func StatusReporter(msg string, idx *int) chan struct{} {
 		for {
 			select {
 			case <-ticker.C:
-				log.Info(msg, "index", *index, "elapsed", time.Duration(time.Since(startTime)))
+				log.Info(msg, "index", *index, "elapsed", time.Since(startTime))
 			case <-quit:
-				log.Info(msg, "index", *index, "elapsed", time.Duration(time.Since(startTime)))
+				log.Info(msg, "index", *index, "elapsed", time.Since(startTime))
 				ticker.Stop()
 				return
 			}

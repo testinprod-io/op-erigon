@@ -42,7 +42,7 @@ func dropLogIndex(ctx *cli.Context) error {
 	if err := DropLogIndex(ethereum); err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
