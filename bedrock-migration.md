@@ -31,7 +31,7 @@ make geth
 # ex) ./migrate.sh 4061224 /home/ubuntu/geth_db  2>&1 | tee migration.log
 ```
 
-[`migrate.sh`](./migrate.sh) executes below steps.
+[`migrate.sh`](https://github.com/testinprod-io/op-geth/blob/pcw109550/bedrock-db-migration/migrate.sh) executes below steps.
 
 * [Export Blocks](#export-blocks)
 * [Export Receipts](#export-receipts)
@@ -95,7 +95,7 @@ make erigon
 # chain name must be optimism-mainnet or optimism-goerli
 ```
 
-[`migrate.sh`](https://github.com/testinprod-io/op-geth/blob/pcw109550/bedrock-db-migration/migrate.sh) executes below steps.
+[`migrate.sh`](./migrate.sh) executes below steps.
 
 * [Import Genesis](#import-genesis)
 * [Recover Genesis](#recover-genesis)
@@ -108,7 +108,7 @@ make erigon
 * [Recover Senders](#recover-senders)
 
 All artifacts will be fetched from `/tmp/migration-artifact`.
-After database creation, we can sanity check state trie by below step. This sanity check step is not included in [`migrate.sh`](https://github.com/testinprod-io/op-geth/blob/pcw109550/bedrock-db-migration/migrate.sh).
+After database creation, we can sanity check state trie by below step. This sanity check step is not included in [`migrate.sh`](./migrate.sh).
 
 * [Sanity Check](#sanity-check)
 
