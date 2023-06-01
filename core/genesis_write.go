@@ -96,8 +96,12 @@ func WriteGenesisBlock(tx kv.RwTx, genesis *types.Genesis, overrideShanghaiTime 
 		if overrideShanghaiTime != nil {
 			config.ShanghaiTime = overrideShanghaiTime
 		}
-		if config.IsOptimism() && config.ChainID != nil && config.ChainID.Cmp(params.OptimismGoerliChainConfig.ChainID) == 0 {
-			config.RegolithTime = params.OptimismGoerliChainConfig.RegolithTime
+		if config.IsOptimism() && config.ChainID != nil {
+			if config.ChainID.Cmp(params.OptimismGoerliChainConfig.ChainID) == 0 {
+				config.RegolithTime = params.OptimismGoerliChainConfig.RegolithTime
+			} else if config.ChainID.Cmp(params.OptimismMainnetChainConfig.ChainID) == 0 {
+				config.RegolithTime = params.OptimismMainnetChainConfig.RegolithTime
+			}
 		}
 	}
 
