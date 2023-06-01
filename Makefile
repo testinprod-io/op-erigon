@@ -143,7 +143,7 @@ db-tools:
 
 ## devnet:
 devnet-up:
-	./build/bin/erigon --datadir=.dev --chain=op-dev --private.api.addr=localhost:9090 --mine --http.port=8545 --log.console.verbosity=4 --genesis.path=./genesis-l2.json
+	./build/bin/erigon --datadir=.dev --chain=optimism-devnet --private.api.addr=localhost:9090 --mine --http.port=8545 --log.console.verbosity=4 --genesis.path=./genesis-l2.json
 
 ## test:                              run unit tests with a 100s timeout
 test:
