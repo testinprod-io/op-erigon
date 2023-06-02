@@ -461,9 +461,10 @@ func importState(ctx *cli.Context) error {
 	if err := ImportState(ethereum, fn, uint64(blockNum), ethCfg.ImportStateStream); err != nil {
 		return err
 	}
-	if err := SanityCheckStorageTrie(ethereum, fn, uint64(blockNum), ethCfg.ImportStateStream); err != nil {
-		return err
-	}
+	// storage trie sanity check will manually done using sanity-check command
+	// if err := SanityCheckStorageTrie(ethereum, fn, uint64(blockNum), ethCfg.ImportStateStream); err != nil {
+	// 	return err
+	// }
 
 	return nil
 }
