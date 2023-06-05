@@ -18,7 +18,6 @@ echo " |____/ \___|\__,_|_|  \___/ \___|_|\_\ |_|  |_|_|\__, |_|  \__,_|\__|_|\_
 echo "                                                   __/ |                            "
 echo "                                                  |___/                             "
 
-ERIGON_DATA_DIR="erigon_db"
 CHAIN="optimism-goerli"
 LOG_DIR="migration-log"
 
@@ -52,6 +51,12 @@ if [ ! -d "$ARTIFACT_PATH" ]; then
     exit 1
 fi
 echo "artifact path set to $ARTIFACT_PATH"
+
+ERIGON_DATA_DIR="erigon_db"
+if [[ -n "$4" ]]; then
+    ERIGON_DATA_DIR=$4
+fi
+echo "data dir set to $ERIGON_DATA_DIR"
 
 EXTRA_FLAGS="--no-downloader --nodiscover --maxpeers=0 --txpool.disable"
 EXTRA_FLAGS="$EXTRA_FLAGS --log.console.verbosity=3"
