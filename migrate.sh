@@ -53,7 +53,7 @@ fi
 EXTRA_FLAGS="--no-downloader --nodiscover --maxpeers=0 --txpool.disable"
 EXTRA_FLAGS="$EXTRA_FLAGS --log.console.verbosity=3"
 EXTRA_FLAGS="$EXTRA_FLAGS --chain=$CHAIN"
-EXTRA_FLAGS="$EXTRA_FLAGS --metrics"
+EXTRA_FLAGS="$EXTRA_FLAGS --metrics --metrics.addr=0.0.0.0 --metrics.port=55555"
 # disable port collision between prometheus
 EXTRA_FLAGS="$EXTRA_FLAGS --private.api.addr=localhost:12345"
 
