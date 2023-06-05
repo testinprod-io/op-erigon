@@ -45,7 +45,9 @@ You can use every flag erigon has. But there are some required flags and newly a
 **[Required]**
 op-erigon cannot execute state transition before the bedrock update. So preconfigured data file is required to run the node. It includes blocks and states of the pre-bedrock chain.
 
-You can download the latest chain data of Optimism Goerli Testnet from [https://op-erigon-backup.goerli.testinprod.io](https://backup.goerli.op-erigon.testinprod.io).
+You can download the chain data from following links:
+- Optimism Mainnet: [https://op-erigon-backup.mainnet.testinprod.io](https://op-erigon-backup.mainnet.testinprod.io)
+- Optimism Goerli Testnet: [https://op-erigon-backup.goerli.testinprod.io](https://op-erigon-backup.goerli.testinprod.io)
 
 ### `--externalcl`
 **[Deprecated]**
@@ -75,9 +77,9 @@ Disable P2P. Execution-layer peering is currently not supported in the Optimism 
 
 ## Example: Running An Optimism Goerli Testnet Node
 ### 1. Download and decompress the chain data
-You can download the latest preconfigured chain data from [https://backup.goerli.op-erigon.testinprod.io](https://backup.goerli.op-erigon.testinprod.io).
+You can download the preconfigured chain data from [https://op-erigon-backup.mainnet.testinprod.io](https://op-erigon-backup.mainnet.testinprod.io).
 ```bash
-curl -L -o "backup.tar.gz" https://backup.goerli.op-erigon.testinprod.io
+curl -L -o "backup.tar.gz" https://op-erigon-backup.mainnet.testinprod.io
 tar -zxvf backup.tar.gz
 ```
 After untaring, you will get a folder named `chaindata` which contains two files: `mdbx.dat` and `mdbx.lck`. Create a directory, move `chaindata` to the directory, and use the directory as a datadir(`$DATADIR`) for erigon. For example,
