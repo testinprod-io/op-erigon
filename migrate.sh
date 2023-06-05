@@ -41,14 +41,17 @@ else
     exit 1
 fi
 
-if [ ! -d "$LOG_DIR" ]; then
-    mkdir "$LOG_DIR"
-fi
+mkdir -p "$LOG_DIR"
 
 ARTIFACT_PATH="/tmp/migration-artifact"
-if [ ! -d "$ARTIFACT_PATH" ]; then
-    mkdir "$ARTIFACT_PATH"
+if [[ -n "$3" ]]; then
+    ARTIFACT_PATH=$3
 fi
+if [ ! -d "$ARTIFACT_PATH" ]; then
+    echo "artifact path $ARTIFACT_PATH does not exist"
+    exit 1
+fi
+echo "artifact path set to $ARTIFACT_PATH"
 
 EXTRA_FLAGS="--no-downloader --nodiscover --maxpeers=0 --txpool.disable"
 EXTRA_FLAGS="$EXTRA_FLAGS --log.console.verbosity=3"
