@@ -27,7 +27,7 @@ git clone https://github.com/testinprod-io/op-geth
 cd op-geth
 git switch pcw109550/bedrock-db-migration
 make geth
-./migrate.sh [bedrock_start_block_num] [geth_bedrock_archive_location] 2>&1 | tee migration.log
+./migrate.sh [bedrock_start_block_num] [geth_bedrock_archive_location] [optional:artifact_path] 2>&1 | tee migration.log
 # ex) ./migrate.sh 4061224 /home/ubuntu/geth_db  2>&1 | tee migration.log
 ```
 
@@ -90,7 +90,7 @@ git clone https://github.com/testinprod-io/op-erigon
 cd op-erigon
 git switch pcw109550/bedrock-db-migration
 make erigon
-./migrate.sh [chain_name] [bedrock_start_block_num] 2>&1 | tee migration.log
+./migrate.sh [chain_name] [bedrock_start_block_num] [optional:artifact_path] [optional:erigon_db_path] 2>&1 | tee migration.log
 # ex) ./migrate.sh optimism-goerli 4061224 2>&1 | tee migration.log
 # chain name must be optimism-mainnet or optimism-goerli
 ```
