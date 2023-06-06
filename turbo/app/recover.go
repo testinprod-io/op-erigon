@@ -386,7 +386,7 @@ func RecoverRegenesis(ethereum *eth.Ethereum) error {
 	case networkname.OptimismGoerliChainName:
 		genesisHeader.Root = params.OptimismGoerliStateRoot
 		targetGenesisHash = params.OptimismGoerliGenesisHash
-	case networkname.MainnetChainName:
+	case networkname.OptimismMainnetChainName:
 		genesisHeader.Root = params.OptimismMainnetStateRoot
 		targetGenesisHash = params.OptimismMainnetGenesisHash
 	default:
