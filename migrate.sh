@@ -103,3 +103,5 @@ time ./build/bin/erigon $EXTRA_FLAGS --datadir=$ERIGON_DATA_DIR --log.dir.path=$
 
 banner "Recover Senders"
 time ./build/bin/erigon $EXTRA_FLAGS --datadir=$ERIGON_DATA_DIR --log.dir.path=$LOG_DIR/recover_senders recover-senders 0 "$BEDROCK_START_BLOCK_NUM" 2> /dev/null
+
+slack_report "Import done" > /dev/null
