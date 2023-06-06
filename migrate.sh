@@ -7,6 +7,18 @@ banner() {
     echo "|                                          |"
     printf "|$(tput bold) %-40s $(tput sgr0)|\n" "$@"
     echo "+------------------------------------------+"
+    slack_report "$1" > /dev/null
+}
+
+# never fail
+slack_report() {
+    if ! [ -e "slack_report.sh" ]; then
+        echo "slack reporter does not exist" 1>&2
+        return 0
+    fi
+    echo "sending slack message: $1"
+    ./slack_report.sh "$1" || true
+    echo
 }
 
 echo " ____           _                _      __  __ _                 _   _              "
