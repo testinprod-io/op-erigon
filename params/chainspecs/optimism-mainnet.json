@@ -15,12 +15,12 @@
     "arrowGlacierBlock": 3950000,
     "grayGlacierBlock": 3950000,
     "mergeNetsplitBlock": 3950000,
-    "bedrockBlock": 13371337,
+    "bedrockBlock": 105235063,
     "terminalTotalDifficulty": 0,
     "terminalTotalDifficultyPassed": true,
     "optimism": {
-        "eip1559Elasticity": 10,
+        "eip1559Elasticity": 6,
         "eip1559Denominator": 50
     },
-    "regolithTime": 13371337
+    "regolithTime": 0
 }

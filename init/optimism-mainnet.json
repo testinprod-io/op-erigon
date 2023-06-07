@@ -16,14 +16,14 @@
         "arrowGlacierBlock": 3950000,
         "grayGlacierBlock": 3950000,
         "mergeNetsplitBlock": 3950000,
-        "bedrockBlock": "<FIXME>",
+        "bedrockBlock": 105235063,
         "terminalTotalDifficulty": 0,
         "terminalTotalDifficultyPassed": true,
         "optimism": {
-            "eip1559Elasticity": "<FIXME>",
-            "eip1559Denominator": "<FIXME>"
+            "eip1559Elasticity": 6,
+            "eip1559Denominator": 50
         },
-        "regolithTime": "<FIXME>"
+        "regolithTime": 0
     },
     "difficulty": "1",
     "gasLimit": "15000000",
