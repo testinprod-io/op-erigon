@@ -1,10 +1,10 @@
 name: Trigger After Release
 
-on:
-  workflow_run:
-    workflows: ["release"]
-    types:
-      - completed
+on: workflow_dispatch
+#  workflow_run:
+#    workflows: ["release"]
+#    types:
+#      - completed
 
 jobs:
   after_release:
