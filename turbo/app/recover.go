@@ -1,9 +1,12 @@
 package app
 
 import (
+	"bufio"
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/signal"
 	"strconv"
@@ -13,6 +16,7 @@ import (
 	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/erigon-lib/common"
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
+	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon/cmd/utils"
 	"github.com/ledgerwatch/erigon/core/rawdb"
 	"github.com/ledgerwatch/erigon/core/types"
@@ -72,6 +76,20 @@ var recoverRegenesisCommand = cli.Command{
 	Category: "BLOCKCHAIN COMMANDS",
 	Description: `
 The recover command corrects chain config and genesis for bedrock regenesis.`,
+}
+
+var recoverIntermediateHashCommand = cli.Command{
+	Action:    MigrateFlags(recoverIntermediateHash),
+	Name:      "recover-intermediatehash",
+	Usage:     "Recovery for intermediatehash",
+	ArgsUsage: "<filename>",
+	Flags: []cli.Flag{
+		&utils.DataDirFlag,
+		&utils.ChainFlag,
+	},
+	Category: "BLOCKCHAIN COMMANDS",
+	Description: `
+The recover command recovers TrieStorage table and TrieAccount table`,
 }
 
 func recoverSenders(ctx *cli.Context) error {
@@ -416,5 +434,137 @@ func RecoverRegenesis(ethereum *eth.Ethereum) error {
 
 	log.Info("Successfully wrote regenesis state", "hash", newGenesisHash.Hex(), "root", genesisHeader.Root.Hex())
 
+	return nil
+}
+
+func recoverIntermediateHash(ctx *cli.Context) error {
+	if ctx.NArg() < 1 {
+		utils.Fatalf("This command requires an argument.")
+	}
+
+	nodeCfg := turboNode.NewNodConfigUrfave(ctx)
+	ethCfg := turboNode.NewEthConfigUrfave(ctx, nodeCfg)
+
+	stack := makeConfigNode(nodeCfg)
+	defer stack.Close()
+
+	ethereum, err := eth.New(stack, ethCfg)
+	if err != nil {
+		return err
+	}
+	fn := ctx.Args().First()
+
+	if err := RecoverIntermediateHash(ethereum, fn); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func RecoverIntermediateHash(ethereum *eth.Ethereum, fn string) error {
+	log.Info("Recovering Intermediate Hash")
+	db := ethereum.ChainDB()
+	tx, err := db.BeginRw(ethereum.SentryCtx())
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	fh, err := os.Open(fn)
+	if err != nil {
+		return err
+	}
+	defer fh.Close()
+
+	var (
+		method          string
+		bucketIndicator string
+		khex            string
+		vhex            string
+	)
+
+	idx := 0
+	quit := StatusReporter("Recover Intermediate Hash", &idx)
+
+	reader := bufio.NewReader(fh)
+	delimiter := byte('\n')
+
+	trieAccountCursor, err := tx.RwCursor(kv.TrieOfAccounts)
+	if err != nil {
+		return err
+	}
+	trieStorageCursor, err := tx.RwCursor(kv.TrieOfStorage)
+	if err != nil {
+		return err
+	}
+
+	cursorFunc := func(b string) (kv.RwCursor, error) {
+		switch b {
+		case "t":
+			// TrieAccount's last byte
+			return trieAccountCursor, nil
+		case "e":
+			// TrieStorage's last byte
+			return trieStorageCursor, nil
+		default:
+			return nil, fmt.Errorf("invalid cursor indicator: %s", b)
+		}
+	}
+
+	for {
+		idx += 1
+		line, err := reader.ReadBytes(delimiter)
+		if errors.Is(err, io.EOF) {
+			break
+		} else if err != nil {
+			return err
+		}
+		_, err = fmt.Sscanf(string(line), "%s %s %s %s", &method, &bucketIndicator, &khex, &vhex)
+		if err != nil {
+			return err
+		}
+		// log.Info(method)
+		// log.Info(bucketIndicator)
+		// log.Info(khex)
+		// log.Info(vhex)
+
+		k, err := hex.DecodeString(khex)
+		if err != nil {
+			return err
+		}
+		v, err := hex.DecodeString(vhex)
+		if err != nil {
+			return err
+		}
+		cursor, err := cursorFunc(bucketIndicator)
+		if err != nil {
+			return err
+		}
+		switch method {
+		case "a":
+			if err := cursor.Append(k, v); err != nil {
+				return err
+			}
+		case "ad":
+			if err := cursor.(kv.RwCursorDupSort).AppendDup(k, v); err != nil {
+				return err
+			}
+		case "d":
+			if err := cursor.Delete(k); err != nil {
+				return err
+			}
+		case "p":
+			if err := cursor.Put(k, v); err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("invalid method %s", method)
+		}
+	}
+	close(quit)
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
 	return nil
 }
