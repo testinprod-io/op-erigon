@@ -79,7 +79,7 @@ Disable P2P. Execution-layer peering is currently not supported in the Optimism 
 ### 1. Download and decompress the chain data
 You can download the preconfigured chain data from [https://op-erigon-backup.mainnet.testinprod.io](https://op-erigon-backup.mainnet.testinprod.io).
 ```bash
-curl -L -o "backup.tar.gz" https://op-erigon-backup.mainnet.testinprod.io
+wget -c -O "backup.tar.gz" https://op-erigon-backup.mainnet.testinprod.io
 tar -zxvf backup.tar.gz
 ```
 After untaring, you will get a folder named `chaindata` which contains two files: `mdbx.dat` and `mdbx.lck`. Create a directory, move `chaindata` to the directory, and use the directory as a datadir(`$DATADIR`) for erigon. For example,
