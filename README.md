@@ -10,7 +10,7 @@ A fork of [Erigon](https://github.com/ledgerwatch/erigon) that supports the [exe
   + [Features that work correctly](#features-that-work-correctly)
   + [Features that don't work (or yet to be confirmed)](#features-that-dont-work-or-yet-to-be-confirmed)
 - [Getting started with Optimism](#getting-started-with-optimism)
-- [Example: Running An Optimism Goerli Testnet Node](#example-running-an-optimism-goerli-testnet-node)
+- [Example: Running An Optimism Mainnet Node](#example-running-an-optimism-mainnet-node)
 - [Need any help?](#need-any-help)
 - [Thanks](#thanks)
 - [Original Erigon README.md](#erigon)
@@ -19,7 +19,7 @@ A fork of [Erigon](https://github.com/ledgerwatch/erigon) that supports the [exe
 Optimistic Erigon is still under development. Please note that some features are not fully implemented or tested.
  
 ### Features that work correctly
-- Validator mode (Synchronizing to the Optimism Goerli Testnet with op-node)
+- Validator mode (Synchronizing to the Optimism Network with op-node)
 - Ethereum standard JSON-RPC API
 - JSON-RPC API for Otterscan
 - All-in-One binary mode
@@ -33,8 +33,12 @@ Optimistic Erigon is still under development. Please note that some features are
 
 ### Stability (dogfooding)
 - [![Hive](https://github.com/testinprod-io/op-erigon/actions/workflows/hive.yml/badge.svg)](https://github.com/testinprod-io/op-erigon/actions/workflows/hive.yml)
-- We've been running an op-erigon public RPC here: [https://op-erigon.goerli.testinprod.io/](https://op-erigon.goerli.testinprod.io/)
-- Our Otterscan (block explorer) uses our public RPC: [https://otterscan.goerli.testinprod.io/](https://otterscan.goerli.testinprod.io/) 
+- We've been running an op-erigon public RPC here:
+  - [https://op-erigon.mainnet.testinprod.io](https://op-erigon.mainnet.testinprod.io)
+  - [https://op-erigon.goerli.testinprod.io](https://op-erigon.goerli.testinprod.io)
+- Our Otterscan (block explorer) uses our public RPC
+  - [https://otterscan.mainnet.testinprod.io](https://otterscan.mainnet.testinprod.io)
+  - [https://otterscan.goerli.testinprod.io](https://otterscan.goerli.testinprod.io) 
  
 ## Getting started with Optimism
 To build from the code, you can use the same command described below(`make erigon`)
@@ -46,8 +50,12 @@ You can use every flag erigon has. But there are some required flags and newly a
 op-erigon cannot execute state transition before the bedrock update. So preconfigured data file is required to run the node. It includes blocks and states of the pre-bedrock chain.
 
 You can download the chain data from following links:
-- Optimism Mainnet: [https://op-erigon-backup.mainnet.testinprod.io](https://op-erigon-backup.mainnet.testinprod.io)
-- Optimism Goerli Testnet: [https://op-erigon-backup.goerli.testinprod.io](https://op-erigon-backup.goerli.testinprod.io)
+- Optimism Mainnet:
+  - [https://op-erigon-backup.mainnet.testinprod.io](https://op-erigon-backup.mainnet.testinprod.io)
+  - Compressed: 115 GB, Uncompressed: 380 GB.
+- Optimism Goerli Testnet
+  - [https://op-erigon-backup.goerli.testinprod.io](https://op-erigon-backup.goerli.testinprod.io)
+  - Compressed: 4.7 GB, Uncompressed: 14 GB.
 
 ### `--externalcl`
 **[Deprecated]**
@@ -63,6 +71,8 @@ Authenticated RPC configs that specify engine API connection info for the consen
 **[New flag / Optional]** 
 HTTP endpoint of the sequencer. op-erigon will route `eth_sendRawTransaction` calls to this URL. This is **required** for transaction submission since Bedrock does not currently have a public mempool. Refer to the documentation for the network you are participating in to get the correct URL.
 
+For the Optimism Mainnet, set the sequencer endpoint: `https://mainnet-sequencer.optimism.io`.
+
 For the Optimism Goerli Testnet, set the sequencer endpoint: `https://goerli-sequencer.optimism.io`
 
 ### `--rollup.historicalrpc`
@@ -75,9 +85,9 @@ For more information about legacy geth, refer the [Optimism's node operator guid
 **[Optional]** 
 Disable P2P. Execution-layer peering is currently not supported in the Optimism protocol. Though this is not required, it saves resources since TX pool gossip is currently not available.
 
-## Example: Running An Optimism Goerli Testnet Node
+## Example: Running An Optimism Mainnet Node
 ### 1. Download and decompress the chain data
-You can download the preconfigured chain data from [https://op-erigon-backup.mainnet.testinprod.io](https://op-erigon-backup.mainnet.testinprod.io).
+You can download the preconfigured chain data from [https://op-erigon-backup.mainnet.testinprod.io](https://op-erigon-backup.mainnet.testinprod.io). Compressed: 115 GB, Uncompressed: 380 GB.
 ```bash
 wget -c -O "backup.tar.gz" https://op-erigon-backup.mainnet.testinprod.io
 tar -zxvf backup.tar.gz
@@ -108,8 +118,9 @@ $ ./build/bin/erigon \
     --authrpc.port=8551 \
     --authrpc.vhosts="*" \
     --authrpc.jwtsecret=$JWT_SECRET_FILE \
-    --rollup.sequencerhttp="https://goerli.optimism.io" \
-    --rollup.historicalrpc=$HISTORICAL_RPC_ENDPOINT \
+    --rollup.sequencerhttp="https://mainnet-sequencer.optimism.io" \
+    --rollup.historicalrpc="https://mainnet.optimism.io" \
+    --chain=optimism-mainnet \
     --nodiscover
 ```
 2. Use the Docker image: You can get the official Docker image from [testinprod/op-erigon](https://hub.docker.com/r/testinprod/op-erigon).
@@ -124,7 +135,7 @@ $ op-node \
     --l1=$L1_RPC_ENDPOINT \
     --l2=$OP_ERIGON_ENGINE_API_ENDPOINT \
     --l2.jwt-secret=$JWT_SECRET_FILE \
-    --network=goerli \
+    --network=mainnet \
     --rpc.addr=0.0.0.0 \
     --rpc.port=9545
 ```
