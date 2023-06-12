@@ -577,7 +577,8 @@ func (r Receipts) DeriveFields(config *chain.Config, hash libcommon.Hash, number
 					rollupDataGas := tx.RollupDataGas().DataGas(time, config) // Only fake txs for RPC view-calls are 0.
 
 					r[i].L1GasPrice = l1Basefee.ToBig()
-					r[i].L1GasUsed = new(big.Int).SetUint64(rollupDataGas)
+					// GasUsed reported in receipt should include the overhead
+					r[i].L1GasUsed = new(big.Int).Add(new(big.Int).SetUint64(rollupDataGas), overhead.ToBig())
 					r[i].L1Fee = L1Cost(rollupDataGas, l1Basefee, overhead, scalar).ToBig()
 					r[i].FeeScalar = feeScalar
 				}
