@@ -128,7 +128,10 @@ func SpawnMiningExecStage(s *StageState, tx kv.RwTx, cfg MiningExecCfg, quit <-c
 	// empty block is necessary to keep the liveness of the network.
 	if noempty {
 		if !forceTxs.Empty() {
-			logs, _, err := addTransactionsToMiningBlock(logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, cfg.engine, forceTxs, cfg.miningState.MiningConfig.Etherbase, ibs, quit, cfg.interrupt, cfg.payloadId, true)
+			// forceTxs is sent by Optimism consensus client, and all force txs must be included in the payload.
+			// Therefore, interrupts to block building must not be handled while force txs are being processed.
+			// So do not pass cfg.interrupt
+			logs, _, err := addTransactionsToMiningBlock(logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, cfg.engine, forceTxs, cfg.miningState.MiningConfig.Etherbase, ibs, quit, nil, cfg.payloadId, true)
 			if err != nil {
 				return err
 			}
