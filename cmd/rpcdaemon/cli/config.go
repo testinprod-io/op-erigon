@@ -124,6 +124,7 @@ func RootCommand() (*cobra.Command, *httpcfg.HttpCfg) {
 	rootCmd.PersistentFlags().StringVar(&cfg.RollupSequencerHTTP, utils.RollupSequencerHTTPFlag.Name, "", "HTTP endpoint for the sequencer mempool")
 	rootCmd.PersistentFlags().StringVar(&cfg.RollupHistoricalRPC, utils.RollupHistoricalRPCFlag.Name, "", "RPC endpoint for historical data")
 	rootCmd.PersistentFlags().DurationVar(&cfg.RollupHistoricalRPCTimeout, utils.RollupHistoricalRPCTimeoutFlag.Name, rpccfg.DefaultHistoricalRPCTimeout, "Timeout for historical RPC requests")
+	rootCmd.PersistentFlags().BoolVar(&cfg.RollupDisableTxPoolGossip, utils.RollupDisableTxPoolGossipFlag.Name, false, "Disables transaction pool gossip")
 
 	if err := rootCmd.MarkPersistentFlagFilename("rpc.accessList", "json"); err != nil {
 		panic(err)

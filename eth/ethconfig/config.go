@@ -255,6 +255,7 @@ type Config struct {
 	RollupSequencerHTTP        string
 	RollupHistoricalRPC        string
 	RollupHistoricalRPCTimeout time.Duration
+	RollupDisableTxPoolGossip  bool
 }
 
 type Sync struct {

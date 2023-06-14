@@ -602,16 +602,18 @@ var (
 		Name:  "rollup.sequencerhttp",
 		Usage: "HTTP endpoint for the sequencer mempool",
 	}
-
 	RollupHistoricalRPCFlag = cli.StringFlag{
 		Name:  "rollup.historicalrpc",
 		Usage: "RPC endpoint for historical data.",
 	}
-
 	RollupHistoricalRPCTimeoutFlag = cli.StringFlag{
 		Name:  "rollup.historicalrpctimeout",
 		Usage: "Timeout for historical RPC requests.",
 		Value: "5s",
+	}
+	RollupDisableTxPoolGossipFlag = cli.StringFlag{
+		Name:  "rollup.disabletxpoolgossip",
+		Usage: "Disables transaction pool gossip.",
 	}
 
 	// Metrics flags
@@ -1601,6 +1603,9 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 	}
 	if ctx.IsSet(RollupHistoricalRPCTimeoutFlag.Name) {
 		cfg.RollupHistoricalRPCTimeout = ctx.Duration(RollupHistoricalRPCTimeoutFlag.Name)
+	}
+	if ctx.IsSet(RollupDisableTxPoolGossipFlag.Name) {
+		cfg.RollupDisableTxPoolGossip = ctx.Bool(RollupDisableTxPoolGossipFlag.Name)
 	}
 	// Override any default configs for hard coded networks.
 	chain := ctx.String(ChainFlag.Name)
