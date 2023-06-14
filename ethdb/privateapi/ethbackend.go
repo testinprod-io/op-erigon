@@ -897,8 +897,8 @@ func (s *EthBackendServer) Peers(ctx context.Context, _ *emptypb.Empty) (*remote
 	return s.eth.Peers(ctx)
 }
 
-func (s *EthBackendServer) AddPeer(ctx context.Context, url *remote.AddPeerRequest) (*remote.AddPeerReply, error) {
-	return s.eth.AddPeer(ctx, url)
+func (s *EthBackendServer) AddPeer(ctx context.Context, req *remote.AddPeerRequest) (*remote.AddPeerReply, error) {
+	return s.eth.AddPeer(ctx, req)
 }
 
 func (s *EthBackendServer) SubscribeLogs(server remote.ETHBACKEND_SubscribeLogsServer) (err error) {
