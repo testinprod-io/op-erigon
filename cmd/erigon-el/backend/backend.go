@@ -463,6 +463,7 @@ func NewBackend(stack *node.Node, config *ethconfig.Config, logger log.Logger) (
 		}
 		backend.historicalRPCService = client
 	}
+	config.TxPool.NoTxGossip = config.RollupDisableTxPoolGossip
 
 	var miningRPC txpool_proto.MiningServer
 	stateDiffClient := direct.NewStateDiffClientDirect(kvRPC)
