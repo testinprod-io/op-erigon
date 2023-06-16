@@ -306,6 +306,14 @@ func (back *RemoteBackend) Peers(ctx context.Context) ([]*p2p.PeerInfo, error) {
 	return peers, nil
 }
 
+func (back *RemoteBackend) AddPeer(ctx context.Context, request *remote.AddPeerRequest) (*remote.AddPeerReply, error) {
+	result, err := back.remoteEthBackend.AddPeer(ctx, request)
+	if err != nil {
+		return nil, fmt.Errorf("ETHBACKENDClient.AddPeer() error: %w", err)
+	}
+	return result, nil
+}
+
 func (back *RemoteBackend) PendingBlock(ctx context.Context) (*types.Block, error) {
 	blockRlp, err := back.remoteEthBackend.PendingBlock(ctx, &emptypb.Empty{})
 	if err != nil {
