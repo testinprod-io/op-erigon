@@ -31,6 +31,7 @@ type ApiBackend interface {
 	EngineGetBlobsBundleV1(ctx context.Context, payloadId uint64) (*types2.BlobsBundleV1, error)
 	NodeInfo(ctx context.Context, limit uint32) ([]p2p.NodeInfo, error)
 	Peers(ctx context.Context) ([]*p2p.PeerInfo, error)
+	AddPeer(ctx context.Context, url *remote.AddPeerRequest) (*remote.AddPeerReply, error)
 	PendingBlock(ctx context.Context) (*types.Block, error)
 	EngineGetPayloadBodiesByHashV1(ctx context.Context, request *remote.EngineGetPayloadBodiesByHashV1Request) (*remote.EngineGetPayloadBodiesV1Response, error)
 	EngineGetPayloadBodiesByRangeV1(ctx context.Context, request *remote.EngineGetPayloadBodiesByRangeV1Request) (*remote.EngineGetPayloadBodiesV1Response, error)
