@@ -163,6 +163,22 @@ func WriteGenesisBlock(tx kv.RwTx, genesis *types.Genesis, overrideShanghaiTime 
 		newCfg = storedCfg
 		applyOverrides(newCfg)
 	}
+
+	// Special case: temporal fix for optimism mainnet database which contains incorrect chainspec.
+	// If london block number is set to previous wrong chainspec, overwrite with correct chainspec.
+	// Following code will be removed after we are confident that previous dbs are all corrected.
+	// https://github.com/testinprod-io/op-erigon/issues/71
+	if storedCfg.ChainName == networkname.OptimismMainnetChainName &&
+		newCfg.ChainName == networkname.OptimismMainnetChainName &&
+		storedCfg.LondonBlock.Uint64() == 3950000 &&
+		newCfg.LondonBlock.Uint64() == 105235063 {
+		log.Warn("Override chainconfig for Optimism Mainnet chainspec correction")
+		if err := rawdb.WriteChainConfig(tx, storedHash, newCfg); err != nil {
+			return newCfg, nil, err
+		}
+		return newCfg, storedBlock, nil
+	}
+
 	// Check config compatibility and write the config. Compatibility errors
 	// are returned to the caller unless we're already at block zero.
 	height := rawdb.ReadHeaderNumber(tx, rawdb.ReadHeadHeaderHash(tx))
