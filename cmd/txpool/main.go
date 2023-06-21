@@ -53,7 +53,8 @@ var (
 	accountSlots uint64
 	priceBump    uint64
 
-	optimism bool
+	optimism   bool
+	noTxGossip bool
 
 	commitEvery time.Duration
 )
@@ -79,6 +80,7 @@ func init() {
 	rootCmd.PersistentFlags().Uint64Var(&priceBump, "txpool.pricebump", txpoolcfg.DefaultConfig.PriceBump, "Price bump percentage to replace an already existing transaction")
 	rootCmd.PersistentFlags().DurationVar(&commitEvery, utils.TxPoolCommitEveryFlag.Name, utils.TxPoolCommitEveryFlag.Value, utils.TxPoolCommitEveryFlag.Usage)
 	rootCmd.PersistentFlags().BoolVar(&optimism, "txpool.optimism", txpoolcfg.DefaultConfig.Optimism, "Enable Optimism Bedrock to make txpool account for L1 cost of transactions")
+	rootCmd.PersistentFlags().BoolVar(&noTxGossip, "txpool.disabletxpoolgossip", txpoolcfg.DefaultConfig.NoTxGossip, "Disable transaction pool gossip")
 	rootCmd.Flags().StringSliceVar(&traceSenders, utils.TxPoolTraceSendersFlag.Name, []string{}, utils.TxPoolTraceSendersFlag.Usage)
 }
 
@@ -147,6 +149,8 @@ func doTxpool(ctx context.Context) error {
 	cfg.MinFeeCap = priceLimit
 	cfg.AccountSlots = accountSlots
 	cfg.PriceBump = priceBump
+	cfg.Optimism = optimism
+	cfg.NoTxGossip = noTxGossip
 
 	cacheConfig := kvcache.DefaultCoherentConfig
 	cacheConfig.MetricsLabel = "txpool"
