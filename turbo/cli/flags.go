@@ -404,7 +404,6 @@ func setEmbeddedRpcDaemon(ctx *cli.Context, cfg *nodecfg.Config) {
 		RollupSequencerHTTP:        ctx.String(utils.RollupSequencerHTTPFlag.Name),
 		RollupHistoricalRPC:        ctx.String(utils.RollupHistoricalRPCFlag.Name),
 		RollupHistoricalRPCTimeout: ctx.Duration(utils.RollupHistoricalRPCTimeoutFlag.Name),
-		RollupDisableTxPoolGossip:  ctx.Bool(utils.RollupDisableTxPoolGossipFlag.Name),
 	}
 	if ctx.IsSet(utils.HttpCompressionFlag.Name) {
 		c.HttpCompression = ctx.Bool(utils.HttpCompressionFlag.Name)
