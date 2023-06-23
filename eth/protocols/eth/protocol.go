@@ -208,6 +208,8 @@ func (tp TransactionsPacket) EncodeRLP(w io.Writer) error {
 			txLen = t.EncodingSize()
 		case *types.DynamicFeeTransaction:
 			txLen = t.EncodingSize()
+		case *types.DepositTx:
+			txLen = t.EncodingSize()
 		}
 		if txLen >= 56 {
 			txsLen += (bits.Len(uint(txLen)) + 7) / 8
@@ -234,6 +236,10 @@ func (tp TransactionsPacket) EncodeRLP(w io.Writer) error {
 				return err
 			}
 		case *types.DynamicFeeTransaction:
+			if err := t.EncodeRLP(w); err != nil {
+				return err
+			}
+		case *types.DepositTx:
 			if err := t.EncodeRLP(w); err != nil {
 				return err
 			}
@@ -523,6 +529,8 @@ func (ptp PooledTransactionsPacket) EncodeRLP(w io.Writer) error {
 			txLen = t.EncodingSize()
 		case *types.DynamicFeeTransaction:
 			txLen = t.EncodingSize()
+		case *types.DepositTx:
+			txLen = t.EncodingSize()
 		}
 		if txLen >= 56 {
 			txsLen += (bits.Len(uint(txLen)) + 7) / 8
@@ -549,6 +557,10 @@ func (ptp PooledTransactionsPacket) EncodeRLP(w io.Writer) error {
 				return err
 			}
 		case *types.DynamicFeeTransaction:
+			if err := t.EncodeRLP(w); err != nil {
+				return err
+			}
+		case *types.DepositTx:
 			if err := t.EncodeRLP(w); err != nil {
 				return err
 			}
@@ -597,6 +609,8 @@ func (ptp66 PooledTransactionsPacket66) EncodeRLP(w io.Writer) error {
 			txLen = t.EncodingSize()
 		case *types.DynamicFeeTransaction:
 			txLen = t.EncodingSize()
+		case *types.DepositTx:
+			txLen = t.EncodingSize()
 		}
 		if txLen >= 56 {
 			txsLen += (bits.Len(uint(txLen)) + 7) / 8
@@ -640,6 +654,10 @@ func (ptp66 PooledTransactionsPacket66) EncodeRLP(w io.Writer) error {
 				return err
 			}
 		case *types.DynamicFeeTransaction:
+			if err := t.EncodeRLP(w); err != nil {
+				return err
+			}
+		case *types.DepositTx:
 			if err := t.EncodeRLP(w); err != nil {
 				return err
 			}
