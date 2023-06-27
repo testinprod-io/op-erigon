@@ -23,11 +23,11 @@ Optimistic Erigon is still under development. Please note that some features are
 - Ethereum standard JSON-RPC API
 - JSON-RPC API for Otterscan
 - All-in-One binary mode
+- P2P transaction gossip
 
 ### Features that don't work (or yet to be confirmed)
 - Block producing as a Sequencer
 - Sequencer and proposer mode
-- P2P transaction gossip
 - Running Erigon services as separate processes
 - Erigon Snapshot
 
