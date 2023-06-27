@@ -276,6 +276,107 @@ func makeBenchBlock() *Block {
 	return NewBlock(header, txs, uncles, receipts, nil /* withdrawals */)
 }
 
+func TestCanEncodeAndDecodeBodyTransactions(t *testing.T) {
+	// Create legacy tx.
+	to := libcommon.HexToAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87")
+	ten := new(uint256.Int).SetUint64(10)
+	var tx1 Transaction = &LegacyTx{
+		CommonTx: CommonTx{
+			Nonce: 0,
+			To:    &to,
+			Value: ten,
+			Gas:   50000,
+			Data:  []byte{98, 10, 7},
+		},
+		GasPrice: ten,
+	}
+	chainID, _ := uint256.FromBig(big.NewInt(1))
+	// Create ACL tx.
+	addr := libcommon.HexToAddress("0x0000000000000000000000000000000000000001")
+	accesses := types2.AccessList{types2.AccessTuple{
+		Address: addr,
+		StorageKeys: []libcommon.Hash{
+			{0},
+		},
+	}}
+	var tx2 Transaction = &AccessListTx{
+		ChainID: chainID,
+		LegacyTx: LegacyTx{
+			CommonTx: CommonTx{
+				Nonce: 0,
+				To:    &to,
+				Gas:   123457,
+				Data:  []byte{10, 20, 30},
+			},
+			GasPrice: ten,
+		},
+		AccessList: accesses,
+	}
+	sig2 := common.Hex2Bytes("3dbacc8d0259f2508625e97fdfc57cd85fdd16e5821bc2c10bdd1a52649e8335476e10695b183a87b0aa292a7f4b78ef0c3fbe62aa2c42c84e1d9c3da159ef1401")
+	tx2, _ = tx2.WithSignature(*LatestSignerForChainID(big.NewInt(1)), sig2)
+	// Create DynamicFeeTransaction tx.
+	feeCap, _ := uint256.FromBig(big.NewInt(2))
+	var tx3 Transaction = &DynamicFeeTransaction{
+		CommonTx: CommonTx{
+			ChainID: u256.Num1,
+			Nonce:   0,
+			To:      &to,
+			Gas:     123457,
+			Data:    []byte{40, 50, 60},
+		},
+		FeeCap:     feeCap,
+		Tip:        u256.Num0,
+		AccessList: accesses,
+	}
+	tx3, _ = tx3.WithSignature(*LatestSignerForChainID(big.NewInt(1)), common.Hex2Bytes("fe38ca4e44a30002ac54af7cf922a6ac2ba11b7d22f548e8ecb3f51f41cb31b06de6a5cbae13c0c856e33acf021b51819636cfc009d39eafb9f606d546e305a800"))
+	// Create Deposit tx.
+	sourceHash := libcommon.HexToHash("0x89c99d90b79719238d2645c7642f2c9295246e80775b38cfd162b696817fbd50")
+	var tx4 Transaction = &DepositTx{
+		SourceHash:          sourceHash,
+		From:                to,
+		To:                  &addr,
+		Mint:                new(uint256.Int).SetUint64(10),
+		Value:               new(uint256.Int).SetUint64(100),
+		Gas:                 1337,
+		IsSystemTransaction: true,
+		Data:                []byte{70, 80, 90},
+	}
+	body := &Body{
+		Transactions: []Transaction{
+			tx1, tx2, tx3, tx4,
+		},
+		Uncles:      []*Header{},
+		Withdrawals: []*Withdrawal{},
+	}
+	writer := bytes.NewBuffer(nil)
+	err := body.EncodeRLP(writer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rlpBytes := common.CopyBytes(writer.Bytes())
+	writer.Reset()
+	writer.WriteString(hexutility.Encode(rlpBytes))
+
+	var resultBody Body
+	fromHex := common.CopyBytes(common.FromHex(writer.String()))
+	bodyReader := bytes.NewReader(fromHex)
+	stream := rlp.NewStream(bodyReader, 0)
+
+	err = resultBody.DecodeRLP(stream)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(resultBody.Transactions) != len(body.Transactions) {
+		t.Fatalf("expected there to be %d transaction once decoded", len(body.Transactions))
+	}
+
+	for i := 0; i < len(body.Transactions); i++ {
+		assert.Equal(t, resultBody.Transactions[i], body.Transactions[i])
+	}
+
+}
+
 func TestCanEncodeAndDecodeRawBody(t *testing.T) {
 	body := &RawBody{
 		Uncles: []*Header{

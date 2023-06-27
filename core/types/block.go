@@ -973,6 +973,8 @@ func (bb Body) payloadSize() (payloadSize int, txsLen, unclesLen, withdrawalsLen
 			txLen = t.EncodingSize()
 		case *DynamicFeeTransaction:
 			txLen = t.EncodingSize()
+		case *DepositTx:
+			txLen = t.EncodingSize()
 		}
 		if txLen >= 56 {
 			txsLen += bitsToBytes(bits.Len(uint(txLen)))
@@ -1041,6 +1043,10 @@ func (bb Body) EncodeRLP(w io.Writer) error {
 				return err
 			}
 		case *DynamicFeeTransaction:
+			if err := t.EncodeRLP(w); err != nil {
+				return err
+			}
+		case *DepositTx:
 			if err := t.EncodeRLP(w); err != nil {
 				return err
 			}
