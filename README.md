@@ -81,6 +81,10 @@ The historical RPC endpoint. op-erigon queries historical execution data that op
 
 For more information about legacy geth, refer the [Optimism's node operator guide](https://community.optimism.io/docs/developers/bedrock/node-operator-guide/#legacy-geth).
 
+### `--rollup.disabletxpoolgossip`
+**[New flag / Optional]** 
+Disables transaction pool gossiping. Though this is not required, it's useful to set this to true since transaction pool gossip is currently unsupported in the Optimism protocol. If not provided, default value is set to `false`.
+
 ### `--maxpeers=0`, `--nodiscover`
 **[Optional]** 
 Disable P2P. Execution-layer peering is currently not supported in the Optimism protocol. Though this is not required, it saves resources since TX pool gossip is currently not available.
@@ -120,6 +124,7 @@ $ ./build/bin/erigon \
     --authrpc.jwtsecret=$JWT_SECRET_FILE \
     --rollup.sequencerhttp="https://mainnet-sequencer.optimism.io" \
     --rollup.historicalrpc="https://mainnet.optimism.io" \
+    --rollup.disabletxpoolgossip=true \
     --chain=optimism-mainnet \
     --nodiscover
 ```

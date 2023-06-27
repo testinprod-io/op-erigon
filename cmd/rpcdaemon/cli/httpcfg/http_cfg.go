@@ -69,4 +69,5 @@ type HttpCfg struct {
 	RollupSequencerHTTP        string
 	RollupHistoricalRPC        string
 	RollupHistoricalRPCTimeout time.Duration
+	RollupDisableTxPoolGossip  bool
 }
