@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"log"
 	"math"
 	"math/big"
 	"testing"
@@ -15,7 +16,6 @@ import (
 	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/crypto"
 	"github.com/ledgerwatch/erigon/params"
-	"github.com/ledgerwatch/erigon/turbo/snapshotsync"
 	"github.com/ledgerwatch/erigon/turbo/stages"
 )
 
@@ -43,8 +43,9 @@ func TestGasPrice(t *testing.T) {
 			m := createGasPriceTestKV(t, testCase.chainSize)
 			defer m.DB.Close()
 			stateCache := kvcache.New(kvcache.DefaultCoherentConfig)
-			base := NewBaseApi(nil, stateCache, snapshotsync.NewBlockReaderWithSnapshots(m.BlockSnapshots, m.TransactionsV3), nil, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs, nil, nil)
-			eth := NewEthAPI(base, m.DB, nil, nil, nil, 5000000, 100_000)
+			br, _ := m.NewBlocksIO()
+			base := NewBaseApi(nil, stateCache, br, nil, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs, nil, nil)
+			eth := NewEthAPI(base, m.DB, nil, nil, nil, 5000000, 100_000, log.New())
 
 			ctx := context.Background()
 			result, err := eth.GasPrice(ctx)

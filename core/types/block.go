@@ -109,7 +109,7 @@ type Header struct {
 // returns nil if the parent header could not be fetched, or if the parent block's excess data gas
 // is nil.
 func (h *Header) ParentExcessDataGas(getHeader func(hash libcommon.Hash, number uint64) *Header) *big.Int {
-	p := getHeader(h.ParentHash, h.Number.Uint64())
+	p := getHeader(h.ParentHash, h.Number.Uint64()-1)
 	if p != nil {
 		return p.ExcessDataGas
 	}
@@ -1086,7 +1086,7 @@ func (bb *Body) DecodeRLP(s *rlp.Stream) error {
 		return err
 	}
 	var tx Transaction
-	for tx, err = DecodeTransaction(s); err == nil; tx, err = DecodeTransaction(s) {
+	for tx, err = DecodeRLPTransaction(s); err == nil; tx, err = DecodeRLPTransaction(s) {
 		bb.Transactions = append(bb.Transactions, tx)
 	}
 	if !errors.Is(err, rlp.EOL) {
@@ -1265,7 +1265,7 @@ func (bb *Block) DecodeRLP(s *rlp.Stream) error {
 		return err
 	}
 	var tx Transaction
-	for tx, err = DecodeTransaction(s); err == nil; tx, err = DecodeTransaction(s) {
+	for tx, err = DecodeRLPTransaction(s); err == nil; tx, err = DecodeRLPTransaction(s) {
 		bb.transactions = append(bb.transactions, tx)
 	}
 	if !errors.Is(err, rlp.EOL) {
