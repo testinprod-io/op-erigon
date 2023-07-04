@@ -19,6 +19,7 @@ import (
 	"github.com/ledgerwatch/erigon/eth/filters"
 	"github.com/ledgerwatch/erigon/turbo/rpchelper"
 	"github.com/ledgerwatch/erigon/turbo/stages"
+	"github.com/ledgerwatch/log/v3"
 )
 
 func TestNewFilters(t *testing.T) {

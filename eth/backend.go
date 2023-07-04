@@ -21,7 +21,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/google/martian/log"
 	"io/fs"
 	"math/big"
 	"net"
@@ -41,6 +40,7 @@ import (
 	"github.com/ledgerwatch/erigon/turbo/snapshotsync/snap"
 
 	"github.com/holiman/uint256"
+	"github.com/ledgerwatch/log/v3"
 	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -495,7 +495,7 @@ func New(stack *node.Node, config *ethconfig.Config, logger log.Logger) (*Ethere
 	// Setup sequencer and hsistorical RPC relay services
 	if config.RollupSequencerHTTP != "" {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		client, err := rpc.DialContext(ctx, config.RollupSequencerHTTP)
+		client, err := rpc.DialContext(ctx, config.RollupSequencerHTTP, logger)
 		cancel()
 		if err != nil {
 			return nil, err
@@ -504,7 +504,7 @@ func New(stack *node.Node, config *ethconfig.Config, logger log.Logger) (*Ethere
 	}
 	if config.RollupHistoricalRPC != "" {
 		ctx, cancel := context.WithTimeout(context.Background(), config.RollupHistoricalRPCTimeout)
-		client, err := rpc.DialContext(ctx, config.RollupHistoricalRPC)
+		client, err := rpc.DialContext(ctx, config.RollupHistoricalRPC, logger)
 		cancel()
 		if err != nil {
 			return nil, err

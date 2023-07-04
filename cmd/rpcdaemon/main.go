@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/google/martian/log"
 	"os"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/ledgerwatch/erigon/consensus/ethash"
 	"github.com/ledgerwatch/erigon/rpc"
 	"github.com/ledgerwatch/erigon/turbo/debug"
+	"github.com/ledgerwatch/log/v3"
 	"github.com/spf13/cobra"
 )
 

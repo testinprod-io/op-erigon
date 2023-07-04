@@ -31,6 +31,7 @@ import (
 	"github.com/ledgerwatch/erigon/core"
 	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/eth/tracers/logger"
+	"github.com/ledgerwatch/log/v3"
 )
 
 // CallArgs represents the arguments for a call.

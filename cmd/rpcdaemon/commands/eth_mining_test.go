@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"log"
 	"math/big"
 	"testing"
 	"time"
@@ -16,6 +15,7 @@ import (
 	"github.com/ledgerwatch/erigon/rlp"
 	"github.com/ledgerwatch/erigon/turbo/rpchelper"
 	"github.com/ledgerwatch/erigon/turbo/stages"
+	"github.com/ledgerwatch/log/v3"
 	"github.com/stretchr/testify/require"
 )
 

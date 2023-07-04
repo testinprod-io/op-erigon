@@ -21,6 +21,7 @@ import (
 	"github.com/ledgerwatch/erigon-lib/kv/kvcfg"
 	libstate "github.com/ledgerwatch/erigon-lib/state"
 	types2 "github.com/ledgerwatch/erigon-lib/types"
+	"github.com/ledgerwatch/log/v3"
 
 	"github.com/ledgerwatch/erigon/common/hexutil"
 	"github.com/ledgerwatch/erigon/common/math"

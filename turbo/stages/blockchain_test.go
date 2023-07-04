@@ -34,6 +34,7 @@ import (
 	"github.com/ledgerwatch/erigon-lib/kv/bitmapdb"
 	types2 "github.com/ledgerwatch/erigon-lib/types"
 	"github.com/ledgerwatch/erigon/turbo/services"
+	"github.com/ledgerwatch/log/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -485,7 +486,7 @@ func TestChainTxReorgs(t *testing.T) {
 		if bn, _ := rawdb.ReadTxLookupEntry(tx, txn.Hash()); bn != nil {
 			t.Errorf("drop %d: tx %v found while shouldn't have been", i, txn)
 		}
-		if rcpt, _, _, _, _ := readReceipt(tx, txn.Hash(), br); rcpt != nil {
+		if rcpt, _, _, _, _ := readReceipt(m.ChainConfig, tx, txn.Hash(), br); rcpt != nil {
 			t.Errorf("drop %d: receipt %v found while shouldn't have been", i, rcpt)
 		}
 	}
@@ -500,7 +501,7 @@ func TestChainTxReorgs(t *testing.T) {
 		if m.HistoryV3 {
 			// m.HistoryV3 doesn't store
 		} else {
-			if rcpt, _, _, _, _ := readReceipt(tx, txn.Hash(), br); rcpt == nil {
+			if rcpt, _, _, _, _ := readReceipt(m.ChainConfig, tx, txn.Hash(), br); rcpt == nil {
 				t.Errorf("add %d: expected receipt to be found", i)
 			}
 		}
@@ -514,14 +515,14 @@ func TestChainTxReorgs(t *testing.T) {
 		if m.HistoryV3 {
 			// m.HistoryV3 doesn't store
 		} else {
-			if rcpt, _, _, _, _ := readReceipt(tx, txn.Hash(), br); rcpt == nil {
+			if rcpt, _, _, _, _ := readReceipt(m.ChainConfig, tx, txn.Hash(), br); rcpt == nil {
 				t.Errorf("share %d: expected receipt to be found", i)
 			}
 		}
 	}
 }
 
-func readReceipt(db kv.Tx, txHash libcommon.Hash, br services.FullBlockReader) (*types.Receipt, libcommon.Hash, uint64, uint64, error) {
+func readReceipt(chainConfig *chain.Config, db kv.Tx, txHash libcommon.Hash, br services.FullBlockReader) (*types.Receipt, libcommon.Hash, uint64, uint64, error) {
 	// Retrieve the context of the receipt based on the transaction hash
 	blockNumber, err := rawdb.ReadTxLookupEntry(db, txHash)
 	if err != nil {
@@ -542,7 +543,7 @@ func readReceipt(db kv.Tx, txHash libcommon.Hash, br services.FullBlockReader) (
 		return nil, libcommon.Hash{}, 0, 0, err
 	}
 	// Read all the receipts from the block and return the one with the matching hash
-	receipts := rawdb.ReadReceipts(db, b, senders)
+	receipts := rawdb.ReadReceipts(chainConfig, db, b, senders)
 	for receiptIndex, receipt := range receipts {
 		if receipt.TxHash == txHash {
 			return receipt, blockHash, *blockNumber, uint64(receiptIndex), nil

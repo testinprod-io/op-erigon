@@ -3,7 +3,6 @@ package commands
 import (
 	"bytes"
 	"encoding/json"
-	"log"
 	"reflect"
 	"testing"
 

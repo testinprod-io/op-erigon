@@ -3,7 +3,6 @@ package stagedsync
 import (
 	"errors"
 	"fmt"
-	"github.com/google/martian/log"
 	"io"
 	"math/big"
 	"sync/atomic"
@@ -19,6 +18,7 @@ import (
 	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/erigon-lib/chain"
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
+	"github.com/ledgerwatch/log/v3"
 	"golang.org/x/net/context"
 
 	"github.com/ledgerwatch/erigon-lib/kv"
@@ -120,11 +120,11 @@ func SpawnMiningExecStage(s *StageState, tx kv.RwTx, cfg MiningExecCfg, quit <-c
 			// forceTxs is sent by Optimism consensus client, and all force txs must be included in the payload.
 			// Therefore, interrupts to block building must not be handled while force txs are being processed.
 			// So do not pass cfg.interrupt
-			logs, _, err := addTransactionsToMiningBlock(logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, cfg.engine, forceTxs, cfg.miningState.MiningConfig.Etherbase, ibs, quit, nil, cfg.payloadId, true)
+			logs, _, err := addTransactionsToMiningBlock(logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, cfg.engine, forceTxs, cfg.miningState.MiningConfig.Etherbase, ibs, quit, nil, cfg.payloadId, true, logger)
 			if err != nil {
 				return err
 			}
-			NotifyPendingLogs(logPrefix, cfg.notifier, logs)
+			NotifyPendingLogs(logPrefix, cfg.notifier, logs, logger)
 		}
 		if txs != nil && !txs.Empty() {
 			logs, _, err := addTransactionsToMiningBlock(logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, cfg.engine, txs, cfg.miningState.MiningConfig.Etherbase, ibs, quit, cfg.interrupt, cfg.payloadId, false, logger)
@@ -466,7 +466,6 @@ LOOP:
 		}
 
 		// Start executing the transaction
-		ibs.Prepare(txn.Hash(), libcommon.Hash{}, tcount)
 		if !allowDeposits && txn.Type() == types.DepositTxType {
 			log.Warn(fmt.Sprintf("[%s] Ignoring deposit tx that made its way through mempool", logPrefix), "hash", txn.Hash())
 			txs.Pop()
@@ -524,7 +523,7 @@ func NotifyPendingLogs(logPrefix string, notifier ChainEventNotifier, logs types
 }
 
 // implemented by tweaking UnwindExecutionStage
-func UnwindMiningExecutionStage(u *UnwindState, s *StageState, tx kv.RwTx, ctx context.Context, cfg MiningExecCfg) (err error) {
+func UnwindMiningExecutionStage(u *UnwindState, s *StageState, tx kv.RwTx, ctx context.Context, cfg MiningExecCfg, logger log.Logger) (err error) {
 	if u.UnwindPoint >= s.BlockNumber {
 		return nil
 	}
@@ -539,7 +538,7 @@ func UnwindMiningExecutionStage(u *UnwindState, s *StageState, tx kv.RwTx, ctx c
 	logPrefix := u.LogPrefix()
 	log.Info(fmt.Sprintf("[%s] Unwind Mining Execution", logPrefix), "from", s.BlockNumber, "to", u.UnwindPoint)
 
-	if err = unwindMiningExecutionStage(u, s, tx, ctx, cfg); err != nil {
+	if err = unwindMiningExecutionStage(u, s, tx, ctx, cfg, logger); err != nil {
 		return err
 	}
 	if err = u.Done(tx); err != nil {
@@ -554,12 +553,12 @@ func UnwindMiningExecutionStage(u *UnwindState, s *StageState, tx kv.RwTx, ctx c
 	return nil
 }
 
-func unwindMiningExecutionStage(u *UnwindState, s *StageState, tx kv.RwTx, ctx context.Context, cfg MiningExecCfg) error {
+func unwindMiningExecutionStage(u *UnwindState, s *StageState, tx kv.RwTx, ctx context.Context, cfg MiningExecCfg, logger log.Logger) error {
 	logPrefix := s.LogPrefix()
 	stateBucket := kv.PlainState
 	storageKeyLength := length.Addr + length.Incarnation + length.Hash
 
-	changes := etl.NewCollector(logPrefix, cfg.tmpdir, etl.NewOldestEntryBuffer(etl.BufferOptimalSize))
+	changes := etl.NewCollector(logPrefix, cfg.tmpdir, etl.NewOldestEntryBuffer(etl.BufferOptimalSize), logger)
 	defer changes.Close()
 	errRewind := changeset.RewindData(tx, s.BlockNumber, u.UnwindPoint, changes, ctx.Done())
 	if errRewind != nil {

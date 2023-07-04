@@ -3,7 +3,6 @@ package commands_test
 import (
 	"bytes"
 	"crypto/ecdsa"
-	"log"
 	"math/big"
 	"testing"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/ledgerwatch/erigon-lib/gointerfaces/sentry"
 	"github.com/ledgerwatch/erigon-lib/gointerfaces/txpool"
 	"github.com/ledgerwatch/erigon-lib/kv/kvcache"
+	"github.com/ledgerwatch/log/v3"
 	"github.com/stretchr/testify/require"
 
 	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/commands"

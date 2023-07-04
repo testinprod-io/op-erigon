@@ -34,6 +34,7 @@ import (
 	"github.com/ledgerwatch/erigon/turbo/rpchelper"
 	"github.com/ledgerwatch/erigon/turbo/services"
 	"github.com/ledgerwatch/erigon/turbo/transactions"
+	"github.com/ledgerwatch/log/v3"
 )
 
 func (api *BaseAPI) getReceipts(ctx context.Context, tx kv.Tx, chainConfig *chain.Config, block *types.Block, senders []common.Address) (types.Receipts, error) {

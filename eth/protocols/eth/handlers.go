@@ -28,6 +28,7 @@ import (
 	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/rlp"
 	"github.com/ledgerwatch/erigon/turbo/services"
+	"github.com/ledgerwatch/log/v3"
 )
 
 func AnswerGetBlockHeadersQuery(db kv.Tx, query *GetBlockHeadersPacket, blockReader services.HeaderAndCanonicalReader) ([]*types.Header, error) {

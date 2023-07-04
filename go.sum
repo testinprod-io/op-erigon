@@ -338,7 +338,6 @@ github.com/google/gofuzz v1.2.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/
 github.com/google/gopacket v1.1.17/go.mod h1:UdDNZ1OO62aGYVnPhxT1U6aI7ukYtA/kB8vaU0diBUM=
 github.com/google/gopacket v1.1.19 h1:ves8RnFZPGiFnTS0uPQStjwru6uO6h+nlr9j6fL7kF8=
 github.com/google/gopacket v1.1.19/go.mod h1:iJ8V8n6KS+z2U1A8pUwu8bW5SyEMkXJB8Yo/Vo+TKTo=
-github.com/google/martian v2.1.0+incompatible h1:/CP5g8u/VJHijgedC/Legn3BAbAaWPgecwXBIDzw5no=
 github.com/google/martian v2.1.0+incompatible/go.mod h1:9I4somxYTbIHy5NJKHRl3wXiIaQGbYVAs8BPL6v8lEs=
 github.com/google/pprof v0.0.0-20181206194817-3ea8567a2e57/go.mod h1:zfwlbNMJ+OItoe0UupaVj+oy1omPYYDuagoSzA8v9mc=
 github.com/google/pprof v0.0.0-20230405160723-4a4c7d95572b h1:Qcx5LM0fSiks9uCyFZwDBUasd3lxd1RM0GYpL+Li5o4=
@@ -446,8 +445,6 @@ github.com/kr/text v0.2.0/go.mod h1:eLer722TekiGuMkidMxC/pM04lWEeraHUUmBw8l2grE=
 github.com/kylelemons/godebug v0.0.0-20170224010052-a616ab194758 h1:0D5M2HQSGD3PYPwICLl+/9oulQauOuETfgFvhBDffs0=
 github.com/leanovate/gopter v0.2.9 h1:fQjYxZaynp97ozCzfOyOuAGOU4aU/z37zf/tOujFk7c=
 github.com/leanovate/gopter v0.2.9/go.mod h1:U2L/78B+KVFIx2VmW6onHJQzXtFb+p5y3y2Sh+Jxxv8=
-github.com/ledgerwatch/erigon-lib v0.0.0-20230602102715-f166e7deb76f h1:of04RfFaI7sXYeAWZAIusucij2hNSRC+NTKkgx0iazo=
-github.com/ledgerwatch/erigon-lib v0.0.0-20230602102715-f166e7deb76f/go.mod h1:KvN1A62PZypY+KfIzwXVbNOVS9CWx/gzqiRr5dPJxuk=
 github.com/ledgerwatch/erigon-snapshot v1.2.0 h1:Pf6eu5XqB29Mlg3oY9zxZ8qenSi2azgcwuNRDvV2rAM=
 github.com/ledgerwatch/erigon-snapshot v1.2.0/go.mod h1:3AuPxZc85jkehh/HA9h8gabv5MSi3kb/ddtzBsTVJFo=
 github.com/ledgerwatch/log/v3 v3.8.0 h1:gCpp7uGtIerEz1jKVPeDnbIopFPud9ZnCpBLlLBGqPU=
@@ -787,6 +784,8 @@ github.com/stretchr/testify v1.8.3/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXl
 github.com/supranational/blst v0.3.10 h1:CMciDZ/h4pXDDXQASe8ZGTNKUiVNxVVA5hpci2Uuhuk=
 github.com/supranational/blst v0.3.10/go.mod h1:jZJtfjgudtNl4en1tzwPIV3KjUnQUvG3/j+w+fVonLw=
 github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07/go.mod h1:kDXzergiv9cbyO7IOYJZWg1U88JhDg3PB6klq9Hg2pA=
+github.com/testinprod-io/erigon-lib v0.0.0-20230704131808-03aa9076ccfe h1:RN3rxvp3pnwKI0Vj3UmBEHVmT4HMlp0eVGdhUS7EBtE=
+github.com/testinprod-io/erigon-lib v0.0.0-20230704131808-03aa9076ccfe/go.mod h1:JDUy/AkEfGguO8hSm94TbWmelc0VCihd5U09OxOUQ4o=
 github.com/thomaso-mirodin/intmath v0.0.0-20160323211736-5dc6d854e46e h1:cR8/SYRgyQCt5cNCMniB/ZScMkhI9nk8U5C7SbISXjo=
 github.com/thomaso-mirodin/intmath v0.0.0-20160323211736-5dc6d854e46e/go.mod h1:Tu4lItkATkonrYuvtVjG0/rhy15qrNGNTjPdaphtZ/8=
 github.com/tidwall/btree v1.6.0 h1:LDZfKfQIBHGHWSwckhXI0RPSXzlo+KYdjK7FWSqOzzg=

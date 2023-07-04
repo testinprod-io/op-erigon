@@ -3,11 +3,11 @@ package commands
 import (
 	"context"
 	"fmt"
-	"log"
 	"testing"
 
 	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/erigon-lib/common"
+	"github.com/ledgerwatch/log/v3"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ledgerwatch/erigon-lib/kv/kvcache"

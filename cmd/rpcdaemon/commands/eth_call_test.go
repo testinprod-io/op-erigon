@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/holiman/uint256"
+	"github.com/ledgerwatch/log/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 

@@ -28,6 +28,7 @@ import (
 	"github.com/ledgerwatch/erigon-lib/kv/memdb"
 	"github.com/ledgerwatch/erigon/core/rawdb"
 	"github.com/ledgerwatch/erigon/turbo/stages"
+	"github.com/ledgerwatch/log/v3"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/sha3"
 

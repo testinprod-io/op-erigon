@@ -21,6 +21,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
+	"github.com/urfave/cli/v2"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -31,11 +32,6 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/c2h5oh/datasize"
-	"github.com/ledgerwatch/log/v3"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-	"github.com/urfave/cli/v2"
-
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/cmp"
 	"github.com/ledgerwatch/erigon-lib/common/datadir"
@@ -44,6 +40,9 @@ import (
 	downloadercfg2 "github.com/ledgerwatch/erigon-lib/downloader/downloadercfg"
 	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon-lib/txpool/txpoolcfg"
+	"github.com/ledgerwatch/log/v3"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	"github.com/ledgerwatch/erigon/cl/clparams"
 	"github.com/ledgerwatch/erigon/cmd/downloader/downloadernat"

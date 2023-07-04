@@ -2,7 +2,6 @@ package commands
 
 import (
 	"context"
-	"log"
 	"math"
 	"math/big"
 	"testing"
@@ -11,6 +10,7 @@ import (
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/kv/kvcache"
 	"github.com/ledgerwatch/erigon/rpc/rpccfg"
+	"github.com/ledgerwatch/log/v3"
 
 	"github.com/ledgerwatch/erigon/core"
 	"github.com/ledgerwatch/erigon/core/types"

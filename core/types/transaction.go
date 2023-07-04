@@ -21,7 +21,6 @@ import (
 	"container/heap"
 	"errors"
 	"fmt"
-	"github.com/google/martian/log"
 	"io"
 	"math/big"
 	"sync/atomic"
@@ -31,6 +30,7 @@ import (
 	"github.com/ledgerwatch/erigon-lib/chain"
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	types2 "github.com/ledgerwatch/erigon-lib/types"
+	"github.com/ledgerwatch/log/v3"
 	"github.com/protolambda/ztyp/codec"
 
 	"github.com/ledgerwatch/erigon/common"

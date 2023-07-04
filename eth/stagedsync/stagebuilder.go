@@ -7,6 +7,7 @@ import (
 	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/eth/stagedsync/stages"
+	"github.com/ledgerwatch/log/v3"
 )
 
 type ChainEventNotifier interface {
@@ -28,11 +29,11 @@ func MiningStages(
 		{
 			ID:          stages.MiningCreateBlock,
 			Description: "Mining: add force-txs",
-			Forward: func(firstCycle bool, badBlockUnwind bool, s *StageState, u Unwinder, tx kv.RwTx, quite bool) error {
+			Forward: func(firstCycle bool, badBlockUnwind bool, s *StageState, u Unwinder, tx kv.RwTx, logger log.Logger) error {
 				return SpawnMiningForceTxsStage(s, tx, createBlockCfg, ctx.Done())
 			},
-			Unwind: func(firstCycle bool, u *UnwindState, s *StageState, tx kv.RwTx) error { return nil },
-			Prune:  func(firstCycle bool, u *PruneState, tx kv.RwTx) error { return nil },
+			Unwind: func(firstCycle bool, u *UnwindState, s *StageState, tx kv.RwTx, logger log.Logger) error { return nil },
+			Prune:  func(firstCycle bool, u *PruneState, tx kv.RwTx, logger log.Logger) error { return nil },
 		},
 		{
 			ID:          stages.MiningCreateBlock,
@@ -50,7 +51,7 @@ func MiningStages(
 				return SpawnMiningExecStage(s, tx, execCfg, ctx.Done(), logger)
 			},
 			Unwind: func(firstCycle bool, u *UnwindState, s *StageState, tx kv.RwTx, logger log.Logger) error {
-				return UnwindMiningExecutionStage(u, s, tx, ctx, execCfg)
+				return UnwindMiningExecutionStage(u, s, tx, ctx, execCfg, logger)
 			},
 			Prune: func(firstCycle bool, u *PruneState, tx kv.RwTx, logger log.Logger) error { return nil },
 		},
@@ -61,7 +62,7 @@ func MiningStages(
 				return SpawnHashStateStage(s, tx, hashStateCfg, ctx, logger)
 			},
 			Unwind: func(firstCycle bool, u *UnwindState, s *StageState, tx kv.RwTx, logger log.Logger) error {
-				return UnwindHashStateStage(u, s, tx, hashStateCfg, ctx)
+				return UnwindHashStateStage(u, s, tx, hashStateCfg, ctx, logger)
 			},
 			Prune: func(firstCycle bool, u *PruneState, tx kv.RwTx, logger log.Logger) error { return nil },
 		},
@@ -77,7 +78,7 @@ func MiningStages(
 				return nil
 			},
 			Unwind: func(firstCycle bool, u *UnwindState, s *StageState, tx kv.RwTx, logger log.Logger) error {
-				return UnwindIntermediateHashesStage(u, s, tx, trieCfg, ctx)
+				return UnwindIntermediateHashesStage(u, s, tx, trieCfg, ctx, logger)
 			},
 			Prune: func(firstCycle bool, u *PruneState, tx kv.RwTx, logger log.Logger) error { return nil },
 		},

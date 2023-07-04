@@ -13,6 +13,7 @@ import (
 	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/erigon/core/rawdb/blockio"
 	"github.com/ledgerwatch/erigon/turbo/services"
+	"github.com/ledgerwatch/log/v3"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/ledgerwatch/erigon-lib/chain"

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"log"
 	"math/big"
 	"strconv"
 	"testing"
@@ -23,6 +22,7 @@ import (
 	"github.com/ledgerwatch/erigon/rpc"
 	"github.com/ledgerwatch/erigon/rpc/rpccfg"
 	"github.com/ledgerwatch/erigon/turbo/adapter/ethapi"
+	"github.com/ledgerwatch/log/v3"
 )
 
 // block 1 contains 3 Transactions

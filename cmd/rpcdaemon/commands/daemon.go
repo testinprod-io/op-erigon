@@ -11,6 +11,7 @@ import (
 	"github.com/ledgerwatch/erigon/rpc"
 	"github.com/ledgerwatch/erigon/turbo/rpchelper"
 	"github.com/ledgerwatch/erigon/turbo/services"
+	"github.com/ledgerwatch/log/v3"
 )
 
 // APIList describes the list of available RPC apis

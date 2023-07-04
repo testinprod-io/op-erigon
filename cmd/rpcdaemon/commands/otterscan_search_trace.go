@@ -3,7 +3,6 @@ package commands
 import (
 	"context"
 	"fmt"
-	"github.com/google/martian/log"
 	"sync"
 
 	"github.com/ledgerwatch/erigon-lib/chain"
@@ -16,6 +15,7 @@ import (
 	"github.com/ledgerwatch/erigon/core/vm"
 	"github.com/ledgerwatch/erigon/turbo/rpchelper"
 	"github.com/ledgerwatch/erigon/turbo/shards"
+	"github.com/ledgerwatch/log/v3"
 )
 
 func (api *OtterscanAPIImpl) searchTraceBlock(ctx, traceCtx context.Context, traceCtxCancel context.CancelFunc, wg *sync.WaitGroup, errCh chan<- error, addr common.Address, chainConfig *chain.Config, idx int, bNum uint64, results []*TransactionsWithReceipts) {
