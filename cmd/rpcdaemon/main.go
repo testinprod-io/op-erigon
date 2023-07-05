@@ -43,7 +43,7 @@ func main() {
 		// Setup sequencer and hsistorical RPC relay services
 		if cfg.RollupSequencerHTTP != "" {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			client, err := rpc.DialContext(ctx, cfg.RollupSequencerHTTP)
+			client, err := rpc.DialContext(ctx, cfg.RollupSequencerHTTP, logger)
 			cancel()
 			if err != nil {
 				log.Error(err.Error())
@@ -53,7 +53,7 @@ func main() {
 		}
 		if cfg.RollupHistoricalRPC != "" {
 			ctx, cancel := context.WithTimeout(context.Background(), cfg.RollupHistoricalRPCTimeout)
-			client, err := rpc.DialContext(ctx, cfg.RollupHistoricalRPC)
+			client, err := rpc.DialContext(ctx, cfg.RollupHistoricalRPC, logger)
 			cancel()
 			if err != nil {
 				log.Error(err.Error())
