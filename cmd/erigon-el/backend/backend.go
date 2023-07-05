@@ -458,7 +458,7 @@ func NewBackend(stack *node.Node, config *ethconfig.Config, logger log.Logger) (
 	// Setup sequencer and hsistorical RPC relay services
 	if config.RollupSequencerHTTP != "" {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		client, err := rpc.DialContext(ctx, config.RollupSequencerHTTP)
+		client, err := rpc.DialContext(ctx, config.RollupSequencerHTTP, logger)
 		cancel()
 		if err != nil {
 			return nil, err
@@ -467,7 +467,7 @@ func NewBackend(stack *node.Node, config *ethconfig.Config, logger log.Logger) (
 	}
 	if config.RollupHistoricalRPC != "" {
 		ctx, cancel := context.WithTimeout(context.Background(), config.RollupHistoricalRPCTimeout)
-		client, err := rpc.DialContext(ctx, config.RollupHistoricalRPC)
+		client, err := rpc.DialContext(ctx, config.RollupHistoricalRPC, logger)
 		cancel()
 		if err != nil {
 			return nil, err
