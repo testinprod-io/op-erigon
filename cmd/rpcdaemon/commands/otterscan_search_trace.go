@@ -90,7 +90,7 @@ func (api *OtterscanAPIImpl) traceBlock(dbtx kv.Tx, ctx context.Context, blockNu
 	}
 	engine := api.engine()
 
-	blockReceipts := rawdb.ReadReceipts(api._chainConfig.Load(), dbtx, block, senders)
+	blockReceipts := rawdb.ReadReceipts(chainConfig, dbtx, block, senders)
 	header := block.Header()
 	excessDataGas := header.ParentExcessDataGas(getHeader)
 	rules := chainConfig.Rules(block.NumberU64(), header.Time)
