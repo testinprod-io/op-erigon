@@ -204,12 +204,12 @@ func (api *PrivateDebugAPIImpl) TraceTransaction(ctx context.Context, hash commo
 		if api.historicalRPCService == nil {
 			return rpc.ErrNoHistoricalFallback
 		}
-		treeResult := &GethTrace{}
-		if err := api.relayToHistoricalBackend(ctx, treeResult, "debug_traceTransaction", hash, config); err != nil {
+		var traceResult interface{}
+		if err := api.relayToHistoricalBackend(ctx, &traceResult, "debug_traceTransaction", hash, config); err != nil {
 			return fmt.Errorf("historical backend error: %w", err)
 		}
 		// stream out relayed response
-		result, err := json.Marshal(treeResult)
+		result, err := json.Marshal(traceResult)
 		if err != nil {
 			return err
 		}
