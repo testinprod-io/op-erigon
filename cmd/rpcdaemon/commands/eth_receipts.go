@@ -746,6 +746,7 @@ func marshalReceipt(receipt *types.Receipt, txn types.Transaction, chainConfig *
 		chainId = t.ChainID.ToBig()
 		// case *types.SignedBlobTx: // TODO: needs eip-4844 signer
 		// 	chainId = t.GetChainID().ToBig()
+	case *types.DepositTx:
 	default:
 		chainId = txn.GetChainID().ToBig()
 	}
