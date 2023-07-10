@@ -7,10 +7,12 @@ import (
 	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon-lib/kv/memdb"
 	"github.com/ledgerwatch/erigon/eth/stagedsync/stages"
+	"github.com/ledgerwatch/log/v3"
 	"github.com/stretchr/testify/require"
 )
 
 func TestMiningExec(t *testing.T) {
+	logger := log.New()
 	ctx, db1, db2 := context.Background(), memdb.NewTestDB(t), memdb.NewTestDB(t)
 	cfg := MiningExecCfg{}
 
@@ -25,10 +27,10 @@ func TestMiningExec(t *testing.T) {
 
 		u := &UnwindState{ID: stages.MiningExecution, UnwindPoint: 25}
 		s := &StageState{ID: stages.MiningExecution, BlockNumber: 50}
-		err = UnwindMiningExecutionStage(u, s, tx2, ctx, cfg)
+		err = UnwindMiningExecutionStage(u, s, tx2, ctx, cfg, logger)
 		require.NoError(err)
 
-		compareCurrentState(t, newAgg(t), tx1, tx2, kv.PlainState, kv.PlainContractCode, kv.ContractTEVMCode)
+		compareCurrentState(t, newAgg(t, logger), tx1, tx2, kv.PlainState, kv.PlainContractCode, kv.ContractTEVMCode)
 	})
 	t.Run("UnwindMiningExecutionStagePlainWithIncarnationChanges", func(t *testing.T) {
 		require, tx1, tx2 := require.New(t), memdb.BeginRw(t, db1), memdb.BeginRw(t, db2)
@@ -41,10 +43,10 @@ func TestMiningExec(t *testing.T) {
 
 		u := &UnwindState{ID: stages.MiningExecution, UnwindPoint: 25}
 		s := &StageState{ID: stages.MiningExecution, BlockNumber: 50}
-		err = UnwindMiningExecutionStage(u, s, tx2, ctx, cfg)
+		err = UnwindMiningExecutionStage(u, s, tx2, ctx, cfg, logger)
 		require.NoError(err)
 
-		compareCurrentState(t, newAgg(t), tx1, tx2, kv.PlainState, kv.PlainContractCode)
+		compareCurrentState(t, newAgg(t, logger), tx1, tx2, kv.PlainState, kv.PlainContractCode)
 	})
 	t.Run("UnwindMiningExecutionStagePlainWithCodeChanges", func(t *testing.T) {
 		t.Skip("not supported yet, to be restored")
@@ -59,9 +61,9 @@ func TestMiningExec(t *testing.T) {
 		}
 		u := &UnwindState{ID: stages.MiningExecution, UnwindPoint: 25}
 		s := &StageState{ID: stages.MiningExecution, BlockNumber: 50}
-		err = UnwindMiningExecutionStage(u, s, tx2, ctx, cfg)
+		err = UnwindMiningExecutionStage(u, s, tx2, ctx, cfg, logger)
 		require.NoError(err)
 
-		compareCurrentState(t, newAgg(t), tx1, tx2, kv.PlainState, kv.PlainContractCode)
+		compareCurrentState(t, newAgg(t, logger), tx1, tx2, kv.PlainState, kv.PlainContractCode)
 	})
 }
