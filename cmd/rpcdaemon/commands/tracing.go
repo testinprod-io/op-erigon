@@ -72,6 +72,30 @@ func (api *PrivateDebugAPIImpl) traceBlock(ctx context.Context, blockNrOrHash rp
 		return fmt.Errorf("invalid arguments; block with hash %x not found", hash)
 	}
 
+	chainConfig, err := api.chainConfig(tx)
+	if err != nil {
+		stream.WriteNil()
+		return err
+	}
+
+	if chainConfig.IsOptimismPreBedrock(block.NumberU64()) {
+		if api.historicalRPCService == nil {
+			return rpc.ErrNoHistoricalFallback
+		}
+		var traceResult interface{}
+		// relay using block hash
+		if err := api.relayToHistoricalBackend(ctx, &traceResult, "debug_traceBlockByHash", block.Hash(), config); err != nil {
+			return fmt.Errorf("historical backend error: %w", err)
+		}
+		// stream out relayed response
+		result, err := json.Marshal(&traceResult)
+		if err != nil {
+			return err
+		}
+		stream.WriteRaw(string(result))
+		return nil
+	}
+
 	// if we've pruned this history away for this block then just return early
 	// to save any red herring errors
 	err = api.BaseAPI.checkPruneHistory(tx, block.NumberU64())
@@ -96,11 +120,6 @@ func (api *PrivateDebugAPIImpl) traceBlock(ctx context.Context, blockNrOrHash rp
 	}
 	if parentBlock != nil {
 		excessDataGas = parentBlock.ExcessDataGas()
-	}
-	chainConfig, err := api.chainConfig(tx)
-	if err != nil {
-		stream.WriteNil()
-		return err
 	}
 	engine := api.engine()
 
