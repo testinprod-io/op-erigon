@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 	"time"
@@ -315,6 +316,10 @@ func (api *PrivateDebugAPIImpl) TraceCall(ctx context.Context, args ethapi.CallA
 	blockNumber, hash, _, err := rpchelper.GetBlockNumber(blockNrOrHash, dbtx, api.filters)
 	if err != nil {
 		return fmt.Errorf("get block number: %v", err)
+	}
+
+	if chainConfig.IsOptimismPreBedrock(blockNumber) {
+		return errors.New("l2geth does not have a debug_traceCall method")
 	}
 
 	err = api.BaseAPI.checkPruneHistory(dbtx, blockNumber)
