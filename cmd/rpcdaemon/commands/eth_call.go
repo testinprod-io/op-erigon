@@ -59,7 +59,7 @@ func (api *APIImpl) Call(ctx context.Context, args ethapi2.CallArgs, blockNrOrHa
 			return nil, rpc.ErrNoHistoricalFallback
 		}
 		var result hexutility.Bytes
-		if err := api.relayToHistoricalBackend(ctx, &result, "eth_call", args, hexutil.EncodeUint64(blockNum)); err != nil {
+		if err := api.relayToHistoricalBackend(ctx, &result, "eth_call", args, hexutil.EncodeUint64(blockNum), overrides); err != nil {
 			return nil, fmt.Errorf("historical backend error: %w", err)
 		}
 		return result, nil
