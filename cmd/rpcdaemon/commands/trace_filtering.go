@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/big"
 
 	"github.com/RoaringBitmap/roaring/roaring64"
 	jsoniter "github.com/json-iterator/go"
@@ -885,14 +884,6 @@ func (api *TraceAPIImpl) callManyTransactions(
 	parentNo := rpc.BlockNumber(pNo)
 	rules := cfg.Rules(blockNumber, block.Time())
 	header := block.Header()
-	parentBlock, err := api.blockByRPCNumber(ctx, parentNo, dbtx)
-	if err != nil {
-		return nil, nil, err
-	}
-	var excessDataGas *big.Int
-	if parentBlock != nil {
-		excessDataGas = parentBlock.ExcessDataGas()
-	}
 	txs := block.Transactions()
 	callParams := make([]TraceCallParam, 0, len(txs))
 	reader, err := rpchelper.CreateHistoryStateReader(dbtx, blockNumber, txIndex, api.historyV3(dbtx), cfg.ChainName)
@@ -905,7 +896,7 @@ func (api *TraceAPIImpl) callManyTransactions(
 	}
 	engine := api.engine()
 	consensusHeaderReader := stagedsync.NewChainReaderImpl(cfg, dbtx, nil)
-	err = core.InitializeBlockExecution(engine.(consensus.Engine), consensusHeaderReader, block.HeaderNoCopy(), block.Transactions(), block.Uncles(), cfg, initialState, excessDataGas)
+	err = core.InitializeBlockExecution(engine.(consensus.Engine), consensusHeaderReader, block.HeaderNoCopy(), block.Transactions(), block.Uncles(), cfg, initialState)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -926,7 +917,7 @@ func (api *TraceAPIImpl) callManyTransactions(
 		// gnosis might have a fee free account here
 		if msg.FeeCap().IsZero() && engine != nil {
 			syscall := func(contract common.Address, data []byte) ([]byte, error) {
-				return core.SysCallContract(contract, data, cfg, initialState, header, engine, true /* constCall */, excessDataGas)
+				return core.SysCallContract(contract, data, cfg, initialState, header, engine, true /* constCall */)
 			}
 			msg.SetIsFree(engine.IsServiceTransaction(msg.From(), syscall))
 		}
@@ -948,7 +939,7 @@ func (api *TraceAPIImpl) callManyTransactions(
 
 	syscall := func(contract common.Address, data []byte) ([]byte, error) {
 		constCall := false // this syscall is used for calculating rewards, which is not constant
-		return core.SysCallContract(contract, data, cfg, lastState, header, engine, constCall, excessDataGas)
+		return core.SysCallContract(contract, data, cfg, lastState, header, engine, constCall)
 	}
 
 	return traces, syscall, nil

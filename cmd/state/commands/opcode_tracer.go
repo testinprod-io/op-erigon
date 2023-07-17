@@ -57,7 +57,8 @@ var opcodeTracerCmd = &cobra.Command{
 	Use:   "opcodeTracer",
 	Short: "Re-executes historical transactions in read-only mode and traces them at the opcode level",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return OpcodeTracer(genesis, block, chaindata, numBlocks, saveOpcodes, saveBBlocks)
+		logger := log.New("opcode-tracer", genesis.Config.ChainID)
+		return OpcodeTracer(genesis, block, chaindata, numBlocks, saveOpcodes, saveBBlocks, logger)
 	},
 }
 
@@ -397,7 +398,7 @@ type segPrefix struct {
 // OpcodeTracer re-executes historical transactions in read-only mode
 // and traces them at the opcode level
 func OpcodeTracer(genesis *types.Genesis, blockNum uint64, chaindata string, numBlocks uint64,
-	saveOpcodes bool, saveBblocks bool) error {
+	saveOpcodes bool, saveBblocks bool, logger log.Logger) error {
 	blockNumOrig := blockNum
 
 	startTime := time.Now()
@@ -421,19 +422,15 @@ func OpcodeTracer(genesis *types.Genesis, blockNum uint64, chaindata string, num
 	}
 	defer historyTx.Rollback()
 
-	var historyV3, txsV3 bool
+	var historyV3 bool
 	chainDb.View(context.Background(), func(tx kv.Tx) (err error) {
 		historyV3, err = kvcfg.HistoryV3.Enabled(tx)
 		if err != nil {
 			return err
 		}
-		txsV3, err = kvcfg.TransactionsV3.Enabled(tx)
-		if err != nil {
-			return err
-		}
 		return nil
 	})
-	blockReader := snapshotsync.NewBlockReader(snapshotsync.NewRoSnapshots(ethconfig.Snapshot{Enabled: false}, "", log.New()), txsV3)
+	blockReader := snapshotsync.NewBlockReader(snapshotsync.NewRoSnapshots(ethconfig.Snapshot{Enabled: false}, "", log.New()))
 
 	chainConfig := genesis.Config
 	vmConfig := vm.Config{Tracer: ot, Debug: true}
@@ -599,7 +596,7 @@ func OpcodeTracer(genesis *types.Genesis, blockNum uint64, chaindata string, num
 		getHeader := func(hash libcommon.Hash, number uint64) *types.Header {
 			return rawdb.ReadHeader(historyTx, hash, number)
 		}
-		receipts, err1 := runBlock(ethash.NewFullFaker(), intraBlockState, noOpWriter, noOpWriter, chainConfig, getHeader, block, vmConfig, false)
+		receipts, err1 := runBlock(ethash.NewFullFaker(), intraBlockState, noOpWriter, noOpWriter, chainConfig, getHeader, block, vmConfig, false, logger)
 		if err1 != nil {
 			return err1
 		}
@@ -710,9 +707,8 @@ func OpcodeTracer(genesis *types.Genesis, blockNum uint64, chaindata string, num
 }
 
 func runBlock(engine consensus.Engine, ibs *state.IntraBlockState, txnWriter state.StateWriter, blockWriter state.StateWriter,
-	chainConfig *chain2.Config, getHeader func(hash libcommon.Hash, number uint64) *types.Header, block *types.Block, vmConfig vm.Config, trace bool) (types.Receipts, error) {
+	chainConfig *chain2.Config, getHeader func(hash libcommon.Hash, number uint64) *types.Header, block *types.Block, vmConfig vm.Config, trace bool, logger log.Logger) (types.Receipts, error) {
 	header := block.Header()
-	excessDataGas := header.ParentExcessDataGas(getHeader)
 	vmConfig.TraceJumpDest = true
 	gp := new(core.GasPool).AddGas(block.GasLimit()).AddDataGas(params.MaxDataGasPerBlock)
 	usedGas := new(uint64)
@@ -720,11 +716,11 @@ func runBlock(engine consensus.Engine, ibs *state.IntraBlockState, txnWriter sta
 	if chainConfig.DAOForkBlock != nil && chainConfig.DAOForkBlock.Cmp(block.Number()) == 0 {
 		misc.ApplyDAOHardFork(ibs)
 	}
-	systemcontracts.UpgradeBuildInSystemContract(chainConfig, header.Number, ibs)
+	systemcontracts.UpgradeBuildInSystemContract(chainConfig, header.Number, ibs, logger)
 	rules := chainConfig.Rules(block.NumberU64(), block.Time())
 	for i, tx := range block.Transactions() {
 		ibs.SetTxContext(tx.Hash(), block.Hash(), i)
-		receipt, _, err := core.ApplyTransaction(chainConfig, core.GetHashFn(header, getHeader), engine, nil, gp, ibs, txnWriter, header, tx, usedGas, vmConfig, excessDataGas)
+		receipt, _, err := core.ApplyTransaction(chainConfig, core.GetHashFn(header, getHeader), engine, nil, gp, ibs, txnWriter, header, tx, usedGas, vmConfig)
 		if err != nil {
 			return nil, fmt.Errorf("could not apply tx %d [%x] failed: %w", i, tx.Hash(), err)
 		}

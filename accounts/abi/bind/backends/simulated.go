@@ -350,15 +350,10 @@ func (b *SimulatedBackend) BlockByHash(ctx context.Context, hash libcommon.Hash)
 	}
 	defer tx.Rollback()
 
-	number := rawdb.ReadHeaderNumber(tx, hash)
-	if number == nil {
-		return nil, nil
-	}
-	block, _, err := b.BlockReader().BlockWithSenders(ctx, tx, hash, *number)
+	block, err := b.BlockReader().BlockByHash(ctx, tx, hash)
 	if err != nil {
 		return nil, err
 	}
-
 	if block != nil {
 		return block, nil
 	}
@@ -735,8 +730,7 @@ func (b *SimulatedBackend) callContract(_ context.Context, call ethereum.CallMsg
 
 	txContext := core.NewEVMTxContext(msg)
 	header := block.Header()
-	excessDataGas := header.ParentExcessDataGas(b.getHeader)
-	evmContext := core.NewEVMBlockContext(header, core.GetHashFn(header, b.getHeader), b.m.Engine, nil, excessDataGas)
+	evmContext := core.NewEVMBlockContext(header, core.GetHashFn(header, b.getHeader), b.m.Engine, nil)
 	evmContext.L1CostFunc = types.NewL1CostFunc(b.m.ChainConfig, statedb)
 	// Create a new environment which holds all relevant information
 	// about the transaction and calling mechanisms.
@@ -770,8 +764,7 @@ func (b *SimulatedBackend) SendTransaction(ctx context.Context, tx types.Transac
 		&b.pendingHeader.Coinbase, b.gasPool,
 		b.pendingState, state.NewNoopWriter(),
 		b.pendingHeader, tx,
-		&b.pendingHeader.GasUsed, vm.Config{},
-		b.pendingHeader.ParentExcessDataGas(b.getHeader)); err != nil {
+		&b.pendingHeader.GasUsed, vm.Config{}); err != nil {
 		return err
 	}
 	//fmt.Printf("==== Start producing block %d\n", (b.prependBlock.NumberU64() + 1))

@@ -150,7 +150,7 @@ func StageLoopStep(ctx context.Context, db kv.RwDB, sync *stagedsync.Sync, initi
 	}
 	// 2 corner-cases: when sync with --snapshots=false and when executed only blocks from snapshots (in this case all stages progress is equal and > 0, but node is not synced)
 	isSynced := finishProgressBefore > 0 && finishProgressBefore > blocksInSnapshots && finishProgressBefore == headersProgressBefore
-	canRunCycleInOneTransaction := !isSynced
+	canRunCycleInOneTransaction := isSynced
 
 	// Main steps:
 	// - process new blocks
@@ -231,11 +231,12 @@ type Hook struct {
 	sync          *stagedsync.Sync
 	chainConfig   *chain.Config
 	logger        log.Logger
+	blockReader   services.FullBlockReader
 	updateHead    func(ctx context.Context, headHeight uint64, headTime uint64, hash libcommon.Hash, td *uint256.Int)
 }
 
-func NewHook(ctx context.Context, notifications *shards.Notifications, sync *stagedsync.Sync, chainConfig *chain.Config, logger log.Logger, updateHead func(ctx context.Context, headHeight uint64, headTime uint64, hash libcommon.Hash, td *uint256.Int)) *Hook {
-	return &Hook{ctx: ctx, notifications: notifications, sync: sync, chainConfig: chainConfig, logger: logger, updateHead: updateHead}
+func NewHook(ctx context.Context, notifications *shards.Notifications, sync *stagedsync.Sync, blockReader services.FullBlockReader, chainConfig *chain.Config, logger log.Logger, updateHead func(ctx context.Context, headHeight uint64, headTime uint64, hash libcommon.Hash, td *uint256.Int)) *Hook {
+	return &Hook{ctx: ctx, notifications: notifications, sync: sync, blockReader: blockReader, chainConfig: chainConfig, logger: logger, updateHead: updateHead}
 }
 func (h *Hook) BeforeRun(tx kv.Tx, canRunCycleInOneTransaction bool) error {
 	notifications := h.notifications
@@ -250,6 +251,7 @@ func (h *Hook) BeforeRun(tx kv.Tx, canRunCycleInOneTransaction bool) error {
 }
 func (h *Hook) AfterRun(tx kv.Tx, finishProgressBefore uint64) error {
 	notifications := h.notifications
+	blockReader := h.blockReader
 	// -- send notifications START
 	//TODO: can this 2 headers be 1
 	var headHeader, currentHeder *types.Header
@@ -287,7 +289,7 @@ func (h *Hook) AfterRun(tx kv.Tx, finishProgressBefore uint64) error {
 	}
 
 	if notifications != nil && notifications.Events != nil {
-		if err = stagedsync.NotifyNewHeaders(h.ctx, finishProgressBefore, head, h.sync.PrevUnwindPoint(), notifications.Events, tx, h.logger); err != nil {
+		if err = stagedsync.NotifyNewHeaders(h.ctx, finishProgressBefore, head, h.sync.PrevUnwindPoint(), notifications.Events, tx, h.logger, blockReader); err != nil {
 			return nil
 		}
 	}
@@ -403,8 +405,8 @@ func NewDefaultStages(ctx context.Context,
 	logger log.Logger,
 ) []*stagedsync.Stage {
 	dirs := cfg.Dirs
-	blockWriter := blockio.NewBlockWriter(cfg.HistoryV3, cfg.TransactionsV3)
-	blockRetire := snapshotsync.NewBlockRetire(1, dirs.Tmp, blockReader, db, snapDownloader, notifications.Events, logger)
+	blockWriter := blockio.NewBlockWriter(cfg.HistoryV3)
+	blockRetire := snapshotsync.NewBlockRetire(1, dirs.Tmp, blockReader, blockWriter, db, snapDownloader, notifications.Events, logger)
 
 	// During Import we don't want other services like header requests, body requests etc. to be running.
 	// Hence we run it in the test mode.
@@ -413,7 +415,7 @@ func NewDefaultStages(ctx context.Context,
 	return stagedsync.DefaultStages(ctx,
 		stagedsync.StageSnapshotsCfg(db, *controlServer.ChainConfig, dirs, blockRetire, snapDownloader, blockReader, notifications.Events, cfg.HistoryV3, agg),
 		stagedsync.StageHeadersCfg(db, controlServer.Hd, controlServer.Bd, *controlServer.ChainConfig, controlServer.SendHeaderRequest, controlServer.PropagateNewBlockHashes, controlServer.Penalize, cfg.BatchSize, p2pCfg.NoDiscovery, blockReader, blockWriter, dirs.Tmp, notifications, forkValidator),
-		stagedsync.StageCumulativeIndexCfg(db),
+		stagedsync.StageCumulativeIndexCfg(db, blockReader),
 		stagedsync.StageBlockHashesCfg(db, dirs.Tmp, controlServer.ChainConfig, blockWriter),
 		stagedsync.StageBodiesCfg(db, controlServer.Bd, controlServer.SendBodyRequest, controlServer.Penalize, controlServer.BroadcastNewBlock, cfg.Sync.BodyDownloadTimeoutSeconds, *controlServer.ChainConfig, blockReader, cfg.HistoryV3, blockWriter),
 		stagedsync.StageSendersCfg(db, controlServer.ChainConfig, false, dirs.Tmp, cfg.Prune, blockRetire, blockWriter, blockReader, controlServer.Hd),
@@ -449,7 +451,7 @@ func NewDefaultStages(ctx context.Context,
 func NewInMemoryExecution(ctx context.Context, db kv.RwDB, cfg *ethconfig.Config, controlServer *sentry.MultiClient,
 	dirs datadir.Dirs, notifications *shards.Notifications, snapshots *snapshotsync.RoSnapshots, agg *state.AggregatorV3,
 	logger log.Logger) (*stagedsync.Sync, error) {
-	blockReader, blockWriter := snapshotsync.NewBlockReader(snapshots, cfg.TransactionsV3), blockio.NewBlockWriter(cfg.HistoryV3, cfg.TransactionsV3)
+	blockReader, blockWriter := snapshotsync.NewBlockReader(snapshots), blockio.NewBlockWriter(cfg.HistoryV3)
 
 	return stagedsync.New(
 		stagedsync.StateStages(ctx,
