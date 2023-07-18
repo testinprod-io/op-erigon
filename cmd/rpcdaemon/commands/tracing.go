@@ -113,7 +113,7 @@ func (api *PrivateDebugAPIImpl) traceBlock(ctx context.Context, blockNrOrHash rp
 		config.BorTraceEnabled = newBoolPtr(false)
 	}
 
-	chainConfig, err := api.chainConfig(tx)
+	chainConfig, err = api.chainConfig(tx)
 	engine := api.engine()
 
 	_, blockCtx, _, ibs, _, err := transactions.ComputeTxEnv(ctx, engine, block, chainConfig, api._blockReader, tx, 0, api.historyV3(tx))
