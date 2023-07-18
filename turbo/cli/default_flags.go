@@ -4,7 +4,6 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/ledgerwatch/erigon/cmd/utils"
-	"github.com/ledgerwatch/erigon/turbo/logging"
 )
 
 // DefaultFlags contains all flags that are used and supported by Erigon binary.
@@ -118,9 +117,6 @@ var DefaultFlags = []cli.Flag{
 	&utils.GpoBlocksFlag,
 	&utils.GpoPercentileFlag,
 	&utils.InsecureUnlockAllowedFlag,
-	&utils.MetricsEnabledFlag,
-	&utils.MetricsHTTPFlag,
-	&utils.MetricsPortFlag,
 	&utils.HistoryV3Flag,
 	&utils.TransactionV3Flag,
 	&utils.IdentityFlag,
@@ -156,12 +152,6 @@ var DefaultFlags = []cli.Flag{
 	&utils.RollupDisableTxPoolGossipFlag,
 
 	&utils.ConfigFlag,
-	&logging.LogConsoleVerbosityFlag,
-	&logging.LogDirVerbosityFlag,
-	&logging.LogDirPathFlag,
-	&logging.LogConsoleJsonFlag,
-	&logging.LogJsonFlag,
-	&logging.LogDirJsonFlag,
 
 	&utils.LightClientDiscoveryAddrFlag,
 	&utils.LightClientDiscoveryPortFlag,

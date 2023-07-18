@@ -29,7 +29,7 @@ import (
 )
 
 func main() {
-	app := sentinelapp.MakeApp(runSentinelNode, flags.CLDefaultFlags)
+	app := sentinelapp.MakeApp("sentinel", runSentinelNode, flags.CLDefaultFlags)
 	if err := app.Run(os.Args); err != nil {
 		_, printErr := fmt.Fprintln(os.Stderr, err)
 		if printErr != nil {
@@ -52,7 +52,7 @@ func runSentinelNode(cliCtx *cli.Context) error {
 		NetworkConfig: cfg.NetworkCfg,
 		BeaconConfig:  cfg.BeaconCfg,
 		NoDiscovery:   cfg.NoDiscovery,
-	}, nil, &service.ServerConfig{Network: cfg.ServerProtocol, Addr: cfg.ServerAddr}, nil, nil)
+	}, nil, &service.ServerConfig{Network: cfg.ServerProtocol, Addr: cfg.ServerAddr}, nil, nil, log.Root())
 	if err != nil {
 		log.Error("[Sentinel] Could not start sentinel", "err", err)
 		return err

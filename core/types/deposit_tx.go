@@ -71,6 +71,10 @@ func (tx DepositTx) GetTo() *libcommon.Address {
 	return tx.To
 }
 
+func (ct DepositTx) GetDataGas() uint64 {
+	return 0
+}
+
 func (tx DepositTx) GetGas() uint64 {
 	return tx.Gas
 }
@@ -474,4 +478,8 @@ func (tx DepositTx) RollupDataGas() RollupGasData {
 func (tx *DepositTx) GetDataHashes() []libcommon.Hash {
 	// Only blob txs have data hashes
 	return []libcommon.Hash{}
+}
+
+func (tx *DepositTx) Unwrap() Transaction {
+	return tx
 }

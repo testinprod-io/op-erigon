@@ -87,7 +87,7 @@ func (api *PrivateDebugAPIImpl) StorageRangeAt(ctx context.Context, blockHash co
 		return storageRangeAtV3(tx.(kv.TemporalTx), contractAddress, keyStart, minTxNum+txIndex, maxResult)
 	}
 
-	block, err := api.blockByHashWithSenders(tx, blockHash)
+	block, err := api.blockByHashWithSenders(ctx, tx, blockHash)
 	if err != nil {
 		return StorageRangeResult{}, err
 	}
@@ -128,7 +128,7 @@ func (api *PrivateDebugAPIImpl) AccountRange(ctx context.Context, blockNrOrHash 
 		}
 
 	} else if hash, ok := blockNrOrHash.Hash(); ok {
-		block, err1 := api.blockByHashWithSenders(tx, hash)
+		block, err1 := api.blockByHashWithSenders(ctx, tx, hash)
 		if err1 != nil {
 			return state.IteratorDump{}, err1
 		}
@@ -148,15 +148,12 @@ func (api *PrivateDebugAPIImpl) AccountRange(ctx context.Context, blockNrOrHash 
 		return state.IteratorDump{}, err
 	}
 
-	hash, err := rawdb.ReadCanonicalHash(tx, blockNumber)
+	header, err := api._blockReader.HeaderByNumber(ctx, tx, blockNumber)
 	if err != nil {
 		return state.IteratorDump{}, err
 	}
-	if hash != (common.Hash{}) {
-		header := rawdb.ReadHeader(tx, hash, blockNumber)
-		if header != nil {
-			res.Root = header.Root.String()
-		}
+	if header != nil {
+		res.Root = header.Root.String()
 	}
 
 	return res, nil
@@ -251,7 +248,7 @@ func (api *PrivateDebugAPIImpl) GetModifiedAccountsByHash(ctx context.Context, s
 	}
 	defer tx.Rollback()
 
-	startBlock, err := api.blockByHashWithSenders(tx, startHash)
+	startBlock, err := api.blockByHashWithSenders(ctx, tx, startHash)
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +259,7 @@ func (api *PrivateDebugAPIImpl) GetModifiedAccountsByHash(ctx context.Context, s
 	endNum := startNum + 1 // allows for single parameter calls
 
 	if endHash != nil {
-		endBlock, err := api.blockByHashWithSenders(tx, *endHash)
+		endBlock, err := api.blockByHashWithSenders(ctx, tx, *endHash)
 		if err != nil {
 			return nil, err
 		}
@@ -303,7 +300,7 @@ func (api *PrivateDebugAPIImpl) AccountAt(ctx context.Context, blockHash common.
 		if number == nil {
 			return nil, nil
 		}
-		canonicalHash, _ := rawdb.ReadCanonicalHash(tx, *number)
+		canonicalHash, _ := api._blockReader.CanonicalHash(ctx, tx, *number)
 		isCanonical := canonicalHash == blockHash
 		if !isCanonical {
 			return nil, fmt.Errorf("block hash is not canonical")
@@ -323,7 +320,7 @@ func (api *PrivateDebugAPIImpl) AccountAt(ctx context.Context, blockHash common.
 		}
 
 		var a accounts.Account
-		if err := a.DecodeForStorage(v); err != nil {
+		if err := accounts.DeserialiseV3(&a, v); err != nil {
 			return nil, err
 		}
 		result := &AccountResult{}
@@ -345,7 +342,7 @@ func (api *PrivateDebugAPIImpl) AccountAt(ctx context.Context, blockHash common.
 	}
 	engine := api.engine()
 
-	block, err := api.blockByHashWithSenders(tx, blockHash)
+	block, err := api.blockByHashWithSenders(ctx, tx, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -401,7 +398,7 @@ func (api *PrivateDebugAPIImpl) GetRawBlock(ctx context.Context, blockNrOrHash r
 	if err != nil {
 		return nil, err
 	}
-	block, err := api.blockWithSenders(tx, h, n)
+	block, err := api.blockWithSenders(ctx, tx, h, n)
 	if err != nil {
 		return nil, err
 	}

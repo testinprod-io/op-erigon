@@ -25,14 +25,13 @@ import (
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/hexutility"
 	types2 "github.com/ledgerwatch/erigon-lib/types"
-	"github.com/ledgerwatch/log/v3"
-
 	"github.com/ledgerwatch/erigon/accounts/abi"
 	"github.com/ledgerwatch/erigon/common/hexutil"
 	"github.com/ledgerwatch/erigon/common/math"
 	"github.com/ledgerwatch/erigon/core"
 	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/eth/tracers/logger"
+	"github.com/ledgerwatch/log/v3"
 )
 
 // CallArgs represents the arguments for a call.
@@ -400,6 +399,9 @@ type RPCTransaction struct {
 	V                *hexutil.Big       `json:"v,omitempty"`
 	R                *hexutil.Big       `json:"r,omitempty"`
 	S                *hexutil.Big       `json:"s,omitempty"`
+
+	BlobVersionedHashes []libcommon.Hash `json:"blobVersionedHashes,omitempty"`
+
 	// deposit-tx only
 	SourceHash *libcommon.Hash `json:"sourceHash,omitempty"`
 	Mint       *hexutil.Big    `json:"mint,omitempty"`
@@ -456,13 +458,7 @@ func newRPCTransaction(tx types.Transaction, blockHash libcommon.Hash, blockNumb
 		result.S = (*hexutil.Big)(t.S.ToBig())
 		result.Accesses = &t.AccessList
 		// if the transaction has been mined, compute the effective gas price
-		if baseFee != nil && blockHash != (libcommon.Hash{}) {
-			// price = min(tip, gasFeeCap - baseFee) + baseFee
-			price := math.BigMin(new(big.Int).Add(t.Tip.ToBig(), baseFee), t.FeeCap.ToBig())
-			result.GasPrice = (*hexutil.Big)(price)
-		} else {
-			result.GasPrice = nil
-		}
+		result.GasPrice = computeGasPrice(tx, blockHash, baseFee)
 	case *types.DepositTx:
 		if t.Mint != nil {
 			result.Mint = (*hexutil.Big)(t.Mint.ToBig())
@@ -481,6 +477,21 @@ func newRPCTransaction(tx types.Transaction, blockHash libcommon.Hash, blockNumb
 		result.R = (*hexutil.Big)(libcommon.Big0)
 		result.S = (*hexutil.Big)(libcommon.Big0)
 		// case *types.SignedBlobTx: // TODO
+	case *types.SignedBlobTx:
+		chainId.Set(t.GetChainID())
+		result.ChainID = (*hexutil.Big)(chainId.ToBig())
+		result.Tip = (*hexutil.Big)(t.GetTip().ToBig())
+		result.FeeCap = (*hexutil.Big)(t.GetFeeCap().ToBig())
+		v, r, s := t.RawSignatureValues()
+		result.V = (*hexutil.Big)(v.ToBig())
+		result.R = (*hexutil.Big)(r.ToBig())
+		result.S = (*hexutil.Big)(s.ToBig())
+		al := t.GetAccessList()
+		result.Accesses = &al
+		// if the transaction has been mined, compute the effective gas price
+		result.GasPrice = computeGasPrice(tx, blockHash, baseFee)
+		result.MaxFeePerDataGas = (*hexutil.Big)(t.GetMaxFeePerDataGas().ToBig())
+		result.BlobVersionedHashes = t.GetDataHashes()
 	}
 	signer := types.LatestSignerForChainID(chainId.ToBig())
 	var err error
@@ -494,6 +505,15 @@ func newRPCTransaction(tx types.Transaction, blockHash libcommon.Hash, blockNumb
 		result.TransactionIndex = (*hexutil.Uint64)(&index)
 	}
 	return result
+}
+
+func computeGasPrice(tx types.Transaction, blockHash libcommon.Hash, baseFee *big.Int) *hexutil.Big {
+	if baseFee != nil && blockHash != (libcommon.Hash{}) {
+		// price = min(tip + baseFee, gasFeeCap)
+		price := math.BigMin(new(big.Int).Add(tx.GetTip().ToBig(), baseFee), tx.GetFeeCap().ToBig())
+		return (*hexutil.Big)(price)
+	}
+	return nil
 }
 
 // newRPCBorTransaction returns a Bor transaction that will serialize to the RPC

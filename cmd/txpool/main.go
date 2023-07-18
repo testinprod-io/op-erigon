@@ -86,17 +86,19 @@ func init() {
 
 var rootCmd = &cobra.Command{
 	Use:   "txpool",
-	Short: "Launch externa Transaction Pool instance - same as built-into Erigon, but as independent Service",
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		return debug.SetupCobra(cmd)
-	},
+	Short: "Launch external Transaction Pool instance - same as built-into Erigon, but as independent Process",
 	PersistentPostRun: func(cmd *cobra.Command, args []string) {
 		debug.Exit()
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		logging.SetupLoggerCmd("txpool", cmd)
+		var logger log.Logger
+		var err error
+		if logger, err = debug.SetupCobra(cmd, "txpool"); err != nil {
+			logger.Error("Setting up", "error", err)
+			return
+		}
 
-		if err := doTxpool(cmd.Context()); err != nil {
+		if err := doTxpool(cmd.Context(), logger); err != nil {
 			if !errors.Is(err, context.Canceled) {
 				log.Error(err.Error())
 			}
@@ -105,7 +107,7 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-func doTxpool(ctx context.Context) error {
+func doTxpool(ctx context.Context, logger log.Logger) error {
 	creds, err := grpcutil.TLS(TLSCACert, TLSCertfile, TLSKeyFile)
 	if err != nil {
 		return fmt.Errorf("could not connect to remoteKv: %w", err)
@@ -164,7 +166,7 @@ func doTxpool(ctx context.Context) error {
 	newTxs := make(chan types.Announcements, 1024)
 	defer close(newTxs)
 	txPoolDB, txPool, fetch, send, txpoolGrpcServer, err := txpooluitl.AllComponents(ctx, cfg,
-		kvcache.New(cacheConfig), newTxs, coreDB, sentryClients, kvClient)
+		kvcache.New(cacheConfig), newTxs, coreDB, sentryClients, kvClient, logger)
 	if err != nil {
 		return err
 	}
@@ -177,9 +179,9 @@ func doTxpool(ctx context.Context) error {
 			ethashApi = casted.APIs(nil)[1].Service.(*ethash.API)
 		}
 	*/
-	miningGrpcServer := privateapi.NewMiningServer(ctx, &rpcdaemontest.IsMiningMock{}, nil)
+	miningGrpcServer := privateapi.NewMiningServer(ctx, &rpcdaemontest.IsMiningMock{}, nil, logger)
 
-	grpcServer, err := txpool.StartGrpc(txpoolGrpcServer, miningGrpcServer, txpoolApiAddr, nil)
+	grpcServer, err := txpool.StartGrpc(txpoolGrpcServer, miningGrpcServer, txpoolApiAddr, nil, logger)
 	if err != nil {
 		return err
 	}

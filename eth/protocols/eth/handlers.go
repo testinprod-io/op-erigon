@@ -23,13 +23,12 @@ import (
 
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/log/v3"
-
 	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/core/rawdb"
 	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/rlp"
 	"github.com/ledgerwatch/erigon/turbo/services"
+	"github.com/ledgerwatch/log/v3"
 )
 
 func AnswerGetBlockHeadersQuery(db kv.Tx, query *GetBlockHeadersPacket, blockReader services.HeaderAndCanonicalReader) ([]*types.Header, error) {
@@ -134,7 +133,7 @@ func AnswerGetBlockHeadersQuery(db kv.Tx, query *GetBlockHeadersPacket, blockRea
 	return headers, nil
 }
 
-func AnswerGetBlockBodiesQuery(db kv.Tx, query GetBlockBodiesPacket) []rlp.RawValue { //nolint:unparam
+func AnswerGetBlockBodiesQuery(db kv.Tx, query GetBlockBodiesPacket, blockReader services.FullBlockReader) []rlp.RawValue { //nolint:unparam
 	// Gather blocks until the fetch or network limits is reached
 	var bytes int
 	bodies := make([]rlp.RawValue, 0, len(query))
@@ -148,21 +147,12 @@ func AnswerGetBlockBodiesQuery(db kv.Tx, query GetBlockBodiesPacket) []rlp.RawVa
 		if number == nil {
 			continue
 		}
-		canonicalHash, err := rawdb.ReadCanonicalHash(db, *number)
-		if err != nil {
-			break
-		}
-		var bodyRlP []byte
-		if canonicalHash == hash {
-			bodyRlP = rawdb.ReadBodyRLP(db, hash, *number)
-		} else {
-			bodyRlP = rawdb.NonCanonicalBodyRLP(db, hash, *number)
-		}
-		if len(bodyRlP) == 0 {
+		bodyRLP, _ := blockReader.BodyRlp(context.Background(), db, hash, *number)
+		if len(bodyRLP) == 0 {
 			continue
 		}
-		bodies = append(bodies, bodyRlP)
-		bytes += len(bodyRlP)
+		bodies = append(bodies, bodyRLP)
+		bytes += len(bodyRLP)
 	}
 	return bodies
 }
@@ -179,10 +169,15 @@ func AnswerGetReceiptsQuery(chainCfg *chain.Config, db kv.Tx, query GetReceiptsP
 			break
 		}
 		// Retrieve the requested block's receipts
-		results, err := rawdb.ReadReceiptsByHash(chainCfg, db, hash)
+		number := rawdb.ReadHeaderNumber(db, hash)
+		if number == nil {
+			return nil, nil
+		}
+		block, senders, err := rawdb.ReadBlockWithSenders(db, hash, *number)
 		if err != nil {
 			return nil, err
 		}
+		results := rawdb.ReadReceipts(chainCfg, db, block, senders)
 		if results == nil {
 			header, err := rawdb.ReadHeaderByHash(db, hash)
 			if err != nil {

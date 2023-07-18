@@ -20,6 +20,7 @@ import (
 	"math/big"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/ledgerwatch/erigon/cmd/sentinel/sentinel/peers"
@@ -28,6 +29,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/multiformats/go-multiaddr"
+	"github.com/pion/randutil"
 )
 
 func convertToInterfacePubkey(pubkey *ecdsa.PublicKey) (crypto.PubKey, error) {
@@ -103,6 +105,8 @@ func convertToMultiAddr(nodes []*enode.Node) []multiaddr.Multiaddr {
 	return multiAddrs
 }
 
+var shuffleSource = randutil.NewMathRandomGenerator()
+
 // will iterate onto randoms nodes until our sentinel connects to one
 func connectToRandomPeer(s *Sentinel, topic string) (peerInfo peer.ID, err error) {
 	var sub *GossipSubscription
@@ -121,6 +125,10 @@ func connectToRandomPeer(s *Sentinel, topic string) (peerInfo peer.ID, err error
 	if len(validPeerList) == 0 {
 		return peer.ID(""), fmt.Errorf("no peers")
 	}
+	for i := range validPeerList {
+		j := shuffleSource.Intn(i + 1)
+		validPeerList[i], validPeerList[j] = validPeerList[j], validPeerList[i]
+	}
 
 	connectedPeer := false
 	maxTries := peers.DefaultMaxPeers
@@ -138,13 +146,31 @@ func connectToRandomPeer(s *Sentinel, topic string) (peerInfo peer.ID, err error
 			}
 			index = n.Int64()
 		}
-
-		if !s.peers.IsPeerAvaiable(validPeerList[index]) {
+		available := false
+		s.peers.TryPeer(validPeerList[index], func(peer *peers.Peer, ok bool) {
+			if !ok {
+				return
+			}
+			available = peer.IsAvailable()
+		})
+		if !available {
 			continue
 		}
-
 		return validPeerList[index], nil
 	}
 
 	return peer.ID(""), fmt.Errorf("failed to connect to peer")
+}
+
+func (s *Sentinel) oneSlotDuration() time.Duration {
+	return time.Duration(s.cfg.BeaconConfig.SecondsPerSlot) * time.Second
+}
+
+func (s *Sentinel) oneEpochDuration() time.Duration {
+	return s.oneSlotDuration() * time.Duration(s.cfg.BeaconConfig.SlotsPerEpoch)
+}
+
+// the cap for `inMesh` time scoring.
+func (s *Sentinel) inMeshCap() float64 {
+	return float64((3600 * time.Second) / s.oneSlotDuration())
 }

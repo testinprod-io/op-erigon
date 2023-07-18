@@ -53,7 +53,7 @@ func (api *APIImpl) CallBundle(ctx context.Context, txHashes []common.Hash, stat
 		if !ok {
 			return nil, nil
 		}
-		block, err := api.blockByNumberWithSenders(tx, blockNum)
+		block, err := api.blockByNumberWithSenders(ctx, tx, blockNum)
 		if err != nil {
 			return nil, err
 		}
@@ -151,7 +151,7 @@ func (api *APIImpl) CallBundle(ctx context.Context, txHashes []common.Hash, stat
 
 	// Setup the gas pool (also for unmetered requests)
 	// and apply the message.
-	gp := new(core.GasPool).AddGas(math.MaxUint64)
+	gp := new(core.GasPool).AddGas(math.MaxUint64).AddDataGas(math.MaxUint64)
 
 	results := []map[string]interface{}{}
 
@@ -263,7 +263,7 @@ func (api *APIImpl) GetBlockByHash(ctx context.Context, numberOrHash rpc.BlockNu
 
 	additionalFields := make(map[string]interface{})
 
-	block, err := api.blockByHashWithSenders(tx, hash)
+	block, err := api.blockByHashWithSenders(ctx, tx, hash)
 	if err != nil {
 		return nil, err
 	}
@@ -316,7 +316,7 @@ func (api *APIImpl) GetBlockTransactionCountByNumber(ctx context.Context, blockN
 	defer tx.Rollback()
 
 	if blockNr == rpc.PendingBlockNumber {
-		b, err := api.blockByRPCNumber(blockNr, tx)
+		b, err := api.blockByRPCNumber(ctx, blockNr, tx)
 		if err != nil {
 			return nil, err
 		}
@@ -375,7 +375,7 @@ func (api *APIImpl) GetBlockTransactionCountByHash(ctx context.Context, blockHas
 
 func (api *APIImpl) blockByNumber(ctx context.Context, number rpc.BlockNumber, tx kv.Tx) (*types.Block, error) {
 	if number != rpc.PendingBlockNumber {
-		return api.blockByRPCNumber(number, tx)
+		return api.blockByRPCNumber(ctx, number, tx)
 	}
 
 	if block := api.pendingBlock(); block != nil {
@@ -390,5 +390,5 @@ func (api *APIImpl) blockByNumber(ctx context.Context, number rpc.BlockNumber, t
 		return block, nil
 	}
 
-	return api.blockByRPCNumber(number, tx)
+	return api.blockByRPCNumber(ctx, number, tx)
 }

@@ -75,7 +75,7 @@ func (api *APIImpl) Call(ctx context.Context, args ethapi2.CallArgs, blockNrOrHa
 	if err != nil {
 		return nil, err
 	}
-	block, err := api.blockWithSenders(tx, hash, blockNumber)
+	block, err := api.blockWithSenders(ctx, tx, hash, blockNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -266,7 +266,7 @@ func (api *APIImpl) EstimateGas(ctx context.Context, argsOrNil *ethapi2.CallArgs
 	// try and get the block from the lru cache first then try DB before failing
 	block := api.tryBlockFromLru(latestCanHash)
 	if block == nil {
-		block, err = api.blockWithSenders(dbtx, latestCanHash, latestCanBlockNumber)
+		block, err = api.blockWithSenders(ctx, dbtx, latestCanHash, latestCanBlockNumber)
 		if err != nil {
 			return 0, err
 		}
@@ -394,13 +394,13 @@ func (api *APIImpl) GetProof(ctx context.Context, address libcommon.Address, sto
 		unwindState := &stagedsync.UnwindState{UnwindPoint: blockNr}
 		stageState := &stagedsync.StageState{BlockNumber: latestBlock}
 
-		hashStageCfg := stagedsync.StageHashStateCfg(nil, api.dirs, api.historyV3(batch), api._agg)
-		if err := stagedsync.UnwindHashStateStage(unwindState, stageState, batch, hashStageCfg, ctx); err != nil {
+		hashStageCfg := stagedsync.StageHashStateCfg(nil, api.dirs, api.historyV3(batch))
+		if err := stagedsync.UnwindHashStateStage(unwindState, stageState, batch, hashStageCfg, ctx, api.logger); err != nil {
 			return nil, err
 		}
 
 		interHashStageCfg := stagedsync.StageTrieCfg(nil, false, false, false, api.dirs.Tmp, api._blockReader, nil, api.historyV3(batch), api._agg)
-		loader, err = stagedsync.UnwindIntermediateHashesForTrieLoader("eth_getProof", rl, unwindState, stageState, batch, interHashStageCfg, nil, nil, ctx.Done())
+		loader, err = stagedsync.UnwindIntermediateHashesForTrieLoader("eth_getProof", rl, unwindState, stageState, batch, interHashStageCfg, nil, nil, ctx.Done(), api.logger)
 		if err != nil {
 			return nil, err
 		}
@@ -416,6 +416,9 @@ func (api *APIImpl) GetProof(ctx context.Context, address libcommon.Address, sto
 	a, err := reader.ReadAccountData(address)
 	if err != nil {
 		return nil, err
+	}
+	if a == nil {
+		a = &accounts.Account{}
 	}
 	pr, err := trie.NewProofRetainer(address, a, storageKeys, rl)
 	if err != nil {
@@ -494,7 +497,7 @@ func (api *APIImpl) CreateAccessList(ctx context.Context, args ethapi2.CallArgs,
 	if err != nil {
 		return nil, err
 	}
-	block, err := api.blockWithSenders(tx, hash, blockNumber)
+	block, err := api.blockWithSenders(ctx, tx, hash, blockNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -589,7 +592,7 @@ func (api *APIImpl) CreateAccessList(ctx context.Context, args ethapi2.CallArgs,
 		blockCtx.L1CostFunc = types.NewL1CostFunc(chainConfig, state)
 
 		evm := vm.NewEVM(blockCtx, txCtx, state, chainConfig, config)
-		gp := new(core.GasPool).AddGas(msg.Gas())
+		gp := new(core.GasPool).AddGas(msg.Gas()).AddDataGas(msg.DataGas())
 		res, err := core.ApplyMessage(evm, msg, gp, true /* refunds */, false /* gasBailout */)
 		if err != nil {
 			return nil, err
