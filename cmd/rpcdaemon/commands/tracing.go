@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 	"time"
@@ -72,6 +73,30 @@ func (api *PrivateDebugAPIImpl) traceBlock(ctx context.Context, blockNrOrHash rp
 		return fmt.Errorf("invalid arguments; block with hash %x not found", hash)
 	}
 
+	chainConfig, err := api.chainConfig(tx)
+	if err != nil {
+		stream.WriteNil()
+		return err
+	}
+
+	if chainConfig.IsOptimismPreBedrock(block.NumberU64()) {
+		if api.historicalRPCService == nil {
+			return rpc.ErrNoHistoricalFallback
+		}
+		var traceResult interface{}
+		// relay using block hash
+		if err := api.relayToHistoricalBackend(ctx, &traceResult, "debug_traceBlockByHash", block.Hash(), config); err != nil {
+			return fmt.Errorf("historical backend error: %w", err)
+		}
+		// stream out relayed response
+		result, err := json.Marshal(&traceResult)
+		if err != nil {
+			return err
+		}
+		stream.WriteRaw(string(result))
+		return nil
+	}
+
 	// if we've pruned this history away for this block then just return early
 	// to save any red herring errors
 	err = api.BaseAPI.checkPruneHistory(tx, block.NumberU64())
@@ -89,10 +114,6 @@ func (api *PrivateDebugAPIImpl) traceBlock(ctx context.Context, blockNrOrHash rp
 	}
 
 	chainConfig, err := api.chainConfig(tx)
-	if err != nil {
-		stream.WriteNil()
-		return err
-	}
 	engine := api.engine()
 
 	_, blockCtx, _, ibs, _, err := transactions.ComputeTxEnv(ctx, engine, block, chainConfig, api._blockReader, tx, 0, api.historyV3(tx))
@@ -195,12 +216,12 @@ func (api *PrivateDebugAPIImpl) TraceTransaction(ctx context.Context, hash commo
 		if api.historicalRPCService == nil {
 			return rpc.ErrNoHistoricalFallback
 		}
-		treeResult := &GethTrace{}
-		if err := api.relayToHistoricalBackend(ctx, treeResult, "debug_traceTransaction", hash, config); err != nil {
+		var traceResult interface{}
+		if err := api.relayToHistoricalBackend(ctx, &traceResult, "debug_traceTransaction", hash, config); err != nil {
 			return fmt.Errorf("historical backend error: %w", err)
 		}
 		// stream out relayed response
-		result, err := json.Marshal(treeResult)
+		result, err := json.Marshal(traceResult)
 		if err != nil {
 			return err
 		}
@@ -287,6 +308,10 @@ func (api *PrivateDebugAPIImpl) TraceCall(ctx context.Context, args ethapi.CallA
 	blockNumber, hash, _, err := rpchelper.GetBlockNumber(blockNrOrHash, dbtx, api.filters)
 	if err != nil {
 		return fmt.Errorf("get block number: %v", err)
+	}
+
+	if chainConfig.IsOptimismPreBedrock(blockNumber) {
+		return errors.New("l2geth does not have a debug_traceCall method")
 	}
 
 	err = api.BaseAPI.checkPruneHistory(dbtx, blockNumber)
