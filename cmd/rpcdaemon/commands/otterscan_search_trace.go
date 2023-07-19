@@ -92,7 +92,6 @@ func (api *OtterscanAPIImpl) traceBlock(dbtx kv.Tx, ctx context.Context, blockNu
 
 	blockReceipts := rawdb.ReadReceipts(chainConfig, dbtx, block, senders)
 	header := block.Header()
-	excessDataGas := header.ParentExcessDataGas(getHeader)
 	rules := chainConfig.Rules(block.NumberU64(), header.Time)
 	found := false
 
@@ -106,7 +105,7 @@ func (api *OtterscanAPIImpl) traceBlock(dbtx kv.Tx, ctx context.Context, blockNu
 		msg, _ := tx.AsMessage(*signer, header.BaseFee, rules)
 
 		tracer := NewTouchTracer(searchAddr)
-		BlockContext := core.NewEVMBlockContext(header, core.GetHashFn(header, getHeader), engine, nil, excessDataGas)
+		BlockContext := core.NewEVMBlockContext(header, core.GetHashFn(header, getHeader), engine, nil)
 		BlockContext.L1CostFunc = types.NewL1CostFunc(chainConfig, ibs)
 		TxContext := core.NewEVMTxContext(msg)
 
@@ -122,7 +121,7 @@ func (api *OtterscanAPIImpl) traceBlock(dbtx kv.Tx, ctx context.Context, blockNu
 				depositNonce = depositNonces[idx]
 			}
 			rpcTx := newRPCTransaction(tx, block.Hash(), blockNum, uint64(idx), block.BaseFee(), depositNonce)
-			mReceipt := marshalReceipt(blockReceipts[idx], tx, chainConfig, block.HeaderNoCopy(), tx.Hash(), true, excessDataGas)
+			mReceipt := marshalReceipt(blockReceipts[idx], tx, chainConfig, block.HeaderNoCopy(), tx.Hash(), true)
 			mReceipt["timestamp"] = block.Time()
 			rpcTxs = append(rpcTxs, rpcTx)
 			receipts = append(receipts, mReceipt)

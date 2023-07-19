@@ -194,11 +194,6 @@ func NewBackend(stack *node.Node, config *ethconfig.Config, logger log.Logger) (
 			return err
 		}
 
-		config.TransactionsV3, err = kvcfg.TransactionsV3.WriteOnce(tx, config.TransactionsV3)
-		if err != nil {
-			return err
-		}
-
 		isCorrectSync, useSnapshots, err := snap.EnsureNotChanged(tx, config.Snapshot)
 		if err != nil {
 			return err
@@ -236,7 +231,7 @@ func NewBackend(stack *node.Node, config *ethconfig.Config, logger log.Logger) (
 	var (
 		allSnapshots *snapshotsync.RoSnapshots
 	)
-	blockReader, blockWriter, allSnapshots, agg, err := setUpBlockReader(ctx, chainKv, config.Dirs, config.Snapshot, config.HistoryV3, config.TransactionsV3, logger)
+	blockReader, blockWriter, allSnapshots, agg, err := setUpBlockReader(ctx, chainKv, config.Dirs, config.Snapshot, config.HistoryV3, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +251,7 @@ func NewBackend(stack *node.Node, config *ethconfig.Config, logger log.Logger) (
 			genesisSpec = nil
 		}
 		var genesisErr error
-		chainConfig, genesis, genesisErr = core.WriteGenesisBlock(tx, genesisSpec, config.OverrideShanghaiTime, tmpdir, logger)
+		chainConfig, genesis, genesisErr = core.WriteGenesisBlock(tx, genesisSpec, config.OverrideShanghaiTime, tmpdir, logger, blockWriter)
 		if _, ok := genesisErr.(*chain.ConfigCompatError); genesisErr != nil && !ok {
 			return genesisErr
 		}
@@ -794,12 +789,6 @@ func (s *Ethereum) StartMining(ctx context.Context, db kv.RwDB, mining *stagedsy
 		errc := make(chan error, 1)
 
 		for {
-			// Only reset if some work was done previously as we'd like to rely
-			// on the `miner.recommit` as backup.
-			if hasWork {
-				mineEvery.Reset(cfg.Recommit)
-			}
-
 			// Only check for case if you're already mining (i.e. works = true) and
 			// waiting for error or you don't have any work yet (i.e. hasWork = false).
 			if works || !hasWork {
@@ -833,6 +822,7 @@ func (s *Ethereum) StartMining(ctx context.Context, db kv.RwDB, mining *stagedsy
 			if !works && hasWork {
 				works = true
 				hasWork = false
+				mineEvery.Reset(cfg.Recommit)
 				go func() { errc <- stages2.MiningStep(ctx, db, mining, tmpDir) }()
 			}
 		}
@@ -926,14 +916,14 @@ func (s *Ethereum) setUpSnapDownloader(ctx context.Context, downloaderCfg *downl
 	return err
 }
 
-func setUpBlockReader(ctx context.Context, db kv.RwDB, dirs datadir.Dirs, snConfig ethconfig.Snapshot, histV3, transactionsV3 bool, logger log.Logger) (services.FullBlockReader, *blockio.BlockWriter, *snapshotsync.RoSnapshots, *libstate.AggregatorV3, error) {
+func setUpBlockReader(ctx context.Context, db kv.RwDB, dirs datadir.Dirs, snConfig ethconfig.Snapshot, histV3 bool, logger log.Logger) (services.FullBlockReader, *blockio.BlockWriter, *snapshotsync.RoSnapshots, *libstate.AggregatorV3, error) {
 	allSnapshots := snapshotsync.NewRoSnapshots(snConfig, dirs.Snap, logger)
 	var err error
 	if !snConfig.NoDownloader {
 		allSnapshots.OptimisticalyReopenWithDB(db)
 	}
-	blockReader := snapshotsync.NewBlockReader(allSnapshots, transactionsV3)
-	blockWriter := blockio.NewBlockWriter(histV3, transactionsV3)
+	blockReader := snapshotsync.NewBlockReader(allSnapshots)
+	blockWriter := blockio.NewBlockWriter(histV3)
 
 	dir.MustExist(dirs.SnapHistory)
 	agg, err := libstate.NewAggregatorV3(ctx, dirs.SnapHistory, dirs.Tmp, ethconfig.HistoryV3AggregationStep, db, logger)

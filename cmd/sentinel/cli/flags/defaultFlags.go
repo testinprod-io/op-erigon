@@ -7,6 +7,8 @@ var CLDefaultFlags = []cli.Flag{
 	&SentinelDiscoveryAddr,
 	&SentinelServerPort,
 	&SentinelServerAddr,
+	&BeaconApiPort,
+	&BeaconApiAddr,
 	&Chain,
 	&SentinelTcpPort,
 	&NoDiscovery,
@@ -19,4 +21,6 @@ var CLDefaultFlags = []cli.Flag{
 	&SentinelStaticPeersFlag,
 	&TransitionChainFlag,
 	&InitSyncFlag,
+	&RecordModeDir,
+	&RecordModeFlag,
 }

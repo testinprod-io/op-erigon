@@ -17,7 +17,6 @@
 package rawdb
 
 import (
-	"github.com/ledgerwatch/erigon-lib/chain"
 	"math/big"
 
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
@@ -63,100 +62,4 @@ func WriteTxLookupEntries(db kv.Putter, block *types.Block) {
 // DeleteTxLookupEntry removes all transaction data associated with a hash.
 func DeleteTxLookupEntry(db kv.Deleter, hash libcommon.Hash) error {
 	return db.Delete(kv.TxLookup, hash.Bytes())
-}
-
-// ReadTransactionByHash retrieves a specific transaction from the database, along with
-// its added positional metadata.
-func ReadTransactionByHash(db kv.Tx, hash libcommon.Hash) (types.Transaction, libcommon.Hash, uint64, uint64, error) {
-	blockNumber, err := ReadTxLookupEntry(db, hash)
-	if err != nil {
-		return nil, libcommon.Hash{}, 0, 0, err
-	}
-	if blockNumber == nil {
-		return nil, libcommon.Hash{}, 0, 0, nil
-	}
-	blockHash, err := ReadCanonicalHash(db, *blockNumber)
-	if err != nil {
-		return nil, libcommon.Hash{}, 0, 0, err
-	}
-	if blockHash == (libcommon.Hash{}) {
-		return nil, libcommon.Hash{}, 0, 0, nil
-	}
-	body := ReadCanonicalBodyWithTransactions(db, blockHash, *blockNumber)
-	if body == nil {
-		log.Error("Transaction referenced missing", "number", blockNumber, "hash", blockHash)
-		return nil, libcommon.Hash{}, 0, 0, nil
-	}
-	senders, err1 := ReadSenders(db, blockHash, *blockNumber)
-	if err1 != nil {
-		return nil, libcommon.Hash{}, 0, 0, err1
-	}
-	body.SendersToTxs(senders)
-	for txIndex, tx := range body.Transactions {
-		if tx.Hash() == hash {
-			return tx, blockHash, *blockNumber, uint64(txIndex), nil
-		}
-	}
-	log.Error("Transaction not found", "number", blockNumber, "hash", blockHash, "txhash", hash)
-	return nil, libcommon.Hash{}, 0, 0, nil
-}
-
-// ReadTransaction retrieves a specific transaction from the database, along with
-// its added positional metadata.
-func ReadTransaction(db kv.Tx, hash libcommon.Hash, blockNumber uint64) (types.Transaction, libcommon.Hash, uint64, uint64, error) {
-	blockHash, err := ReadCanonicalHash(db, blockNumber)
-	if err != nil {
-		return nil, libcommon.Hash{}, 0, 0, err
-	}
-	if blockHash == (libcommon.Hash{}) {
-		return nil, libcommon.Hash{}, 0, 0, nil
-	}
-	body := ReadCanonicalBodyWithTransactions(db, blockHash, blockNumber)
-	if body == nil {
-		log.Error("Transaction referenced missing", "number", blockNumber, "hash", blockHash)
-		return nil, libcommon.Hash{}, 0, 0, nil
-	}
-	senders, err1 := ReadSenders(db, blockHash, blockNumber)
-	if err1 != nil {
-		return nil, libcommon.Hash{}, 0, 0, err1
-	}
-	body.SendersToTxs(senders)
-	for txIndex, tx := range body.Transactions {
-		if tx.Hash() == hash {
-			return tx, blockHash, blockNumber, uint64(txIndex), nil
-		}
-	}
-	log.Error("Transaction not found", "number", blockNumber, "hash", blockHash, "txhash", hash)
-	return nil, libcommon.Hash{}, 0, 0, nil
-}
-
-func ReadReceipt(config *chain.Config, db kv.Tx, txHash libcommon.Hash) (*types.Receipt, libcommon.Hash, uint64, uint64, error) {
-	// Retrieve the context of the receipt based on the transaction hash
-	blockNumber, err := ReadTxLookupEntry(db, txHash)
-	if err != nil {
-		return nil, libcommon.Hash{}, 0, 0, err
-	}
-	if blockNumber == nil {
-		return nil, libcommon.Hash{}, 0, 0, nil
-	}
-	blockHash, err := ReadCanonicalHash(db, *blockNumber)
-	if err != nil {
-		return nil, libcommon.Hash{}, 0, 0, err
-	}
-	if blockHash == (libcommon.Hash{}) {
-		return nil, libcommon.Hash{}, 0, 0, nil
-	}
-	b, senders, err := ReadBlockWithSenders(db, blockHash, *blockNumber)
-	if err != nil {
-		return nil, libcommon.Hash{}, 0, 0, err
-	}
-	// Read all the receipts from the block and return the one with the matching hash
-	receipts := ReadReceipts(config, db, b, senders)
-	for receiptIndex, receipt := range receipts {
-		if receipt.TxHash == txHash {
-			return receipt, blockHash, *blockNumber, uint64(receiptIndex), nil
-		}
-	}
-	log.Error("Receipt not found", "number", blockNumber, "hash", blockHash, "txhash", txHash)
-	return nil, libcommon.Hash{}, 0, 0, nil
 }

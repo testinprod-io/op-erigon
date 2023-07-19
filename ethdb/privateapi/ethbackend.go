@@ -61,7 +61,7 @@ type EthBackendServer struct {
 	eth         EthBackend
 	events      *shards.Events
 	db          kv.RoDB
-	blockReader services.BlockAndTxnReader
+	blockReader services.FullBlockReader
 	config      *chain.Config
 
 	// Block proposing for proof-of-stake
@@ -86,7 +86,7 @@ type EthBackend interface {
 	AddPeer(ctx context.Context, url *remote.AddPeerRequest) (*remote.AddPeerReply, error)
 }
 
-func NewEthBackendServer(ctx context.Context, eth EthBackend, db kv.RwDB, events *shards.Events, blockReader services.BlockAndTxnReader,
+func NewEthBackendServer(ctx context.Context, eth EthBackend, db kv.RwDB, events *shards.Events, blockReader services.FullBlockReader,
 	config *chain.Config, builderFunc builder.BlockBuilderFunc, hd *headerdownload.HeaderDownload, proposing bool, logger log.Logger,
 ) *EthBackendServer {
 	s := &EthBackendServer{ctx: ctx, eth: eth, events: events, db: db, blockReader: blockReader, config: config,
@@ -335,11 +335,16 @@ func (s *EthBackendServer) EngineNewPayload(ctx context.Context, req *types2.Exe
 	}
 
 	if req.Version >= 3 {
-		header.ExcessDataGas = gointerfaces.ConvertH256ToUint256Int(req.ExcessDataGas).ToBig()
+		header.DataGasUsed = req.DataGasUsed
+		header.ExcessDataGas = req.ExcessDataGas
 	}
 
-	if !s.config.IsCancun(header.Time) && header.ExcessDataGas != nil || s.config.IsCancun(header.Time) && header.ExcessDataGas == nil {
-		return nil, &rpc.InvalidParamsError{Message: "excess data gas setting doesn't match sharding state"}
+	if !s.config.IsCancun(header.Time) && (header.DataGasUsed != nil || header.ExcessDataGas != nil) {
+		return nil, &rpc.InvalidParamsError{Message: "dataGasUsed/excessDataGas present before Cancun"}
+	}
+
+	if s.config.IsCancun(header.Time) && (header.DataGasUsed == nil || header.ExcessDataGas == nil) {
+		return nil, &rpc.InvalidParamsError{Message: "dataGasUsed/excessDataGas missing"}
 	}
 
 	blockHash := gointerfaces.ConvertH256ToHash(req.BlockHash)
@@ -459,7 +464,7 @@ func (s *EthBackendServer) getQuickPayloadStatusIfPossible(blockHash libcommon.H
 
 	var canonicalHash libcommon.Hash
 	if header != nil {
-		canonicalHash, err = rawdb.ReadCanonicalHash(tx, header.Number.Uint64())
+		canonicalHash, err = s.blockReader.CanonicalHash(context.Background(), tx, header.Number.Uint64())
 	}
 	if err != nil {
 		return nil, err
@@ -599,11 +604,10 @@ func (s *EthBackendServer) EngineGetPayload(ctx context.Context, req *remote.Eng
 		payload.Withdrawals = ConvertWithdrawalsToRpc(block.Withdrawals())
 	}
 
-	if block.ExcessDataGas() != nil {
+	if header.DataGasUsed != nil && header.ExcessDataGas != nil {
 		payload.Version = 3
-		var excessDataGas uint256.Int
-		excessDataGas.SetFromBig(block.Header().ExcessDataGas)
-		payload.ExcessDataGas = gointerfaces.ConvertUint256IntToH256(&excessDataGas)
+		payload.DataGasUsed = header.DataGasUsed
+		payload.ExcessDataGas = header.ExcessDataGas
 	}
 
 	blockValue := blockValue(blockWithReceipts, baseFee)
@@ -774,11 +778,10 @@ func (s *EthBackendServer) EngineGetPayloadBodiesByHashV1(ctx context.Context, r
 
 	for hashIdx, hash := range request.Hashes {
 		h := gointerfaces.ConvertH256ToHash(hash)
-		block, err := rawdb.ReadBlockByHash(tx, h)
+		block, err := s.blockReader.BlockByHash(ctx, tx, h)
 		if err != nil {
 			return nil, err
 		}
-
 		body, err := extractPayloadBodyFromBlock(block)
 		if err != nil {
 			return nil, err
@@ -808,7 +811,10 @@ func (s *EthBackendServer) EngineGetPayloadBodiesByRangeV1(ctx context.Context, 
 			break
 		}
 
-		block := rawdb.ReadBlock(tx, hash, request.Start+i)
+		block, _, err := s.blockReader.BlockWithSenders(ctx, tx, hash, request.Start+i)
+		if err != nil {
+			return nil, err
+		}
 		body, err := extractPayloadBodyFromBlock(block)
 		if err != nil {
 			return nil, err

@@ -531,7 +531,7 @@ func readReceipt(chainConfig *chain.Config, db kv.Tx, txHash libcommon.Hash, br 
 	if blockNumber == nil {
 		return nil, libcommon.Hash{}, 0, 0, nil
 	}
-	blockHash, err := rawdb.ReadCanonicalHash(db, *blockNumber)
+	blockHash, err := br.CanonicalHash(context.Background(), db, *blockNumber)
 	if err != nil {
 		return nil, libcommon.Hash{}, 0, 0, err
 	}

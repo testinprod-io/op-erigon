@@ -27,6 +27,7 @@ import (
 	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon/core/systemcontracts"
 	"github.com/ledgerwatch/erigon/eth/ethconfig"
+	"github.com/ledgerwatch/log/v3"
 
 	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/consensus"
@@ -116,7 +117,7 @@ func (b *BlockGen) AddTxWithChain(getHeader func(hash libcommon.Hash, number uin
 		b.SetCoinbase(libcommon.Address{})
 	}
 	b.ibs.SetTxContext(tx.Hash(), libcommon.Hash{}, len(b.txs))
-	receipt, _, err := ApplyTransaction(b.config, GetHashFn(b.header, getHeader), engine, &b.header.Coinbase, b.gasPool, b.ibs, state.NewNoopWriter(), b.header, tx, &b.header.GasUsed, vm.Config{}, b.parent.ExcessDataGas())
+	receipt, _, err := ApplyTransaction(b.config, GetHashFn(b.header, getHeader), engine, &b.header.Coinbase, b.gasPool, b.ibs, state.NewNoopWriter(), b.header, tx, &b.header.GasUsed, vm.Config{})
 	if err != nil {
 		panic(err)
 	}
@@ -129,7 +130,7 @@ func (b *BlockGen) AddFailedTxWithChain(getHeader func(hash libcommon.Hash, numb
 		b.SetCoinbase(libcommon.Address{})
 	}
 	b.ibs.SetTxContext(tx.Hash(), libcommon.Hash{}, len(b.txs))
-	receipt, _, err := ApplyTransaction(b.config, GetHashFn(b.header, getHeader), engine, &b.header.Coinbase, b.gasPool, b.ibs, state.NewNoopWriter(), b.header, tx, &b.header.GasUsed, vm.Config{}, b.parent.ExcessDataGas())
+	receipt, _, err := ApplyTransaction(b.config, GetHashFn(b.header, getHeader), engine, &b.header.Coinbase, b.gasPool, b.ibs, state.NewNoopWriter(), b.header, tx, &b.header.GasUsed, vm.Config{})
 	_ = err // accept failed transactions
 	b.txs = append(b.txs, tx)
 	b.receipts = append(b.receipts, receipt)
@@ -309,6 +310,8 @@ func GenerateChain(config *chain.Config, parent *types.Block, engine consensus.E
 	}
 	defer tx.Rollback()
 
+	logger := log.New("generate-chain", config.ChainName)
+
 	genblock := func(i int, parent *types.Block, ibs *state.IntraBlockState, stateReader state.StateReader,
 		stateWriter state.StateWriter) (*types.Block, types.Receipts, error) {
 		b := &BlockGen{i: i, chain: blocks, parent: parent, ibs: ibs, stateReader: stateReader, config: config, engine: engine, txs: make([]types.Transaction, 0, 1), receipts: make([]*types.Receipt, 0, 1), uncles: make([]*types.Header, 0, 1)}
@@ -323,7 +326,7 @@ func GenerateChain(config *chain.Config, parent *types.Block, engine consensus.E
 				misc.ApplyDAOHardFork(ibs)
 			}
 		}
-		systemcontracts.UpgradeBuildInSystemContract(config, b.header.Number, ibs)
+		systemcontracts.UpgradeBuildInSystemContract(config, b.header.Number, ibs, logger)
 		// Execute any user modifications to the block
 		if gen != nil {
 			gen(i, b)
@@ -497,6 +500,11 @@ func MakeEmptyHeader(parent *types.Header, chainConfig *chain.Config, timestamp 
 		}
 	} else {
 		header.GasLimit = parentGasLimit
+	}
+
+	if chainConfig.IsCancun(header.Time) {
+		excessDataGas := misc.CalcExcessDataGas(parent)
+		header.ExcessDataGas = &excessDataGas
 	}
 
 	return header
