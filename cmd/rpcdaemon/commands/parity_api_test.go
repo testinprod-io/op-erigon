@@ -22,7 +22,7 @@ func TestParityAPIImpl_ListStorageKeys_NoOffset(t *testing.T) {
 	assert := assert.New(t)
 	m, _, _ := rpcdaemontest.CreateTestSentry(t)
 	agg := m.HistoryV3Components()
-	baseApi := NewBaseApi(nil, nil, m.BlockReader, agg, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs)
+	baseApi := NewBaseApi(nil, nil, m.BlockReader, agg, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs, nil, nil)
 	api := NewParityAPIImpl(baseApi, m.DB)
 	answers := []string{
 		"0000000000000000000000000000000000000000000000000000000000000000",

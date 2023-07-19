@@ -30,7 +30,7 @@ import (
 func newBaseApiForTest(m *stages.MockSentry) *commands.BaseAPI {
 	agg := m.HistoryV3Components()
 	stateCache := kvcache.New(kvcache.DefaultCoherentConfig)
-	return commands.NewBaseApi(nil, stateCache, m.BlockReader, agg, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs)
+	return commands.NewBaseApi(nil, stateCache, m.BlockReader, agg, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs, nil, nil)
 }
 
 func TestSendRawTransaction(t *testing.T) {
