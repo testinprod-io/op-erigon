@@ -60,7 +60,7 @@ func ComputeTxEnv(ctx context.Context, engine consensus.EngineReader, block *typ
 	blockContext.L1CostFunc = types.NewL1CostFunc(cfg, statedb)
 
 	// Recompute transactions up to the target index.
-	signer := types.MakeSigner(cfg, block.NumberU64())
+	signer := types.MakeSigner(cfg, block.NumberU64(), block.Time())
 	if historyV3 {
 		rules := cfg.Rules(blockContext.BlockNumber, blockContext.Time)
 		txn := block.Transactions()[txIndex]

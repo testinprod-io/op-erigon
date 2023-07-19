@@ -17,7 +17,6 @@ import (
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/etl"
 	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/log/v3"
 	"golang.org/x/exp/slices"
 
 	"github.com/ledgerwatch/erigon/dataflow"
@@ -303,7 +302,7 @@ func (hd *HeaderDownload) logAnchorState() {
 	sort.Strings(ss)
 	hd.logger.Debug("[downloader] Queue sizes", "anchors", hd.anchorTree.Len(), "links", hd.linkQueue.Len(), "persisted", hd.persistedLinkQueue.Len())
 	for _, s := range ss {
-		log.Debug(s)
+		hd.logger.Debug(s)
 	}
 }
 
@@ -476,7 +475,7 @@ func (hd *HeaderDownload) UpdateStats(req *HeaderRequest, skeleton bool, peer [6
 			}
 		}
 	}
-	//log.Debug("Header request sent", "req", fmt.Sprintf("%+v", req), "peer", fmt.Sprintf("%x", peer)[:8])
+	//hd.logger.Debug("Header request sent", "req", fmt.Sprintf("%+v", req), "peer", fmt.Sprintf("%x", peer)[:8])
 }
 
 func (hd *HeaderDownload) UpdateRetryTime(req *HeaderRequest, currentTime time.Time, timeout time.Duration) {
@@ -570,7 +569,7 @@ func (hd *HeaderDownload) InsertHeader(hf FeedHeaderFunc, terminalTotalDifficult
 			if terminalTotalDifficulty != nil {
 				if td.Cmp(terminalTotalDifficulty) >= 0 {
 					hd.highestInDb = link.blockHeight
-					log.Info(POSPandaBanner)
+					hd.logger.Info(POSPandaBanner)
 					dataflow.HeaderDownloadStates.AddChange(link.blockHeight, dataflow.HeaderInserted)
 					return true, true, 0, lastTime, nil
 				}
@@ -906,11 +905,11 @@ func (hi *HeaderInserter) FeedHeaderPoW(db kv.StatelessRwTx, headerReader servic
 		// This makes sure we end up choosing the chain with the max total difficulty
 		hi.localTd.Set(td)
 	}
-	if err = hi.headerWriter.WriteTd(db, hash, blockHeight, td); err != nil {
+	if err = rawdb.WriteTd(db, hash, blockHeight, td); err != nil {
 		return nil, fmt.Errorf("[%s] failed to WriteTd: %w", hi.logPrefix, err)
 	}
 	// skipIndexing=true - because next stages will build indices in-batch (for example StageBlockHash)
-	if err = hi.headerWriter.WriteHeaderRaw(db, blockHeight, hash, headerRaw, true); err != nil {
+	if err = rawdb.WriteHeaderRaw(db, blockHeight, hash, headerRaw, true); err != nil {
 		return nil, fmt.Errorf("[%s] failed to WriteTd: %w", hi.logPrefix, err)
 	}
 
@@ -927,10 +926,10 @@ func (hi *HeaderInserter) FeedHeaderPoS(db kv.RwTx, header *types.Header, hash l
 		return fmt.Errorf("[%s] parent's total difficulty not found with hash %x and height %d for header %x %d: %v", hi.logPrefix, header.ParentHash, blockHeight-1, hash, blockHeight, err)
 	}
 	td := new(big.Int).Add(parentTd, header.Difficulty)
-	if err = hi.headerWriter.WriteHeader(db, header); err != nil {
+	if err = rawdb.WriteHeader(db, header); err != nil {
 		return fmt.Errorf("[%s] failed to WriteHeader: %w", hi.logPrefix, err)
 	}
-	if err = hi.headerWriter.WriteTd(db, hash, blockHeight, td); err != nil {
+	if err = rawdb.WriteTd(db, hash, blockHeight, td); err != nil {
 		return fmt.Errorf("[%s] failed to WriteTd: %w", hi.logPrefix, err)
 	}
 
@@ -1224,7 +1223,9 @@ func (hd *HeaderDownload) AddMinedHeader(header *types.Header) error {
 	return nil
 }
 
-func (hd *HeaderDownload) AddHeadersFromSnapshot(tx kv.Tx, n uint64, r services.FullBlockReader) error {
+func (hd *HeaderDownload) AddHeadersFromSnapshot(tx kv.Tx, r services.FullBlockReader) error {
+	n := r.FrozenBlocks()
+
 	hd.lock.Lock()
 	defer hd.lock.Unlock()
 	for i := n; i > 0 && hd.persistedLinkQueue.Len() < hd.persistedLinkLimit; i-- {
