@@ -323,6 +323,7 @@ func TestCanEncodeAndDecodeBodyTransactions(t *testing.T) {
 			Gas:   123457,
 			Data:  []byte{40, 50, 60},
 		},
+		ChainID:    u256.Num1,
 		FeeCap:     feeCap,
 		Tip:        u256.Num0,
 		AccessList: accesses,
