@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/google/btree"
-	lru "github.com/hashicorp/golang-lru/v2"
+	lru "github.com/hashicorp/golang-lru/arc/v2"
 	"github.com/ledgerwatch/log/v3"
 
 	"github.com/ledgerwatch/erigon-lib/chain"
@@ -41,9 +41,11 @@ import (
 )
 
 const (
-	checkpointInterval = 1024 // Number of blocks after which to save the vote snapshot to the database
-	inmemorySnapshots  = 128  // Number of recent vote snapshots to keep in memory
-	inmemorySignatures = 4096 // Number of recent block signatures to keep in memory
+	spanLength              = 6400 // Number of blocks in a span
+	zerothSpanEnd           = 255  // End block of 0th span
+	snapshotPersistInterval = 1024 // Number of blocks after which to persist the vote snapshot to the database
+	inmemorySnapshots       = 128  // Number of recent vote snapshots to keep in memory
+	inmemorySignatures      = 4096 // Number of recent block signatures to keep in memory
 )
 
 // Bor protocol constants.
@@ -481,7 +483,14 @@ func (c *Bor) verifyCascadingFields(chain consensus.ChainHeaderReader, header *t
 	}
 
 	// Verify the validator list match the local contract
-	if isSprintStart(number+1, c.config.CalculateSprint(number)) {
+	//
+	// Note: Here we fetch the data from span instead of contract
+	// as done in bor client. The contract (validator set) returns
+	// a fixed span for 0th span i.e. 0 - 255 blocks. Hence, the
+	// contract data and span data won't match for that. Skip validating
+	// for 0th span. TODO: Remove `number > zerothSpanEnd` check
+	// once we start fetching validator data from contract.
+	if number > zerothSpanEnd && isSprintStart(number+1, c.config.CalculateSprint(number)) {
 		producerSet, err := c.spanner.GetCurrentProducers(number+1, c.authorizedSigner.Load().signer, c.getSpanForBlock)
 
 		if err != nil {
@@ -544,8 +553,8 @@ func (c *Bor) snapshot(chain consensus.ChainHeaderReader, number uint64, hash li
 			break
 		}
 
-		// If an on-disk checkpoint snapshot can be found, use that
-		if number%checkpointInterval == 0 {
+		// If an on-disk snapshot can be found, use that
+		if number%snapshotPersistInterval == 0 {
 			if s, err := loadSnapshot(c.config, c.signatures, c.DB, hash); err == nil {
 				c.logger.Trace("Loaded snapshot from disk", "number", number, "hash", hash)
 
@@ -625,8 +634,8 @@ func (c *Bor) snapshot(chain consensus.ChainHeaderReader, number uint64, hash li
 
 	c.recents.Add(snap.Hash, snap)
 
-	// If we've generated a new checkpoint snapshot, save to disk
-	if snap.Number%checkpointInterval == 0 && len(headers) > 0 {
+	// If we've generated a new persistent snapshot, save to disk
+	if snap.Number%snapshotPersistInterval == 0 && len(headers) > 0 {
 		if err = snap.store(c.DB); err != nil {
 			return nil, err
 		}
@@ -738,8 +747,12 @@ func (c *Bor) Prepare(chain consensus.ChainHeaderReader, header *types.Header, s
 	header.Extra = header.Extra[:extraVanity]
 
 	// get validator set if number
+	// Note: headers.Extra has producer set and not validator set. The bor
+	// client calls `GetCurrentValidators` because it makes a contract call
+	// where it fetches producers internally. As we fetch data from span
+	// in Erigon, use directly the `GetCurrentProducers` function.
 	if isSprintStart(number+1, c.config.CalculateSprint(number)) {
-		newValidators, err := c.spanner.GetCurrentValidators(number+1, c.authorizedSigner.Load().signer, c.getSpanForBlock)
+		newValidators, err := c.spanner.GetCurrentProducers(number+1, c.authorizedSigner.Load().signer, c.getSpanForBlock)
 		if err != nil {
 			return errUnknownValidators
 		}
@@ -1103,42 +1116,33 @@ func (c *Bor) needToCommitSpan(currentSpan *span.Span, headerNumber uint64) bool
 }
 
 func (c *Bor) getSpanForBlock(blockNum uint64) (*span.HeimdallSpan, error) {
-	c.logger.Info("Getting span", "for block", blockNum)
+	c.logger.Debug("Getting span", "for block", blockNum)
 	var borSpan *span.HeimdallSpan
 	c.spanCache.AscendGreaterOrEqual(&span.HeimdallSpan{Span: span.Span{EndBlock: blockNum}}, func(item btree.Item) bool {
 		borSpan = item.(*span.HeimdallSpan)
 		return false
 	})
 
-	if borSpan == nil {
-		// Span with high enough block number is not loaded
-		var spanID uint64
-		if c.spanCache.Len() > 0 {
-			spanID = c.spanCache.Max().(*span.HeimdallSpan).ID + 1
-		}
-		for borSpan == nil || borSpan.EndBlock < blockNum {
-			c.logger.Info("Span with high enough block number is not loaded", "fetching span", spanID)
-			response, err := c.HeimdallClient.Span(c.execCtx, spanID)
-			if err != nil {
-				return nil, err
-			}
-			borSpan = response
-			c.spanCache.ReplaceOrInsert(borSpan)
-			spanID++
-		}
-	} else {
-		for borSpan.StartBlock > blockNum {
-			// Span wit low enough block number is not loaded
-			var spanID = borSpan.ID - 1
-			c.logger.Info("Span with low enough block number is not loaded", "fetching span", spanID)
-			response, err := c.HeimdallClient.Span(c.execCtx, spanID)
-			if err != nil {
-				return nil, err
-			}
-			borSpan = response
-			c.spanCache.ReplaceOrInsert(borSpan)
-		}
+	if borSpan != nil && borSpan.StartBlock <= blockNum && borSpan.EndBlock >= blockNum {
+		return borSpan, nil
 	}
+
+	// Span with given block block number is not loaded
+	// As span has fixed set of blocks (except 0th span), we can
+	// formulate it and get the exact ID we'd need to fetch.
+	var spanID uint64
+	if blockNum > zerothSpanEnd {
+		spanID = 1 + (blockNum-zerothSpanEnd-1)/spanLength
+	}
+
+	c.logger.Info("Span with given block number is not loaded", "fetching span", spanID)
+
+	response, err := c.HeimdallClient.Span(c.execCtx, spanID)
+	if err != nil {
+		return nil, err
+	}
+	borSpan = response
+	c.spanCache.ReplaceOrInsert(borSpan)
 
 	for c.spanCache.Len() > 128 {
 		c.spanCache.DeleteMin()

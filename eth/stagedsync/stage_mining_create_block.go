@@ -15,8 +15,6 @@ import (
 	"github.com/ledgerwatch/log/v3"
 
 	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon-lib/txpool"
-
 	"github.com/ledgerwatch/erigon/common/debug"
 	"github.com/ledgerwatch/erigon/consensus"
 	"github.com/ledgerwatch/erigon/core"
@@ -72,21 +70,19 @@ type MiningCreateBlockCfg struct {
 	miner                  MiningState
 	chainConfig            chain.Config
 	engine                 consensus.Engine
-	txPool2                *txpool.TxPool
-	txPool2DB              kv.RoDB
+	txPoolDB               kv.RoDB
 	tmpdir                 string
 	blockBuilderParameters *core.BlockBuilderParameters
 	blockReader            services.FullBlockReader
 }
 
-func StageMiningCreateBlockCfg(db kv.RwDB, miner MiningState, chainConfig chain.Config, engine consensus.Engine, txPool2 *txpool.TxPool, txPool2DB kv.RoDB, blockBuilderParameters *core.BlockBuilderParameters, tmpdir string, blockReader services.FullBlockReader) MiningCreateBlockCfg {
+func StageMiningCreateBlockCfg(db kv.RwDB, miner MiningState, chainConfig chain.Config, engine consensus.Engine, txPoolDB kv.RoDB, blockBuilderParameters *core.BlockBuilderParameters, tmpdir string, blockReader services.FullBlockReader) MiningCreateBlockCfg {
 	return MiningCreateBlockCfg{
 		db:                     db,
 		miner:                  miner,
 		chainConfig:            chainConfig,
 		engine:                 engine,
-		txPool2:                txPool2,
-		txPool2DB:              txPool2DB,
+		txPoolDB:               txPoolDB,
 		tmpdir:                 tmpdir,
 		blockBuilderParameters: blockBuilderParameters,
 		blockReader:            blockReader,
@@ -184,19 +180,6 @@ func SpawnMiningCreateBlockStage(s *StageState, tx kv.RwTx, cfg MiningCreateBloc
 		return
 	}
 
-	type envT struct {
-		signer    *types.Signer
-		ancestors mapset.Set // ancestor set (used for checking uncle parent validity)
-		family    mapset.Set // family set (used for checking uncle invalidity)
-		uncles    mapset.Set // uncle set
-	}
-	env := &envT{
-		signer:    types.MakeSigner(&cfg.chainConfig, blockNum),
-		ancestors: mapset.NewSet(),
-		family:    mapset.NewSet(),
-		uncles:    mapset.NewSet(),
-	}
-
 	// re-written miner/worker.go:commitNewWork
 	var timestamp uint64
 	if cfg.blockBuilderParameters == nil {
@@ -213,6 +196,19 @@ func SpawnMiningCreateBlockStage(s *StageState, tx kv.RwTx, cfg MiningCreateBloc
 	if cfg.chainConfig.IsOptimism() {
 		targetGasLimit = cfg.blockBuilderParameters.GasLimit
 	}
+	type envT struct {
+		signer    *types.Signer
+		ancestors mapset.Set // ancestor set (used for checking uncle parent validity)
+		family    mapset.Set // family set (used for checking uncle invalidity)
+		uncles    mapset.Set // uncle set
+	}
+	env := &envT{
+		signer:    types.MakeSigner(&cfg.chainConfig, blockNum, timestamp),
+		ancestors: mapset.NewSet(),
+		family:    mapset.NewSet(),
+		uncles:    mapset.NewSet(),
+	}
+
 	header := core.MakeEmptyHeader(parent, &cfg.chainConfig, timestamp, targetGasLimit)
 	header.Coinbase = coinbase
 	header.Extra = cfg.miner.MiningConfig.ExtraData

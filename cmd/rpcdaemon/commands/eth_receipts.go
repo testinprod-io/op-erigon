@@ -23,7 +23,6 @@ import (
 	"github.com/ledgerwatch/erigon/core"
 	"github.com/ledgerwatch/erigon/core/rawdb"
 	"github.com/ledgerwatch/erigon/core/state"
-	"github.com/ledgerwatch/erigon/core/state/temporal"
 	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/core/vm"
 	"github.com/ledgerwatch/erigon/core/vm/evmtypes"
@@ -507,7 +506,7 @@ func (e *intraBlockExec) changeBlock(header *types.Header) {
 	e.blockHash = header.Hash()
 	e.header = header
 	e.rules = e.chainConfig.Rules(e.blockNum, header.Time)
-	e.signer = types.MakeSigner(e.chainConfig, e.blockNum)
+	e.signer = types.MakeSigner(e.chainConfig, e.blockNum, header.Time)
 	e.vmConfig.SkipAnalysis = core.SkipAnalysis(e.chainConfig, e.blockNum)
 }
 
@@ -550,7 +549,7 @@ func getTopicsBitmapV3(tx kv.TemporalTx, topics [][]common.Hash, from, to uint64
 
 		var topicsUnion iter.U64
 		for _, topic := range sub {
-			it, err := tx.IndexRange(temporal.LogTopicIdx, topic.Bytes(), int(from), int(to), order.Asc, kv.Unlim)
+			it, err := tx.IndexRange(kv.LogTopicIdx, topic.Bytes(), int(from), int(to), order.Asc, kv.Unlim)
 			if err != nil {
 				return nil, err
 			}
@@ -568,7 +567,7 @@ func getTopicsBitmapV3(tx kv.TemporalTx, topics [][]common.Hash, from, to uint64
 
 func getAddrsBitmapV3(tx kv.TemporalTx, addrs []common.Address, from, to uint64) (res iter.U64, err error) {
 	for _, addr := range addrs {
-		it, err := tx.IndexRange(temporal.LogAddrIdx, addr[:], int(from), int(to), true, kv.Unlim)
+		it, err := tx.IndexRange(kv.LogAddrIdx, addr[:], int(from), int(to), true, kv.Unlim)
 		if err != nil {
 			return nil, err
 		}
@@ -722,12 +721,6 @@ func marshalReceipt(receipt *types.Receipt, txn types.Transaction, chainConfig *
 		if t.Protected() {
 			chainId = types.DeriveChainId(&t.V).ToBig()
 		}
-	case *types.AccessListTx:
-		chainId = t.ChainID.ToBig()
-	case *types.DynamicFeeTransaction:
-		chainId = t.ChainID.ToBig()
-		// case *types.SignedBlobTx: // TODO: needs eip-4844 signer
-		// 	chainId = t.GetChainID().ToBig()
 	case *types.DepositTx:
 		// Deposit TX does not have chain ID
 	default:
