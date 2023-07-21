@@ -27,16 +27,16 @@ import (
 	"time"
 
 	"github.com/holiman/uint256"
+	"github.com/ledgerwatch/log/v3"
+	"github.com/protolambda/ztyp/codec"
+
 	"github.com/ledgerwatch/erigon-lib/chain"
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	types2 "github.com/ledgerwatch/erigon-lib/types"
-	"github.com/ledgerwatch/log/v3"
-	"github.com/protolambda/ztyp/codec"
 
 	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/common/math"
 	"github.com/ledgerwatch/erigon/crypto"
-	"github.com/ledgerwatch/erigon/params"
 	"github.com/ledgerwatch/erigon/rlp"
 )
 
@@ -653,7 +653,7 @@ func (m Message) IsSystemTx() bool             { return m.isSystemTx }
 func (m Message) IsDepositTx() bool            { return m.isDepositTx }
 func (m Message) Mint() *uint256.Int           { return m.mint }
 func (m Message) RollupDataGas() RollupGasData { return m.l1CostGas }
-func (m Message) DataGas() uint64              { return params.DataGasPerBlob * uint64(len(m.dataHashes)) }
+func (m Message) DataGas() uint64              { return chain.DataGasPerBlob * uint64(len(m.dataHashes)) }
 func (m Message) MaxFeePerDataGas() *uint256.Int {
 	return &m.maxFeePerDataGas
 }
