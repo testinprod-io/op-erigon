@@ -33,7 +33,10 @@ import (
 )
 
 // the maximum point from the current head, past which side forks are not validated anymore.
-const maxForkDepth = 32 // 32 slots is the duration of an epoch thus there cannot be side forks in PoS deeper than 32 blocks from head.
+// Original value was 32 slots, which is the duration of an epoch thus there cannot be side forks in PoS deeper than 32 blocks from head.
+// But in the case of OP chains, there can be more than 32 blocks fork. So it was set to an arbitrarily large value.
+// TODO: Find the proper maxForkDepth value for OP Chains
+const maxForkDepth = 320
 
 type validatePayloadFunc func(kv.RwTx, *types.Header, *types.RawBody, uint64, []*types.Header, []*types.RawBody, *shards.Notifications) error
 
