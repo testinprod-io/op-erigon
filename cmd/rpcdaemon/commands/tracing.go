@@ -474,6 +474,7 @@ func (api *PrivateDebugAPIImpl) TraceCallMany(ctx context.Context, bundles []Bun
 		GasLimit:    parent.GasLimit,
 		BaseFee:     &baseFee,
 	}
+	blockCtx.L1CostFunc = types.NewL1CostFunc(chainConfig, st)
 
 	// Get a new instance of the EVM
 	evm = vm.NewEVM(blockCtx, txCtx, st, chainConfig, vm.Config{Debug: false})
