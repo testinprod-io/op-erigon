@@ -68,6 +68,8 @@ var (
 	chaindata  = flag.String("chaindata", "chaindata", "path to the chaindata database file")
 	bucket     = flag.String("bucket", "", "bucket in the database")
 	hash       = flag.String("hash", "0x00", "image for preimage or state root for testBlockHashes action")
+	startBlock = flag.Int("startBlock", 1, "specifies start block number")
+	endBlock   = flag.Int("endBlock", 1, "specifies end block number")
 )
 
 func dbSlice(chaindata string, bucket string, prefix []byte) {
@@ -874,6 +876,40 @@ func fixState(chaindata string) error {
 	return tx.Commit()
 }
 
+func txTypeMetric(chaindata string, startBlock uint64, endBlock uint64) error {
+	db := mdbx.MustOpen(chaindata)
+	defer db.Close()
+	tx, err := db.BeginRw(context.Background())
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	stats := make(map[int]int)
+	chunkSize := uint64(1000)
+	for i := startBlock; i < endBlock; i += chunkSize {
+		start := i
+		end := i + chunkSize
+		if end >= endBlock {
+			end = endBlock
+		}
+		txs, err := rawdb.RawTransactionsRange(tx, start, end)
+		if err != nil {
+			return err
+		}
+		for _, tx := range txs {
+			txn, err := types.DecodeTransaction(tx)
+			if err != nil {
+				return err
+			}
+			stats[int(txn.Type())]++
+		}
+		fmt.Println(stats)
+	}
+	fmt.Println(stats)
+	return nil
+}
+
 func trimTxs(chaindata string) error {
 	db := mdbx.MustOpen(chaindata)
 	defer db.Close()
@@ -1486,6 +1522,9 @@ func main() {
 
 	case "trimTxs":
 		err = trimTxs(*chaindata)
+
+	case "txTypeMetric":
+		err = txTypeMetric(*chaindata, uint64(*startBlock), uint64(*endBlock))
 
 	case "scanTxs":
 		err = scanTxs(*chaindata)
