@@ -876,7 +876,7 @@ func fixState(chaindata string) error {
 	return tx.Commit()
 }
 
-func txTypeMetric(chaindata string, startBlock uint64, endBlock uint64, chunkSize uint64) error {
+func txTypeStat(chaindata string, startBlock uint64, endBlock uint64, chunkSize uint64) error {
 	db := mdbx.MustOpen(chaindata)
 	defer db.Close()
 	tx, err := db.BeginRo(context.Background())
@@ -1522,8 +1522,8 @@ func main() {
 	case "trimTxs":
 		err = trimTxs(*chaindata)
 
-	case "txTypeMetric":
-		err = txTypeMetric(*chaindata, uint64(*startBlock), uint64(*endBlock), uint64(*chunkSize))
+	case "txTypeStat":
+		err = txTypeStat(*chaindata, uint64(*startBlock), uint64(*endBlock), uint64(*chunkSize))
 
 	case "scanTxs":
 		err = scanTxs(*chaindata)
