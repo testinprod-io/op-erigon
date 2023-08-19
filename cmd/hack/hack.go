@@ -893,7 +893,7 @@ func txTypeMetric(chaindata string, startBlock uint64, endBlock uint64) error {
 		if end >= endBlock {
 			end = endBlock
 		}
-		txs, err := rawdb.RawTransactionsRange(tx, start, end)
+		txs, err := rawdb.RawTransactionsRange(tx, start, end - 1)
 		if err != nil {
 			return err
 		}
