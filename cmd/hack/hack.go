@@ -9,7 +9,6 @@ import (
 	"flag"
 	"fmt"
 	"math/big"
-	"net/http"
 	_ "net/http/pprof" //nolint:gosec
 	"os"
 	"path/filepath"
@@ -1435,11 +1434,11 @@ func main() {
 		}
 		defer pprof.StopCPUProfile()
 	}
-	go func() {
-		if err := http.ListenAndServe("localhost:6960", nil); err != nil {
-			log.Error("Failure in running pprof server", "err", err)
-		}
-	}()
+	// go func() {
+	// 	if err := http.ListenAndServe("localhost:6960", nil); err != nil {
+	// 		log.Error("Failure in running pprof server", "err", err)
+	// 	}
+	// }()
 
 	var err error
 	switch *action {
