@@ -879,7 +879,7 @@ func fixState(chaindata string) error {
 func txTypeMetric(chaindata string, startBlock uint64, endBlock uint64) error {
 	db := mdbx.MustOpen(chaindata)
 	defer db.Close()
-	tx, err := db.BeginRw(context.Background())
+	tx, err := db.BeginRo(context.Background())
 	if err != nil {
 		return err
 	}
