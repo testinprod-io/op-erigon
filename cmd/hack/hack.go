@@ -69,6 +69,7 @@ var (
 	hash       = flag.String("hash", "0x00", "image for preimage or state root for testBlockHashes action")
 	startBlock = flag.Int("startBlock", 1, "specifies start block number")
 	endBlock   = flag.Int("endBlock", 1, "specifies end block number")
+	chunkSize  = flag.Int("chunkSize", 1, "specifies chunk size")
 )
 
 func dbSlice(chaindata string, bucket string, prefix []byte) {
@@ -875,7 +876,7 @@ func fixState(chaindata string) error {
 	return tx.Commit()
 }
 
-func txTypeMetric(chaindata string, startBlock uint64, endBlock uint64) error {
+func txTypeMetric(chaindata string, startBlock uint64, endBlock uint64, chunkSize uint64) error {
 	db := mdbx.MustOpen(chaindata)
 	defer db.Close()
 	tx, err := db.BeginRo(context.Background())
@@ -885,7 +886,6 @@ func txTypeMetric(chaindata string, startBlock uint64, endBlock uint64) error {
 	defer tx.Rollback()
 
 	stats := make(map[int]int)
-	chunkSize := uint64(1000)
 	for i := startBlock; i < endBlock; i += chunkSize {
 		start := i
 		end := i + chunkSize
@@ -1523,7 +1523,7 @@ func main() {
 		err = trimTxs(*chaindata)
 
 	case "txTypeMetric":
-		err = txTypeMetric(*chaindata, uint64(*startBlock), uint64(*endBlock))
+		err = txTypeMetric(*chaindata, uint64(*startBlock), uint64(*endBlock), uint64(*chunkSize))
 
 	case "scanTxs":
 		err = scanTxs(*chaindata)
