@@ -886,6 +886,7 @@ func txTypeStat(chaindata string, startBlock uint64, endBlock uint64, chunkSize 
 	defer tx.Rollback()
 
 	stats := make(map[int]int)
+
 	for i := startBlock; i < endBlock; i += chunkSize {
 		start := i
 		end := i + chunkSize
@@ -896,14 +897,22 @@ func txTypeStat(chaindata string, startBlock uint64, endBlock uint64, chunkSize 
 		if err != nil {
 			return err
 		}
+		partialStats := make(map[int]int)
+		partialTxCount := 0
 		for _, tx := range txs {
 			txn, err := types.DecodeTransaction(tx)
 			if err != nil {
 				return err
 			}
-			stats[int(txn.Type())]++
+			partialStats[int(txn.Type())]++
+			partialTxCount++
 		}
-		fmt.Println(start, end-1, stats)
+		percentage := 100 * float64(partialStats[0]) / float64(partialTxCount-partialStats[126])
+		fmt.Println("Partial Stat legacy tx percentage excluding DepositTx:", percentage)
+		fmt.Println(start, end-1, partialStats)
+		for k, v := range partialStats {
+			stats[k] += v
+		}
 		totalTxCount := 0
 		totalDepositTxCount := 0
 		totalLegacyTxCount := 0
@@ -914,7 +923,7 @@ func txTypeStat(chaindata string, startBlock uint64, endBlock uint64, chunkSize 
 		totalDepositTxCount += stats[126]
 		fmt.Println("Total tx count excluding DepositTx:", totalTxCount-totalDepositTxCount)
 		fmt.Println("Total LegacyTx count:", totalLegacyTxCount)
-		percentage := 100 * float64(totalLegacyTxCount) / float64(totalTxCount-totalDepositTxCount)
+		percentage = 100 * float64(totalLegacyTxCount) / float64(totalTxCount-totalDepositTxCount)
 		fmt.Println("LegacyTx percentage excluding DepositTx:", percentage)
 		fmt.Println()
 	}
