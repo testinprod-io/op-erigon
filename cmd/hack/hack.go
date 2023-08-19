@@ -904,6 +904,19 @@ func txTypeStat(chaindata string, startBlock uint64, endBlock uint64, chunkSize 
 			stats[int(txn.Type())]++
 		}
 		fmt.Println(start, end-1, stats)
+		totalTxCount := 0
+		totalDepositTxCount := 0
+		totalLegacyTxCount := 0
+		for _, v := range stats {
+			totalTxCount += v
+		}
+		totalLegacyTxCount += stats[0]
+		totalDepositTxCount += stats[126]
+		fmt.Println("Total tx count excluding DepositTx:", totalTxCount-totalDepositTxCount)
+		fmt.Println("Total LegacyTx count:", totalLegacyTxCount)
+		percentage := 100 * float64(totalLegacyTxCount) / float64(totalTxCount-totalDepositTxCount)
+		fmt.Println("LegacyTx percentage excluding DepositTx:", percentage)
+		fmt.Println()
 	}
 	fmt.Println(stats)
 	return nil
