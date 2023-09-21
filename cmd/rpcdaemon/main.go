@@ -8,11 +8,10 @@ import (
 
 	"github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/cli"
-	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/commands"
 	"github.com/ledgerwatch/erigon/consensus/ethash"
 	"github.com/ledgerwatch/erigon/rpc"
 	"github.com/ledgerwatch/erigon/turbo/debug"
-	"github.com/ledgerwatch/log/v3"
+	"github.com/ledgerwatch/erigon/turbo/jsonrpc"
 	"github.com/spf13/cobra"
 )
 
@@ -21,12 +20,7 @@ func main() {
 	rootCtx, rootCancel := common.RootContext()
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		var logger log.Logger
-		var err error
-		if logger, err = debug.SetupCobra(cmd, "rpcdaemon"); err != nil {
-			logger.Error("Setting up", "error", err)
-			return err
-		}
+		logger := debug.SetupCobra(cmd, "sentry")
 		db, borDb, backend, txPool, mining, stateCache, blockReader, ff, agg, err := cli.RemoteServices(ctx, *cfg, logger, rootCancel)
 		if err != nil {
 			logger.Error("Could not connect to DB", "err", err)
@@ -64,8 +58,8 @@ func main() {
 
 		// TODO: Replace with correct consensus Engine
 		engine := ethash.NewFaker()
-		apiList := commands.APIList(db, borDb, backend, txPool, mining, ff, stateCache, blockReader, agg, *cfg, engine, seqRPCService, historicalRPCService, logger)
-		if err := cli.StartRpcServer(ctx, *cfg, apiList, nil, logger); err != nil {
+		apiList := jsonrpc.APIList(db, borDb, backend, txPool, mining, ff, stateCache, blockReader, agg, *cfg, engine, seqRPCService, historicalRPCService, logger)
+		if err := cli.StartRpcServer(ctx, *cfg, apiList, logger); err != nil {
 			logger.Error(err.Error())
 			return nil
 		}

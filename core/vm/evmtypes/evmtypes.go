@@ -32,7 +32,7 @@ type BlockContext struct {
 	Difficulty    *big.Int       // Provides information for DIFFICULTY
 	BaseFee       *uint256.Int   // Provides information for BASEFEE
 	PrevRanDao    *common.Hash   // Provides information for PREVRANDAO
-	ExcessDataGas *uint64        // Provides information for handling data blobs
+	ExcessBlobGas *uint64        // Provides information for handling data blobs
 
 	// L1CostFunc returns the L1 cost of the rollup message, the function may be nil, or return nil
 	L1CostFunc types.L1CostFunc
@@ -45,7 +45,7 @@ type TxContext struct {
 	TxHash     common.Hash
 	Origin     common.Address // Provides information for ORIGIN
 	GasPrice   *uint256.Int   // Provides information for GASPRICE
-	DataHashes []common.Hash  // Provides versioned data hashes for DATAHASH
+	BlobHashes []common.Hash  // Provides versioned blob hashes for BLOBHASH
 }
 
 type (
@@ -87,6 +87,7 @@ type IntraBlockState interface {
 
 	Selfdestruct(common.Address) bool
 	HasSelfdestructed(common.Address) bool
+	Selfdestruct6780(common.Address)
 
 	// Exist reports whether the given account exists in state.
 	// Notably this should also return true for suicided accounts.

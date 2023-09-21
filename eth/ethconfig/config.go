@@ -101,7 +101,6 @@ var Defaults = Config{
 		KeepBlocks: false,
 		Produce:    true,
 	},
-	DropUselessPeers: false,
 }
 
 func init() {
@@ -245,14 +244,14 @@ type Config struct {
 	SentinelAddr                string
 	SentinelPort                uint64
 
-	OverrideShanghaiTime *big.Int `toml:",omitempty"`
-
-	DropUselessPeers bool
+	OverrideCancunTime *big.Int `toml:",omitempty"`
 
 	RollupSequencerHTTP        string
 	RollupHistoricalRPC        string
 	RollupHistoricalRPCTimeout time.Duration
 	RollupDisableTxPoolGossip  bool
+
+	ForcePartialCommit bool
 }
 
 type Sync struct {

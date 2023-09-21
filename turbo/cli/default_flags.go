@@ -88,6 +88,7 @@ var DefaultFlags = []cli.Flag{
 	&utils.SnapStopFlag,
 	&utils.DbPageSizeFlag,
 	&utils.DbSizeLimitFlag,
+	&utils.ForcePartialCommitFlag,
 	&utils.TorrentPortFlag,
 	&utils.TorrentMaxPeersFlag,
 	&utils.TorrentConnsPerFileFlag,
@@ -134,7 +135,6 @@ var DefaultFlags = []cli.Flag{
 	&utils.MinerSigningKeyFileFlag,
 	&utils.SentryAddrFlag,
 	&utils.SentryLogPeerInfoFlag,
-	&utils.SentryDropUselessPeers,
 	&utils.DownloaderAddrFlag,
 	&utils.DisableIPV4,
 	&utils.DisableIPV6,
@@ -144,8 +144,10 @@ var DefaultFlags = []cli.Flag{
 	&utils.HeimdallURLFlag,
 	&utils.WithoutHeimdallFlag,
 	&utils.HeimdallgRPCAddressFlag,
+	&utils.BorBlockPeriodFlag,
+	&utils.BorBlockSizeFlag,
 	&utils.EthStatsURLFlag,
-	&utils.OverrideShanghaiTime,
+	&utils.OverrideCancunFlag,
 	&utils.RollupSequencerHTTPFlag,
 	&utils.RollupHistoricalRPCFlag,
 	&utils.RollupHistoricalRPCTimeoutFlag,
@@ -160,4 +162,7 @@ var DefaultFlags = []cli.Flag{
 	&utils.SentinelPortFlag,
 
 	&utils.GenesisPathFlag,
+	&utils.OtsSearchMaxCapFlag,
+
+	&utils.TrustedSetupFile,
 }
