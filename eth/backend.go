@@ -147,6 +147,7 @@ type Ethereum struct {
 	eth1ExecutionServer *eth1.EthereumExecutionModule
 
 	ethBackendRPC        *privateapi.EthBackendServer
+	engineBackendRPC     *engineapi.EngineServer
 	seqRPCService        *rpc.Client
 	historicalRPCService *rpc.Client
 	miningRPC            txpool_proto.MiningServer
