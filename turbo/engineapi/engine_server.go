@@ -458,9 +458,9 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 		return nil, &engine_helpers.InvalidPayloadAttributesErr
 	}
 
-	var txs [][]byte
-	for _, tx := range payloadAttributes.Transactions {
-		txs = append(txs, tx)
+	txs := make([][]byte, len(payloadAttributes.Transactions))
+	for i, tx := range payloadAttributes.Transactions {
+		txs[i] = tx
 	}
 
 	req := &execution.AssembleBlockRequest{
