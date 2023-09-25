@@ -458,11 +458,18 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 		return nil, &engine_helpers.InvalidPayloadAttributesErr
 	}
 
+	var txs [][]byte
+	for _, tx := range payloadAttributes.Transactions {
+		txs = append(txs, tx)
+	}
+
 	req := &execution.AssembleBlockRequest{
 		ParentHash:            gointerfaces.ConvertHashToH256(forkchoiceState.HeadHash),
 		Timestamp:             timestamp,
 		PrevRandao:            gointerfaces.ConvertHashToH256(payloadAttributes.PrevRandao),
 		SuggestedFeeRecipient: gointerfaces.ConvertAddressToH160(payloadAttributes.SuggestedFeeRecipient),
+		Transactions:          txs,
+		NoTxPool:              payloadAttributes.NoTxPool,
 	}
 
 	if version >= clparams.CapellaVersion {
@@ -471,6 +478,10 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 
 	if version >= clparams.DenebVersion {
 		req.ParentBeaconBlockRoot = gointerfaces.ConvertHashToH256(*payloadAttributes.ParentBeaconBlockRoot)
+	}
+
+	if payloadAttributes.GasLimit != nil {
+		req.GasLimit = (*uint64)(payloadAttributes.GasLimit)
 	}
 
 	resp, err := s.executionService.AssembleBlock(ctx, req)

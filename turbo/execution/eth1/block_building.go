@@ -55,6 +55,9 @@ func (e *EthereumExecutionModule) AssembleBlock(ctx context.Context, req *execut
 		PrevRandao:            gointerfaces.ConvertH256ToHash(req.PrevRandao),
 		SuggestedFeeRecipient: gointerfaces.ConvertH160toAddress(req.SuggestedFeeRecipient),
 		Withdrawals:           eth1_utils.ConvertWithdrawalsFromRpc(req.Withdrawals),
+		Transactions:          req.Transactions,
+		NoTxPool:              req.NoTxPool,
+		GasLimit:              req.GasLimit,
 	}
 
 	if err := e.checkWithdrawalsPresence(param.Timestamp, param.Withdrawals); err != nil {
