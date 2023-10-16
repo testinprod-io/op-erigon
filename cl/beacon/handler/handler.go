@@ -34,6 +34,11 @@ func (a *ApiHandler) init() {
 	r.Route("/eth", func(r chi.Router) {
 		r.Route("/v1", func(r chi.Router) {
 			r.Get("/events", nil)
+			r.Route("/config", func(r chi.Router) {
+				r.Get("/spec", beaconHandlerWrapper(a.getSpec))
+				r.Get("/deposit_contract", beaconHandlerWrapper(a.getDepositContract))
+				r.Get("/fork_schedule", beaconHandlerWrapper(a.getForkSchedule))
+			})
 			r.Route("/beacon", func(r chi.Router) {
 				r.Route("/headers", func(r chi.Router) {
 					r.Get("/", beaconHandlerWrapper(a.getHeaders))
@@ -42,7 +47,8 @@ func (a *ApiHandler) init() {
 				r.Route("/blocks", func(r chi.Router) {
 					r.Post("/", nil)
 					r.Get("/{block_id}", a.getBlock)
-					r.Get("/block_id}/root", a.getBlockRoot)
+					r.Get("/{block_id}/attestations", beaconHandlerWrapper(a.getBlockRoot))
+					r.Get("/{block_id}/root", beaconHandlerWrapper(a.getBlockRoot))
 				})
 				r.Get("/genesis", beaconHandlerWrapper(a.getGenesis))
 				r.Post("/binded_blocks", nil)
@@ -51,7 +57,7 @@ func (a *ApiHandler) init() {
 					r.Post("/sync_committees", nil)
 				})
 				r.Get("/node/syncing", nil)
-				r.Get("/config/spec", nil)
+
 				r.Route("/states", func(r chi.Router) {
 					r.Get("/head/validators/{index}", nil) // otterscan
 					r.Get("/head/committees", nil)         // otterscan
