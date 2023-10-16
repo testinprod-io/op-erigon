@@ -212,7 +212,7 @@ func (st *StateTransition) buyGas(gasBailout bool) error {
 		l1Cost = fn(st.evm.Context().BlockNumber, st.evm.Context().Time, st.msg)
 	}
 	if l1Cost != nil {
-		mgval = mgval.Add(mgval, l1Cost)
+		gasVal = gasVal.Add(gasVal, l1Cost)
 	}
 
 	// compute blob fee for eip-4844 data blobs if any
