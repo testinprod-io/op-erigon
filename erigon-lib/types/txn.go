@@ -330,12 +330,12 @@ func (ctx *TxParseContext) parseTransactionBody(payload []byte, pos, p0 int, slo
 		// SourchHash
 		p, _, err = rlp.SkipString(payload, p)
 		if err != nil {
-			return 0, fmt.Errorf("%w: depostTx sourchHash: %s", ErrParseTxn, err)
+			return 0, fmt.Errorf("%w: depostTx sourchHash: %s", ErrParseTxn, err) //nolint
 		}
 		// From
 		dataPos, dataLen, err := rlp.String(payload, p)
 		if err != nil {
-			return 0, fmt.Errorf("%w: depostTx from: %s", ErrParseTxn, err)
+			return 0, fmt.Errorf("%w: depostTx from: %s", ErrParseTxn, err) //nolint
 		}
 		if ctx.withSender {
 			copy(sender, payload[dataPos:dataPos+dataLen])
@@ -344,28 +344,28 @@ func (ctx *TxParseContext) parseTransactionBody(payload []byte, pos, p0 int, slo
 		// To
 		p, dataLen, err = rlp.SkipString(payload, p)
 		if err != nil {
-			return 0, fmt.Errorf("%w: depostTx to: %s", ErrParseTxn, err)
+			return 0, fmt.Errorf("%w: depostTx to: %s", ErrParseTxn, err) //nolint
 		}
 		slot.Creation = dataLen == 0
 		// Mint
 		p, _, err = rlp.SkipString(payload, p)
 		if err != nil {
-			return 0, fmt.Errorf("%w: depostTx mint: %s", ErrParseTxn, err)
+			return 0, fmt.Errorf("%w: depostTx mint: %s", ErrParseTxn, err) //nolint
 		}
 		// Value
 		p, err = rlp.U256(payload, p, &slot.Value)
 		if err != nil {
-			return 0, fmt.Errorf("%w: depostTx value: %s", ErrParseTxn, err)
+			return 0, fmt.Errorf("%w: depostTx value: %s", ErrParseTxn, err) //nolint
 		}
 		// Gas
 		p, slot.Gas, err = rlp.U64(payload, p)
 		if err != nil {
-			return 0, fmt.Errorf("%w: depositTx gas: %s", ErrParseTxn, err)
+			return 0, fmt.Errorf("%w: depositTx gas: %s", ErrParseTxn, err) //nolint
 		}
 		// Data
 		dataPos, dataLen, err = rlp.String(payload, p)
 		if err != nil {
-			return 0, fmt.Errorf("%w: depositTx data len: %s", ErrParseTxn, err)
+			return 0, fmt.Errorf("%w: depositTx data len: %s", ErrParseTxn, err) //nolint
 		}
 		slot.DataLen = dataLen
 
