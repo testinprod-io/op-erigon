@@ -47,6 +47,9 @@ type Config struct {
 	MdbxPageSize          datasize.ByteSize
 	MdbxDBSizeLimit       datasize.ByteSize
 	MdbxGrowthStep        datasize.ByteSize
+
+	Optimism   bool
+	NoTxGossip bool
 }
 
 var DefaultConfig = Config{
@@ -64,6 +67,9 @@ var DefaultConfig = Config{
 	BlobSlots:     48, // Default for a total of 8 txs for 6 blobs each - for hive tests
 	PriceBump:     10, // Price bump percentage to replace an already existing transaction
 	BlobPriceBump: 100,
+
+	Optimism:   false,
+	NoTxGossip: false,
 }
 
 type DiscardReason uint8
@@ -100,6 +106,7 @@ const (
 	BlobHashCheckFail   DiscardReason = 28 // KZGcommitment's versioned hash has to be equal to blob_versioned_hash at the same index
 	UnmatchedBlobTxExt  DiscardReason = 29 // KZGcommitments must match the corresponding blobs and proofs
 	BlobTxReplace       DiscardReason = 30 // Cannot replace type-3 blob txn with another type of txn
+	TxTypeNotSupported  DiscardReason = 31
 )
 
 func (r DiscardReason) String() string {
@@ -150,6 +157,8 @@ func (r DiscardReason) String() string {
 		return "existing tx with same hash"
 	case InitCodeTooLarge:
 		return "initcode too large"
+	case TxTypeNotSupported:
+		return types.ErrTxTypeNotSupported.Error()
 	case TypeNotActivated:
 		return "fork supporting this transaction type is not activated yet"
 	case CreateBlobTxn:

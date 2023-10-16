@@ -5,11 +5,13 @@ on:
       - main
       - stable
       - alpha
+      - op-erigon
   pull_request:
     branches:
       - main
       - stable
       - alpha
+      - op-erigon
 env:
   CGO_ENABLED: "1"
   CGO_CXXFLAGS: "-g -O2 -std=c++17"
@@ -45,6 +47,13 @@ jobs:
           choco upgrade mingw -y --no-progress --version 11.2.0.07112021
           choco install cmake -y --no-progress --version 3.23.1
 
+      - name: Test win
+        if: matrix.os == 'windows-2022'
+        run: make test-no-fuzz
+      - name: Test
+        if: matrix.os != 'windows-2022'
+        run: make test
+
       - name: Lint
         if: matrix.os == 'ubuntu-20.04'
         uses: golangci/golangci-lint-action@v3
@@ -55,10 +64,3 @@ jobs:
       - name: Lint source code licenses
         if: matrix.os == 'ubuntu-20.04'
         run: make lint-licenses-deps lint-licenses
-
-      - name: Test win
-        if: matrix.os == 'windows-2022'
-        run: make test-no-fuzz
-      - name: Test
-        if: matrix.os != 'windows-2022'
-        run: make test
