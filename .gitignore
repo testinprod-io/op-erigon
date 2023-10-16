@@ -73,7 +73,6 @@ libmdbx/build/*
 tests/testdata/*
 
 go.work*
-erigon-lib/
 
 /goerli
 

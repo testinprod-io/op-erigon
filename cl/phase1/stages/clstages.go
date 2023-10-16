@@ -4,8 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"runtime"
 	"time"
 
+	"github.com/ledgerwatch/erigon-lib/common"
+	"github.com/ledgerwatch/erigon-lib/common/dbg"
 	"github.com/ledgerwatch/erigon/cl/clparams"
 	"github.com/ledgerwatch/erigon/cl/clstages"
 	"github.com/ledgerwatch/erigon/cl/cltypes"
@@ -269,7 +272,7 @@ func ConsensusClStages(ctx context.Context,
 					}
 					defer tx.Rollback()
 				MainLoop:
-					for currentEpoch <= args.targetEpoch {
+					for currentEpoch <= args.targetEpoch+1 {
 						startBlock := currentEpoch * cfg.beaconCfg.SlotsPerEpoch
 						blocks, err := rpcSource.GetRange(tx, ctx, startBlock, cfg.beaconCfg.SlotsPerEpoch)
 						if err != nil {
@@ -295,7 +298,7 @@ func ConsensusClStages(ctx context.Context,
 								}
 								blockBatch = append(blockBatch, types.NewBlockFromStorage(executionPayload.BlockHash, header, txs, nil, body.Withdrawals))
 							}
-							if err := processBlock(tx, block, false, false); err != nil {
+							if err := processBlock(tx, block, false, true); err != nil {
 								log.Warn("bad blocks segment received", "err", err)
 								currentEpoch = utils.Max64(args.seenEpoch, currentEpoch-1)
 								continue MainLoop
@@ -312,7 +315,7 @@ func ConsensusClStages(ctx context.Context,
 						}
 						currentEpoch++
 					}
-					return nil
+					return tx.Commit()
 				},
 			},
 			CatchUpBlocks: {
@@ -429,24 +432,32 @@ func ConsensusClStages(ctx context.Context,
 						return err
 					}
 					for currentRoot != currentCanonical {
+						var newFoundSlot *uint64
 						if err := beacon_indicies.MarkRootCanonical(ctx, tx, currentSlot, currentRoot); err != nil {
 							return err
 						}
 						if currentRoot, err = beacon_indicies.ReadParentBlockRoot(ctx, tx, currentRoot); err != nil {
 							return err
 						}
-						if currentSlot, err = beacon_indicies.ReadBlockSlotByBlockRoot(ctx, tx, currentRoot); err != nil {
+						if newFoundSlot, err = beacon_indicies.ReadBlockSlotByBlockRoot(ctx, tx, currentRoot); err != nil {
 							return err
 						}
-						if currentSlot == 0 {
+						if newFoundSlot == nil {
 							break
 						}
+						currentSlot = *newFoundSlot
 						currentCanonical, err = beacon_indicies.ReadCanonicalBlockRoot(ctx, tx, currentSlot)
 						if err != nil {
 							return err
 						}
 					}
-					logger.Debug("Imported chain segment", "hash", headRoot, "slot", headSlot)
+
+					var m runtime.MemStats
+					dbg.ReadMemStats(&m)
+					logger.Debug("Imported chain segment",
+						"hash", headRoot, "slot", headSlot,
+						"alloc", common.ByteCount(m.Alloc),
+						"sys", common.ByteCount(m.Sys))
 					return tx.Commit()
 				},
 			},

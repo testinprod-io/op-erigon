@@ -8,6 +8,8 @@ import (
 
 	"github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/cli"
+	"github.com/ledgerwatch/erigon/consensus"
+	"github.com/ledgerwatch/erigon/consensus/bor"
 	"github.com/ledgerwatch/erigon/consensus/ethash"
 	"github.com/ledgerwatch/erigon/rpc"
 	"github.com/ledgerwatch/erigon/turbo/debug"
@@ -27,8 +29,15 @@ func main() {
 			return nil
 		}
 		defer db.Close()
+
+		var engine consensus.EngineReader
+
 		if borDb != nil {
 			defer borDb.Close()
+			engine = bor.NewRo(borDb, blockReader, logger)
+		} else {
+			// TODO: Replace with correct consensus Engine
+			engine = ethash.NewFaker()
 		}
 
 		var seqRPCService *rpc.Client
@@ -57,8 +66,8 @@ func main() {
 		}
 
 		// TODO: Replace with correct consensus Engine
-		engine := ethash.NewFaker()
-		apiList := jsonrpc.APIList(db, borDb, backend, txPool, mining, ff, stateCache, blockReader, agg, *cfg, engine, seqRPCService, historicalRPCService, logger)
+		apiList := jsonrpc.APIList(db, backend, txPool, mining, ff, stateCache, blockReader, agg, *cfg, engine, seqRPCService, historicalRPCService, logger)
+		rpc.PreAllocateRPCMetricLabels(apiList)
 		if err := cli.StartRpcServer(ctx, *cfg, apiList, logger); err != nil {
 			logger.Error(err.Error())
 			return nil
