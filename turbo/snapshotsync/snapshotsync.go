@@ -65,6 +65,7 @@ func RequestSnapshotsDownload(ctx context.Context, downloadRequest []services.Do
 // for MVP we sync with Downloader only once, in future will send new snapshots also
 func WaitForDownloader(logPrefix string, ctx context.Context, histV3 bool, agg *state.AggregatorV3, tx kv.RwTx, blockReader services.FullBlockReader, notifier services.DBEventNotifier, cc *chain.Config, snapshotDownloader proto_downloader.DownloaderClient) error {
 	snapshots := blockReader.Snapshots()
+
 	if blockReader.FreezingCfg().NoDownloader {
 		if err := snapshots.ReopenFolder(); err != nil {
 			return err
@@ -103,7 +104,9 @@ func WaitForDownloader(logPrefix string, ctx context.Context, histV3 bool, agg *
 	// build all download requests
 	// builds preverified snapshots request
 	for _, p := range preverifiedBlockSnapshots {
+		fmt.Println("Request:", p.Hash)
 		if _, exists := existingFilesMap[p.Name]; !exists { // Not to download existing files "behind the scenes"
+			fmt.Println("Request not exist:", p.Hash)
 			downloadRequest = append(downloadRequest, services.NewDownloadRequest(nil, p.Name, p.Hash))
 		}
 	}

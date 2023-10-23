@@ -2,6 +2,7 @@ package snapcfg
 
 import (
 	_ "embed"
+	"fmt"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -135,9 +136,11 @@ func KnownCfg(networkName string, whiteList, whiteListHistory []string) *Cfg {
 
 		result = make(Preverified, 0, len(c.Preverified))
 		for _, p := range c.Preverified {
-			if _, ok := wlMap[p.Name]; !ok {
-				continue
-			}
+			fmt.Println("knowncfg", p.Name)
+			// if _, ok := wlMap[p.Name]; !ok {
+			// 	continue
+			// }
+			fmt.Println("knowncfg added", p.Name)
 			result = append(result, p)
 		}
 	}

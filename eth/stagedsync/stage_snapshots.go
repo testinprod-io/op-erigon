@@ -83,6 +83,7 @@ func SpawnStageSnapshots(
 	var minProgress uint64
 	for _, stage := range []stages.SyncStage{stages.Headers, stages.Bodies, stages.Senders, stages.TxLookup} {
 		progress, err := stages.GetStageProgress(tx, stage)
+		fmt.Println("SpawnStageSnapshots", progress, minProgress)
 		if err != nil {
 			return err
 		}
@@ -100,6 +101,7 @@ func SpawnStageSnapshots(
 			return err
 		}
 	}
+	fmt.Println("SpawnStageSnapshots DONE")
 
 	return nil
 }
@@ -138,12 +140,19 @@ func DownloadAndIndexSnapshotsIfNeed(s *StageState, ctx context.Context, tx kv.R
 	}
 
 	frozenBlocks := cfg.blockReader.FrozenBlocks()
+	fmt.Println("frozenblock update")
+	fmt.Println(s.BlockNumber, frozenBlocks)	
 	if s.BlockNumber < frozenBlocks { // allow genesis
+
 		if err := s.Update(tx, frozenBlocks); err != nil {
 			return err
 		}
 		s.BlockNumber = frozenBlocks
 	}
+	
+	fmt.Println("s.BlockNumber", s.BlockNumber)
+	//s.BlockNumber = 499999
+	//fmt.Println("force s.BlockNumber", 499999)
 
 	if err := FillDBFromSnapshots(s.LogPrefix(), ctx, tx, cfg.dirs, cfg.blockReader, cfg.agg, logger); err != nil {
 		return err
@@ -153,6 +162,12 @@ func DownloadAndIndexSnapshotsIfNeed(s *StageState, ctx context.Context, tx kv.R
 
 func FillDBFromSnapshots(logPrefix string, ctx context.Context, tx kv.RwTx, dirs datadir.Dirs, blockReader services.FullBlockReader, agg *state.AggregatorV3, logger log.Logger) error {
 	blocksAvailable := blockReader.FrozenBlocks()
+	fmt.Println("force blocksAvailable", blocksAvailable)
+	
+	//blocksAvailable := uint64(999999)
+	//fmt.Println("force blocksAvailable", blocksAvailable)
+
+	fmt.Println("blocksAvailable", blocksAvailable)
 	logEvery := time.NewTicker(logInterval)
 	defer logEvery.Stop()
 	// updating the progress of further stages (but only forward) that are contained inside of snapshots
@@ -161,10 +176,12 @@ func FillDBFromSnapshots(logPrefix string, ctx context.Context, tx kv.RwTx, dirs
 		if err != nil {
 			return fmt.Errorf("get %s stage progress to advance: %w", stage, err)
 		}
+		fmt.Println("progress", progress)
 		if progress >= blocksAvailable {
+			fmt.Println("continue  progress >= blocksAvailable")
 			continue
 		}
-
+		fmt.Println("progress2")
 		if err = stages.SaveStageProgress(tx, stage, blocksAvailable); err != nil {
 			return fmt.Errorf("advancing %s stage: %w", stage, err)
 		}

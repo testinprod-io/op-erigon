@@ -374,7 +374,12 @@ func SpawnExecuteBlocksStage(s *StageState, u Unwinder, tx kv.RwTx, toBlock uint
 	if err != nil {
 		return err
 	}
+	
+	fmt.Println("prevStageProgress", prevStageProgress)
+	fmt.Println("nextStageProgress", nextStageProgress)
+
 	nextStagesExpectData := nextStageProgress > 0 // Incremental move of next stages depend on fully written ChangeSets, Receipts, CallTraceSet
+
 
 	logPrefix := s.LogPrefix()
 	var to = prevStageProgress

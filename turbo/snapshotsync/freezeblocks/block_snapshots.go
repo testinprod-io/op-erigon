@@ -701,6 +701,8 @@ func (s *RoSnapshots) Ranges() (ranges []Range) {
 func (s *RoSnapshots) OptimisticalyReopenFolder()           { _ = s.ReopenFolder() }
 func (s *RoSnapshots) OptimisticalyReopenWithDB(db kv.RoDB) { _ = s.ReopenWithDB(db) }
 func (s *RoSnapshots) ReopenFolder() error {
+	fmt.Println("#######", s.dir)
+
 	files, _, err := Segments(s.dir)
 	if err != nil {
 		return err
@@ -1173,6 +1175,7 @@ func (br *BlockRetire) BuildMissedIndicesIfNeed(ctx context.Context, logPrefix s
 	snapshots.LogStat()
 
 	// Create .idx files
+	fmt.Println("BuildMissedIndicesIfNeed", snapshots.IndicesMax(),snapshots.SegmentsMax() )
 	if snapshots.IndicesMax() >= snapshots.SegmentsMax() {
 		return nil
 	}
@@ -1186,6 +1189,7 @@ func (br *BlockRetire) BuildMissedIndicesIfNeed(ctx context.Context, logPrefix s
 		}
 
 		// wait for Downloader service to download all expected snapshots
+		fmt.Println("snapshots.IndicesMax() < snapshots.SegmentsMax()", snapshots.IndicesMax(), snapshots.SegmentsMax())
 		if snapshots.IndicesMax() < snapshots.SegmentsMax() {
 			chainID, _ := uint256.FromBig(cc.ChainID)
 			indexWorkers := estimate.IndexSnapshot.Workers()
@@ -1205,6 +1209,7 @@ func (br *BlockRetire) BuildMissedIndicesIfNeed(ctx context.Context, logPrefix s
 }
 
 func DumpBlocks(ctx context.Context, blockFrom, blockTo, blocksPerFile uint64, tmpDir, snapDir string, firstTxNum uint64, chainDB kv.RoDB, workers int, lvl log.Lvl, logger log.Logger, blockReader services.FullBlockReader) error {
+	fmt.Println(blockFrom, blockTo, blocksPerFile)
 	if blocksPerFile == 0 {
 		return nil
 	}
@@ -1218,6 +1223,7 @@ func DumpBlocks(ctx context.Context, blockFrom, blockTo, blocksPerFile uint64, t
 }
 
 func dumpBlocksRange(ctx context.Context, blockFrom, blockTo uint64, tmpDir, snapDir string, firstTxNum uint64, chainDB kv.RoDB, chainConfig chain.Config, workers int, lvl log.Lvl, logger log.Logger, blockReader services.FullBlockReader) error {
+	fmt.Println(blockFrom, blockTo)
 	chainId, _ := uint256.FromBig(chainConfig.ChainID)
 	logEvery := time.NewTicker(20 * time.Second)
 	defer logEvery.Stop()
