@@ -13,21 +13,23 @@ import (
 )
 
 var (
-	Mainnet    = fromToml(snapshothashes.Mainnet)
-	Sepolia    = fromToml(snapshothashes.Sepolia)
-	Goerli     = fromToml(snapshothashes.Goerli)
-	Mumbai     = fromToml(snapshothashes.Mumbai)
-	BorMainnet = fromToml(snapshothashes.BorMainnet)
-	Gnosis     = fromToml(snapshothashes.Gnosis)
-	Chiado     = fromToml(snapshothashes.Chiado)
+	Mainnet        = fromToml(snapshothashes.Mainnet)
+	Sepolia        = fromToml(snapshothashes.Sepolia)
+	Goerli         = fromToml(snapshothashes.Goerli)
+	Mumbai         = fromToml(snapshothashes.Mumbai)
+	BorMainnet     = fromToml(snapshothashes.BorMainnet)
+	Gnosis         = fromToml(snapshothashes.Gnosis)
+	Chiado         = fromToml(snapshothashes.Chiado)
+	OptimismGoerli = fromToml(snapshothashes.OptimismGoerli)
 
-	MainnetHistory    = fromToml(snapshothashes.MainnetHistory)
-	SepoliaHistory    = fromToml(snapshothashes.SepoliaHistory)
-	GoerliHistory     = fromToml(snapshothashes.GoerliHistory)
-	MumbaiHistory     = fromToml(snapshothashes.MumbaiHistory)
-	BorMainnetHistory = fromToml(snapshothashes.BorMainnetHistory)
-	GnosisHistory     = fromToml(snapshothashes.GnosisHistory)
-	ChiadoHistory     = fromToml(snapshothashes.ChiadoHistory)
+	MainnetHistory        = fromToml(snapshothashes.MainnetHistory)
+	SepoliaHistory        = fromToml(snapshothashes.SepoliaHistory)
+	GoerliHistory         = fromToml(snapshothashes.GoerliHistory)
+	MumbaiHistory         = fromToml(snapshothashes.MumbaiHistory)
+	BorMainnetHistory     = fromToml(snapshothashes.BorMainnetHistory)
+	GnosisHistory         = fromToml(snapshothashes.GnosisHistory)
+	ChiadoHistory         = fromToml(snapshothashes.ChiadoHistory)
+	OptimismGoerliHistory = fromToml(snapshothashes.OptimismGoerliHistory)
 )
 
 type PreverifiedItem struct {
@@ -61,6 +63,7 @@ var (
 	BorMainnetChainSnapshotCfg = newCfg(BorMainnet, BorMainnetHistory)
 	GnosisChainSnapshotCfg     = newCfg(Gnosis, GnosisHistory)
 	ChiadoChainSnapshotCfg     = newCfg(Chiado, ChiadoHistory)
+	OptimismGoerliSnapshotCfg  = newCfg(OptimismGoerli, OptimismGoerliHistory)
 )
 
 func newCfg(preverified, preverifiedHistory Preverified) *Cfg {
@@ -104,13 +107,14 @@ type Cfg struct {
 }
 
 var KnownCfgs = map[string]*Cfg{
-	networkname.MainnetChainName:    MainnetChainSnapshotCfg,
-	networkname.SepoliaChainName:    SepoliaChainSnapshotCfg,
-	networkname.GoerliChainName:     GoerliChainSnapshotCfg,
-	networkname.MumbaiChainName:     MumbaiChainSnapshotCfg,
-	networkname.BorMainnetChainName: BorMainnetChainSnapshotCfg,
-	networkname.GnosisChainName:     GnosisChainSnapshotCfg,
-	networkname.ChiadoChainName:     ChiadoChainSnapshotCfg,
+	networkname.MainnetChainName:        MainnetChainSnapshotCfg,
+	networkname.SepoliaChainName:        SepoliaChainSnapshotCfg,
+	networkname.GoerliChainName:         GoerliChainSnapshotCfg,
+	networkname.MumbaiChainName:         MumbaiChainSnapshotCfg,
+	networkname.BorMainnetChainName:     BorMainnetChainSnapshotCfg,
+	networkname.GnosisChainName:         GnosisChainSnapshotCfg,
+	networkname.ChiadoChainName:         ChiadoChainSnapshotCfg,
+	networkname.OptimismGoerliChainName: OptimismGoerliSnapshotCfg,
 }
 
 // KnownCfg return list of preverified hashes for given network, but apply whiteList filter if it's not empty
