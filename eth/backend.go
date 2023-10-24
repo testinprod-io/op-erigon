@@ -237,6 +237,10 @@ func New(stack *node.Node, config *ethconfig.Config, logger log.Logger) (*Ethere
 			config.Snapshot.Enabled = ethconfig.UseSnapshotsByChainName(config.Genesis.Config.ChainName) && useSnapshots
 		}
 
+		// force to use snapshot
+		useSnapshots = true
+		config.Snapshot.Enabled = true
+
 		return nil
 	}); err != nil {
 		return nil, err
