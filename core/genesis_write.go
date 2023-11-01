@@ -65,16 +65,16 @@ import (
 //
 // The returned chain configuration is never nil.
 func CommitGenesisBlock(db kv.RwDB, genesis *types.Genesis, tmpDir string, logger log.Logger) (*chain.Config, *types.Block, error) {
-	return CommitGenesisBlockWithOverride(db, genesis, nil, tmpDir, logger)
+	return CommitGenesisBlockWithOverride(db, genesis, nil, nil, tmpDir, logger)
 }
 
-func CommitGenesisBlockWithOverride(db kv.RwDB, genesis *types.Genesis, overrideShanghaiTime *big.Int, tmpDir string, logger log.Logger) (*chain.Config, *types.Block, error) {
+func CommitGenesisBlockWithOverride(db kv.RwDB, genesis *types.Genesis, overrideShanghaiTime, overrideOptimismCanyonTime *big.Int, tmpDir string, logger log.Logger) (*chain.Config, *types.Block, error) {
 	tx, err := db.BeginRw(context.Background())
 	if err != nil {
 		return nil, nil, err
 	}
 	defer tx.Rollback()
-	c, b, err := WriteGenesisBlock(tx, genesis, overrideShanghaiTime, tmpDir, logger)
+	c, b, err := WriteGenesisBlock(tx, genesis, overrideShanghaiTime, overrideOptimismCanyonTime, tmpDir, logger)
 	if err != nil {
 		return c, b, err
 	}
@@ -85,7 +85,7 @@ func CommitGenesisBlockWithOverride(db kv.RwDB, genesis *types.Genesis, override
 	return c, b, nil
 }
 
-func WriteGenesisBlock(tx kv.RwTx, genesis *types.Genesis, overrideShanghaiTime *big.Int, tmpDir string, logger log.Logger) (*chain.Config, *types.Block, error) {
+func WriteGenesisBlock(tx kv.RwTx, genesis *types.Genesis, overrideShanghaiTime, overrideOptimismCanyonTime *big.Int, tmpDir string, logger log.Logger) (*chain.Config, *types.Block, error) {
 	var storedBlock *types.Block
 	if genesis != nil && genesis.Config == nil {
 		return params.AllProtocolChanges, nil, types.ErrGenesisNoConfig
@@ -99,6 +99,9 @@ func WriteGenesisBlock(tx kv.RwTx, genesis *types.Genesis, overrideShanghaiTime 
 	applyOverrides := func(config *chain.Config) {
 		if overrideShanghaiTime != nil {
 			config.ShanghaiTime = overrideShanghaiTime
+		}
+		if config.IsOptimism() && overrideOptimismCanyonTime != nil {
+			config.CanyonTime = overrideOptimismCanyonTime
 		}
 		if config.IsOptimism() && config.ChainID != nil {
 			if config.ChainID.Cmp(params.OptimismGoerliChainConfig.ChainID) == 0 {
