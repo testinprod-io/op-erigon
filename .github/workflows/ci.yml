@@ -6,12 +6,14 @@ on:
       - alpha
       - stable
       - op-erigon
+      - tip/canyon
   pull_request:
     branches:
       - devel
       - alpha
       - stable
       - op-erigon
+      - tip/canyon
     types:
       - opened
       - reopened
