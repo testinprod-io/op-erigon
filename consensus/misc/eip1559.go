@@ -49,7 +49,7 @@ func VerifyEip1559Header(config *chain.Config, parent, header *types.Header, ski
 		return fmt.Errorf("header is missing baseFee")
 	}
 	// Verify the baseFee is correct based on the parent header.
-	expectedBaseFee := CalcBaseFee(config, parent)
+	expectedBaseFee := CalcBaseFee(config, parent, header.Time)
 	if header.BaseFee.Cmp(expectedBaseFee) != 0 {
 		return fmt.Errorf("invalid baseFee: have %s, want %s, parentBaseFee %s, parentGasUsed %d",
 			expectedBaseFee, header.BaseFee, parent.BaseFee, parent.GasUsed)
@@ -58,7 +58,7 @@ func VerifyEip1559Header(config *chain.Config, parent, header *types.Header, ski
 }
 
 // CalcBaseFee calculates the basefee of the header.
-func CalcBaseFee(config *chain.Config, parent *types.Header) *big.Int {
+func CalcBaseFee(config *chain.Config, parent *types.Header, time uint64) *big.Int {
 	// If the current block is the first EIP-1559 block, return the InitialBaseFee.
 	if !config.IsLondon(parent.Number.Uint64()) {
 		return new(big.Int).SetUint64(params.InitialBaseFee)
@@ -67,7 +67,7 @@ func CalcBaseFee(config *chain.Config, parent *types.Header) *big.Int {
 	var (
 		parentGasTarget          = parent.GasLimit / config.ElasticityMultiplier(params.ElasticityMultiplier)
 		parentGasTargetBig       = new(big.Int).SetUint64(parentGasTarget)
-		baseFeeChangeDenominator = new(big.Int).SetUint64(getBaseFeeChangeDenominator(config, parent.Number.Uint64()))
+		baseFeeChangeDenominator = new(big.Int).SetUint64(getBaseFeeChangeDenominator(config, parent.Number.Uint64(), time))
 	)
 	// If the parent gasUsed is the same as the target, the baseFee remains unchanged.
 	if parent.GasUsed == parentGasTarget {
@@ -98,12 +98,12 @@ func CalcBaseFee(config *chain.Config, parent *types.Header) *big.Int {
 	}
 }
 
-func getBaseFeeChangeDenominator(config *chain.Config, number uint64) uint64 {
+func getBaseFeeChangeDenominator(config *chain.Config, number, time uint64) uint64 {
 	// If we're running bor based chain post delhi hardfork, return the new value
 	if config.Bor != nil && config.Bor.IsDelhi(number) {
 		return params.BaseFeeChangeDenominatorPostDelhi
 	}
 
 	// Return the original once for other chains and pre-fork cases
-	return config.BaseFeeChangeDenominator(params.BaseFeeChangeDenominator)
+	return config.BaseFeeChangeDenominator(params.BaseFeeChangeDenominator, time)
 }
