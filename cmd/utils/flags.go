@@ -21,13 +21,14 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
-	"github.com/urfave/cli/v2"
 	"math/big"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
+
+	"github.com/urfave/cli/v2"
 
 	"golang.org/x/exp/slices"
 
@@ -111,6 +112,10 @@ var (
 	OverrideShanghaiTime = flags.BigFlag{
 		Name:  "override.shanghaiTime",
 		Usage: "Manually specify Shanghai fork time, overriding the bundled setting",
+	}
+	OverrideOptimismCanyonFlag = flags.BigFlag{
+		Name:  "override.canyon",
+		Usage: "Manually specify the Optimism Canyon fork time, overriding the bundled setting",
 	}
 	// Ethash settings
 	EthashCachesInMemoryFlag = cli.IntFlag{
@@ -1638,7 +1643,10 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 		cfg.Genesis = readGenesis(ctx.String(GenesisPathFlag.Name))
 		//log.Info("Using custom developer period", "seconds", cfg.Genesis.Config.Clique.Period)
 	}
-
+	if ctx.IsSet(OverrideOptimismCanyonFlag.Name) {
+		cfg.OverrideOptimismCanyonTime = flags.GlobalBig(ctx, OverrideOptimismCanyonFlag.Name)
+		cfg.TxPool.OverrideOptimismCanyonTime = cfg.OverrideOptimismCanyonTime
+	}
 	if ctx.IsSet(OverrideShanghaiTime.Name) {
 		cfg.OverrideShanghaiTime = flags.GlobalBig(ctx, OverrideShanghaiTime.Name)
 		cfg.TxPool.OverrideShanghaiTime = cfg.OverrideShanghaiTime
