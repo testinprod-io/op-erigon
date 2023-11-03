@@ -94,11 +94,6 @@ func (api *OtterscanAPIImpl) traceBlock(dbtx kv.Tx, ctx context.Context, blockNu
 	header := block.Header()
 	rules := chainConfig.Rules(block.NumberU64(), header.Time)
 	found := false
-
-	var depositNonces []*uint64
-	if chainConfig.IsOptimism() {
-		depositNonces = rawdb.ReadDepositNonces(dbtx, blockNum)
-	}
 	for idx, tx := range block.Transactions() {
 		ibs.SetTxContext(tx.Hash(), block.Hash(), idx)
 
@@ -116,11 +111,11 @@ func (api *OtterscanAPIImpl) traceBlock(dbtx kv.Tx, ctx context.Context, blockNu
 		_ = ibs.FinalizeTx(rules, cachedWriter)
 
 		if tracer.Found {
-			var depositNonce *uint64
-			if chainConfig.IsOptimism() && idx < len(depositNonces) {
-				depositNonce = depositNonces[idx]
+			var receipt *types.Receipt
+			if chainConfig.IsOptimism() && idx < len(block.Transactions()) {
+				receipt = blockReceipts[idx]
 			}
-			rpcTx := newRPCTransaction(tx, block.Hash(), blockNum, uint64(idx), block.BaseFee(), depositNonce)
+			rpcTx := newRPCTransaction(tx, block.Hash(), blockNum, uint64(idx), block.BaseFee(), receipt)
 			mReceipt := marshalReceipt(blockReceipts[idx], tx, chainConfig, block.HeaderNoCopy(), tx.Hash(), true)
 			mReceipt["timestamp"] = block.Time()
 			rpcTxs = append(rpcTxs, rpcTx)

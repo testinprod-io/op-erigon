@@ -403,12 +403,14 @@ type RPCTransaction struct {
 	SourceHash *common.Hash `json:"sourceHash,omitempty"`
 	Mint       *hexutil.Big `json:"mint,omitempty"`
 	IsSystemTx *bool        `json:"isSystemTx,omitempty"`
+	// deposit-tx post-Canyon only
+	DepositReceiptVersion *hexutil.Uint64 `json:"depositReceiptVersion,omitempty"`
 }
 
 // newRPCTransaction returns a transaction that will serialize to the RPC
 // representation, with the given location metadata set (if available).
 func newRPCTransaction(tx types.Transaction, blockHash common.Hash, blockNumber uint64, index uint64, baseFee *big.Int,
-	depositNonce *uint64) *RPCTransaction {
+	receipt *types.Receipt) *RPCTransaction {
 	// Determine the signer. For replay-protected transactions, use the most permissive
 	// signer, because we assume that signers are backwards-compatible with old
 	// transactions. For non-protected transactions, the homestead signer signer is used
@@ -464,8 +466,12 @@ func newRPCTransaction(tx types.Transaction, blockHash common.Hash, blockNumber 
 		if t.IsSystemTransaction {
 			result.IsSystemTx = &t.IsSystemTransaction
 		}
-		if depositNonce != nil {
-			result.Nonce = hexutil.Uint64(*depositNonce)
+		if receipt != nil && receipt.DepositNonce != nil {
+			result.Nonce = hexutil.Uint64(*receipt.DepositNonce)
+			if receipt.DepositReceiptVersion != nil {
+				result.DepositReceiptVersion = new(hexutil.Uint64)
+				*result.DepositReceiptVersion = hexutil.Uint64(*receipt.DepositReceiptVersion)
+			}
 		}
 		result.GasPrice = (*hexutil.Big)(common.Big0)
 		// must contain v, r, s values for backwards compatibility.
