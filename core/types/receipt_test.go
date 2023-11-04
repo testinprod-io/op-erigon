@@ -663,3 +663,42 @@ func TestRoundTripReceiptForStorage(t *testing.T) {
 		})
 	}
 }
+
+func TestReceiptJSON(t *testing.T) {
+	tests := []struct {
+		name string
+		rcpt *Receipt
+	}{
+		{name: "Legacy", rcpt: legacyReceipt},
+		{name: "AccessList", rcpt: accessListReceipt},
+		{name: "EIP1559", rcpt: eip1559Receipt},
+		{name: "DepositNoNonce", rcpt: depositReceiptNoNonce},
+		{name: "DepositWithNonce", rcpt: depositReceiptWithNonce},
+		{name: "DepositWithNonceAndVersion", rcpt: depositReceiptWithNonceAndVersion},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			b, err := test.rcpt.MarshalJSON()
+			if err != nil {
+				t.Fatal("error marshaling receipt to json:", err)
+			}
+			r := Receipt{}
+			err = r.UnmarshalJSON(b)
+			if err != nil {
+				t.Fatal("error unmarshaling receipt from json:", err)
+			}
+
+			// Make sure marshal/unmarshal doesn't affect receipt hash root computation by comparing
+			// the output of EncodeIndex
+			rsBefore := Receipts([]*Receipt{test.rcpt})
+			rsAfter := Receipts([]*Receipt{&r})
+
+			encBefore, encAfter := bytes.Buffer{}, bytes.Buffer{}
+			rsBefore.EncodeIndex(0, &encBefore)
+			rsAfter.EncodeIndex(0, &encAfter)
+			if !bytes.Equal(encBefore.Bytes(), encAfter.Bytes()) {
+				t.Errorf("%v: EncodeIndex differs after JSON marshal/unmarshal", test.name)
+			}
+		})
+	}
+}
