@@ -559,7 +559,7 @@ func TestReceiptEncodeIndexBugIsEnshrined(t *testing.T) {
 	// Check that a post-Regolith, pre-Canyon receipt produces no difference between
 	// receipts having different depositNonce
 	buf := new(bytes.Buffer)
-	receipts := Receipts{depositReceiptWithNonce}
+	receipts := Receipts{depositReceiptWithNonce.Copy()}
 	receipts.EncodeIndex(0, buf)
 	indexBytesBefore := buf.Bytes()
 
@@ -577,14 +577,14 @@ func TestReceiptEncodeIndexBugIsEnshrined(t *testing.T) {
 	buf3 := new(bytes.Buffer)
 	receipts[0].Type = eip1559Receipt.Type
 	receipts.EncodeIndex(0, buf3)
-	indexBytesNonDeposit := buf3.Bytes()
+	indexBytesNoDeposit := buf3.Bytes()
 
-	require.NotEqual(t, indexBytesBefore[0], indexBytesNonDeposit[0])
-	require.Equal(t, indexBytesBefore[1:], indexBytesNonDeposit[1:])
+	require.NotEqual(t, indexBytesBefore[0], indexBytesNoDeposit[0])
+	require.Equal(t, indexBytesBefore[1:], indexBytesNoDeposit[1:])
 
 	// Check that post-canyon changes the hash compared to pre-Canyon
 	buf4 := new(bytes.Buffer)
-	receipts = Receipts{depositReceiptWithNonceAndVersion}
+	receipts = Receipts{depositReceiptWithNonceAndVersion.Copy()}
 	receipts.EncodeIndex(0, buf4)
 	indexBytesCanyon := buf4.Bytes()
 	require.NotEqual(t, indexBytesBefore[1:], indexBytesCanyon[1:])
