@@ -515,10 +515,11 @@ type Receipts []*Receipt
 // Len returns the number of receipts in this list.
 func (rs Receipts) Len() int { return len(rs) }
 
-// EncodeIndex encodes the i'th receipt to w. For DepositTxType receipts with non-nil DepositNonce
-// but nil DepositReceiptVersion, the output will differ than calling r.MarshalBinary(); this
-// behavior difference should not be changed to preserve backwards compatibility of receipt-root
-// hash computation.
+
+// EncodeIndex encodes the i'th receipt to w.
+// During post-regolith and pre-Canyon, DepositNonce was not included when encoding for hashing.
+// Canyon adds DepositReceiptVersion to preserve backwards compatibility for pre-Canyon, and
+// for correct receipt-root hash computation.
 func (rs Receipts) EncodeIndex(i int, w *bytes.Buffer) {
 	r := rs[i]
 	data := &receiptRLP{r.statusEncoding(), r.CumulativeGasUsed, r.Bloom, r.Logs}
