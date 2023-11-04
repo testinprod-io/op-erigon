@@ -385,7 +385,10 @@ func (r *Receipt) Copy() *Receipt {
 	txHash := libcommon.BytesToHash(r.TxHash.Bytes())
 	contractAddress := libcommon.BytesToAddress(r.ContractAddress.Bytes())
 	blockHash := libcommon.BytesToHash(r.BlockHash.Bytes())
-	blockNumber := big.NewInt(0).Set(r.BlockNumber)
+	var blockNumber *big.Int
+	if r.BlockNumber != nil {
+		blockNumber = big.NewInt(0).Set(r.BlockNumber)
+	}
 
 	return &Receipt{
 		Type:                  r.Type,
@@ -514,7 +517,6 @@ type Receipts []*Receipt
 
 // Len returns the number of receipts in this list.
 func (rs Receipts) Len() int { return len(rs) }
-
 
 // EncodeIndex encodes the i'th receipt to w.
 // During post-regolith and pre-Canyon, DepositNonce was not included when encoding for hashing.
