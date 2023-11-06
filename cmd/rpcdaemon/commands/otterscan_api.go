@@ -523,8 +523,8 @@ func (api *OtterscanAPIImpl) searchTransactionsBeforeV3(tx kv.TemporalTx, ctx co
 		var receipt *types.Receipt
 		if chainConfig.IsOptimism() {
 			receipts := rawdb.ReadRawReceipts(tx, blockNum)
-			if len(receipts) <= int(txIndex) {
-				return nil, fmt.Errorf("block has less receipts than expected: %d <= %d, block: %d", len(receipts), int(txIndex), blockNum)
+			if len(receipts) <= txIndex {
+				return nil, fmt.Errorf("block has less receipts than expected: %d <= %d, block: %d", len(receipts), txIndex, blockNum)
 			}
 			receipt = receipts[txIndex]
 		}
