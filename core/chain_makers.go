@@ -371,6 +371,10 @@ func GenerateChain(config *chain.Config, parent *types.Block, engine consensus.E
 				misc.ApplyDAOHardFork(ibs)
 			}
 		}
+
+		// Optimism Canyon
+		misc.EnsureCreate2Deployer(config, b.header.Time, ibs)
+
 		systemcontracts.UpgradeBuildInSystemContract(config, b.header.Number, ibs, logger)
 		// Execute any user modifications to the block
 		if gen != nil {

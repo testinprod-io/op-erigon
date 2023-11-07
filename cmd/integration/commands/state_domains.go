@@ -532,6 +532,16 @@ func (b *blockProcessor) applyBlock(
 		}
 	}
 
+	// Optimism Canyon
+	ibs := state.New(b.reader)
+	misc.EnsureCreate2Deployer(b.chainConfig, header.Time, ibs)
+	if err := ibs.FinalizeTx(rules, b.writer); err != nil {
+		return nil, err
+	}
+	if err := b.writer.w.FinishTx(); err != nil {
+		return nil, fmt.Errorf("finish create2Deployer failed: %w", err)
+	}
+
 	b.txNum++ // Pre-block transaction
 	b.writer.w.SetTxNum(b.txNum)
 	if err := b.writer.w.FinishTx(); err != nil {

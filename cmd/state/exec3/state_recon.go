@@ -293,6 +293,9 @@ func (rw *ReconWorker) runTxTask(txTask *exec22.TxTask) error {
 	ibs := rw.ibs
 	rules := txTask.Rules
 	daoForkTx := rw.chainConfig.DAOForkBlock != nil && rw.chainConfig.DAOForkBlock.Uint64() == txTask.BlockNum && txTask.TxIndex == -1
+	// Optimism Canyon
+	create2DeployerTx := txTask.TxIndex == -1
+
 	var err error
 	if txTask.BlockNum == 0 && txTask.TxIndex == -1 {
 		//fmt.Printf("txNum=%d, blockNum=%d, Genesis\n", txTask.TxNum, txTask.BlockNum)
@@ -303,9 +306,15 @@ func (rw *ReconWorker) runTxTask(txTask *exec22.TxTask) error {
 		}
 		// For Genesis, rules should be empty, so that empty accounts can be included
 		rules = &chain.Rules{}
-	} else if daoForkTx {
-		//fmt.Printf("txNum=%d, blockNum=%d, DAO fork\n", txNum, blockNum)
-		misc.ApplyDAOHardFork(ibs)
+	} else if daoForkTx || create2DeployerTx {
+		if daoForkTx {
+			//fmt.Printf("txNum=%d, blockNum=%d, DAO fork\n", txNum, blockNum)
+			misc.ApplyDAOHardFork(ibs)
+		}
+		if create2DeployerTx && txTask.Header != nil {
+			// Optimism Canyon
+			misc.EnsureCreate2Deployer(rw.chainConfig, txTask.Header.Time, ibs)
+		}
 		ibs.SoftFinalise()
 	} else if txTask.Final {
 		if txTask.BlockNum > 0 {
