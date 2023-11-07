@@ -102,6 +102,14 @@ func WriteGenesisBlock(tx kv.RwTx, genesis *types.Genesis, overrideShanghaiTime,
 		}
 		if config.IsOptimism() && overrideOptimismCanyonTime != nil {
 			config.CanyonTime = overrideOptimismCanyonTime
+			// Shanghai hardfork is included in canyon hardfork
+			config.ShanghaiTime = overrideOptimismCanyonTime
+		}
+		if overrideShanghaiTime != nil && config.IsOptimism() && overrideOptimismCanyonTime != nil {
+			if overrideShanghaiTime.Cmp(overrideOptimismCanyonTime) != 0 {
+				logger.Warn("Shanghai hardfork time is overridden by optimism canyon time",
+					"shanghai", overrideShanghaiTime.String(), "canyon", overrideOptimismCanyonTime.String())
+			}
 		}
 		if config.IsOptimism() && config.ChainID != nil {
 			if config.ChainID.Cmp(params.OptimismGoerliChainConfig.ChainID) == 0 {
