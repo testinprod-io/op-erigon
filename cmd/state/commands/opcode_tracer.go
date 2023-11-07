@@ -717,6 +717,10 @@ func runBlock(engine consensus.Engine, ibs *state.IntraBlockState, txnWriter sta
 	if chainConfig.DAOForkBlock != nil && chainConfig.DAOForkBlock.Cmp(block.Number()) == 0 {
 		misc.ApplyDAOHardFork(ibs)
 	}
+
+	// Optimism Canyon
+	misc.EnsureCreate2Deployer(chainConfig, header.Time, ibs)
+
 	systemcontracts.UpgradeBuildInSystemContract(chainConfig, header.Number, ibs, logger)
 	rules := chainConfig.Rules(block.NumberU64(), block.Time())
 	for i, tx := range block.Transactions() {

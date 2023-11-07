@@ -103,6 +103,10 @@ func SpawnMiningExecStage(s *StageState, tx kv.RwTx, cfg MiningExecCfg, quit <-c
 	if cfg.chainConfig.DAOForkBlock != nil && cfg.chainConfig.DAOForkBlock.Cmp(current.Header.Number) == 0 {
 		misc.ApplyDAOHardFork(ibs)
 	}
+
+	// Optimism Canyon
+	misc.EnsureCreate2Deployer(&cfg.chainConfig, current.Header.Time, ibs)
+
 	systemcontracts.UpgradeBuildInSystemContract(&cfg.chainConfig, current.Header.Number, ibs, logger)
 
 	// Create an empty block based on temporary copied state for
