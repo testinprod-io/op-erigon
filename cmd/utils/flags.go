@@ -1657,7 +1657,6 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 	if ctx.IsSet(OverrideShanghaiTime.Name) && ctx.IsSet(OverrideOptimismCanyonFlag.Name) {
 		overrideShanghaiTime := flags.GlobalBig(ctx, OverrideShanghaiTime.Name)
 		overrideOptimismCanyonTime := flags.GlobalBig(ctx, OverrideOptimismCanyonFlag.Name)
-		fmt.Println(overrideShanghaiTime.String(), overrideOptimismCanyonTime.String())
 		if overrideShanghaiTime.Cmp(overrideOptimismCanyonTime) != 0 {
 			logger.Warn("Shanghai hardfork time is overridden by optimism canyon hardfork time",
 				"shanghai", overrideShanghaiTime.String(), "canyon", overrideOptimismCanyonTime.String())
