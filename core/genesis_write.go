@@ -104,6 +104,10 @@ func WriteGenesisBlock(tx kv.RwTx, genesis *types.Genesis, overrideShanghaiTime,
 			config.CanyonTime = overrideOptimismCanyonTime
 			// Shanghai hardfork is included in canyon hardfork
 			config.ShanghaiTime = overrideOptimismCanyonTime
+			if config.Optimism.EIP1559DenominatorCanyon == 0 {
+				logger.Warn("EIP1559DenominatorCanyon set to 0. Overriding to 250 to avoid divide by zero.")
+				config.Optimism.EIP1559DenominatorCanyon = 250
+			}
 		}
 		if overrideShanghaiTime != nil && config.IsOptimism() && overrideOptimismCanyonTime != nil {
 			if overrideShanghaiTime.Cmp(overrideOptimismCanyonTime) != 0 {
