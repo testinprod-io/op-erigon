@@ -24,6 +24,6 @@
       "eip1559DenominatorCanyon": 250
     },
     "regolithTime": 0,
-    "shanghaiTime": 0,
-    "canyonTime": 0
+    "shanghaiTime": 2,
+    "canyonTime": 2
 }
