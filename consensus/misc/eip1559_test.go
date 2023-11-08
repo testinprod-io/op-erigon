@@ -45,9 +45,9 @@ func opConfig() *chain.Config {
 	config.LondonBlock = big.NewInt(5)
 	config.CanyonTime = big.NewInt(10)
 	config.Optimism = &chain.OptimismConfig{
-		EIP1559Elasticity:            6,
-		EIP1559Denominator:           50,
-		EIP1559DenominatorPostCanyon: 250,
+		EIP1559Elasticity:        6,
+		EIP1559Denominator:       50,
+		EIP1559DenominatorCanyon: 250,
 	}
 	return config
 }
