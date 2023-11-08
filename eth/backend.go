@@ -296,8 +296,13 @@ func New(stack *node.Node, config *ethconfig.Config, logger log.Logger) (*Ethere
 	backend.genesisHash = genesis.Hash()
 
 	logger.Info("Initialised chain configuration", "config", chainConfig, "genesis", genesis.Hash())
-	if chainConfig.IsOptimism() && chainConfig.RegolithTime == nil {
-		log.Warn("Optimism RegolithTime has not been set")
+	if chainConfig.IsOptimism() {
+		if chainConfig.RegolithTime == nil {
+			log.Warn("Optimism RegolithTime has not been set")
+		}
+		if chainConfig.CanyonTime == nil {
+			log.Warn("Optimism CanyonTime has not been set")
+		}
 	}
 
 	if err := backend.setUpSnapDownloader(ctx, config.Downloader); err != nil {
