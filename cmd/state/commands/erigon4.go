@@ -412,12 +412,13 @@ func processBlock23(startTxNum uint64, trace bool, txNumStart uint64, rw *StateR
 
 	// Optimism Canyon
 	ibs := state.New(rw)
-	misc.EnsureCreate2Deployer(chainConfig, header.Time, ibs)
-	if err := ibs.FinalizeTx(rules, ww); err != nil {
-		return 0, nil, err
-	}
-	if err := ww.w.FinishTx(); err != nil {
-		return 0, nil, fmt.Errorf("finish create2Deployer failed: %w", err)
+	if misc.EnsureCreate2Deployer(chainConfig, header.Time, ibs) {
+		if err := ibs.FinalizeTx(rules, ww); err != nil {
+			return 0, nil, err
+		}
+		if err := ww.w.FinishTx(); err != nil {
+			return 0, nil, fmt.Errorf("finish create2Deployer failed: %w", err)
+		}
 	}
 
 	txNum++ // Pre-block transaction

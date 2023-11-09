@@ -135,10 +135,11 @@ func (rw *Worker) RunTxTaskNoLock(txTask *exec22.TxTask) {
 	rules := txTask.Rules
 	daoForkTx := rw.chainConfig.DAOForkBlock != nil && rw.chainConfig.DAOForkBlock.Uint64() == txTask.BlockNum && txTask.TxIndex == -1
 	// Optimism Canyon
-	create2DeployerTx := txTask.TxIndex == -1
+	header := txTask.Header
+	create2DeployerTx := rw.chainConfig.IsOptimism() && rw.chainConfig.CanyonTime != nil &&
+		(*rw.chainConfig.CanyonTime).Uint64() != header.Time && txTask.TxIndex == -1
 
 	var err error
-	header := txTask.Header
 
 	switch {
 	case daoForkTx || create2DeployerTx:
