@@ -745,8 +745,8 @@ github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXl
 github.com/supranational/blst v0.3.10 h1:CMciDZ/h4pXDDXQASe8ZGTNKUiVNxVVA5hpci2Uuhuk=
 github.com/supranational/blst v0.3.10/go.mod h1:jZJtfjgudtNl4en1tzwPIV3KjUnQUvG3/j+w+fVonLw=
 github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07/go.mod h1:kDXzergiv9cbyO7IOYJZWg1U88JhDg3PB6klq9Hg2pA=
-github.com/testinprod-io/erigon-lib v0.0.0-20231107080117-508e450fb098 h1:OyFkQCzCnEBcIEq8yRHMDdTwS839y/A1rLy/Y12+T8I=
-github.com/testinprod-io/erigon-lib v0.0.0-20231107080117-508e450fb098/go.mod h1:yq49cI1Z1S+aS0gj6ERZU03UIrseMmDRj4zWa1EA96Y=
+github.com/testinprod-io/erigon-lib v0.0.0-20231109025633-6e4e2ee1c58d h1:cRaYv5QuoOR66uirFqECvfEQORn6J9GzmmjufhQtOGg=
+github.com/testinprod-io/erigon-lib v0.0.0-20231109025633-6e4e2ee1c58d/go.mod h1:yq49cI1Z1S+aS0gj6ERZU03UIrseMmDRj4zWa1EA96Y=
 github.com/thomaso-mirodin/intmath v0.0.0-20160323211736-5dc6d854e46e h1:cR8/SYRgyQCt5cNCMniB/ZScMkhI9nk8U5C7SbISXjo=
 github.com/thomaso-mirodin/intmath v0.0.0-20160323211736-5dc6d854e46e/go.mod h1:Tu4lItkATkonrYuvtVjG0/rhy15qrNGNTjPdaphtZ/8=
 github.com/tidwall/btree v1.6.0 h1:LDZfKfQIBHGHWSwckhXI0RPSXzlo+KYdjK7FWSqOzzg=
