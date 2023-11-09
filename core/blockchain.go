@@ -104,6 +104,10 @@ func ExecuteBlockEphemerally(
 	if chainConfig.DAOForkBlock != nil && chainConfig.DAOForkBlock.Cmp(block.Number()) == 0 {
 		misc.ApplyDAOHardFork(ibs)
 	}
+
+	// Optimism Canyon
+	misc.EnsureCreate2Deployer(chainConfig, header.Time, ibs)
+
 	noop := state.NewNoopWriter()
 	//fmt.Printf("====txs processing start: %d====\n", block.NumberU64())
 	for i, tx := range block.Transactions() {
@@ -212,6 +216,10 @@ func SysCallContract(contract libcommon.Address, data []byte, chainConfig *chain
 	if chainConfig.DAOForkBlock != nil && chainConfig.DAOForkBlock.Cmp(header.Number) == 0 {
 		misc.ApplyDAOHardFork(ibs)
 	}
+
+	// Optimism Canyon
+	misc.EnsureCreate2Deployer(chainConfig, header.Time, ibs)
+
 	msg := types.NewMessage(
 		state.SystemAddress,
 		&contract,
@@ -257,6 +265,10 @@ func SysCreate(contract libcommon.Address, data []byte, chainConfig chain.Config
 	if chainConfig.DAOForkBlock != nil && chainConfig.DAOForkBlock.Cmp(header.Number) == 0 {
 		misc.ApplyDAOHardFork(ibs)
 	}
+
+	// Optimism Canyon
+	misc.EnsureCreate2Deployer(&chainConfig, header.Time, ibs)
+
 	msg := types.NewMessage(
 		contract,
 		nil, // to
@@ -293,6 +305,10 @@ func CallContract(contract libcommon.Address, data []byte, chainConfig chain.Con
 	if chainConfig.DAOForkBlock != nil && chainConfig.DAOForkBlock.Cmp(header.Number) == 0 {
 		misc.ApplyDAOHardFork(ibs)
 	}
+
+	// Optimism Canyon
+	misc.EnsureCreate2Deployer(&chainConfig, header.Time, ibs)
+
 	noop := state.NewNoopWriter()
 	tx, err := CallContractTx(contract, data, ibs)
 	if err != nil {

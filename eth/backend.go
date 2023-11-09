@@ -281,7 +281,7 @@ func New(stack *node.Node, config *ethconfig.Config, logger log.Logger) (*Ethere
 			genesisSpec = nil
 		}
 		var genesisErr error
-		chainConfig, genesis, genesisErr = core.WriteGenesisBlock(tx, genesisSpec, config.OverrideShanghaiTime, tmpdir, logger)
+		chainConfig, genesis, genesisErr = core.WriteGenesisBlock(tx, genesisSpec, config.OverrideShanghaiTime, config.OverrideOptimismCanyonTime, tmpdir, logger)
 		if _, ok := genesisErr.(*chain.ConfigCompatError); genesisErr != nil && !ok {
 			return genesisErr
 		}
@@ -296,8 +296,13 @@ func New(stack *node.Node, config *ethconfig.Config, logger log.Logger) (*Ethere
 	backend.genesisHash = genesis.Hash()
 
 	logger.Info("Initialised chain configuration", "config", chainConfig, "genesis", genesis.Hash())
-	if chainConfig.IsOptimism() && chainConfig.RegolithTime == nil {
-		log.Warn("Optimism RegolithTime has not been set")
+	if chainConfig.IsOptimism() {
+		if chainConfig.RegolithTime == nil {
+			log.Warn("Optimism RegolithTime has not been set")
+		}
+		if chainConfig.CanyonTime == nil {
+			log.Warn("Optimism CanyonTime has not been set")
+		}
 	}
 
 	if err := backend.setUpSnapDownloader(ctx, config.Downloader); err != nil {

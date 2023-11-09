@@ -146,6 +146,7 @@ var DefaultFlags = []cli.Flag{
 	&utils.HeimdallgRPCAddressFlag,
 	&utils.EthStatsURLFlag,
 	&utils.OverrideShanghaiTime,
+	&utils.OverrideOptimismCanyonFlag,
 	&utils.RollupSequencerHTTPFlag,
 	&utils.RollupHistoricalRPCFlag,
 	&utils.RollupHistoricalRPCTimeoutFlag,

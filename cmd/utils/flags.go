@@ -21,13 +21,14 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
-	"github.com/urfave/cli/v2"
 	"math/big"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
+
+	"github.com/urfave/cli/v2"
 
 	"golang.org/x/exp/slices"
 
@@ -111,6 +112,10 @@ var (
 	OverrideShanghaiTime = flags.BigFlag{
 		Name:  "override.shanghaiTime",
 		Usage: "Manually specify Shanghai fork time, overriding the bundled setting",
+	}
+	OverrideOptimismCanyonFlag = flags.BigFlag{
+		Name:  "override.canyon",
+		Usage: "Manually specify the Optimism Canyon fork time, overriding the bundled setting",
 	}
 	// Ethash settings
 	EthashCachesInMemoryFlag = cli.IntFlag{
@@ -1632,18 +1637,31 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 		if developer == (libcommon.Address{}) {
 			Fatalf("Please specify developer account address using --miner.etherbase")
 		}
-		log.Info("Using developer account", "address", developer)
+		logger.Info("Using developer account", "address", developer)
 
 		// Create a new developer genesis block or reuse existing one
 		cfg.Genesis = readGenesis(ctx.String(GenesisPathFlag.Name))
 		//log.Info("Using custom developer period", "seconds", cfg.Genesis.Config.Clique.Period)
 	}
-
 	if ctx.IsSet(OverrideShanghaiTime.Name) {
 		cfg.OverrideShanghaiTime = flags.GlobalBig(ctx, OverrideShanghaiTime.Name)
 		cfg.TxPool.OverrideShanghaiTime = cfg.OverrideShanghaiTime
 	}
-
+	if ctx.IsSet(OverrideOptimismCanyonFlag.Name) {
+		cfg.OverrideOptimismCanyonTime = flags.GlobalBig(ctx, OverrideOptimismCanyonFlag.Name)
+		cfg.TxPool.OverrideOptimismCanyonTime = cfg.OverrideOptimismCanyonTime
+		// Shanghai hardfork is included in canyon hardfork
+		cfg.OverrideShanghaiTime = flags.GlobalBig(ctx, OverrideOptimismCanyonFlag.Name)
+		cfg.TxPool.OverrideShanghaiTime = cfg.OverrideOptimismCanyonTime
+	}
+	if ctx.IsSet(OverrideShanghaiTime.Name) && ctx.IsSet(OverrideOptimismCanyonFlag.Name) {
+		overrideShanghaiTime := flags.GlobalBig(ctx, OverrideShanghaiTime.Name)
+		overrideOptimismCanyonTime := flags.GlobalBig(ctx, OverrideOptimismCanyonFlag.Name)
+		if overrideShanghaiTime.Cmp(overrideOptimismCanyonTime) != 0 {
+			logger.Warn("Shanghai hardfork time is overridden by optimism canyon hardfork time",
+				"shanghai", overrideShanghaiTime.String(), "canyon", overrideOptimismCanyonTime.String())
+		}
+	}
 	if ctx.IsSet(InternalConsensusFlag.Name) && clparams.EmbeddedEnabledByDefault(cfg.NetworkID) {
 		cfg.InternalCL = ctx.Bool(InternalConsensusFlag.Name)
 	}
