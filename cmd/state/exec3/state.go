@@ -136,8 +136,7 @@ func (rw *Worker) RunTxTaskNoLock(txTask *exec22.TxTask) {
 	daoForkTx := rw.chainConfig.DAOForkBlock != nil && rw.chainConfig.DAOForkBlock.Uint64() == txTask.BlockNum && txTask.TxIndex == -1
 	// Optimism Canyon
 	header := txTask.Header
-	create2DeployerTx := misc.IsCanyonActivationBlock(rw.chainConfig, header.Time) && txTask.TxIndex == -1
-
+	create2DeployerTx := rw.chainConfig.IsOptimism() && rw.chainConfig.IsCanyon(header.Time) && txTask.TxIndex == -1
 	var err error
 
 	switch {

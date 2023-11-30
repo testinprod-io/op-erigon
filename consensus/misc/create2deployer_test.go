@@ -1,11 +1,11 @@
 package misc
 
 import (
-	"bytes"
 	"math/big"
 	"testing"
 
 	"github.com/ledgerwatch/erigon-lib/chain"
+	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/kv/memdb"
 	"github.com/ledgerwatch/erigon/core/state"
 	"github.com/ledgerwatch/erigon/crypto"
@@ -24,16 +24,12 @@ func TestCreateDeployerCodeHash(t *testing.T) {
 func TestEnsureCreate2Deployer(t *testing.T) {
 	canyonTime := uint64(1000)
 	var tests = []struct {
-		name      string
-		override  func(cfg *chain.Config)
-		timestamp uint64
-		applied   bool
+		name       string
+		override   func(cfg *chain.Config)
+		timestamp  uint64
+		applied    bool
+		codeExists bool
 	}{
-		{
-			name:      "at hardfork",
-			timestamp: canyonTime,
-			applied:   true,
-		},
 		{
 			name: "another chain ID",
 			override: func(cfg *chain.Config) {
@@ -48,9 +44,26 @@ func TestEnsureCreate2Deployer(t *testing.T) {
 			applied:   false,
 		},
 		{
+			name:      "at hardfork exactly",
+			timestamp: canyonTime,
+			applied:   true,
+		},
+		{
 			name:      "post hardfork",
 			timestamp: canyonTime + 1,
-			applied:   false,
+			applied:   true,
+		},
+		{
+			name:       "post hardfork but already deployed",
+			timestamp:  canyonTime,
+			applied:    false,
+			codeExists: true,
+		},
+		{
+			name:       "pre Canyon but already deployed",
+			timestamp:  canyonTime - 1,
+			applied:    false,
+			codeExists: true,
 		},
 		{
 			name: "canyon not configured",
@@ -82,13 +95,25 @@ func TestEnsureCreate2Deployer(t *testing.T) {
 
 			_, tx := memdb.NewTestTx(t)
 			state := state.New(state.NewPlainStateReader(tx))
-			// make sure state is empty
-			assert.NotEqual(t, state.GetCode(create2DeployerAddress), create2DeployerCode)
 
-			EnsureCreate2Deployer(&cfg, tt.timestamp, state)
+			if !tt.codeExists {
+				// make sure state is empty
+				assert.Equal(t, libcommon.Hash{}, state.GetCodeHash(create2DeployerAddress))
+				assert.NotEqual(t, create2DeployerCode, state.GetCode(create2DeployerAddress))
+			} else {
+				state.SetCode(create2DeployerAddress, create2DeployerCode)
+			}
 
-			applied := bytes.Equal(state.GetCode(create2DeployerAddress), create2DeployerCode)
+			applied := EnsureCreate2Deployer(&cfg, tt.timestamp, state)
 			assert.Equal(t, tt.applied, applied)
+
+			if applied || tt.codeExists {
+				assert.Equal(t, create2DeployerCodeHash, state.GetCodeHash(create2DeployerAddress))
+				assert.Equal(t, create2DeployerCode, state.GetCode(create2DeployerAddress))
+			} else {
+				assert.Equal(t, libcommon.Hash{}, state.GetCodeHash(create2DeployerAddress))
+				assert.NotEqual(t, create2DeployerCode, state.GetCode(create2DeployerAddress))
+			}
 		})
 	}
 }
