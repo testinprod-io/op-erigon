@@ -21,6 +21,7 @@ import (
 	"github.com/ledgerwatch/erigon/core/vm/evmtypes"
 	"github.com/ledgerwatch/erigon/rlp"
 	"github.com/ledgerwatch/erigon/turbo/services"
+	"github.com/ledgerwatch/log/v3"
 )
 
 type Worker struct {
@@ -134,9 +135,6 @@ func (rw *Worker) RunTxTaskNoLock(txTask *exec22.TxTask) {
 	rules := txTask.Rules
 	var err error
 	header := txTask.Header
-	create2DeployerTx := misc.IsCanyonActivationBlock(rw.chainConfig, header.Time) && txTask.TxIndex == -1
-
-	var err error
 
 	var logger = log.New("worker-tx")
 
