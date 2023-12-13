@@ -773,8 +773,13 @@ func marshalReceipt(receipt *types.Receipt, txn types.Transaction, chainConfig *
 			fields["l1GasUsed"] = hexutil.Big(*receipt.L1GasUsed)
 			fields["l1Fee"] = hexutil.Big(*receipt.L1Fee)
 			fields["l1FeeScalar"] = receipt.FeeScalar
-		} else if receipt.DepositNonce != nil {
-			fields["depositNonce"] = hexutil.Uint64(*receipt.DepositNonce)
+		} else {
+			if receipt.DepositNonce != nil {
+				fields["depositNonce"] = hexutil.Uint64(*receipt.DepositNonce)
+			}
+			if receipt.DepositReceiptVersion != nil {
+				fields["depositReceiptVersion"] = hexutil.Uint64(*receipt.DepositReceiptVersion)
+			}
 		}
 	}
 

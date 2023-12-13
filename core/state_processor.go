@@ -91,9 +91,14 @@ func applyTransaction(config *chain.Config, engine consensus.EngineReader, gp *G
 		receipt.GasUsed = result.UsedGas
 
 		if msg.IsDepositTx() && config.IsOptimismRegolith(evm.Context().Time) {
-			// The actual nonce for deposit transactions is only recorded from Regolith onwards.
-			// Before the Regolith fork the DepositNonce must remain nil
+			// The actual nonce for deposit transactions is only recorded from Regolith onwards and
+			// otherwise must be nil.
 			receipt.DepositNonce = &nonce
+
+			if config.IsOptimismCanyon(evm.Context().Time) {
+				receipt.DepositReceiptVersion = new(uint64)
+				*receipt.DepositReceiptVersion = types.CanyonDepositReceiptVersion
+			}
 		}
 
 		// if the transaction created a contract, store the creation address in the receipt.

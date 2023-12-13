@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/ledgerwatch/erigon/consensus/misc"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -14,7 +15,6 @@ import (
 
 	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/erigon/metrics"
-	"github.com/ledgerwatch/log/v3"
 	"github.com/spf13/cobra"
 
 	chain2 "github.com/ledgerwatch/erigon-lib/chain"
@@ -523,7 +523,19 @@ func (b *blockProcessor) applyBlock(
 			return nil, fmt.Errorf("finish pre-block tx %d (block %d) has failed: %w", b.txNum, block.NumberU64(), err)
 		}
 	}
-	b.txNum++
+
+	// Optimism Canyon
+	ibs := state.New(b.reader)
+	if misc.EnsureCreate2Deployer(b.chainConfig, header.Time, ibs) {
+		if err := ibs.FinalizeTx(rules, b.writer); err != nil {
+			return nil, err
+		}
+		if err := b.writer.w.FinishTx(); err != nil {
+			return nil, fmt.Errorf("finish create2Deployer failed: %w", err)
+		}
+	}
+
+	b.txNum++ // Pre-block transaction
 	b.writer.w.SetTxNum(b.txNum)
 
 	getHashFn := core.GetHashFn(header, b.getHeader)

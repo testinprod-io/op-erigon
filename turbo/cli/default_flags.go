@@ -1,8 +1,6 @@
 package cli
 
 import (
-	"github.com/urfave/cli/v2"
-
 	"github.com/ledgerwatch/erigon/cmd/utils"
 )
 
@@ -152,6 +150,8 @@ var DefaultFlags = []cli.Flag{
 	&utils.WithHeimdallMilestones,
 	&utils.EthStatsURLFlag,
 	&utils.OverrideCancunFlag,
+	&utils.OverrideShanghaiTime,
+	&utils.OverrideOptimismCanyonFlag,
 	&utils.RollupSequencerHTTPFlag,
 	&utils.RollupHistoricalRPCFlag,
 	&utils.RollupHistoricalRPCTimeoutFlag,

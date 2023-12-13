@@ -6,12 +6,14 @@ on:
       - alpha
       - op-erigon
       - 'release/**'
+      - tip/canyon
   pull_request:
     branches:
       - devel
       - alpha
       - op-erigon
       - 'release/**'
+      - tip/canyon
     types:
       - opened
       - reopened

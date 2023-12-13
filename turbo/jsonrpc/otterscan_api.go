@@ -526,18 +526,17 @@ func (api *OtterscanAPIImpl) searchTransactionsBeforeV3(tx kv.TemporalTx, ctx co
 			return nil, err
 		}
 		var rpcTx *RPCTransaction
+		var receipt *types.Receipt
 		if chainConfig.IsOptimism() {
-			depositNonces := rawdb.ReadDepositNonces(tx, blockNum)
-			if txIndex >= len(depositNonces) {
-				return nil, fmt.Errorf("depositNonce for tx %x not found", txn.Hash())
-			} else {
-				rpcTx = newRPCTransaction(txn, blockHash, blockNum, uint64(txIndex), header.BaseFee, depositNonces[txIndex])
+			receipts := rawdb.ReadRawReceipts(tx, blockNum)
+			if len(receipts) <= txIndex {
+				return nil, fmt.Errorf("block has less receipts than expected: %d <= %d, block: %d", len(receipts), txIndex, blockNum)
 			}
-		} else {
-			rpcTx = newRPCTransaction(txn, blockHash, blockNum, uint64(txIndex), header.BaseFee, nil)
+			receipt = receipts[txIndex]
 		}
+		rpcTx = newRPCTransaction(txn, blockHash, blockNum, uint64(txIndex), header.BaseFee, receipt)
 		txs = append(txs, rpcTx)
-		receipt := &types.Receipt{
+		receipt = &types.Receipt{
 			Type: txn.Type(), CumulativeGasUsed: res.UsedGas,
 			TransactionIndex: uint(txIndex),
 			BlockNumber:      header.Number, BlockHash: blockHash, Logs: rawLogs,
@@ -687,8 +686,8 @@ func (api *OtterscanAPIImpl) delegateGetBlockByNumber(tx kv.Tx, b *types.Block, 
 		return nil, err
 	}
 	additionalFields := make(map[string]interface{})
-	depositNonces := rawdb.ReadDepositNonces(tx, uint64(number.Int64()))
-	response, err := ethapi.RPCMarshalBlock(b, inclTx, inclTx, additionalFields, depositNonces)
+	receipts := rawdb.ReadRawReceipts(tx, uint64(number.Int64()))
+	response, err := ethapi.RPCMarshalBlock(b, inclTx, inclTx, additionalFields, receipts)
 	if !inclTx {
 		delete(response, "transactions") // workaround for https://github.com/ledgerwatch/erigon/issues/4989#issuecomment-1218415666
 	}

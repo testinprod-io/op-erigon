@@ -26,8 +26,6 @@ import (
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/length"
 	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/log/v3"
-
 	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/consensus"
 	"github.com/ledgerwatch/erigon/consensus/merge"
@@ -590,7 +588,7 @@ func MakeEmptyHeader(parent *types.Header, chainConfig *chain.Config, timestamp 
 	parentGasLimit := parent.GasLimit
 	// Set baseFee and GasLimit if we are on an EIP-1559 chain
 	if chainConfig.IsLondon(header.Number.Uint64()) {
-		header.BaseFee = misc.CalcBaseFee(chainConfig, parent)
+		header.BaseFee = misc.CalcBaseFee(chainConfig, parent, timestamp)
 		if !chainConfig.IsLondon(parent.Number.Uint64()) {
 			parentGasLimit = parent.GasLimit * chainConfig.ElasticityMultiplier(params.ElasticityMultiplier)
 		}

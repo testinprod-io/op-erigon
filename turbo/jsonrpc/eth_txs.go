@@ -79,12 +79,11 @@ func (api *APIImpl) GetTransactionByHash(ctx context.Context, txnHash common.Has
 		}
 
 		if chainConfig.IsOptimism() {
-			depositNonces := rawdb.ReadDepositNonces(tx, block.NumberU64())
-			if txnIndex >= uint64(len(depositNonces)) {
-				return nil, fmt.Errorf("depositNonce for tx %x not found", txnHash)
-			} else {
-				return newRPCTransaction(txn, blockHash, blockNum, txnIndex, baseFee, depositNonces[txnIndex]), nil
+			receipts := rawdb.ReadRawReceipts(tx, block.NumberU64())
+			if len(receipts) <= int(txnIndex) {
+				return nil, fmt.Errorf("block has less receipts than expected: %d <= %d, block: %d", len(receipts), int(txnIndex), blockNum)
 			}
+			return newRPCTransaction(txn, blockHash, blockNum, txnIndex, baseFee, receipts[txnIndex]), nil
 		}
 		return newRPCTransaction(txn, blockHash, blockNum, txnIndex, baseFee, nil), nil
 	}
@@ -202,12 +201,11 @@ func (api *APIImpl) GetTransactionByBlockHashAndIndex(ctx context.Context, block
 	}
 
 	if chainConfig.IsOptimism() {
-		depositNonces := rawdb.ReadDepositNonces(tx, block.NumberU64())
-		if uint64(txIndex) >= uint64(len(depositNonces)) {
-			return nil, fmt.Errorf("depositNonce for tx %x not found", txs[txIndex].Hash())
-		} else {
-			return newRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), depositNonces[txIndex]), nil
+		receipts := rawdb.ReadRawReceipts(tx, block.NumberU64())
+		if len(receipts) <= int(txIndex) {
+			return nil, fmt.Errorf("block has less receipts than expected: %d <= %d, block: %d", len(receipts), int(txIndex), block.NumberU64())
 		}
+		return newRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), receipts[txIndex]), nil
 	}
 	return newRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), nil), nil
 }
@@ -273,12 +271,11 @@ func (api *APIImpl) GetTransactionByBlockNumberAndIndex(ctx context.Context, blo
 		return newRPCBorTransaction(borTx, derivedBorTxHash, hash, blockNum, uint64(txIndex), block.BaseFee(), chainConfig.ChainID), nil
 	}
 	if chainConfig.IsOptimism() {
-		depositNonces := rawdb.ReadDepositNonces(tx, blockNum)
-		if uint64(txIndex) >= uint64(len(depositNonces)) {
-			return nil, fmt.Errorf("depositNonce for tx %x not found", txs[txIndex].Hash())
-		} else {
-			return newRPCTransaction(txs[txIndex], hash, blockNum, uint64(txIndex), block.BaseFee(), depositNonces[txIndex]), nil
+		receipts := rawdb.ReadRawReceipts(tx, block.NumberU64())
+		if len(receipts) <= int(txIndex) {
+			return nil, fmt.Errorf("block has less receipts than expected: %d <= %d, block: %d", len(receipts), int(txIndex), block.NumberU64())
 		}
+		return newRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), receipts[txIndex]), nil
 	}
 
 	return newRPCTransaction(txs[txIndex], hash, blockNum, uint64(txIndex), block.BaseFee(), nil), nil

@@ -246,7 +246,11 @@ type Config struct {
 	SentinelAddr                string
 	SentinelPort                uint64
 
-	OverrideCancunTime *big.Int `toml:",omitempty"`
+	OverrideCancunTime         *big.Int `toml:",omitempty"`
+	OverrideShanghaiTime       *big.Int `toml:",omitempty"`
+	OverrideOptimismCanyonTime *big.Int `toml:",omitempty"`
+
+	DropUselessPeers bool
 
 	RollupSequencerHTTP        string
 	RollupHistoricalRPC        string

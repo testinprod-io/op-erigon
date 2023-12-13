@@ -5,7 +5,6 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/ledgerwatch/log/v3"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/ledgerwatch/erigon-lib/chain"
@@ -135,6 +134,9 @@ func (rw *Worker) RunTxTaskNoLock(txTask *exec22.TxTask) {
 	rules := txTask.Rules
 	var err error
 	header := txTask.Header
+	create2DeployerTx := misc.IsCanyonActivationBlock(rw.chainConfig, header.Time) && txTask.TxIndex == -1
+
+	var err error
 
 	var logger = log.New("worker-tx")
 
