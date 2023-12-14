@@ -53,9 +53,11 @@ You can download the chain data from following links:
 - Optimism Mainnet:
   - [https://op-erigon-backup.mainnet.testinprod.io](https://op-erigon-backup.mainnet.testinprod.io)
   - Compressed: 115 GB, Uncompressed: 380 GB.
+  - June 2023
 - Optimism Goerli Testnet
   - [https://op-erigon-backup.goerli.testinprod.io](https://op-erigon-backup.goerli.testinprod.io)
   - Compressed: 4.7 GB, Uncompressed: 14 GB.
+  - June 2023
 
 ### `--externalcl`
 **[Deprecated]**
