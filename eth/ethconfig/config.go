@@ -101,6 +101,8 @@ var Defaults = Config{
 		KeepBlocks: false,
 		Produce:    true,
 	},
+
+	SilkwormEnabled: false,
 }
 
 func init() {
@@ -258,6 +260,10 @@ type Config struct {
 	RollupDisableTxPoolGossip  bool
 
 	ForcePartialCommit bool
+
+	// Embedded Silkworm support
+	SilkwormEnabled bool
+	SilkwormPath    string
 }
 
 type Sync struct {

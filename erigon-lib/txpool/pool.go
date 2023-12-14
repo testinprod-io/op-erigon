@@ -99,25 +99,22 @@ type Pool interface {
 var _ Pool = (*TxPool)(nil)           // compile-time interface check
 var _ Pool = (*TxPoolDropRemote)(nil) // compile-time interface check
 
-// SubPoolMarker is an ordered bitset of six bits that's used to sort transactions into sub-pools. Bits meaning:
-// 1. Minimum fee requirement. Set to 1 if feeCap of the transaction is no less than in-protocol parameter of minimal base fee. Set to 0 if feeCap is less than minimum base fee, which means this transaction will never be included into this particular chain.
-// 2. Absence of nonce gaps. Set to 1 for transactions whose nonce is N, state nonce for the sender is M, and there are transactions for all nonces between M and N from the same sender. Set to 0 is the transaction's nonce is divided from the state nonce by one or more nonce gaps.
-// 3. Sufficient balance for gas. Set to 1 if the balance of sender's account in the state is B, nonce of the sender in the state is M, nonce of the transaction is N, and the sum of feeCap x gasLimit + transferred_value of all transactions from this sender with nonces N+1 ... M is no more than B. Set to 0 otherwise. In other words, this bit is set if there is currently a guarantee that the transaction and all its required prior transactions will be able to pay for gas.
-// 4. Not too much gas: Set to 1 if the transaction doesn't use too much gas
-// 5. Dynamic fee requirement. Set to 1 if feeCap of the transaction is no less than baseFee of the currently pending block. Set to 0 otherwise.
-// 6. Local transaction. Set to 1 if transaction is local.
+// SubPoolMarker is an ordered bitset of five bits that's used to sort transactions into sub-pools. Bits meaning:
+// 1. Absence of nonce gaps. Set to 1 for transactions whose nonce is N, state nonce for the sender is M, and there are transactions for all nonces between M and N from the same sender. Set to 0 is the transaction's nonce is divided from the state nonce by one or more nonce gaps.
+// 2. Sufficient balance for gas. Set to 1 if the balance of sender's account in the state is B, nonce of the sender in the state is M, nonce of the transaction is N, and the sum of feeCap x gasLimit + transferred_value of all transactions from this sender with nonces N+1 ... M is no more than B. Set to 0 otherwise. In other words, this bit is set if there is currently a guarantee that the transaction and all its required prior transactions will be able to pay for gas.
+// 3. Not too much gas: Set to 1 if the transaction doesn't use too much gas
+// 4. Dynamic fee requirement. Set to 1 if feeCap of the transaction is no less than baseFee of the currently pending block. Set to 0 otherwise.
+// 5. Local transaction. Set to 1 if transaction is local.
 type SubPoolMarker uint8
 
 const (
-	EnoughFeeCapProtocol = 0b100000
-	NoNonceGaps          = 0b010000
-	EnoughBalance        = 0b001000
-	NotTooMuchGas        = 0b000100
-	EnoughFeeCapBlock    = 0b000010
-	IsLocal              = 0b000001
+	NoNonceGaps       = 0b010000
+	EnoughBalance     = 0b001000
+	NotTooMuchGas     = 0b000100
+	EnoughFeeCapBlock = 0b000010
+	IsLocal           = 0b000001
 
-	BaseFeePoolBits = EnoughFeeCapProtocol + NoNonceGaps + EnoughBalance + NotTooMuchGas
-	QueuedPoolBits  = EnoughFeeCapProtocol
+	BaseFeePoolBits = NoNonceGaps + EnoughBalance + NotTooMuchGas
 )
 
 // metaTx holds transaction and some metadata
@@ -179,10 +176,6 @@ func SortByNonceLess(a, b *metaTx) bool {
 		return a.Tx.SenderID < b.Tx.SenderID
 	}
 	return a.Tx.Nonce < b.Tx.Nonce
-}
-
-func calcProtocolBaseFee(baseFee uint64) uint64 {
-	return 7
 }
 
 type L1CostFn func(tx *types.TxSlot) *uint256.Int
@@ -1190,7 +1183,6 @@ func addTxs(blockNum uint64, cacheView kvcache.CacheView, senders *sendersBatch,
 	byNonce *BySenderAndNonce, byHash map[string]*metaTx, add func(*metaTx, *types.Announcements) txpoolcfg.DiscardReason, discard func(*metaTx, txpoolcfg.DiscardReason), collect bool,
 	l1CostFn L1CostFn,
 	logger log.Logger) (types.Announcements, []txpoolcfg.DiscardReason, error) {
-	protocolBaseFee := calcProtocolBaseFee(pendingBaseFee)
 	if assert.Enable {
 		for _, txn := range newTxs.Txs {
 			if txn.SenderID == 0 {
@@ -1237,7 +1229,7 @@ func addTxs(blockNum uint64, cacheView kvcache.CacheView, senders *sendersBatch,
 			return announcements, discardReasons, err
 		}
 		onSenderStateChange(senderID, nonce, balance, byNonce,
-			protocolBaseFee, blockGasLimit, pending, baseFee, queued, discard, l1CostFn, logger)
+			blockGasLimit, pending, baseFee, queued, discard, l1CostFn, logger)
 	}
 
 	promote(pending, baseFee, queued, pendingBaseFee, pendingBlobFee, discard, &announcements, logger)
@@ -1253,7 +1245,6 @@ func addTxsOnNewBlock(blockNum uint64, cacheView kvcache.CacheView, stateChanges
 	byNonce *BySenderAndNonce, byHash map[string]*metaTx, add func(*metaTx, *types.Announcements) txpoolcfg.DiscardReason, discard func(*metaTx, txpoolcfg.DiscardReason),
 	l1CostFn L1CostFn,
 	logger log.Logger) (types.Announcements, error) {
-	protocolBaseFee := calcProtocolBaseFee(pendingBaseFee)
 	if assert.Enable {
 		for _, txn := range newTxs.Txs {
 			if txn.SenderID == 0 {
@@ -1307,7 +1298,7 @@ func addTxsOnNewBlock(blockNum uint64, cacheView kvcache.CacheView, stateChanges
 			return announcements, err
 		}
 		onSenderStateChange(senderID, nonce, balance, byNonce,
-			protocolBaseFee, blockGasLimit, pending, baseFee, queued, discard, l1CostFn, logger)
+			blockGasLimit, pending, baseFee, queued, discard, l1CostFn, logger)
 	}
 
 	return announcements, nil
@@ -1531,7 +1522,7 @@ func removeMined(byNonce *BySenderAndNonce, minedTxs []*types.TxSlot, pending *P
 // nonces, and also affect other transactions from the same sender with higher nonce, it loops through all transactions
 // for a given senderID
 func onSenderStateChange(senderID uint64, senderNonce uint64, senderBalance uint256.Int, byNonce *BySenderAndNonce,
-	protocolBaseFee, blockGasLimit uint64, pending *PendingPool, baseFee, queued *SubPool, discard func(*metaTx, txpoolcfg.DiscardReason), l1CostFn L1CostFn, logger log.Logger) {
+	blockGasLimit uint64, pending *PendingPool, baseFee, queued *SubPool, discard func(*metaTx, txpoolcfg.DiscardReason), l1CostFn L1CostFn, logger log.Logger) {
 	noGapsNonce := senderNonce
 	cumulativeRequiredBalance := uint256.NewInt(0)
 	minFeeCap := uint256.NewInt(0).SetAllOne()
@@ -1586,17 +1577,6 @@ func onSenderStateChange(senderID uint64, senderNonce uint64, senderBalance uint
 			if l1Cost := l1CostFn(mt.Tx); l1Cost != nil {
 				needBalance.Add(needBalance, l1Cost)
 			}
-		}
-
-		// 1. Minimum fee requirement. Set to 1 if feeCap of the transaction is no less than in-protocol
-		// parameter of minimal base fee. Set to 0 if feeCap is less than minimum base fee, which means
-		// this transaction will never be included into this particular chain.
-		mt.subPool &^= EnoughFeeCapProtocol
-		if mt.minFeeCap.Cmp(uint256.NewInt(protocolBaseFee)) >= 0 {
-			mt.subPool |= EnoughFeeCapProtocol
-		} else {
-			mt.subPool = 0 // TODO: we immediately drop all transactions if they have no first bit - then maybe we don't need this bit at all? And don't add such transactions to queue?
-			return true
 		}
 
 		// 2. Absence of nonce gaps. Set to 1 for transactions whose nonce is N, state nonce for
@@ -1662,10 +1642,8 @@ func promote(pending *PendingPool, baseFee, queued *SubPool, pendingBaseFee uint
 			tx := pending.PopWorst()
 			announcements.Append(tx.Tx.Type, tx.Tx.Size, tx.Tx.IDHash[:])
 			baseFee.Add(tx, logger)
-		} else if worst.subPool >= QueuedPoolBits {
-			queued.Add(pending.PopWorst(), logger)
 		} else {
-			discard(pending.PopWorst(), txpoolcfg.FeeTooLow)
+			queued.Add(pending.PopWorst(), logger)
 		}
 	}
 
@@ -1678,11 +1656,7 @@ func promote(pending *PendingPool, baseFee, queued *SubPool, pendingBaseFee uint
 
 	// Demote worst transactions that do not qualify for base fee pool anymore, to queued sub pool, or discard
 	for worst := baseFee.Worst(); baseFee.Len() > 0 && worst.subPool < BaseFeePoolBits; worst = baseFee.Worst() {
-		if worst.subPool >= QueuedPoolBits {
-			queued.Add(baseFee.PopWorst(), logger)
-		} else {
-			discard(baseFee.PopWorst(), txpoolcfg.FeeTooLow)
-		}
+		queued.Add(baseFee.PopWorst(), logger)
 	}
 
 	// Promote best transactions from the queued pool to either pending or base fee pool, while they qualify
@@ -1697,9 +1671,7 @@ func promote(pending *PendingPool, baseFee, queued *SubPool, pendingBaseFee uint
 	}
 
 	// Discard worst transactions from the queued sub pool if they do not qualify
-	for worst := queued.Worst(); queued.Len() > 0 && worst.subPool < QueuedPoolBits; worst = queued.Worst() {
-		discard(queued.PopWorst(), txpoolcfg.FeeTooLow)
-	}
+	// <FUNCTIONALITY REMOVED>
 
 	// Discard worst transactions from pending pool until it is within capacity limit
 	for pending.Len() > pending.limit {

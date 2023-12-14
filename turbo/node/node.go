@@ -2,6 +2,8 @@
 package node
 
 import (
+	"context"
+
 	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon/cmd/utils"
 	"github.com/ledgerwatch/erigon/eth"
@@ -35,6 +37,10 @@ func (eri *ErigonNode) Serve() error {
 
 func (eri *ErigonNode) Backend() *eth.Ethereum {
 	return eri.backend
+}
+
+func (eri *ErigonNode) Node() *node.Node {
+	return eri.stack
 }
 
 func (eri *ErigonNode) Close() {
@@ -107,12 +113,13 @@ func NewEthConfigUrfave(ctx *cli.Context, nodeConfig *nodecfg.Config, logger log
 // * sync - `stagedsync.StagedSync`, an instance of staged sync, setup just as needed.
 // * optionalParams - additional parameters for running a node.
 func New(
+	ctx context.Context,
 	nodeConfig *nodecfg.Config,
 	ethConfig *ethconfig.Config,
 	logger log.Logger,
 ) (*ErigonNode, error) {
 	//prepareBuckets(optionalParams.CustomBuckets)
-	node, err := node.New(nodeConfig, logger)
+	node, err := node.New(ctx, nodeConfig, logger)
 	if err != nil {
 		utils.Fatalf("Failed to create Erigon node: %v", err)
 	}

@@ -23,22 +23,13 @@ func main() {
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 		logger := debug.SetupCobra(cmd, "sentry")
-		db, borDb, backend, txPool, mining, stateCache, blockReader, ff, agg, err := cli.RemoteServices(ctx, *cfg, logger, rootCancel)
+		db, backend, txPool, mining, stateCache, blockReader, engine, ff, agg, err := cli.RemoteServices(ctx, *cfg, logger, rootCancel)
 		if err != nil {
 			logger.Error("Could not connect to DB", "err", err)
 			return nil
 		}
 		defer db.Close()
-
-		var engine consensus.EngineReader
-
-		if borDb != nil {
-			defer borDb.Close()
-			engine = bor.NewRo(borDb, blockReader, logger)
-		} else {
-			// TODO: Replace with correct consensus Engine
-			engine = ethash.NewFaker()
-		}
+		defer engine.Close()
 
 		var seqRPCService *rpc.Client
 		var historicalRPCService *rpc.Client
