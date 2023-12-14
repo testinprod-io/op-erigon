@@ -403,7 +403,7 @@ func MockWithEverything(tb testing.TB, gspec *types.Genesis, key *ecdsa.PrivateK
 			stagedsync.MiningStages(mock.Ctx,
 				stagedsync.StageMiningCreateBlockCfg(mock.DB, miningStatePos, *mock.ChainConfig, mock.Engine, mock.txPoolDB, param, tmpdir, mock.BlockReader),
 				stagedsync.StageBorHeimdallCfg(mock.DB, miningStatePos, *mock.ChainConfig, nil, mock.BlockReader, nil, nil),
-				stagedsync.StageMiningExecCfg(mock.DB, miningStatePos, mock.Notifications.Events, *mock.ChainConfig, mock.Engine, &vm.Config{}, tmpdir, interrupt, param.PayloadId, mock.TxPool, mock.txPoolDB, mock.BlockReader),
+				stagedsync.StageMiningExecCfg(mock.DB, miningStatePos, mock.Notifications.Events, *mock.ChainConfig, mock.Engine, &vm.Config{}, tmpdir, interrupt, param.PayloadId, mock.TxPool, mock.txPoolDB, false, mock.BlockReader),
 				stagedsync.StageHashStateCfg(mock.DB, dirs, cfg.HistoryV3),
 				stagedsync.StageTrieCfg(mock.DB, false, true, true, tmpdir, mock.BlockReader, nil, histV3, mock.agg),
 				stagedsync.StageMiningFinishCfg(mock.DB, *mock.ChainConfig, mock.Engine, miningStatePos, nil, mock.BlockReader, latestBlockBuiltStore),
