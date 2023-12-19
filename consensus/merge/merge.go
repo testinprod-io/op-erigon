@@ -282,6 +282,7 @@ func (s *Merge) Initialize(config *chain.Config, chain consensus.ChainHeaderRead
 			return syscall(addr, data, state, header, false /* constCall */)
 		})
 	}
+	misc.EnsureCreate2Deployer(config, header.Time, state)
 }
 
 func (s *Merge) APIs(chain consensus.ChainHeaderReader) []rpc.API {

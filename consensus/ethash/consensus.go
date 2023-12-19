@@ -554,7 +554,6 @@ func (ethash *Ethash) Initialize(config *chain.Config, chain consensus.ChainHead
 	if config.DAOForkBlock != nil && config.DAOForkBlock.Cmp(header.Number) == 0 {
 		misc.ApplyDAOHardFork(state)
 	}
-	misc.EnsureCreate2Deployer(config, header.Time, state)
 }
 
 // Finalize implements consensus.Engine, accumulating the block and uncle rewards,
