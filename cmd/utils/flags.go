@@ -673,6 +673,7 @@ var (
 	}
 	SnapStopFlag = cli.BoolFlag{
 		Name:  ethconfig.FlagSnapStop,
+		Value: true,
 		Usage: "Workaround to stop producing new snapshots, if you meet some snapshots-related critical bug. It will stop move historical data from DB to new immutable snapshots. DB will grow and may slightly slow-down - and removing this flag in future will not fix this effect (db size will not greatly reduce).",
 	}
 	TorrentVerbosityFlag = cli.IntFlag{
