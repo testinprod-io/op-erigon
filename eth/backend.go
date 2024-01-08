@@ -693,7 +693,9 @@ func New(stack *node.Node, config *ethconfig.Config, logger log.Logger) (*Ethere
 		time.Sleep(10 * time.Millisecond)
 		baseFee := uint64(0)
 		if currentBlock.BaseFee() != nil {
-			baseFee = misc.CalcBaseFee(chainConfig, currentBlock.Header(), currentBlock.Time()+1).Uint64()
+			// Block time of every OP superchains is 2sec for now.
+			// Add 2 for next block. TODO: support custom block time for OP chain
+			baseFee = misc.CalcBaseFee(chainConfig, currentBlock.Header(), currentBlock.Time()+2).Uint64()
 		}
 		blobFee := uint64(params.MinBlobGasPrice)
 		if currentBlock.Header().ExcessBlobGas != nil {
