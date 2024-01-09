@@ -1,5 +1,5 @@
 {
-    "ChainName": "optimism-devnet",
+    "ChainName": "op-devnet",
     "chainId": 901,
     "homesteadBlock": 0,
     "eip150Block": 0,

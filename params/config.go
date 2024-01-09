@@ -133,11 +133,7 @@ var (
 
 	BorDevnetChainConfig = readChainSpec("chainspecs/bor-devnet.json")
 
-	OptimismMainnetChainConfig = readChainSpec("chainspecs/optimism-mainnet.json")
-
-	OptimismGoerliChainConfig = readChainSpec("chainspecs/optimism-goerli.json")
-
-	OptimismDevnetChainConfig = readChainSpec("chainspecs/optimism-devnet.json")
+	OPDevnetChainConfig = readChainSpec("chainspecs/op-devnet.json")
 
 	GnosisChainConfig = readChainSpec("chainspecs/gnosis.json")
 
@@ -222,12 +218,8 @@ func ChainConfigByChainName(chain string) *chain.Config {
 		return BorMainnetChainConfig
 	case networkname.BorDevnetChainName:
 		return BorDevnetChainConfig
-	case networkname.OptimismMainnetChainName:
-		return OptimismMainnetChainConfig
-	case networkname.OptimismGoerliChainName:
-		return OptimismGoerliChainConfig
-	case networkname.OptimismDevnetChainName:
-		return OptimismDevnetChainConfig
+	case networkname.OPDevnetChainName:
+		return OPDevnetChainConfig
 	case networkname.GnosisChainName:
 		return GnosisChainConfig
 	case networkname.ChiadoChainName:
@@ -257,11 +249,7 @@ func GenesisHashByChainName(chain string) *libcommon.Hash {
 		return &BorMainnetGenesisHash
 	case networkname.BorDevnetChainName:
 		return &BorDevnetGenesisHash
-	case networkname.OptimismMainnetChainName:
-		return &OptimismMainnetGenesisHash
-	case networkname.OptimismGoerliChainName:
-		return &OptimismGoerliGenesisHash
-	case networkname.OptimismDevnetChainName:
+	case networkname.OPDevnetChainName:
 		return &OptimismDevnetGenesisHash
 	case networkname.GnosisChainName:
 		return &GnosisGenesisHash
@@ -291,12 +279,8 @@ func ChainConfigByGenesisHash(genesisHash libcommon.Hash) *chain.Config {
 		return BorMainnetChainConfig
 	case genesisHash == BorDevnetGenesisHash:
 		return BorDevnetChainConfig
-	case genesisHash == OptimismMainnetGenesisHash:
-		return OptimismMainnetChainConfig
-	case genesisHash == OptimismGoerliGenesisHash:
-		return OptimismGoerliChainConfig
 	case genesisHash == OptimismDevnetGenesisHash:
-		return OptimismDevnetChainConfig
+		return OPDevnetChainConfig
 	case genesisHash == GnosisGenesisHash:
 		return GnosisChainConfig
 	case genesisHash == ChiadoGenesisHash:

@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"math/big"
 	"strings"
-	
+
 	"github.com/ethereum-optimism/superchain-registry/superchain"
 	"github.com/ledgerwatch/erigon-lib/chain"
 	"github.com/ledgerwatch/erigon-lib/common"
+	"github.com/ledgerwatch/erigon/params/networkname"
 )
 
 const (
@@ -36,20 +37,9 @@ var (
 	chaosnetRegolithTime = big.NewInt(1692156862)
 )
 
-func handleLegacyName(name string) string {
-	switch name {
-	case "optimism-goerli":
-		return "op-goerli"
-	case "optimism-mainnet":
-		return "op-mainnet"
-	default:
-		return name
-	}
-}
-
 func OPStackChainConfigByName(name string) *superchain.ChainConfig {
 	// Handle legacy name aliases
-	name = handleLegacyName(name)
+	name = networkname.HandleLegacyName(name)
 	for _, chainCfg := range superchain.OPChains {
 		if strings.EqualFold(chainCfg.Chain+"-"+chainCfg.Superchain, name) {
 			return chainCfg
@@ -163,11 +153,3 @@ func LoadSuperChainConfig(opStackChainCfg *superchain.ChainConfig) *chain.Config
 
 	return out
 }
-
-// genesis block by chain name -> genesis_write.go
-
-// chain config by chain name -> params/config.go
-
-// genesis hash by chain name -> params/config.go
-
-// chain config by genesis hash -> params/config.go

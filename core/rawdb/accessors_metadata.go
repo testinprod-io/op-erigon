@@ -23,6 +23,7 @@ import (
 	"github.com/ledgerwatch/erigon-lib/chain"
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/kv"
+	"github.com/ledgerwatch/erigon/params/networkname"
 )
 
 // ReadChainConfig retrieves the consensus settings based on the given genesis hash.
@@ -38,6 +39,7 @@ func ReadChainConfig(db kv.Getter, hash libcommon.Hash) (*chain.Config, error) {
 	if err := json.Unmarshal(data, &config); err != nil {
 		return nil, fmt.Errorf("invalid chain config JSON: %x, %w", hash, err)
 	}
+	config.ChainName = networkname.HandleLegacyName(config.ChainName)
 	return &config, nil
 }
 
@@ -46,6 +48,7 @@ func WriteChainConfig(db kv.Putter, hash libcommon.Hash, cfg *chain.Config) erro
 	if cfg == nil {
 		return nil
 	}
+	cfg.ChainName = networkname.HandleLegacyName(cfg.ChainName)
 	data, err := json.Marshal(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to JSON encode chain config: %w", err)

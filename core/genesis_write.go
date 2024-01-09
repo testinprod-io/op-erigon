@@ -117,18 +117,6 @@ func WriteGenesisBlock(tx kv.RwTx, genesis *types.Genesis, overrideCancunTime, o
 					"shanghai", overrideShanghaiTime.String(), "canyon", overrideOptimismCanyonTime.String())
 			}
 		}
-		if config.IsOptimism() && config.ChainID != nil {
-			if config.ChainID.Cmp(params.OptimismGoerliChainConfig.ChainID) == 0 {
-				config.RegolithTime = params.OptimismGoerliChainConfig.RegolithTime
-				if overrideOptimismCanyonTime == nil {
-					// fall back to default hardfork time
-					config.ShanghaiTime = params.OptimismGoerliChainConfig.ShanghaiTime
-					config.CanyonTime = params.OptimismGoerliChainConfig.CanyonTime
-				}
-			} else if config.ChainID.Cmp(params.OptimismMainnetChainConfig.ChainID) == 0 {
-				config.RegolithTime = params.OptimismMainnetChainConfig.RegolithTime
-			}
-		}
 	}
 
 	if (storedHash == libcommon.Hash{}) {
@@ -198,8 +186,8 @@ func WriteGenesisBlock(tx kv.RwTx, genesis *types.Genesis, overrideCancunTime, o
 	// If london block number is set to previous wrong chainspec, overwrite with correct chainspec.
 	// Following code will be removed after we are confident that previous dbs are all corrected.
 	// https://github.com/testinprod-io/op-erigon/issues/71
-	if storedCfg.ChainName == networkname.OptimismMainnetChainName &&
-		newCfg.ChainName == networkname.OptimismMainnetChainName &&
+	if storedCfg.ChainName == networkname.OPMainnetChainName &&
+		newCfg.ChainName == networkname.OPMainnetChainName &&
 		storedCfg.LondonBlock.Uint64() == 3950000 &&
 		newCfg.LondonBlock.Uint64() == 105235063 {
 		log.Warn("Override chainconfig for Optimism Mainnet chainspec correction")
@@ -464,32 +452,10 @@ func BorDevnetGenesisBlock() *types.Genesis {
 	}
 }
 
-func OptimismMainnetGenesisBlock() *types.Genesis {
-	return &types.Genesis{
-		Config:     params.OptimismMainnetChainConfig,
-		Difficulty: big.NewInt(1),
-		Mixhash:    libcommon.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"),
-		ExtraData:  hexutil.MustDecode("0x000000000000000000000000000000000000000000000000000000000000000000000398232e2064f896018496b4b44b3d62751f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-		GasLimit:   15000000,
-		Alloc:      readPrealloc("allocs/optimism_mainnet.json"),
-	}
-}
-
-func OptimismGoerliGenesisBlock() *types.Genesis {
-	return &types.Genesis{
-		Config:     params.OptimismGoerliChainConfig,
-		Difficulty: big.NewInt(1),
-		Mixhash:    libcommon.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"),
-		ExtraData:  hexutil.MustDecode("0x000000000000000000000000000000000000000000000000000000000000000027770a9694e4b4b1e130ab91bc327c36855f612e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-		GasLimit:   15000000,
-		Alloc:      readPrealloc("allocs/optimism_goerli.json"),
-	}
-}
-
 func OptimismDevnetGenesisBlock() *types.Genesis {
 	// copy of optimism goerli spec
 	return &types.Genesis{
-		Config:     params.OptimismDevnetChainConfig,
+		Config:     params.OPDevnetChainConfig,
 		Difficulty: big.NewInt(0),
 		Mixhash:    libcommon.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"),
 		ExtraData:  hexutil.MustDecode("0x424544524f434b"), // BEDROCK
@@ -739,11 +705,7 @@ func GenesisBlockByChainName(chain string) *types.Genesis {
 		return BorMainnetGenesisBlock()
 	case networkname.BorDevnetChainName:
 		return BorDevnetGenesisBlock()
-	case networkname.OptimismMainnetChainName:
-		return OptimismMainnetGenesisBlock()
-	case networkname.OptimismGoerliChainName:
-		return OptimismGoerliGenesisBlock()
-	case networkname.OptimismDevnetChainName:
+	case networkname.OPDevnetChainName:
 		return OptimismDevnetGenesisBlock()
 	case networkname.GnosisChainName:
 		return GnosisGenesisBlock()

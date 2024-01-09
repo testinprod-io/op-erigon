@@ -877,6 +877,10 @@ var MetricFlags = []cli.Flag{&MetricsEnabledFlag, &MetricsHTTPFlag, &MetricsPort
 
 var DiagnosticsFlags = []cli.Flag{&DiagnosticsURLFlag, &DiagnosticsURLFlag, &DiagnosticsSessionsFlag}
 
+func GetChainNameFromFlag(ctx *cli.Context) string {
+	return networkname.HandleLegacyName(ctx.String(ChainFlag.Name))
+}
+
 // setNodeKey loads a node key from command line flags if provided,
 // otherwise it tries to load it from datadir,
 // otherwise it generates a new key in datadir.
@@ -910,7 +914,7 @@ func setBootstrapNodes(ctx *cli.Context, cfg *p2p.Config) {
 		return
 	}
 
-	nodes, err := GetBootnodesFromFlags(ctx.String(BootnodesFlag.Name), ctx.String(ChainFlag.Name))
+	nodes, err := GetBootnodesFromFlags(ctx.String(BootnodesFlag.Name), GetChainNameFromFlag(ctx))
 	if err != nil {
 		Fatalf("Option %s: %v", BootnodesFlag.Name, err)
 	}
@@ -924,7 +928,7 @@ func setBootstrapNodesV5(ctx *cli.Context, cfg *p2p.Config) {
 		return
 	}
 
-	nodes, err := GetBootnodesFromFlags(ctx.String(BootnodesFlag.Name), ctx.String(ChainFlag.Name))
+	nodes, err := GetBootnodesFromFlags(ctx.String(BootnodesFlag.Name), GetChainNameFromFlag(ctx))
 	if err != nil {
 		Fatalf("Option %s: %v", BootnodesFlag.Name, err)
 	}
@@ -950,7 +954,7 @@ func setStaticPeers(ctx *cli.Context, cfg *p2p.Config) {
 	if ctx.IsSet(StaticPeersFlag.Name) {
 		urls = libcommon.CliString2Array(ctx.String(StaticPeersFlag.Name))
 	} else {
-		chain := ctx.String(ChainFlag.Name)
+		chain := GetChainNameFromFlag(ctx)
 		urls = params.StaticPeerURLsOfChain(chain)
 	}
 
@@ -1139,7 +1143,7 @@ func setEtherbase(ctx *cli.Context, cfg *ethconfig.Config) {
 		}
 	}
 
-	if slices.Contains([]string{networkname.DevChainName, networkname.BorDevnetChainName, networkname.OptimismDevnetChainName}, ctx.String(ChainFlag.Name)) {
+	if slices.Contains([]string{networkname.DevChainName, networkname.BorDevnetChainName, networkname.OPDevnetChainName}, GetChainNameFromFlag(ctx)) {
 		if etherbase == "" {
 			cfg.Miner.Etherbase = core.DevnetEtherbase
 		}
@@ -1150,7 +1154,7 @@ func setEtherbase(ctx *cli.Context, cfg *ethconfig.Config) {
 	}
 
 	chainsWithValidatorMode := map[string]bool{}
-	if _, ok := chainsWithValidatorMode[ctx.String(ChainFlag.Name)]; ok || ctx.IsSet(MinerSigningKeyFileFlag.Name) {
+	if _, ok := chainsWithValidatorMode[GetChainNameFromFlag(ctx)]; ok || ctx.IsSet(MinerSigningKeyFileFlag.Name) {
 		if ctx.IsSet(MiningEnabledFlag.Name) && !ctx.IsSet(MinerSigningKeyFileFlag.Name) {
 			panic(fmt.Sprintf("Flag --%s is required in %s chain with --%s flag", MinerSigningKeyFileFlag.Name, ChainFlag.Name, MiningEnabledFlag.Name))
 		}
@@ -1202,7 +1206,7 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config, nodeName, datadir string, l
 		cfg.NetRestrict = list
 	}
 
-	if ctx.String(ChainFlag.Name) == networkname.DevChainName {
+	if GetChainNameFromFlag(ctx) == networkname.DevChainName {
 		// --dev mode can't use p2p networking.
 		//cfg.MaxPeers = 0 // It can have peers otherwise local sync is not possible
 		if !ctx.IsSet(ListenPortFlag.Name) {
@@ -1234,7 +1238,7 @@ func setDataDir(ctx *cli.Context, cfg *nodecfg.Config) {
 	if ctx.IsSet(DataDirFlag.Name) {
 		cfg.Dirs.DataDir = ctx.String(DataDirFlag.Name)
 	} else {
-		cfg.Dirs.DataDir = paths.DataDirForNetwork(cfg.Dirs.DataDir, ctx.String(ChainFlag.Name))
+		cfg.Dirs.DataDir = paths.DataDirForNetwork(cfg.Dirs.DataDir, GetChainNameFromFlag(ctx))
 	}
 	cfg.Dirs = datadir.New(cfg.Dirs.DataDir)
 	cfg.MdbxPageSize = flags.DBPageSizeFlagUnmarshal(ctx, DbPageSizeFlag.Name, DbPageSizeFlag.Usage)
@@ -1256,6 +1260,7 @@ func setDataDirCobra(f *pflag.FlagSet, cfg *nodecfg.Config) {
 	if err != nil {
 		panic(err)
 	}
+	chain = networkname.HandleLegacyName(chain)
 	if dirname != "" {
 		cfg.Dirs.DataDir = dirname
 	} else {
@@ -1575,7 +1580,7 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 	cfg.SentinelPort = ctx.Uint64(SentinelPortFlag.Name)
 	cfg.ForcePartialCommit = ctx.Bool(ForcePartialCommitFlag.Name)
 
-	cfg.Sync.UseSnapshots = ethconfig.UseSnapshotsByChainName(ctx.String(ChainFlag.Name))
+	cfg.Sync.UseSnapshots = ethconfig.UseSnapshotsByChainName(GetChainNameFromFlag(ctx))
 	if ctx.IsSet(SnapshotFlag.Name) { //force override default by cli
 		cfg.Sync.UseSnapshots = ctx.Bool(SnapshotFlag.Name)
 	}
@@ -1671,7 +1676,7 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 		cfg.RollupDisableTxPoolGossip = ctx.Bool(RollupDisableTxPoolGossipFlag.Name)
 	}
 	// Override any default configs for hard coded networks.
-	chain := ctx.String(ChainFlag.Name)
+	chain := GetChainNameFromFlag(ctx)
 
 	switch chain {
 	default:
@@ -1708,7 +1713,7 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 		if !ctx.IsSet(MinerGasPriceFlag.Name) {
 			cfg.Miner.GasPrice = big.NewInt(1)
 		}
-	case networkname.OptimismDevnetChainName:
+	case networkname.OPDevnetChainName:
 		// Create new developer account or reuse existing one
 		developer := cfg.Miner.Etherbase
 		if developer == (libcommon.Address{}) {
