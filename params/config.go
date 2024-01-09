@@ -204,6 +204,9 @@ func NewSnapshotConfig(checkpointInterval uint64, inmemorySnapshots int, inmemor
 }
 
 func ChainConfigByChainName(chain string) *chain.Config {
+	if cfg := ChainConfigByOpStackChainName(chain); cfg != nil {
+		return cfg
+	}
 	switch chain {
 	case networkname.MainnetChainName:
 		return MainnetChainConfig
@@ -235,6 +238,10 @@ func ChainConfigByChainName(chain string) *chain.Config {
 }
 
 func GenesisHashByChainName(chain string) *libcommon.Hash {
+	if opStackChainCfg := OPStackChainConfigByName(chain); opStackChainCfg != nil {
+		genesisHash := libcommon.Hash(opStackChainCfg.Genesis.L2.Hash)
+		return &genesisHash
+	}
 	switch chain {
 	case networkname.MainnetChainName:
 		return &MainnetGenesisHash
@@ -266,6 +273,9 @@ func GenesisHashByChainName(chain string) *libcommon.Hash {
 }
 
 func ChainConfigByGenesisHash(genesisHash libcommon.Hash) *chain.Config {
+	if cfg := ChainConfigByOpStackGenesisHash(genesisHash); cfg != nil {
+		return cfg
+	}
 	switch {
 	case genesisHash == MainnetGenesisHash:
 		return MainnetChainConfig
@@ -297,6 +307,9 @@ func ChainConfigByGenesisHash(genesisHash libcommon.Hash) *chain.Config {
 }
 
 func NetworkIDByChainName(chain string) uint64 {
+	if opStackChainCfg := OPStackChainConfigByName(chain); opStackChainCfg != nil {
+		return opStackChainCfg.ChainID
+	}
 	switch chain {
 	case networkname.DevChainName:
 		return 1337
