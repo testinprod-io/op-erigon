@@ -15,6 +15,7 @@ import (
 
 	"github.com/VictoriaMetrics/metrics"
 	"github.com/c2h5oh/datasize"
+	"github.com/erigontech/mdbx-go/mdbx"
 	"github.com/ledgerwatch/erigon-lib/chain"
 	"github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/datadir"
@@ -28,7 +29,6 @@ import (
 	state2 "github.com/ledgerwatch/erigon-lib/state"
 	"github.com/ledgerwatch/erigon/common/math"
 	"github.com/ledgerwatch/log/v3"
-	"github.com/torquem-ch/mdbx-go/mdbx"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/ledgerwatch/erigon/cmd/state/exec22"
@@ -628,7 +628,9 @@ Loop:
 						gasUsed += txTask.UsedGas
 						if gasUsed != txTask.Header.GasUsed {
 							if txTask.BlockNum > 0 { //Disable check for genesis. Maybe need somehow improve it in future - to satisfy TestExecutionSpec
-								return fmt.Errorf("gas used by execution: %d, in header: %d, headerNum=%d, %x", gasUsed, txTask.Header.GasUsed, txTask.Header.Number.Uint64(), txTask.Header.Hash())
+								return fmt.Errorf("%w: gas used by execution: %d, in header: %d, headerNum=%d, %x",
+									consensus.ErrInvalidBlock, gasUsed, txTask.Header.GasUsed,
+									txTask.Header.Number.Uint64(), txTask.Header.Hash())
 							}
 						}
 						gasUsed = 0
@@ -637,7 +639,7 @@ Loop:
 					}
 					return nil
 				}(); err != nil {
-					if errors.Is(err, context.Canceled) || errors.Is(err, common.ErrStopped) {
+					if !errors.Is(err, consensus.ErrInvalidBlock) {
 						return err
 					} else {
 						logger.Warn(fmt.Sprintf("[%s] Execution failed", logPrefix), "block", blockNum, "hash", header.Hash().String(), "err", err)

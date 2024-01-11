@@ -24,7 +24,8 @@ CGO_CFLAGS += -DMDBX_FORCE_ASSERTIONS=0 # Enable MDBX's asserts by default in 'd
 #CGO_CFLAGS += -DMDBX_ENV_CHECKPID=0 # Erigon doesn't do fork() syscall
 CGO_CFLAGS += -O
 CGO_CFLAGS += -D__BLST_PORTABLE__
-CGO_CFLAGS += -Wno-error=strict-prototypes # for Clang15, remove it when can https://github.com/ledgerwatch/erigon/issues/6113#issuecomment-1359526277
+CGO_CFLAGS += -Wno-unknown-warning-option -Wno-enum-int-mismatch -Wno-strict-prototypes
+#CGO_CFLAGS += -Wno-error=strict-prototypes # for Clang15, remove it when can https://github.com/ledgerwatch/erigon/issues/6113#issuecomment-1359526277
 
 # about netgo see: https://github.com/golang/go/issues/30310#issuecomment-471669125 and https://github.com/golang/go/issues/57757
 BUILD_TAGS = nosqlite,noboltdb
@@ -105,7 +106,6 @@ erigon: go-version erigon.cmd
 	@rm -f $(GOBIN)/tg # Remove old binary to prevent confusion where users still use it because of the scripts
 
 COMMANDS += devnet
-COMMANDS += erigon-el-mock
 COMMANDS += downloader
 COMMANDS += hack
 COMMANDS += integration
@@ -119,7 +119,6 @@ COMMANDS += txpool
 COMMANDS += verkle
 COMMANDS += evm
 COMMANDS += sentinel
-COMMANDS += erigon-el
 COMMANDS += caplin-phase1
 COMMANDS += caplin-regression
 
@@ -135,9 +134,9 @@ db-tools:
 	@echo "Building db-tools"
 
 	go mod vendor
-	cd vendor/github.com/torquem-ch/mdbx-go && MDBX_BUILD_TIMESTAMP=unknown make tools
+	cd vendor/github.com/erigontech/mdbx-go && MDBX_BUILD_TIMESTAMP=unknown make tools
 	mkdir -p $(GOBIN)
-	cd vendor/github.com/torquem-ch/mdbx-go/mdbxdist && cp mdbx_chk $(GOBIN) && cp mdbx_copy $(GOBIN) && cp mdbx_dump $(GOBIN) && cp mdbx_drop $(GOBIN) && cp mdbx_load $(GOBIN) && cp mdbx_stat $(GOBIN)
+	cd vendor/github.com/erigontech/mdbx-go/mdbxdist && cp mdbx_chk $(GOBIN) && cp mdbx_copy $(GOBIN) && cp mdbx_dump $(GOBIN) && cp mdbx_drop $(GOBIN) && cp mdbx_load $(GOBIN) && cp mdbx_stat $(GOBIN)
 	rm -rf vendor
 	@echo "Run \"$(GOBIN)/mdbx_stat -h\" to get info about mdbx db file."
 
@@ -147,31 +146,36 @@ devnet-up:
 
 ## test:                              run unit tests with a 100s timeout
 test:
+	@cd erigon-lib && $(MAKE) test
 	$(GOTEST) --timeout 100s
 
 test3:
+	@cd erigon-lib && $(MAKE) test
 	$(GOTEST) --timeout 100s -tags $(BUILD_TAGS),e3
 
 ## test-integration:                  run integration tests with a 30m timeout
 test-integration:
+	@cd erigon-lib && $(MAKE) test
 	$(GOTEST) --timeout 60m -tags $(BUILD_TAGS),integration
 
 test3-integration:
+	@cd erigon-lib && $(MAKE) test
 	$(GOTEST) --timeout 60m -tags $(BUILD_TAGS),integration,e3
 
-## lint:                              run golangci-lint with .golangci.yml config file
-lint:
-	@./build/bin/golangci-lint run --config ./.golangci.yml
+## lint-deps:                         install lint dependencies
+lint-deps:
+	@cd erigon-lib && $(MAKE) lint-deps
 
-## lintci:                            run golangci-lint (additionally outputs message before run)
+## lintci:                            run golangci-lint linters
 lintci:
-	@echo "--> Running linter for code"
-	@./build/bin/golangci-lint run --config ./.golangci.yml
+	@cd erigon-lib && $(MAKE) lintci
+	@./erigon-lib/tools/golangci_lint.sh
 
-## lintci-deps:                       (re)installs golangci-lint to build/bin/golangci-lint
-lintci-deps:
-	rm -f ./build/bin/golangci-lint
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./build/bin v1.53.2
+## lint:                              run all linters
+lint:
+	@cd erigon-lib && $(MAKE) lint
+	@./erigon-lib/tools/golangci_lint.sh
+	@./erigon-lib/tools/mod_tidy_check.sh
 
 ## clean:                             cleans the go cache, build dir, libmdbx db dir
 clean:
@@ -219,7 +223,7 @@ git-submodules:
 	@git submodule update --quiet --init --recursive --force || true
 
 PACKAGE_NAME          := github.com/testinprod-io/op-erigon
-GOLANG_CROSS_VERSION  ?= v1.20.5
+GOLANG_CROSS_VERSION  ?= v1.20.7
 
 .PHONY: release-dry-run
 release-dry-run: git-submodules
@@ -261,7 +265,6 @@ release: git-submodules
 # we need separate envvars to facilitate creation of the erigon user on the host OS.
 ERIGON_USER_UID ?= 3473
 ERIGON_USER_GID ?= 3473
-ERIGON_USER_XDG_DATA_HOME ?= ~$(ERIGON_USER)/.local/share
 
 ## user_linux:                        create "erigon" user (Linux)
 user_linux:
@@ -275,7 +278,7 @@ endif
 ifdef DOCKER
 	sudo usermod -aG docker $(ERIGON_USER)
 endif
-	sudo -u $(ERIGON_USER) mkdir -p $(ERIGON_USER_XDG_DATA_HOME)
+	sudo -u $(ERIGON_USER) mkdir -p /home/$(ERIGON_USER)/.local/share
 
 ## user_macos:                        create "erigon" user (MacOS)
 user_macos:
@@ -285,7 +288,7 @@ user_macos:
 	sudo dscl . -create /Users/$(ERIGON_USER) PrimaryGroupID $(ERIGON_USER_GID)
 	sudo dscl . -create /Users/$(ERIGON_USER) NFSHomeDirectory /Users/$(ERIGON_USER)
 	sudo dscl . -append /Groups/admin GroupMembership $(ERIGON_USER)
-	sudo -u $(ERIGON_USER) mkdir -p $(ERIGON_USER_XDG_DATA_HOME)
+	sudo -u $(ERIGON_USER) mkdir -p /Users/$(ERIGON_USER)/.local/share
 
 ## coverage:                          run code coverage report and output total coverage %
 .PHONY: coverage

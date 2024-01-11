@@ -2,6 +2,8 @@
 package node
 
 import (
+	"context"
+
 	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon/cmd/utils"
 	"github.com/ledgerwatch/erigon/eth"
@@ -33,6 +35,14 @@ func (eri *ErigonNode) Serve() error {
 	return nil
 }
 
+func (eri *ErigonNode) Backend() *eth.Ethereum {
+	return eri.backend
+}
+
+func (eri *ErigonNode) Node() *node.Node {
+	return eri.stack
+}
+
 func (eri *ErigonNode) Close() {
 	eri.stack.Close()
 }
@@ -57,6 +67,8 @@ func NewNodConfigUrfave(ctx *cli.Context, logger log.Logger) *nodecfg.Config {
 	// If we're running a known preset, log it for convenience.
 	chain := ctx.String(utils.ChainFlag.Name)
 	switch chain {
+	case networkname.HoleskyChainName:
+		logger.Info("Starting Erigon on Holesky testnet...")
 	case networkname.SepoliaChainName:
 		logger.Info("Starting Erigon on Sepolia testnet...")
 	case networkname.GoerliChainName:
@@ -89,11 +101,11 @@ func NewNodConfigUrfave(ctx *cli.Context, logger log.Logger) *nodecfg.Config {
 	return nodeConfig
 }
 func NewEthConfigUrfave(ctx *cli.Context, nodeConfig *nodecfg.Config, logger log.Logger) *ethconfig.Config {
-	ethConfig := &ethconfig.Defaults
-	utils.SetEthConfig(ctx, nodeConfig, ethConfig, logger)
-	erigoncli.ApplyFlagsForEthConfig(ctx, ethConfig, logger)
+	ethConfig := ethconfig.Defaults // Needs to be a copy, not pointer
+	utils.SetEthConfig(ctx, nodeConfig, &ethConfig, logger)
+	erigoncli.ApplyFlagsForEthConfig(ctx, &ethConfig, logger)
 
-	return ethConfig
+	return &ethConfig
 }
 
 // New creates a new `ErigonNode`.
@@ -101,12 +113,13 @@ func NewEthConfigUrfave(ctx *cli.Context, nodeConfig *nodecfg.Config, logger log
 // * sync - `stagedsync.StagedSync`, an instance of staged sync, setup just as needed.
 // * optionalParams - additional parameters for running a node.
 func New(
+	ctx context.Context,
 	nodeConfig *nodecfg.Config,
 	ethConfig *ethconfig.Config,
 	logger log.Logger,
 ) (*ErigonNode, error) {
 	//prepareBuckets(optionalParams.CustomBuckets)
-	node, err := node.New(nodeConfig, logger)
+	node, err := node.New(ctx, nodeConfig, logger)
 	if err != nil {
 		utils.Fatalf("Failed to create Erigon node: %v", err)
 	}

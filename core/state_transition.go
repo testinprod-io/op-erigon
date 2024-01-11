@@ -66,7 +66,7 @@ type StateTransition struct {
 	value      *uint256.Int
 	data       []byte
 	state      evmtypes.IntraBlockState
-	evm        vm.VMInterface
+	evm        *vm.EVM
 
 	//some pre-allocated intermediate variables
 	sharedBuyGas        *uint256.Int
@@ -84,8 +84,8 @@ type Message interface {
 	FeeCap() *uint256.Int
 	Tip() *uint256.Int
 	Gas() uint64
-	DataGas() uint64
-	MaxFeePerDataGas() *uint256.Int
+	BlobGas() uint64
+	MaxFeePerBlobGas() *uint256.Int
 	Value() *uint256.Int
 
 	// Mint is nil if there is no minting
@@ -98,7 +98,7 @@ type Message interface {
 	CheckNonce() bool
 	Data() []byte
 	AccessList() types2.AccessList
-	DataHashes() []libcommon.Hash
+	BlobHashes() []libcommon.Hash
 
 	IsFree() bool
 	IsFake() bool
@@ -158,7 +158,7 @@ func IntrinsicGas(data []byte, accessList types2.AccessList, isContractCreation 
 }
 
 // NewStateTransition initialises and returns a new state transition object.
-func NewStateTransition(evm vm.VMInterface, msg Message, gp *GasPool) *StateTransition {
+func NewStateTransition(evm *vm.EVM, msg Message, gp *GasPool) *StateTransition {
 	isBor := evm.ChainConfig().Bor != nil
 	return &StateTransition{
 		gp:        gp,
@@ -188,7 +188,7 @@ func NewStateTransition(evm vm.VMInterface, msg Message, gp *GasPool) *StateTran
 // `refunds` is false when it is not required to apply gas refunds
 // `gasBailout` is true when it is not required to fail transaction if the balance is not enough to pay gas.
 // for trace_call to replicate OE/Pariry behaviour
-func ApplyMessage(evm vm.VMInterface, msg Message, gp *GasPool, refunds bool, gasBailout bool) (*ExecutionResult, error) {
+func ApplyMessage(evm *vm.EVM, msg Message, gp *GasPool, refunds bool, gasBailout bool) (*ExecutionResult, error) {
 	return NewStateTransition(evm, msg, gp).TransitionDb(refunds, gasBailout)
 }
 
@@ -201,9 +201,9 @@ func (st *StateTransition) to() libcommon.Address {
 }
 
 func (st *StateTransition) buyGas(gasBailout bool) error {
-	mgval := st.sharedBuyGas
-	mgval.SetUint64(st.msg.Gas())
-	mgval, overflow := mgval.MulOverflow(mgval, st.gasPrice)
+	gasVal := st.sharedBuyGas
+	gasVal.SetUint64(st.msg.Gas())
+	gasVal, overflow := gasVal.MulOverflow(gasVal, st.gasPrice)
 	if overflow {
 		return fmt.Errorf("%w: address %v", ErrInsufficientFunds, st.msg.From().Hex())
 	}
@@ -212,29 +212,29 @@ func (st *StateTransition) buyGas(gasBailout bool) error {
 		l1Cost = fn(st.evm.Context().BlockNumber, st.evm.Context().Time, st.msg)
 	}
 	if l1Cost != nil {
-		mgval = mgval.Add(mgval, l1Cost)
+		gasVal = gasVal.Add(gasVal, l1Cost)
 	}
 
-	// compute data fee for eip-4844 data blobs if any
-	dgval := new(uint256.Int)
+	// compute blob fee for eip-4844 data blobs if any
+	blobGasVal := new(uint256.Int)
 	if st.evm.ChainRules().IsCancun {
-		if st.evm.Context().ExcessDataGas == nil {
-			return fmt.Errorf("%w: Cancun is active but ExcessDataGas is nil", ErrInternalFailure)
+		if st.evm.Context().ExcessBlobGas == nil {
+			return fmt.Errorf("%w: Cancun is active but ExcessBlobGas is nil", ErrInternalFailure)
 		}
-		dataGasPrice, err := misc.GetDataGasPrice(*st.evm.Context().ExcessDataGas)
+		blobGasPrice, err := misc.GetBlobGasPrice(*st.evm.Context().ExcessBlobGas)
 		if err != nil {
 			return err
 		}
-		_, overflow = dgval.MulOverflow(dataGasPrice, new(uint256.Int).SetUint64(st.msg.DataGas()))
+		blobGasVal, overflow = blobGasVal.MulOverflow(blobGasPrice, new(uint256.Int).SetUint64(st.msg.BlobGas()))
 		if overflow {
-			return fmt.Errorf("%w: overflow converting datagas: %v", ErrInsufficientFunds, dgval)
+			return fmt.Errorf("%w: overflow converting blob gas: %v", ErrInsufficientFunds, blobGasVal)
 		}
-		if err := st.gp.SubDataGas(st.msg.DataGas()); err != nil {
+		if err := st.gp.SubBlobGas(st.msg.BlobGas()); err != nil {
 			return err
 		}
 	}
 
-	balanceCheck := mgval
+	balanceCheck := gasVal
 	if st.gasFeeCap != nil {
 		balanceCheck = st.sharedBuyGasBalance.SetUint64(st.msg.Gas())
 		balanceCheck, overflow = balanceCheck.MulOverflow(balanceCheck, st.gasFeeCap)
@@ -248,7 +248,7 @@ func (st *StateTransition) buyGas(gasBailout bool) error {
 		if l1Cost != nil {
 			balanceCheck.Add(balanceCheck, l1Cost)
 		}
-		balanceCheck, overflow = balanceCheck.AddOverflow(balanceCheck, dgval)
+		balanceCheck, overflow = balanceCheck.AddOverflow(balanceCheck, blobGasVal)
 		if overflow {
 			return fmt.Errorf("%w: address %v", ErrInsufficientFunds, st.msg.From().Hex())
 		}
@@ -270,8 +270,8 @@ func (st *StateTransition) buyGas(gasBailout bool) error {
 	st.initialGas = st.msg.Gas()
 
 	if subBalance {
-		st.state.SubBalance(st.msg.From(), mgval)
-		st.state.SubBalance(st.msg.From(), dgval)
+		st.state.SubBalance(st.msg.From(), gasVal)
+		st.state.SubBalance(st.msg.From(), blobGasVal)
 	}
 	return nil
 }
@@ -353,19 +353,19 @@ func (st *StateTransition) preCheck(gasBailout bool) error {
 			}
 		}
 	}
-	if st.msg.DataGas() > 0 && st.evm.ChainRules().IsCancun {
-		if st.evm.Context().ExcessDataGas == nil {
-			return fmt.Errorf("%w: Cancun is active but ExcessDataGas is nil", ErrInternalFailure)
+	if st.msg.BlobGas() > 0 && st.evm.ChainRules().IsCancun {
+		if st.evm.Context().ExcessBlobGas == nil {
+			return fmt.Errorf("%w: Cancun is active but ExcessBlobGas is nil", ErrInternalFailure)
 		}
-		dataGasPrice, err := misc.GetDataGasPrice(*st.evm.Context().ExcessDataGas)
+		blobGasPrice, err := misc.GetBlobGasPrice(*st.evm.Context().ExcessBlobGas)
 		if err != nil {
 			return err
 		}
-		maxFeePerDataGas := st.msg.MaxFeePerDataGas()
-		if dataGasPrice.Cmp(maxFeePerDataGas) > 0 {
-			return fmt.Errorf("%w: address %v, maxFeePerDataGas: %v dataGasPrice: %v, excessDataGas: %v",
-				ErrMaxFeePerDataGas,
-				st.msg.From().Hex(), st.msg.MaxFeePerDataGas(), dataGasPrice, st.evm.Context().ExcessDataGas)
+		maxFeePerBlobGas := st.msg.MaxFeePerBlobGas()
+		if blobGasPrice.Cmp(maxFeePerBlobGas) > 0 {
+			return fmt.Errorf("%w: address %v, maxFeePerBlobGas: %v blobGasPrice: %v, excessBlobGas: %v",
+				ErrMaxFeePerBlobGas,
+				st.msg.From().Hex(), st.msg.MaxFeePerBlobGas(), blobGasPrice, st.evm.Context().ExcessBlobGas)
 		}
 	}
 

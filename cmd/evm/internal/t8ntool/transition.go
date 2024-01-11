@@ -39,7 +39,6 @@ import (
 	"github.com/ledgerwatch/erigon-lib/common/length"
 	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon-lib/kv/kvcfg"
-	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/commands"
 	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/common/math"
 	"github.com/ledgerwatch/erigon/consensus/ethash"
@@ -49,9 +48,11 @@ import (
 	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/core/vm"
 	"github.com/ledgerwatch/erigon/crypto"
-	"github.com/ledgerwatch/erigon/eth/tracers/logger"
+	"github.com/ledgerwatch/erigon/eth/stagedsync"
+	trace_logger "github.com/ledgerwatch/erigon/eth/tracers/logger"
 	"github.com/ledgerwatch/erigon/rlp"
 	"github.com/ledgerwatch/erigon/tests"
+	"github.com/ledgerwatch/erigon/turbo/jsonrpc"
 	"github.com/ledgerwatch/erigon/turbo/trie"
 )
 
@@ -114,7 +115,7 @@ func Main(ctx *cli.Context) error {
 	}
 	if ctx.Bool(TraceFlag.Name) {
 		// Configure the EVM logger
-		logConfig := &logger.LogConfig{
+		logConfig := &trace_logger.LogConfig{
 			DisableStack:      ctx.Bool(TraceDisableStackFlag.Name),
 			DisableMemory:     ctx.Bool(TraceDisableMemoryFlag.Name),
 			DisableReturnData: ctx.Bool(TraceDisableReturnDataFlag.Name),
@@ -136,7 +137,7 @@ func Main(ctx *cli.Context) error {
 				return nil, NewError(ErrorIO, fmt.Errorf("failed creating trace-file: %v", err2))
 			}
 			prevFile = traceFile
-			return logger.NewJSONLogger(logConfig, traceFile), nil
+			return trace_logger.NewJSONLogger(logConfig, traceFile), nil
 		}
 	} else {
 		getTracer = func(txIndex int, txHash libcommon.Hash) (tracer vm.EVMLogger, err error) {
@@ -308,7 +309,9 @@ func Main(ctx *cli.Context) error {
 	// redirects to the ethash engine based on the block number
 	engine := merge.New(&ethash.FakeEthash{})
 
-	result, err := core.ExecuteBlockEphemerally(chainConfig, &vmConfig, getHash, engine, block, reader, writer, nil, getTracer)
+	t8logger := log.New("t8ntool")
+	chainReader := stagedsync.NewChainReaderImpl(chainConfig, tx, nil, t8logger)
+	result, err := core.ExecuteBlockEphemerally(chainConfig, &vmConfig, getHash, engine, block, reader, writer, chainReader, getTracer, t8logger)
 
 	if hashError != nil {
 		return NewError(ErrorMissingBlockhash, fmt.Errorf("blockhash error: %v", err))
@@ -364,7 +367,7 @@ func (t *txWithKey) UnmarshalJSON(input []byte) error {
 	}
 
 	// Now, read the transaction itself
-	var txJson commands.RPCTransaction
+	var txJson jsonrpc.RPCTransaction
 
 	if err := json.Unmarshal(input, &txJson); err != nil {
 		return err
@@ -379,7 +382,7 @@ func (t *txWithKey) UnmarshalJSON(input []byte) error {
 	return nil
 }
 
-func getTransaction(txJson commands.RPCTransaction) (types.Transaction, error) {
+func getTransaction(txJson jsonrpc.RPCTransaction) (types.Transaction, error) {
 	gasPrice, value := uint256.NewInt(0), uint256.NewInt(0)
 	var overflow bool
 	var chainId *uint256.Int

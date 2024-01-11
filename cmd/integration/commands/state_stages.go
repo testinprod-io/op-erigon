@@ -54,12 +54,7 @@ Examples:
 		`,
 	Example: "go run ./cmd/integration state_stages --datadir=... --verbosity=3 --unwind=100 --unwind.every=100000 --block=2000000",
 	Run: func(cmd *cobra.Command, args []string) {
-		var logger log.Logger
-		var err error
-		if logger, err = debug.SetupCobra(cmd, "integration"); err != nil {
-			logger.Error("Setting up", "error", err)
-			return
-		}
+		logger := debug.SetupCobra(cmd, "integration")
 		ctx, _ := common2.RootContext()
 		cfg := &nodecfg.DefaultConfig
 		utils.SetNodeConfigCobra(cmd, cfg)
@@ -96,12 +91,7 @@ Examples:
 var loopIhCmd = &cobra.Command{
 	Use: "loop_ih",
 	Run: func(cmd *cobra.Command, args []string) {
-		var logger log.Logger
-		var err error
-		if logger, err = debug.SetupCobra(cmd, "integration"); err != nil {
-			logger.Error("Setting up", "error", err)
-			return
-		}
+		logger := debug.SetupCobra(cmd, "integration")
 		ctx, _ := common2.RootContext()
 		db, err := openDB(dbCfg(kv.ChainDB, chaindata), true, logger)
 		if err != nil {
@@ -125,12 +115,7 @@ var loopIhCmd = &cobra.Command{
 var loopExecCmd = &cobra.Command{
 	Use: "loop_exec",
 	Run: func(cmd *cobra.Command, args []string) {
-		var logger log.Logger
-		var err error
-		if logger, err = debug.SetupCobra(cmd, "integration"); err != nil {
-			logger.Error("Setting up", "error", err)
-			return
-		}
+		logger := debug.SetupCobra(cmd, "integration")
 		ctx, _ := common2.RootContext()
 		db, err := openDB(dbCfg(kv.ChainDB, chaindata), true, logger)
 		if err != nil {
@@ -184,8 +169,13 @@ func init() {
 
 func syncBySmallSteps(db kv.RwDB, miningConfig params.MiningConfig, ctx context.Context, logger1 log.Logger) error {
 	dirs := datadir.New(datadirCli)
-	sn, agg := allSnapshots(ctx, db, logger1)
+	if err := datadir.ApplyMigrations(dirs); err != nil {
+		return err
+	}
+
+	sn, borSn, agg := allSnapshots(ctx, db, logger1)
 	defer sn.Close()
+	defer borSn.Close()
 	defer agg.Close()
 	engine, vmConfig, stateStages, miningStages, miner := newSync(ctx, db, &miningConfig, logger1)
 	chainConfig, historyV3, pm := fromdb.ChainConfig(db), kvcfg.HistoryV3.FromDB(db), fromdb.PruneMode(db)
@@ -232,7 +222,7 @@ func syncBySmallSteps(db kv.RwDB, miningConfig params.MiningConfig, ctx context.
 
 	br, _ := blocksIO(db, logger1)
 	execCfg := stagedsync.StageExecuteBlocksCfg(db, pm, batchSize, changeSetHook, chainConfig, engine, vmConfig, changesAcc, false, false, historyV3, dirs,
-		br, nil, genesis, syncCfg, agg)
+		br, nil, genesis, syncCfg, agg, nil)
 
 	execUntilFunc := func(execToBlock uint64) func(firstCycle bool, badBlockUnwind bool, stageState *stagedsync.StageState, unwinder stagedsync.Unwinder, tx kv.RwTx, logger log.Logger) error {
 		return func(firstCycle bool, badBlockUnwind bool, s *stagedsync.StageState, unwinder stagedsync.Unwinder, tx kv.RwTx, logger log.Logger) error {
@@ -460,8 +450,9 @@ func checkMinedBlock(b1, b2 *types.Block, chainConfig *chain2.Config) {
 }
 
 func loopIh(db kv.RwDB, ctx context.Context, unwind uint64, logger log.Logger) error {
-	sn, agg := allSnapshots(ctx, db, logger)
+	sn, borSn, agg := allSnapshots(ctx, db, logger)
 	defer sn.Close()
+	defer borSn.Close()
 	defer agg.Close()
 	_, _, sync, _, _ := newSync(ctx, db, nil /* miningConfig */, logger)
 	dirs := datadir.New(datadirCli)
@@ -472,7 +463,7 @@ func loopIh(db kv.RwDB, ctx context.Context, unwind uint64, logger log.Logger) e
 		return err
 	}
 	defer tx.Rollback()
-	sync.DisableStages(stages.Snapshots, stages.Headers, stages.BlockHashes, stages.Bodies, stages.Senders, stages.Execution, stages.Translation, stages.AccountHistoryIndex, stages.StorageHistoryIndex, stages.TxLookup, stages.Finish)
+	sync.DisableStages(stages.Snapshots, stages.Headers, stages.BlockHashes, stages.Bodies, stages.Senders, stages.Execution, stages.AccountHistoryIndex, stages.StorageHistoryIndex, stages.TxLookup, stages.Finish)
 	if err = sync.Run(db, tx, false /* firstCycle */); err != nil {
 		return err
 	}
@@ -533,8 +524,9 @@ func loopIh(db kv.RwDB, ctx context.Context, unwind uint64, logger log.Logger) e
 func loopExec(db kv.RwDB, ctx context.Context, unwind uint64, logger log.Logger) error {
 	chainConfig := fromdb.ChainConfig(db)
 	dirs, pm := datadir.New(datadirCli), fromdb.PruneMode(db)
-	sn, agg := allSnapshots(ctx, db, logger)
+	sn, borSn, agg := allSnapshots(ctx, db, logger)
 	defer sn.Close()
+	defer borSn.Close()
 	defer agg.Close()
 	engine, vmConfig, sync, _, _ := newSync(ctx, db, nil, logger)
 
@@ -568,7 +560,7 @@ func loopExec(db kv.RwDB, ctx context.Context, unwind uint64, logger log.Logger)
 	br, _ := blocksIO(db, logger)
 	cfg := stagedsync.StageExecuteBlocksCfg(db, pm, batchSize, nil, chainConfig, engine, vmConfig, nil,
 		/*stateStream=*/ false,
-		/*badBlockHalt=*/ false, historyV3, dirs, br, nil, genesis, syncCfg, agg)
+		/*badBlockHalt=*/ false, historyV3, dirs, br, nil, genesis, syncCfg, agg, nil)
 
 	// set block limit of execute stage
 	sync.MockExecFunc(stages.Execution, func(firstCycle bool, badBlockUnwind bool, stageState *stagedsync.StageState, unwinder stagedsync.Unwinder, tx kv.RwTx, logger log.Logger) error {
@@ -590,7 +582,7 @@ func loopExec(db kv.RwDB, ctx context.Context, unwind uint64, logger log.Logger)
 		if err = sync.Run(db, tx, initialCycle); err != nil {
 			return err
 		}
-		log.Info("[Integration] ", "loop time", time.Since(t))
+		logger.Info("[Integration] ", "loop time", time.Since(t))
 		tx.Rollback()
 		tx, err = db.BeginRw(ctx)
 		if err != nil {

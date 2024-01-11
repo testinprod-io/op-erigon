@@ -25,7 +25,7 @@ import (
 
 type (
 	executionFunc func(pc *uint64, interpreter *EVMInterpreter, callContext *ScopeContext) ([]byte, error)
-	gasFunc       func(VMInterpreter, *Contract, *stack.Stack, *Memory, uint64) (uint64, error) // last parameter is the requested memory size as a uint64
+	gasFunc       func(*EVM, *Contract, *stack.Stack, *Memory, uint64) (uint64, error) // last parameter is the requested memory size as a uint64
 	// memorySizeFunc returns the required size, and whether the operation overflowed a uint64
 	memorySizeFunc func(*stack.Stack) (size uint64, overflow bool)
 )
@@ -100,7 +100,11 @@ func newPragueInstructionSet() JumpTable {
 // and cancun instructions.
 func newCancunInstructionSet() JumpTable {
 	instructionSet := newShanghaiInstructionSet()
-	enable4844(&instructionSet) // DATAHASH
+	enable1153(&instructionSet) // Transient storage opcodes
+	enable4844(&instructionSet) // BLOBHASH opcode
+	enable5656(&instructionSet) // MCOPY opcode
+	enable6780(&instructionSet) // SELFDESTRUCT only in same transaction
+	enable7516(&instructionSet) // BLOBBASEFEE opcode
 	validateAndFillMaxStack(&instructionSet)
 	return instructionSet
 }

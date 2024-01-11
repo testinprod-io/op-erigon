@@ -16,6 +16,7 @@ import (
 	"github.com/ledgerwatch/erigon-lib/common/length"
 	"github.com/ledgerwatch/erigon-lib/etl"
 	"github.com/ledgerwatch/erigon-lib/kv"
+	"github.com/ledgerwatch/erigon/consensus"
 	"github.com/ledgerwatch/erigon/turbo/services"
 	"github.com/ledgerwatch/log/v3"
 	"github.com/ledgerwatch/secp256k1"
@@ -204,6 +205,15 @@ Loop:
 			continue
 		}
 
+		var header *types.Header
+		if header, err = cfg.blockReader.Header(ctx, tx, blockHash, blockNumber); err != nil {
+			return err
+		}
+		if header == nil {
+			logger.Warn(fmt.Sprintf("[%s] senders stage can't find header", logPrefix), "num", blockNumber, "hash", blockHash)
+			continue
+		}
+
 		var body *types.Body
 		if body, err = cfg.blockReader.BodyWithTransactions(ctx, tx, blockHash, blockNumber); err != nil {
 			return err
@@ -222,7 +232,13 @@ Loop:
 				}
 				break Loop
 			}
-		case jobs <- &senderRecoveryJob{body: body, key: k, blockNumber: blockNumber, blockHash: blockHash, index: int(blockNumber - s.BlockNumber - 1)}:
+		case jobs <- &senderRecoveryJob{
+			body:        body,
+			key:         k,
+			blockNumber: blockNumber,
+			blockTime:   header.Time,
+			blockHash:   blockHash,
+			index:       int(blockNumber - s.BlockNumber - 1)}:
 		}
 	}
 
@@ -243,9 +259,10 @@ Loop:
 			return minBlockErr
 		}
 		minHeader := rawdb.ReadHeader(tx, minBlockHash, minBlockNum)
-		if cfg.hd != nil {
+		if cfg.hd != nil && errors.Is(minBlockErr, consensus.ErrInvalidBlock) {
 			cfg.hd.ReportBadHeaderPoS(minBlockHash, minHeader.ParentHash)
 		}
+
 		if to > s.BlockNumber {
 			u.UnwindTo(minBlockNum-1, minBlockHash)
 		}
@@ -283,6 +300,7 @@ type senderRecoveryJob struct {
 	senders     []byte
 	blockHash   libcommon.Hash
 	blockNumber uint64
+	blockTime   uint64
 	index       int
 	err         error
 }
@@ -306,13 +324,13 @@ func recoverSenders(ctx context.Context, logPrefix string, cryptoContext *secp25
 		}
 
 		body := job.body
-		blockTime := uint64(0) // TODO(yperbasis) proper timestamp
-		signer := types.MakeSigner(config, job.blockNumber, blockTime)
+		signer := types.MakeSigner(config, job.blockNumber, job.blockTime)
 		job.senders = make([]byte, len(body.Transactions)*length.Addr)
 		for i, tx := range body.Transactions {
 			from, err := signer.SenderWithContext(cryptoContext, tx)
 			if err != nil {
-				job.err = fmt.Errorf("%s: error recovering sender for tx=%x, %w", logPrefix, tx.Hash(), err)
+				job.err = fmt.Errorf("%w: error recovering sender for tx=%x, %v",
+					consensus.ErrInvalidBlock, tx.Hash(), err)
 				break
 			}
 			copy(job.senders[i*length.Addr:], from[:])

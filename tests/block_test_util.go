@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"reflect"
 	"testing"
 
 	"github.com/holiman/uint256"
@@ -33,6 +34,7 @@ import (
 	"github.com/ledgerwatch/erigon-lib/common/hexutility"
 	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon/turbo/services"
+	"github.com/ledgerwatch/erigon/turbo/stages/mock"
 
 	"github.com/ledgerwatch/log/v3"
 
@@ -45,7 +47,6 @@ import (
 	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/eth/ethconsensusconfig"
 	"github.com/ledgerwatch/erigon/rlp"
-	"github.com/ledgerwatch/erigon/turbo/stages"
 )
 
 // A BlockTest checks handling of entire blocks.
@@ -79,42 +80,48 @@ type btBlock struct {
 //go:generate gencodec -type btHeader -field-override btHeaderMarshaling -out gen_btheader.go
 
 type btHeader struct {
-	Bloom            types.Bloom
-	Coinbase         libcommon.Address
-	MixHash          libcommon.Hash
-	Nonce            types.BlockNonce
-	Number           *big.Int
-	Hash             libcommon.Hash
-	ParentHash       libcommon.Hash
-	ReceiptTrie      libcommon.Hash
-	StateRoot        libcommon.Hash
-	TransactionsTrie libcommon.Hash
-	UncleHash        libcommon.Hash
-	ExtraData        []byte
-	Difficulty       *big.Int
-	GasLimit         uint64
-	GasUsed          uint64
-	Timestamp        uint64
-	BaseFee          *big.Int
+	Bloom                 types.Bloom
+	Coinbase              libcommon.Address
+	MixHash               libcommon.Hash
+	Nonce                 types.BlockNonce
+	Number                *big.Int
+	Hash                  libcommon.Hash
+	ParentHash            libcommon.Hash
+	ReceiptTrie           libcommon.Hash
+	StateRoot             libcommon.Hash
+	TransactionsTrie      libcommon.Hash
+	UncleHash             libcommon.Hash
+	ExtraData             []byte
+	Difficulty            *big.Int
+	GasLimit              uint64
+	GasUsed               uint64
+	Timestamp             uint64
+	BaseFeePerGas         *big.Int
+	WithdrawalsRoot       *libcommon.Hash
+	BlobGasUsed           *uint64
+	ExcessBlobGas         *uint64
+	ParentBeaconBlockRoot *libcommon.Hash
 }
 
 type btHeaderMarshaling struct {
-	ExtraData  hexutility.Bytes
-	Number     *math.HexOrDecimal256
-	Difficulty *math.HexOrDecimal256
-	GasLimit   math.HexOrDecimal64
-	GasUsed    math.HexOrDecimal64
-	Timestamp  math.HexOrDecimal64
-	BaseFee    *math.HexOrDecimal256
+	ExtraData     hexutility.Bytes
+	Number        *math.HexOrDecimal256
+	Difficulty    *math.HexOrDecimal256
+	GasLimit      math.HexOrDecimal64
+	GasUsed       math.HexOrDecimal64
+	Timestamp     math.HexOrDecimal64
+	BaseFeePerGas *math.HexOrDecimal256
+	BlobGasUsed   *math.HexOrDecimal64
+	ExcessBlobGas *math.HexOrDecimal64
 }
 
-func (bt *BlockTest) Run(t *testing.T, _ bool) error {
+func (bt *BlockTest) Run(t *testing.T, checkStateRoot bool) error {
 	config, ok := Forks[bt.json.Network]
 	if !ok {
 		return UnsupportedForkError{bt.json.Network}
 	}
 	engine := ethconsensusconfig.CreateConsensusEngineBareBones(config, log.New())
-	m := stages.MockWithGenesisEngine(t, bt.genesis(config), engine, false)
+	m := mock.MockWithGenesisEngine(t, bt.genesis(config), engine, false, checkStateRoot)
 
 	bt.br = m.BlockReader
 	// import pre accounts & construct test genesis block & state root
@@ -125,16 +132,16 @@ func (bt *BlockTest) Run(t *testing.T, _ bool) error {
 		return fmt.Errorf("genesis block state root does not match test: computed=%x, test=%x", m.Genesis.Root().Bytes()[:6], bt.json.Genesis.StateRoot[:6])
 	}
 
+	validBlocks, err := bt.insertBlocks(m)
+	if err != nil {
+		return err
+	}
+
 	tx, err := m.DB.BeginRw(m.Ctx)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
-
-	validBlocks, err := bt.insertBlocks(m, tx)
-	if err != nil {
-		return err
-	}
 
 	cmlast := rawdb.ReadHeadBlockHash(tx)
 	if libcommon.Hash(bt.json.BestBlock) != cmlast {
@@ -149,18 +156,21 @@ func (bt *BlockTest) Run(t *testing.T, _ bool) error {
 
 func (bt *BlockTest) genesis(config *chain.Config) *types.Genesis {
 	return &types.Genesis{
-		Config:     config,
-		Nonce:      bt.json.Genesis.Nonce.Uint64(),
-		Timestamp:  bt.json.Genesis.Timestamp,
-		ParentHash: bt.json.Genesis.ParentHash,
-		ExtraData:  bt.json.Genesis.ExtraData,
-		GasLimit:   bt.json.Genesis.GasLimit,
-		GasUsed:    bt.json.Genesis.GasUsed,
-		Difficulty: bt.json.Genesis.Difficulty,
-		Mixhash:    bt.json.Genesis.MixHash,
-		Coinbase:   bt.json.Genesis.Coinbase,
-		Alloc:      bt.json.Pre,
-		BaseFee:    bt.json.Genesis.BaseFee,
+		Config:                config,
+		Nonce:                 bt.json.Genesis.Nonce.Uint64(),
+		Timestamp:             bt.json.Genesis.Timestamp,
+		ParentHash:            bt.json.Genesis.ParentHash,
+		ExtraData:             bt.json.Genesis.ExtraData,
+		GasLimit:              bt.json.Genesis.GasLimit,
+		GasUsed:               bt.json.Genesis.GasUsed,
+		Difficulty:            bt.json.Genesis.Difficulty,
+		Mixhash:               bt.json.Genesis.MixHash,
+		Coinbase:              bt.json.Genesis.Coinbase,
+		Alloc:                 bt.json.Pre,
+		BaseFee:               bt.json.Genesis.BaseFeePerGas,
+		BlobGasUsed:           bt.json.Genesis.BlobGasUsed,
+		ExcessBlobGas:         bt.json.Genesis.ExcessBlobGas,
+		ParentBeaconBlockRoot: bt.json.Genesis.ParentBeaconBlockRoot,
 	}
 }
 
@@ -177,7 +187,7 @@ See https://github.com/ethereum/tests/wiki/Blockchain-Tests-II
 	expected we are expected to ignore it and continue processing and then validate the
 	post state.
 */
-func (bt *BlockTest) insertBlocks(m *stages.MockSentry, tx kv.RwTx) ([]btBlock, error) {
+func (bt *BlockTest) insertBlocks(m *mock.MockSentry) ([]btBlock, error) {
 	validBlocks := make([]btBlock, 0)
 	// insert the test blocks, which will execute all transaction
 	for bi, b := range bt.json.Blocks {
@@ -192,7 +202,7 @@ func (bt *BlockTest) insertBlocks(m *stages.MockSentry, tx kv.RwTx) ([]btBlock, 
 		// RLP decoding worked, try to insert into chain:
 		chain := &core.ChainPack{Blocks: []*types.Block{cb}, Headers: []*types.Header{cb.Header()}, TopBlock: cb}
 
-		err1 := m.InsertChain(chain, tx)
+		err1 := m.InsertChain(chain)
 		if err1 != nil {
 			if b.BlockHeader == nil {
 				continue // OK - block is supposed to be invalid, continue with next block
@@ -200,7 +210,12 @@ func (bt *BlockTest) insertBlocks(m *stages.MockSentry, tx kv.RwTx) ([]btBlock, 
 				return nil, fmt.Errorf("block #%v insertion into chain failed: %w", cb.Number(), err1)
 			}
 		} else if b.BlockHeader == nil {
-			canonical, cErr := bt.br.CanonicalHash(context.Background(), tx, cb.NumberU64())
+			roTx, err := m.DB.BeginRo(m.Ctx)
+			if err != nil {
+				return nil, err
+			}
+			defer roTx.Rollback()
+			canonical, cErr := bt.br.CanonicalHash(context.Background(), roTx, cb.NumberU64())
 			if cErr != nil {
 				return nil, cErr
 			}
@@ -272,6 +287,21 @@ func validateHeader(h *btHeader, h2 *types.Header) error {
 	if h.Timestamp != h2.Time {
 		return fmt.Errorf("timestamp: want: %v have: %v", h.Timestamp, h2.Time)
 	}
+	if !reflect.DeepEqual(h.BaseFeePerGas, h2.BaseFee) {
+		return fmt.Errorf("baseFeePerGas: want: %v have: %v", h.BaseFeePerGas, h2.BaseFee)
+	}
+	if !reflect.DeepEqual(h.WithdrawalsRoot, h2.WithdrawalsHash) {
+		return fmt.Errorf("withdrawalsRoot: want: %v have: %v", h.WithdrawalsRoot, h2.WithdrawalsHash)
+	}
+	if !reflect.DeepEqual(h.BlobGasUsed, h2.BlobGasUsed) {
+		return fmt.Errorf("blobGasUsed: want: %v have: %v", h.BlobGasUsed, h2.BlobGasUsed)
+	}
+	if !reflect.DeepEqual(h.ExcessBlobGas, h2.ExcessBlobGas) {
+		return fmt.Errorf("excessBlobGas: want: %v have: %v", h.ExcessBlobGas, h2.ExcessBlobGas)
+	}
+	if !reflect.DeepEqual(h.ParentBeaconBlockRoot, h2.ParentBeaconBlockRoot) {
+		return fmt.Errorf("parentBeaconBlockRoot: want: %v have: %v", h.ParentBeaconBlockRoot, h2.ParentBeaconBlockRoot)
+	}
 	return nil
 }
 
@@ -303,7 +333,7 @@ func (bt *BlockTest) validatePostState(statedb *state.IntraBlockState) error {
 	return nil
 }
 
-func (bt *BlockTest) validateImportedHeaders(tx kv.Tx, validBlocks []btBlock, m *stages.MockSentry) error {
+func (bt *BlockTest) validateImportedHeaders(tx kv.Tx, validBlocks []btBlock, m *mock.MockSentry) error {
 	// to get constant lookup when verifying block headers by hash (some tests have many blocks)
 	bmap := make(map[libcommon.Hash]btBlock, len(bt.json.Blocks))
 	for _, b := range validBlocks {

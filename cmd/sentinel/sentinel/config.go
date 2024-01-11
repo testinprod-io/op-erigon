@@ -21,8 +21,8 @@ import (
 	"github.com/ledgerwatch/erigon/cl/clparams"
 	"github.com/ledgerwatch/log/v3"
 	"github.com/libp2p/go-libp2p"
+	mplex "github.com/libp2p/go-libp2p-mplex"
 	"github.com/libp2p/go-libp2p/core/crypto"
-	"github.com/libp2p/go-libp2p/p2p/muxer/mplex"
 	"github.com/libp2p/go-libp2p/p2p/security/noise"
 	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
 	"github.com/multiformats/go-multiaddr"
@@ -36,13 +36,14 @@ type SentinelConfig struct {
 	Port          int
 	TCPPort       uint
 	// Optional
-	LocalIP       string
-	EnableUPnP    bool
-	RelayNodeAddr string
-	HostAddress   string
-	HostDNS       string
-	NoDiscovery   bool
-	TmpDir        string
+	LocalIP        string
+	EnableUPnP     bool
+	RelayNodeAddr  string
+	HostAddress    string
+	HostDNS        string
+	NoDiscovery    bool
+	TmpDir         string
+	LocalDiscovery bool
 }
 
 func convertToCryptoPrivkey(privkey *ecdsa.PrivateKey) (crypto.PrivKey, error) {

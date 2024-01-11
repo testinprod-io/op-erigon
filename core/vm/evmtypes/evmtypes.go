@@ -32,7 +32,7 @@ type BlockContext struct {
 	Difficulty    *big.Int       // Provides information for DIFFICULTY
 	BaseFee       *uint256.Int   // Provides information for BASEFEE
 	PrevRanDao    *common.Hash   // Provides information for PREVRANDAO
-	ExcessDataGas *uint64        // Provides information for handling data blobs
+	ExcessBlobGas *uint64        // Provides information for handling data blobs
 
 	// L1CostFunc returns the L1 cost of the rollup message, the function may be nil, or return nil
 	L1CostFunc types.L1CostFunc
@@ -45,7 +45,7 @@ type TxContext struct {
 	TxHash     common.Hash
 	Origin     common.Address // Provides information for ORIGIN
 	GasPrice   *uint256.Int   // Provides information for GASPRICE
-	DataHashes []common.Hash  // Provides versioned data hashes for DATAHASH
+	BlobHashes []common.Hash  // Provides versioned blob hashes for BLOBHASH
 }
 
 type (
@@ -87,6 +87,7 @@ type IntraBlockState interface {
 
 	Selfdestruct(common.Address) bool
 	HasSelfdestructed(common.Address) bool
+	Selfdestruct6780(common.Address)
 
 	// Exist reports whether the given account exists in state.
 	// Notably this should also return true for suicided accounts.
@@ -99,13 +100,12 @@ type IntraBlockState interface {
 		precompiles []common.Address, txAccesses types2.AccessList)
 
 	AddressInAccessList(addr common.Address) bool
-	SlotInAccessList(addr common.Address, slot common.Hash) (addressOk bool, slotOk bool)
 	// AddAddressToAccessList adds the given address to the access list. This operation is safe to perform
 	// even if the feature/fork is not active yet
-	AddAddressToAccessList(addr common.Address)
+	AddAddressToAccessList(addr common.Address) (addrMod bool)
 	// AddSlotToAccessList adds the given (address,slot) to the access list. This operation is safe to perform
 	// even if the feature/fork is not active yet
-	AddSlotToAccessList(addr common.Address, slot common.Hash)
+	AddSlotToAccessList(addr common.Address, slot common.Hash) (addrMod, slotMod bool)
 
 	RevertToSnapshot(int)
 	Snapshot() int

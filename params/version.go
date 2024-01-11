@@ -32,10 +32,10 @@ var (
 // Version is the version of upstream erigon
 // see https://calver.org
 const (
-	VersionMajor       = 2        // Major version component of the current release
-	VersionMinor       = 48       // Minor version component of the current release
-	VersionMicro       = 1        // Patch version component of the current release
-	VersionModifier    = "stable" // Modifier component of the current release
+	VersionMajor       = 2  // Major version component of the current release
+	VersionMinor       = 51 // Minor version component of the current release
+	VersionMicro       = 0  // Patch version component of the current release
+	VersionModifier    = "" // Modifier component of the current release
 	VersionKeyCreated  = "ErigonVersionCreated"
 	VersionKeyFinished = "ErigonVersionFinished"
 )
@@ -47,21 +47,6 @@ const (
 	OPVersionMicro    = 0          // Patch version component of the current release
 	OPVersionModifier = "unstable" // Version metadata to append to the version string
 )
-
-func withModifier(vsn string) string {
-	if !isStable() {
-		vsn += "-" + OPVersionModifier
-	}
-	return vsn
-}
-
-func isStable() bool {
-	return OPVersionModifier == "stable"
-}
-
-func isRelease() bool {
-	return isStable() || OPVersionModifier == "alpha" || OPVersionModifier == "beta"
-}
 
 // Version holds the textual version string.
 var Version = func() string {
@@ -90,18 +75,6 @@ var ErigonVersionWithMeta = func() string {
 	}
 	return v
 }()
-
-// ArchiveVersion holds the textual version string used for op-erigon archives.
-// e.g. "1.8.11-dea1ce05" for stable releases, or
-//
-//	"1.8.13-unstable-21c059b6" for unstable releases
-func ArchiveVersion(gitCommit string) string {
-	vsn := withModifier(Version)
-	if len(gitCommit) >= 8 {
-		vsn += "-" + gitCommit[:8]
-	}
-	return vsn
-}
 
 func VersionWithCommit(gitCommit string) string {
 	vsn := VersionWithMeta

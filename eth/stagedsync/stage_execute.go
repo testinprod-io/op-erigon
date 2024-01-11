@@ -10,8 +10,12 @@ import (
 	"time"
 
 	"github.com/c2h5oh/datasize"
+	"github.com/ledgerwatch/log/v3"
+	"golang.org/x/sync/errgroup"
+
 	"github.com/ledgerwatch/erigon-lib/chain"
 	"github.com/ledgerwatch/erigon-lib/common"
+	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/cmp"
 	"github.com/ledgerwatch/erigon-lib/common/datadir"
 	"github.com/ledgerwatch/erigon-lib/common/dbg"
@@ -22,8 +26,6 @@ import (
 	"github.com/ledgerwatch/erigon-lib/kv/rawdbv3"
 	"github.com/ledgerwatch/erigon-lib/kv/temporal/historyv2"
 	libstate "github.com/ledgerwatch/erigon-lib/state"
-	"github.com/ledgerwatch/log/v3"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/ledgerwatch/erigon/common/changeset"
 	"github.com/ledgerwatch/erigon/common/dbutils"
@@ -39,12 +41,13 @@ import (
 	"github.com/ledgerwatch/erigon/eth/ethconfig"
 	"github.com/ledgerwatch/erigon/eth/ethconfig/estimate"
 	"github.com/ledgerwatch/erigon/eth/stagedsync/stages"
-	"github.com/ledgerwatch/erigon/eth/tracers/logger"
+	trace_logger "github.com/ledgerwatch/erigon/eth/tracers/logger"
 	"github.com/ledgerwatch/erigon/ethdb"
 	"github.com/ledgerwatch/erigon/ethdb/olddb"
 	"github.com/ledgerwatch/erigon/ethdb/prune"
 	"github.com/ledgerwatch/erigon/turbo/services"
 	"github.com/ledgerwatch/erigon/turbo/shards"
+	"github.com/ledgerwatch/erigon/turbo/silkworm"
 )
 
 const (
@@ -77,12 +80,15 @@ type ExecuteBlockCfg struct {
 	accumulator   *shards.Accumulator
 	blockReader   services.FullBlockReader
 	hd            headerDownloader
+	// last valid number of the stage
 
 	dirs      datadir.Dirs
 	historyV3 bool
 	syncCfg   ethconfig.Sync
 	genesis   *types.Genesis
 	agg       *libstate.AggregatorV3
+
+	silkworm *silkworm.Silkworm
 }
 
 func StageExecuteBlocksCfg(
@@ -104,7 +110,11 @@ func StageExecuteBlocksCfg(
 	genesis *types.Genesis,
 	syncCfg ethconfig.Sync,
 	agg *libstate.AggregatorV3,
+	silkworm *silkworm.Silkworm,
 ) ExecuteBlockCfg {
+	if genesis == nil {
+		panic("assert: nil genesis")
+	}
 	return ExecuteBlockCfg{
 		db:            db,
 		prune:         pm,
@@ -123,6 +133,7 @@ func StageExecuteBlocksCfg(
 		historyV3:     historyV3,
 		syncCfg:       syncCfg,
 		agg:           agg,
+		silkworm:      silkworm,
 	}
 }
 
@@ -137,6 +148,7 @@ func executeBlock(
 	writeCallTraces bool,
 	initialCycle bool,
 	stateStream bool,
+	logger log.Logger,
 ) error {
 	blockNum := block.NumberU64()
 	stateReader, stateWriter, err := newStateReaderWriter(batch, tx, block, writeChangesets, cfg.accumulator, cfg.blockReader, initialCycle, stateStream)
@@ -151,7 +163,7 @@ func executeBlock(
 	}
 
 	getTracer := func(txIndex int, txHash common.Hash) (vm.EVMLogger, error) {
-		return logger.NewStructLogger(&logger.LogConfig{}), nil
+		return trace_logger.NewStructLogger(&trace_logger.LogConfig{}), nil
 	}
 
 	callTracer := calltracer.NewCallTracer()
@@ -163,9 +175,9 @@ func executeBlock(
 	var execRs *core.EphemeralExecResult
 	getHashFn := core.GetHashFn(block.Header(), getHeader)
 
-	execRs, err = core.ExecuteBlockEphemerally(cfg.chainConfig, &vmConfig, getHashFn, cfg.engine, block, stateReader, stateWriter, ChainReaderImpl{config: cfg.chainConfig, tx: tx, blockReader: cfg.blockReader}, getTracer)
+	execRs, err = core.ExecuteBlockEphemerally(cfg.chainConfig, &vmConfig, getHashFn, cfg.engine, block, stateReader, stateWriter, NewChainReaderImpl(cfg.chainConfig, tx, cfg.blockReader, logger), getTracer, logger)
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: %v", consensus.ErrInvalidBlock, err)
 	}
 	receipts = execRs.Receipts
 	stateSyncReceipt = execRs.StateSyncReceipt
@@ -452,17 +464,42 @@ Loop:
 		writeChangeSets := nextStagesExpectData || blockNum > cfg.prune.History.PruneTo(to)
 		writeReceipts := nextStagesExpectData || blockNum > cfg.prune.Receipts.PruneTo(to)
 		writeCallTraces := nextStagesExpectData || blockNum > cfg.prune.CallTraces.PruneTo(to)
-		if err = executeBlock(block, tx, batch, cfg, *cfg.vmConfig, writeChangeSets, writeReceipts, writeCallTraces, initialCycle, stateStream); err != nil {
+
+		if cfg.silkworm != nil {
+			blockNum, err = cfg.silkworm.ExecuteBlocks(tx, cfg.chainConfig.ChainID, blockNum, to, uint64(cfg.batchSize), writeChangeSets, writeReceipts, writeCallTraces)
+		} else {
+			err = executeBlock(block, tx, batch, cfg, *cfg.vmConfig, writeChangeSets, writeReceipts, writeCallTraces, initialCycle, stateStream, logger)
+		}
+
+		if err != nil {
+			if errors.Is(err, silkworm.ErrInterrupted) {
+				logger.Warn(fmt.Sprintf("[%s] Execution interrupted", logPrefix), "block", blockNum, "err", err)
+				// Remount the termination signal
+				p, err := os.FindProcess(os.Getpid())
+				if err != nil {
+					return err
+				}
+				p.Signal(os.Interrupt)
+				return nil
+			}
 			if !errors.Is(err, context.Canceled) {
-				logger.Warn(fmt.Sprintf("[%s] Execution failed", logPrefix), "block", blockNum, "hash", block.Hash().String(), "err", err)
-				if cfg.hd != nil {
-					cfg.hd.ReportBadHeaderPoS(blockHash, block.ParentHash())
+				if cfg.silkworm != nil {
+					logger.Warn(fmt.Sprintf("[%s] Execution failed", logPrefix), "block", blockNum, "err", err)
+				} else {
+					logger.Warn(fmt.Sprintf("[%s] Execution failed", logPrefix), "block", blockNum, "hash", blockHash.String(), "err", err)
+				}
+				if cfg.hd != nil && errors.Is(err, consensus.ErrInvalidBlock) {
+					cfg.hd.ReportBadHeaderPoS(blockHash, block.ParentHash() /* lastValidAncestor */)
 				}
 				if cfg.badBlockHalt {
 					return err
 				}
 			}
-			u.UnwindTo(blockNum-1, block.Hash())
+			if errors.Is(err, consensus.ErrInvalidBlock) {
+				u.UnwindTo(blockNum-1, blockHash /* badBlock */)
+			} else {
+				u.UnwindTo(blockNum-1, libcommon.Hash{} /* badBlock */)
+			}
 			break Loop
 		}
 		stageProgress = blockNum
@@ -751,7 +788,7 @@ func unwindExecutionStage(u *UnwindState, s *StageState, tx kv.RwTx, ctx context
 			copy(address[:], k[:length.Addr])
 			incarnation = binary.BigEndian.Uint64(k[length.Addr:])
 			copy(location[:], k[length.Addr+length.Incarnation:])
-			log.Debug(fmt.Sprintf("un ch st: %x, %d, %x, %x\n", address, incarnation, location, common.Copy(v)))
+			logger.Debug(fmt.Sprintf("un ch st: %x, %d, %x, %x\n", address, incarnation, location, common.Copy(v)))
 			accumulator.ChangeStorage(address, incarnation, location, common.Copy(v))
 		}
 		if len(v) > 0 {
@@ -794,8 +831,7 @@ func unwindExecutionStage(u *UnwindState, s *StageState, tx kv.RwTx, ctx context
 		if err != nil {
 			return err
 		}
-		err = c.DeleteCurrentDuplicates()
-		if err != nil {
+		if err = tx.Delete(kv.CallTraceSet, k); err != nil {
 			return err
 		}
 	}
