@@ -792,6 +792,9 @@ func loadOPStackGenesisByChainName(name string) (*types.Genesis, error) {
 	}
 
 	genesisBlock, _, err := GenesisToBlock(genesis, "")
+	if err != nil {
+		return nil, fmt.Errorf("failed to build genesis block: %w", err)
+	}
 	genesisBlockHash := genesisBlock.Hash()
 	expectedHash := libcommon.Hash([32]byte(opStackChainCfg.Genesis.L2.Hash))
 
