@@ -648,6 +648,13 @@ func GenesisToBlock(g *types.Genesis, tmpDir string) (*types.Block, *state.Intra
 		return nil, nil, err
 	}
 
+	if g.StateHash != nil {
+		if len(g.Alloc) > 0 {
+			panic(fmt.Errorf("cannot both have genesis hash %s "+
+				"and non-empty state-allocation", *g.StateHash))
+		}
+		root = *g.StateHash
+	}
 	head.Root = root
 
 	return types.NewBlock(head, nil, nil, nil, withdrawals), statedb, nil
@@ -781,6 +788,7 @@ func loadOPStackGenesisByChainName(name string) (*types.Genesis, error) {
 		if len(gen.Alloc) > 0 {
 			return nil, fmt.Errorf("chain definition unexpectedly contains both allocation (%d) and state-hash %s", len(gen.Alloc), *gen.StateHash)
 		}
+		genesis.StateHash = (*libcommon.Hash)(gen.StateHash)
 	}
 
 	genesisBlock, _, err := GenesisToBlock(genesis, "")
