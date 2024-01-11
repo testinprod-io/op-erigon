@@ -60,9 +60,9 @@ var (
 	GnosisGenesisHash     = libcommon.HexToHash("0x4f1dd23188aab3a76b463e4af801b52b1248ef073c648cbdc4c9333d3da79756")
 	ChiadoGenesisHash     = libcommon.HexToHash("0xada44fd8d2ecab8b08f256af07ad3e777f17fb434f8f8e678b312f576212ba9a")
 
-	OptimismMainnetGenesisHash = libcommon.HexToHash("0x7ca38a1916c42007829c55e69d3e9a73265554b586a499015373241b8a3fa48b")
-	OptimismGoerliGenesisHash  = libcommon.HexToHash("0xc1fc15cd51159b1f1e5cbc4b82e85c1447ddfa33c52cf1d98d14fba0d6354be1")
-	OptimismDevnetGenesisHash  = libcommon.HexToHash("0x1c16b5a055ff0197544b96f1375bf6be35ec478e23a95093cfe01902d821c22a")
+	OPMainnetGenesisHash = libcommon.HexToHash("0x7ca38a1916c42007829c55e69d3e9a73265554b586a499015373241b8a3fa48b")
+	OPGoerliGenesisHash  = libcommon.HexToHash("0xc1fc15cd51159b1f1e5cbc4b82e85c1447ddfa33c52cf1d98d14fba0d6354be1")
+	OPDevnetGenesisHash  = libcommon.HexToHash("0x1c16b5a055ff0197544b96f1375bf6be35ec478e23a95093cfe01902d821c22a")
 )
 
 var (
@@ -230,11 +230,7 @@ func ChainConfigByChainName(chain string) *chain.Config {
 }
 
 func GenesisHashByChainName(chain string) *libcommon.Hash {
-	if opStackChainCfg := OPStackChainConfigByName(chain); opStackChainCfg != nil {
-		genesisHash := libcommon.Hash(opStackChainCfg.Genesis.L2.Hash)
-		return &genesisHash
-	}
-	switch chain {
+	switch networkname.HandleLegacyName(chain) {
 	case networkname.MainnetChainName:
 		return &MainnetGenesisHash
 	case networkname.HoleskyChainName:
@@ -250,12 +246,22 @@ func GenesisHashByChainName(chain string) *libcommon.Hash {
 	case networkname.BorDevnetChainName:
 		return &BorDevnetGenesisHash
 	case networkname.OPDevnetChainName:
-		return &OptimismDevnetGenesisHash
+		return &OPDevnetGenesisHash
 	case networkname.GnosisChainName:
 		return &GnosisGenesisHash
 	case networkname.ChiadoChainName:
 		return &ChiadoGenesisHash
+	case networkname.OPMainnetChainName:
+		// cannot use genesis has from superchain registry because of pre-bedrock blocks
+		return &OPMainnetGenesisHash
+	case networkname.OPGoerliChainName:
+		// cannot use genesis has from superchain registry because of pre-bedrock blocks
+		return &OPGoerliGenesisHash
 	default:
+		if opStackChainCfg := OPStackChainConfigByName(chain); opStackChainCfg != nil {
+			genesisHash := libcommon.Hash(opStackChainCfg.Genesis.L2.Hash)
+			return &genesisHash
+		}
 		return nil
 	}
 }
@@ -279,7 +285,7 @@ func ChainConfigByGenesisHash(genesisHash libcommon.Hash) *chain.Config {
 		return BorMainnetChainConfig
 	case genesisHash == BorDevnetGenesisHash:
 		return BorDevnetChainConfig
-	case genesisHash == OptimismDevnetGenesisHash:
+	case genesisHash == OPDevnetGenesisHash:
 		return OPDevnetChainConfig
 	case genesisHash == GnosisGenesisHash:
 		return GnosisChainConfig

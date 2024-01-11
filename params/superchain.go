@@ -52,6 +52,11 @@ func OPStackChainConfigByName(name string) *superchain.ChainConfig {
 
 // OPStackChainConfigByGenesisHash loads chain config corresponding to the genesis hash from superchain registry.
 func OPStackChainConfigByGenesisHash(genesisHash common.Hash) *superchain.ChainConfig {
+	if bytes.Equal(genesisHash.Bytes(), OPMainnetGenesisHash.Bytes()) {
+		return superchain.OPChains[OPMainnetChainID]
+	} else if bytes.Equal(genesisHash.Bytes(), OPGoerliGenesisHash.Bytes()) {
+		return superchain.OPChains[OPGoerliChainID]
+	}
 	for _, chainCfg := range superchain.OPChains {
 		if bytes.Equal(chainCfg.Genesis.L2.Hash[:], genesisHash.Bytes()) {
 			return chainCfg
