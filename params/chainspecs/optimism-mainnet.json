@@ -20,7 +20,8 @@
     "terminalTotalDifficultyPassed": true,
     "optimism": {
         "eip1559Elasticity": 6,
-        "eip1559Denominator": 50
+        "eip1559Denominator": 50,
+        "eip1559DenominatorCanyon": 250
     },
     "regolithTime": 0,
     "shanghaiTime": 1704992401,
