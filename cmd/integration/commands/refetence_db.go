@@ -16,7 +16,6 @@ import (
 	mdbx2 "github.com/ledgerwatch/erigon-lib/kv/mdbx"
 	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/turbo/backup"
-	"github.com/ledgerwatch/erigon/turbo/debug"
 	"github.com/ledgerwatch/log/v3"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -45,11 +44,10 @@ var cmdWarmup = &cobra.Command{
 	Use: "warmup",
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, _ := common2.RootContext()
-		logger := debug.SetupCobra(cmd, "integration")
-		err := doWarmup(ctx, chaindata, bucket, logger)
+		err := doWarmup(ctx, chaindata, bucket)
 		if err != nil {
 			if !errors.Is(err, context.Canceled) {
-				logger.Error(err.Error())
+				log.Error(err.Error())
 			}
 			return
 		}
@@ -61,14 +59,13 @@ var cmdCompareBucket = &cobra.Command{
 	Short: "compare bucket to the same bucket in '--chaindata.reference'",
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, _ := common2.RootContext()
-		logger := debug.SetupCobra(cmd, "integration")
 		if referenceChaindata == "" {
 			referenceChaindata = chaindata + "-copy"
 		}
 		err := compareBucketBetweenDatabases(ctx, chaindata, referenceChaindata, bucket)
 		if err != nil {
 			if !errors.Is(err, context.Canceled) {
-				logger.Error(err.Error())
+				log.Error(err.Error())
 			}
 			return
 		}
@@ -80,14 +77,13 @@ var cmdCompareStates = &cobra.Command{
 	Short: "compare state buckets to buckets in '--chaindata.reference'",
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, _ := common2.RootContext()
-		logger := debug.SetupCobra(cmd, "integration")
 		if referenceChaindata == "" {
 			referenceChaindata = chaindata + "-copy"
 		}
 		err := compareStates(ctx, chaindata, referenceChaindata)
 		if err != nil {
 			if !errors.Is(err, context.Canceled) {
-				logger.Error(err.Error())
+				log.Error(err.Error())
 			}
 			return
 		}
@@ -99,12 +95,12 @@ var cmdMdbxToMdbx = &cobra.Command{
 	Short: "copy data from '--chaindata' to '--chaindata.to'",
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, _ := common2.RootContext()
-		logger := debug.SetupCobra(cmd, "integration")
-		from, to := backup.OpenPair(chaindata, toChaindata, kv.ChainDB, 0, logger)
-		err := backup.Kv2kv(ctx, from, to, nil, backup.ReadAheadThreads, logger)
+
+		from, to := backup.OpenPair(chaindata, toChaindata, kv.ChainDB, 0)
+		err := backup.Kv2kv(ctx, from, to, nil, backup.ReadAheadThreads)
 		if err != nil && !errors.Is(err, context.Canceled) {
 			if !errors.Is(err, context.Canceled) {
-				logger.Error(err.Error())
+				log.Error(err.Error())
 			}
 			return
 		}
@@ -116,11 +112,11 @@ var cmdFToMdbx = &cobra.Command{
 	Short: "copy data from '--chaindata' to '--chaindata.to'",
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, _ := common2.RootContext()
-		logger := debug.SetupCobra(cmd, "integration")
+		logger := log.New()
 		err := fToMdbx(ctx, logger, toChaindata)
 		if err != nil && !errors.Is(err, context.Canceled) {
 			if !errors.Is(err, context.Canceled) {
-				logger.Error(err.Error())
+				log.Error(err.Error())
 			}
 			return
 		}
@@ -158,9 +154,9 @@ func init() {
 	rootCmd.AddCommand(cmdFToMdbx)
 }
 
-func doWarmup(ctx context.Context, chaindata string, bucket string, logger log.Logger) error {
+func doWarmup(ctx context.Context, chaindata string, bucket string) error {
 	const ThreadsLimit = 5_000
-	db := mdbx2.NewMDBX(log.New()).Path(chaindata).RoTxsLimiter(semaphore.NewWeighted(ThreadsLimit)).MustOpen()
+	db := mdbx2.NewMDBX(log.New()).Path(chaindata).RoTxsLimiter(semaphore.NewWeighted(ThreadsLimit)).Readonly().MustOpen()
 	defer db.Close()
 
 	var total uint64
@@ -198,8 +194,7 @@ func doWarmup(ctx context.Context, chaindata string, bucket string, logger log.L
 
 						select {
 						case <-logEvery.C:
-
-							logger.Info(fmt.Sprintf("Progress: %.2f%%", 100*float64(progress.Load())/float64(total)))
+							log.Info(fmt.Sprintf("Progress: %.2f%%", 100*float64(progress.Load())/float64(total)))
 						default:
 						}
 					}
@@ -414,7 +409,7 @@ MainLoop:
 			case <-ctx.Done():
 				return ctx.Err()
 			case <-commitEvery.C:
-				logger.Info("Progress", "bucket", bucket, "key", fmt.Sprintf("%x", k))
+				log.Info("Progress", "bucket", bucket, "key", fmt.Sprintf("%x", k))
 			}
 		}
 		err = fileScanner.Err()

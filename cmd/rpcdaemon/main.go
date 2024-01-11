@@ -8,9 +8,11 @@ import (
 
 	"github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/cli"
+	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/commands"
+	"github.com/ledgerwatch/erigon/consensus/ethash"
 	"github.com/ledgerwatch/erigon/rpc"
 	"github.com/ledgerwatch/erigon/turbo/debug"
-	"github.com/ledgerwatch/erigon/turbo/jsonrpc"
+	"github.com/ledgerwatch/log/v3"
 	"github.com/spf13/cobra"
 )
 
@@ -19,14 +21,21 @@ func main() {
 	rootCtx, rootCancel := common.RootContext()
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		logger := debug.SetupCobra(cmd, "sentry")
-		db, backend, txPool, mining, stateCache, blockReader, engine, ff, agg, err := cli.RemoteServices(ctx, *cfg, logger, rootCancel)
+		var logger log.Logger
+		var err error
+		if logger, err = debug.SetupCobra(cmd, "rpcdaemon"); err != nil {
+			logger.Error("Setting up", "error", err)
+			return err
+		}
+		db, borDb, backend, txPool, mining, stateCache, blockReader, ff, agg, err := cli.RemoteServices(ctx, *cfg, logger, rootCancel)
 		if err != nil {
 			logger.Error("Could not connect to DB", "err", err)
 			return nil
 		}
 		defer db.Close()
-		defer engine.Close()
+		if borDb != nil {
+			defer borDb.Close()
+		}
 
 		var seqRPCService *rpc.Client
 		var historicalRPCService *rpc.Client
@@ -37,7 +46,7 @@ func main() {
 			client, err := rpc.DialContext(ctx, cfg.RollupSequencerHTTP, logger)
 			cancel()
 			if err != nil {
-				logger.Error(err.Error())
+				log.Error(err.Error())
 				return nil
 			}
 			seqRPCService = client
@@ -47,16 +56,16 @@ func main() {
 			client, err := rpc.DialContext(ctx, cfg.RollupHistoricalRPC, logger)
 			cancel()
 			if err != nil {
-				logger.Error(err.Error())
+				log.Error(err.Error())
 				return nil
 			}
 			historicalRPCService = client
 		}
 
 		// TODO: Replace with correct consensus Engine
-		apiList := jsonrpc.APIList(db, backend, txPool, mining, ff, stateCache, blockReader, agg, *cfg, engine, seqRPCService, historicalRPCService, logger)
-		rpc.PreAllocateRPCMetricLabels(apiList)
-		if err := cli.StartRpcServer(ctx, *cfg, apiList, logger); err != nil {
+		engine := ethash.NewFaker()
+		apiList := commands.APIList(db, borDb, backend, txPool, mining, ff, stateCache, blockReader, agg, *cfg, engine, seqRPCService, historicalRPCService, logger)
+		if err := cli.StartRpcServer(ctx, *cfg, apiList, nil, logger); err != nil {
 			logger.Error(err.Error())
 			return nil
 		}

@@ -49,7 +49,6 @@ type BodyDownload struct {
 	bodyCache        *btree.BTreeG[BodyTreeItem]
 	bodyCacheSize    int
 	bodyCacheLimit   int // Limit of body Cache size
-	blockBufferSize  int
 	br               services.FullBlockReader
 }
 
@@ -62,7 +61,7 @@ type BodyRequest struct {
 }
 
 // NewBodyDownload create a new body download state object
-func NewBodyDownload(engine consensus.Engine, blockBufferSize, bodyCacheLimit int, br services.FullBlockReader) *BodyDownload {
+func NewBodyDownload(engine consensus.Engine, bodyCacheLimit int, br services.FullBlockReader) *BodyDownload {
 	bd := &BodyDownload{
 		requestedMap:     make(map[TripleHash]uint64),
 		bodyCacheLimit:   bodyCacheLimit,
@@ -77,11 +76,10 @@ func NewBodyDownload(engine consensus.Engine, blockBufferSize, bodyCacheLimit in
 		DeliveryNotify: make(chan struct{}, 1),
 		// delivery channel needs to have enough capacity not to create contention
 		// between delivery and collections
-		deliveryCh:      make(chan Delivery, 2*MaxBodiesInRequest),
-		Engine:          engine,
-		bodyCache:       btree.NewG[BodyTreeItem](32, func(a, b BodyTreeItem) bool { return a.blockNum < b.blockNum }),
-		br:              br,
-		blockBufferSize: blockBufferSize,
+		deliveryCh: make(chan Delivery, 2*MaxBodiesInRequest),
+		Engine:     engine,
+		bodyCache:  btree.NewG[BodyTreeItem](32, func(a, b BodyTreeItem) bool { return a.blockNum < b.blockNum }),
+		br:         br,
 	}
 	return bd
 }

@@ -13,14 +13,21 @@ import (
 )
 
 var (
-	Mainnet = fromToml(snapshothashes.Mainnet)
-	// Holesky    = fromToml(snapshothashes.Holesky)
+	Mainnet    = fromToml(snapshothashes.Mainnet)
 	Sepolia    = fromToml(snapshothashes.Sepolia)
 	Goerli     = fromToml(snapshothashes.Goerli)
 	Mumbai     = fromToml(snapshothashes.Mumbai)
 	BorMainnet = fromToml(snapshothashes.BorMainnet)
 	Gnosis     = fromToml(snapshothashes.Gnosis)
 	Chiado     = fromToml(snapshothashes.Chiado)
+
+	MainnetHistory    = fromToml(snapshothashes.MainnetHistory)
+	SepoliaHistory    = fromToml(snapshothashes.SepoliaHistory)
+	GoerliHistory     = fromToml(snapshothashes.GoerliHistory)
+	MumbaiHistory     = fromToml(snapshothashes.MumbaiHistory)
+	BorMainnetHistory = fromToml(snapshothashes.BorMainnetHistory)
+	GnosisHistory     = fromToml(snapshothashes.GnosisHistory)
+	ChiadoHistory     = fromToml(snapshothashes.ChiadoHistory)
 )
 
 type PreverifiedItem struct {
@@ -42,23 +49,22 @@ func doSort(in preverified) Preverified {
 	for k, v := range in {
 		out = append(out, PreverifiedItem{k, v})
 	}
-	slices.SortFunc(out, func(i, j PreverifiedItem) int { return strings.Compare(i.Name, j.Name) })
+	slices.SortFunc(out, func(i, j PreverifiedItem) bool { return i.Name < j.Name })
 	return out
 }
 
 var (
-	MainnetChainSnapshotCfg = newCfg(Mainnet)
-	// HoleskyChainSnapshotCfg    = newCfg(Holesky, HoleskyHistory)
-	SepoliaChainSnapshotCfg    = newCfg(Sepolia)
-	GoerliChainSnapshotCfg     = newCfg(Goerli)
-	MumbaiChainSnapshotCfg     = newCfg(Mumbai)
-	BorMainnetChainSnapshotCfg = newCfg(BorMainnet)
-	GnosisChainSnapshotCfg     = newCfg(Gnosis)
-	ChiadoChainSnapshotCfg     = newCfg(Chiado)
+	MainnetChainSnapshotCfg    = newCfg(Mainnet, MainnetHistory)
+	SepoliaChainSnapshotCfg    = newCfg(Sepolia, SepoliaHistory)
+	GoerliChainSnapshotCfg     = newCfg(Goerli, GoerliHistory)
+	MumbaiChainSnapshotCfg     = newCfg(Mumbai, MumbaiHistory)
+	BorMainnetChainSnapshotCfg = newCfg(BorMainnet, BorMainnetHistory)
+	GnosisChainSnapshotCfg     = newCfg(Gnosis, GnosisHistory)
+	ChiadoChainSnapshotCfg     = newCfg(Chiado, ChiadoHistory)
 )
 
-func newCfg(preverified Preverified) *Cfg {
-	return &Cfg{ExpectBlocks: maxBlockNum(preverified), Preverified: preverified}
+func newCfg(preverified, preverifiedHistory Preverified) *Cfg {
+	return &Cfg{ExpectBlocks: maxBlockNum(preverified), Preverified: preverified, PreverifiedHistory: preverifiedHistory}
 }
 
 func maxBlockNum(preverified Preverified) uint64 {
@@ -92,13 +98,13 @@ func maxBlockNum(preverified Preverified) uint64 {
 }
 
 type Cfg struct {
-	ExpectBlocks uint64
-	Preverified  Preverified
+	ExpectBlocks       uint64
+	Preverified        Preverified
+	PreverifiedHistory Preverified
 }
 
 var KnownCfgs = map[string]*Cfg{
-	networkname.MainnetChainName: MainnetChainSnapshotCfg,
-	// networkname.HoleskyChainName:    HoleskyChainSnapshotCfg,
+	networkname.MainnetChainName:    MainnetChainSnapshotCfg,
 	networkname.SepoliaChainName:    SepoliaChainSnapshotCfg,
 	networkname.GoerliChainName:     GoerliChainSnapshotCfg,
 	networkname.MumbaiChainName:     MumbaiChainSnapshotCfg,
@@ -111,10 +117,10 @@ var KnownCfgs = map[string]*Cfg{
 func KnownCfg(networkName string, whiteList, whiteListHistory []string) *Cfg {
 	c, ok := KnownCfgs[networkName]
 	if !ok {
-		return newCfg(Preverified{})
+		return newCfg(Preverified{}, Preverified{})
 	}
 
-	var result Preverified
+	var result, result2 Preverified
 	if len(whiteList) == 0 {
 		result = c.Preverified
 	} else {
@@ -132,5 +138,22 @@ func KnownCfg(networkName string, whiteList, whiteListHistory []string) *Cfg {
 		}
 	}
 
-	return newCfg(result)
+	if len(whiteList) == 0 {
+		result2 = c.PreverifiedHistory
+	} else {
+		wlMap2 := make(map[string]struct{}, len(whiteListHistory))
+		for _, fName := range whiteListHistory {
+			wlMap2[filepath.Join("history", fName)] = struct{}{}
+		}
+
+		result2 = make(Preverified, 0, len(c.PreverifiedHistory))
+		for _, p := range c.PreverifiedHistory {
+			if _, ok := wlMap2[p.Name]; !ok {
+				continue
+			}
+			result2 = append(result2, p)
+		}
+	}
+
+	return newCfg(result, result2)
 }

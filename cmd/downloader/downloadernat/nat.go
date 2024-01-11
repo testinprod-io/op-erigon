@@ -1,13 +1,12 @@
 package downloadernat
 
 import (
-	"github.com/anacrolix/torrent"
+	"github.com/ledgerwatch/erigon-lib/downloader/downloadercfg"
 	"github.com/ledgerwatch/erigon/p2p/nat"
 	"github.com/ledgerwatch/log/v3"
 )
 
-// DoNat can mutate `cfg` parameter
-func DoNat(natif nat.Interface, cfg *torrent.ClientConfig, logger log.Logger) {
+func DoNat(natif nat.Interface, cfg *downloadercfg.Cfg, logger log.Logger) {
 	switch natif.(type) {
 	case nil:
 		// No NAT interface, do nothing.

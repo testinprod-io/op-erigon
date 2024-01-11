@@ -45,14 +45,13 @@ func runSentinelNode(cliCtx *cli.Context) error {
 	log.Root().SetHandler(log.LvlFilterHandler(log.Lvl(cfg.LogLvl), log.StderrHandler))
 	log.Info("[Sentinel] running sentinel with configuration", "cfg", cfg)
 	_, err := service.StartSentinelService(&sentinel.SentinelConfig{
-		IpAddr:         cfg.Addr,
-		Port:           int(cfg.Port),
-		TCPPort:        cfg.ServerTcpPort,
-		GenesisConfig:  cfg.GenesisCfg,
-		NetworkConfig:  cfg.NetworkCfg,
-		BeaconConfig:   cfg.BeaconCfg,
-		NoDiscovery:    cfg.NoDiscovery,
-		LocalDiscovery: cfg.LocalDiscovery,
+		IpAddr:        cfg.Addr,
+		Port:          int(cfg.Port),
+		TCPPort:       cfg.ServerTcpPort,
+		GenesisConfig: cfg.GenesisCfg,
+		NetworkConfig: cfg.NetworkCfg,
+		BeaconConfig:  cfg.BeaconCfg,
+		NoDiscovery:   cfg.NoDiscovery,
 	}, nil, &service.ServerConfig{Network: cfg.ServerProtocol, Addr: cfg.ServerAddr}, nil, nil, log.Root())
 	if err != nil {
 		log.Error("[Sentinel] Could not start sentinel", "err", err)

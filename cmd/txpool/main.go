@@ -49,11 +49,9 @@ var (
 	baseFeePoolLimit int
 	queuedPoolLimit  int
 
-	priceLimit    uint64
-	accountSlots  uint64
-	blobSlots     uint64
-	priceBump     uint64
-	blobPriceBump uint64
+	priceLimit   uint64
+	accountSlots uint64
+	priceBump    uint64
 
 	optimism   bool
 	noTxGossip bool
@@ -79,9 +77,7 @@ func init() {
 	rootCmd.PersistentFlags().IntVar(&queuedPoolLimit, "txpool.globalqueue", txpoolcfg.DefaultConfig.QueuedSubPoolLimit, "Maximum number of non-executable transaction slots for all accounts")
 	rootCmd.PersistentFlags().Uint64Var(&priceLimit, "txpool.pricelimit", txpoolcfg.DefaultConfig.MinFeeCap, "Minimum gas price (fee cap) limit to enforce for acceptance into the pool")
 	rootCmd.PersistentFlags().Uint64Var(&accountSlots, "txpool.accountslots", txpoolcfg.DefaultConfig.AccountSlots, "Minimum number of executable transaction slots guaranteed per account")
-	rootCmd.PersistentFlags().Uint64Var(&blobSlots, "txpool.blobslots", txpoolcfg.DefaultConfig.BlobSlots, "Max allowed total number of blobs (within type-3 txs) per account")
 	rootCmd.PersistentFlags().Uint64Var(&priceBump, "txpool.pricebump", txpoolcfg.DefaultConfig.PriceBump, "Price bump percentage to replace an already existing transaction")
-	rootCmd.PersistentFlags().Uint64Var(&blobPriceBump, "txpool.blobpricebump", txpoolcfg.DefaultConfig.BlobPriceBump, "Price bump percentage to replace an existing blob (type-3) transaction")
 	rootCmd.PersistentFlags().DurationVar(&commitEvery, utils.TxPoolCommitEveryFlag.Name, utils.TxPoolCommitEveryFlag.Value, utils.TxPoolCommitEveryFlag.Usage)
 	rootCmd.PersistentFlags().BoolVar(&optimism, "txpool.optimism", txpoolcfg.DefaultConfig.Optimism, "Enable Optimism Bedrock to make txpool account for L1 cost of transactions")
 	rootCmd.PersistentFlags().BoolVar(&noTxGossip, "txpool.disabletxpoolgossip", txpoolcfg.DefaultConfig.NoTxGossip, "Disable transaction pool gossip")
@@ -95,7 +91,13 @@ var rootCmd = &cobra.Command{
 		debug.Exit()
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		logger := debug.SetupCobra(cmd, "integration")
+		var logger log.Logger
+		var err error
+		if logger, err = debug.SetupCobra(cmd, "txpool"); err != nil {
+			logger.Error("Setting up", "error", err)
+			return
+		}
+
 		if err := doTxpool(cmd.Context(), logger); err != nil {
 			if !errors.Is(err, context.Canceled) {
 				log.Error(err.Error())
@@ -148,10 +150,7 @@ func doTxpool(ctx context.Context, logger log.Logger) error {
 	cfg.QueuedSubPoolLimit = queuedPoolLimit
 	cfg.MinFeeCap = priceLimit
 	cfg.AccountSlots = accountSlots
-	cfg.BlobSlots = blobSlots
 	cfg.PriceBump = priceBump
-	cfg.BlobPriceBump = blobPriceBump
-
 	cfg.Optimism = optimism
 	cfg.NoTxGossip = noTxGossip
 

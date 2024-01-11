@@ -274,13 +274,10 @@ The following table shows the current implementation status of Erigon's RPC daem
 |                                            |         |                                      |
 | engine_newPayloadV1                        | Yes     |                                      |
 | engine_newPayloadV2                        | Yes     |                                      |
-| engine_newPayloadV3                        | Yes     |                                      |
 | engine_forkchoiceUpdatedV1                 | Yes     |                                      |
 | engine_forkchoiceUpdatedV2                 | Yes     |                                      |
-| engine_forkchoiceUpdatedV3                 | Yes     |                                      |
 | engine_getPayloadV1                        | Yes     |                                      |
 | engine_getPayloadV2                        | Yes     |                                      |
-| engine_getPayloadV3                        | Yes     |                                      |
 | engine_exchangeTransitionConfigurationV1   | Yes     |                                      |
 |                                            |         |                                      |
 | debug_accountRange                         | Yes     | Private Erigon debug module          |
@@ -335,7 +332,6 @@ The following table shows the current implementation status of Erigon's RPC daem
 | bor_getCurrentValidators                   | Yes     | Bor only                             |
 | bor_getSnapshotProposerSequence            | Yes     | Bor only                             |
 | bor_getRootHash                            | Yes     | Bor only                             |
-| bor_getVoteOnHash                          | Yes     | Bor only                             |
 
 ### GraphQL
 

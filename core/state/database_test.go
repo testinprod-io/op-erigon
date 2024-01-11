@@ -43,7 +43,7 @@ import (
 	"github.com/ledgerwatch/erigon/core/types/accounts"
 	"github.com/ledgerwatch/erigon/crypto"
 	"github.com/ledgerwatch/erigon/params"
-	"github.com/ledgerwatch/erigon/turbo/stages/mock"
+	"github.com/ledgerwatch/erigon/turbo/stages"
 	"github.com/ledgerwatch/erigon/turbo/trie"
 )
 
@@ -71,7 +71,7 @@ func TestCreate2Revive(t *testing.T) {
 		signer = types.LatestSignerForChainID(nil)
 	)
 
-	m := mock.MockWithGenesis(t, gspec, key, false)
+	m := stages.MockWithGenesis(t, gspec, key, false)
 
 	contractBackend := backends.NewTestSimulatedBackendWithConfig(t, gspec.Alloc, gspec.Config, gspec.GasLimit)
 	defer contractBackend.Close()
@@ -143,7 +143,7 @@ func TestCreate2Revive(t *testing.T) {
 	require.NoError(t, err)
 
 	// BLOCK 1
-	if err = m.InsertChain(chain.Slice(0, 1)); err != nil {
+	if err = m.InsertChain(chain.Slice(0, 1), nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -157,7 +157,7 @@ func TestCreate2Revive(t *testing.T) {
 	require.NoError(t, err)
 
 	// BLOCK 2
-	if err = m.InsertChain(chain.Slice(1, 2)); err != nil {
+	if err = m.InsertChain(chain.Slice(1, 2), nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -179,7 +179,7 @@ func TestCreate2Revive(t *testing.T) {
 	require.NoError(t, err)
 
 	// BLOCK 3
-	if err = m.InsertChain(chain.Slice(2, 3)); err != nil {
+	if err = m.InsertChain(chain.Slice(2, 3), nil); err != nil {
 		t.Fatal(err)
 	}
 	err = m.DB.View(context.Background(), func(tx kv.Tx) error {
@@ -192,7 +192,7 @@ func TestCreate2Revive(t *testing.T) {
 	require.NoError(t, err)
 
 	// BLOCK 4
-	if err = m.InsertChain(chain.Slice(3, 4)); err != nil {
+	if err = m.InsertChain(chain.Slice(3, 4), nil); err != nil {
 		t.Fatal(err)
 	}
 	err = m.DB.View(context.Background(), func(tx kv.Tx) error {
@@ -241,7 +241,7 @@ func TestCreate2Polymorth(t *testing.T) {
 		}
 		signer = types.LatestSignerForChainID(nil)
 	)
-	m := mock.MockWithGenesis(t, gspec, key, false)
+	m := stages.MockWithGenesis(t, gspec, key, false)
 
 	contractBackend := backends.NewTestSimulatedBackendWithConfig(t, gspec.Alloc, gspec.Config, gspec.GasLimit)
 	defer contractBackend.Close()
@@ -349,7 +349,7 @@ func TestCreate2Polymorth(t *testing.T) {
 	require.NoError(t, err)
 
 	// BLOCK 1
-	if err = m.InsertChain(chain.Slice(0, 1)); err != nil {
+	if err = m.InsertChain(chain.Slice(0, 1), nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -364,7 +364,7 @@ func TestCreate2Polymorth(t *testing.T) {
 	require.NoError(t, err)
 
 	// BLOCK 2
-	if err = m.InsertChain(chain.Slice(1, 2)); err != nil {
+	if err = m.InsertChain(chain.Slice(1, 2), nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -384,7 +384,7 @@ func TestCreate2Polymorth(t *testing.T) {
 	require.NoError(t, err)
 
 	// BLOCK 3
-	if err = m.InsertChain(chain.Slice(2, 3)); err != nil {
+	if err = m.InsertChain(chain.Slice(2, 3), nil); err != nil {
 		t.Fatal(err)
 	}
 	err = m.DB.View(context.Background(), func(tx kv.Tx) error {
@@ -397,7 +397,7 @@ func TestCreate2Polymorth(t *testing.T) {
 	require.NoError(t, err)
 
 	// BLOCK 4
-	if err = m.InsertChain(chain.Slice(3, 4)); err != nil {
+	if err = m.InsertChain(chain.Slice(3, 4), nil); err != nil {
 		t.Fatal(err)
 	}
 	err = m.DB.View(context.Background(), func(tx kv.Tx) error {
@@ -417,7 +417,7 @@ func TestCreate2Polymorth(t *testing.T) {
 	require.NoError(t, err)
 
 	// BLOCK 5
-	if err = m.InsertChain(chain.Slice(4, 5)); err != nil {
+	if err = m.InsertChain(chain.Slice(4, 5), nil); err != nil {
 		t.Fatal(err)
 	}
 	err = m.DB.View(context.Background(), func(tx kv.Tx) error {
@@ -458,7 +458,7 @@ func TestReorgOverSelfDestruct(t *testing.T) {
 		}
 	)
 
-	m := mock.MockWithGenesis(t, gspec, key, false)
+	m := stages.MockWithGenesis(t, gspec, key, false)
 
 	contractBackend := backends.NewTestSimulatedBackendWithConfig(t, gspec.Alloc, gspec.Config, gspec.GasLimit)
 	transactOpts, err := bind.NewKeyedTransactorWithChainID(key, m.ChainConfig.ChainID)
@@ -534,7 +534,7 @@ func TestReorgOverSelfDestruct(t *testing.T) {
 	})
 	require.NoError(t, err)
 	// BLOCK 1
-	if err = m.InsertChain(chain.Slice(0, 1)); err != nil {
+	if err = m.InsertChain(chain.Slice(0, 1), nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -553,7 +553,7 @@ func TestReorgOverSelfDestruct(t *testing.T) {
 	require.NoError(t, err)
 
 	// BLOCKS 2 + 3
-	if err = m.InsertChain(chain.Slice(1, chain.Length())); err != nil {
+	if err = m.InsertChain(chain.Slice(1, chain.Length()), nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -567,7 +567,7 @@ func TestReorgOverSelfDestruct(t *testing.T) {
 	require.NoError(t, err)
 
 	// REORG of block 2 and 3, and insert new (empty) BLOCK 2, 3, and 4
-	if err = m.InsertChain(longerChain.Slice(1, 4)); err != nil {
+	if err = m.InsertChain(longerChain.Slice(1, 4), nil); err != nil {
 		t.Fatal(err)
 	}
 	err = m.DB.View(context.Background(), func(tx kv.Tx) error {
@@ -606,7 +606,7 @@ func TestReorgOverStateChange(t *testing.T) {
 		}
 	)
 
-	m := mock.MockWithGenesis(t, gspec, key, false)
+	m := stages.MockWithGenesis(t, gspec, key, false)
 
 	contractBackend := backends.NewTestSimulatedBackendWithConfig(t, gspec.Alloc, gspec.Config, gspec.GasLimit)
 	transactOpts, err := bind.NewKeyedTransactorWithChainID(key, m.ChainConfig.ChainID)
@@ -675,7 +675,7 @@ func TestReorgOverStateChange(t *testing.T) {
 	require.NoError(t, err)
 
 	// BLOCK 1
-	if err = m.InsertChain(chain.Slice(0, 1)); err != nil {
+	if err = m.InsertChain(chain.Slice(0, 1), nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -694,12 +694,12 @@ func TestReorgOverStateChange(t *testing.T) {
 	require.NoError(t, err)
 
 	// BLOCK 2
-	if err = m.InsertChain(chain.Slice(1, chain.Length())); err != nil {
+	if err = m.InsertChain(chain.Slice(1, chain.Length()), nil); err != nil {
 		t.Fatal(err)
 	}
 
 	// REORG of block 2 and 3, and insert new (empty) BLOCK 2, 3, and 4
-	if err = m.InsertChain(longerChain.Slice(1, 3)); err != nil {
+	if err = m.InsertChain(longerChain.Slice(1, 3), nil); err != nil {
 		t.Fatal(err)
 	}
 	err = m.DB.View(context.Background(), func(tx kv.Tx) error {
@@ -758,7 +758,7 @@ func TestCreateOnExistingStorage(t *testing.T) {
 		}
 	)
 
-	m := mock.MockWithGenesis(t, gspec, key, false)
+	m := stages.MockWithGenesis(t, gspec, key, false)
 
 	var err error
 	contractBackend := backends.NewTestSimulatedBackendWithConfig(t, gspec.Alloc, gspec.Config, gspec.GasLimit)
@@ -802,7 +802,7 @@ func TestCreateOnExistingStorage(t *testing.T) {
 	require.NoError(t, err)
 
 	// BLOCK 1
-	if err = m.InsertChain(chain.Slice(0, 1)); err != nil {
+	if err = m.InsertChain(chain.Slice(0, 1), nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -887,7 +887,7 @@ func TestEip2200Gas(t *testing.T) {
 		}
 	)
 
-	m := mock.MockWithGenesis(t, gspec, key, false)
+	m := stages.MockWithGenesis(t, gspec, key, false)
 
 	contractBackend := backends.NewTestSimulatedBackendWithConfig(t, gspec.Alloc, gspec.Config, gspec.GasLimit)
 	transactOpts, err := bind.NewKeyedTransactorWithChainID(key, m.ChainConfig.ChainID)
@@ -938,7 +938,7 @@ func TestEip2200Gas(t *testing.T) {
 	require.NoError(t, err)
 
 	// BLOCK 1
-	if err = m.InsertChain(chain.Slice(0, 1)); err != nil {
+	if err = m.InsertChain(chain.Slice(0, 1), nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -978,7 +978,7 @@ func TestWrongIncarnation(t *testing.T) {
 		}
 	)
 
-	m := mock.MockWithGenesis(t, gspec, key, false)
+	m := stages.MockWithGenesis(t, gspec, key, false)
 
 	contractBackend := backends.NewTestSimulatedBackendWithConfig(t, gspec.Alloc, gspec.Config, gspec.GasLimit)
 	transactOpts, err := bind.NewKeyedTransactorWithChainID(key, m.ChainConfig.ChainID)
@@ -1024,7 +1024,7 @@ func TestWrongIncarnation(t *testing.T) {
 	require.NoError(t, err)
 
 	// BLOCK 1
-	if err = m.InsertChain(chain.Slice(0, 1)); err != nil {
+	if err = m.InsertChain(chain.Slice(0, 1), nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1051,7 +1051,7 @@ func TestWrongIncarnation(t *testing.T) {
 	require.NoError(t, err)
 
 	// BLOCKS 2
-	if err = m.InsertChain(chain.Slice(1, 2)); err != nil {
+	if err = m.InsertChain(chain.Slice(1, 2), nil); err != nil {
 		t.Fatal(err)
 	}
 	err = m.DB.View(context.Background(), func(tx kv.Tx) error {
@@ -1093,7 +1093,7 @@ func TestWrongIncarnation2(t *testing.T) {
 
 	knownContractAddress := libcommon.HexToAddress("0xdb7d6ab1f17c6b31909ae466702703daef9269cf")
 
-	m := mock.MockWithGenesis(t, gspec, key, false)
+	m := stages.MockWithGenesis(t, gspec, key, false)
 
 	contractBackend := backends.NewTestSimulatedBackendWithConfig(t, gspec.Alloc, gspec.Config, gspec.GasLimit)
 	transactOpts, err := bind.NewKeyedTransactorWithChainID(key, m.ChainConfig.ChainID)
@@ -1169,12 +1169,12 @@ func TestWrongIncarnation2(t *testing.T) {
 	require.NoError(t, err)
 
 	// BLOCK 1
-	if err = m.InsertChain(chain.Slice(0, 1)); err != nil {
+	if err = m.InsertChain(chain.Slice(0, 1), nil); err != nil {
 		t.Fatal(err)
 	}
 
 	// BLOCKS 2
-	if err = m.InsertChain(chain.Slice(1, chain.Length())); err != nil {
+	if err = m.InsertChain(chain.Slice(1, chain.Length()), nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1199,7 +1199,7 @@ func TestWrongIncarnation2(t *testing.T) {
 	})
 	require.NoError(t, err)
 	// REORG of block 2 and 3, and insert new (empty) BLOCK 2, 3, and 4
-	if err = m.InsertChain(longerChain.Slice(1, longerChain.Length())); err != nil {
+	if err = m.InsertChain(longerChain.Slice(1, longerChain.Length()), nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1345,7 +1345,7 @@ func TestRecreateAndRewind(t *testing.T) {
 		}
 	)
 
-	m := mock.MockWithGenesis(t, gspec, key, false)
+	m := stages.MockWithGenesis(t, gspec, key, false)
 	contractBackend := backends.NewTestSimulatedBackendWithConfig(t, gspec.Alloc, gspec.Config, gspec.GasLimit)
 	transactOpts, err := bind.NewKeyedTransactorWithChainID(key, m.ChainConfig.ChainID)
 	require.NoError(t, err)
@@ -1472,7 +1472,7 @@ func TestRecreateAndRewind(t *testing.T) {
 	}
 
 	// BLOCKS 1 and 2
-	if err = m.InsertChain(chain.Slice(0, 2)); err != nil {
+	if err = m.InsertChain(chain.Slice(0, 2), nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1493,7 +1493,7 @@ func TestRecreateAndRewind(t *testing.T) {
 	require.NoError(t, err)
 
 	// Block 3 and 4
-	if err = m.InsertChain(chain.Slice(2, chain.Length())); err != nil {
+	if err = m.InsertChain(chain.Slice(2, chain.Length()), nil); err != nil {
 		t.Fatal(err)
 	}
 	err = m.DB.View(context.Background(), func(tx kv.Tx) error {
@@ -1512,7 +1512,7 @@ func TestRecreateAndRewind(t *testing.T) {
 	require.NoError(t, err)
 
 	// Reorg
-	if err = m.InsertChain(longerChain); err != nil {
+	if err = m.InsertChain(longerChain, nil); err != nil {
 		t.Fatal(err)
 	}
 	err = m.DB.View(context.Background(), func(tx kv.Tx) error {
@@ -1551,7 +1551,7 @@ func TestTxLookupUnwind(t *testing.T) {
 		signer = types.LatestSignerForChainID(nil)
 	)
 
-	m := mock.MockWithGenesis(t, gspec, key, false)
+	m := stages.MockWithGenesis(t, gspec, key, false)
 	chain1, err := core.GenerateChain(m.ChainConfig, m.Genesis, m.Engine, m.DB, 2, func(i int, block *core.BlockGen) {
 		var tx types.Transaction
 		var e error
@@ -1572,10 +1572,10 @@ func TestTxLookupUnwind(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err = m.InsertChain(chain1); err != nil {
+	if err = m.InsertChain(chain1, nil); err != nil {
 		t.Fatal(err)
 	}
-	if err = m.InsertChain(chain2); err != nil {
+	if err = m.InsertChain(chain2, nil); err != nil {
 		t.Fatal(err)
 	}
 	var count uint64

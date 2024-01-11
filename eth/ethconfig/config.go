@@ -101,8 +101,7 @@ var Defaults = Config{
 		KeepBlocks: false,
 		Produce:    true,
 	},
-
-	SilkwormEnabled: false,
+	DropUselessPeers: false,
 }
 
 func init() {
@@ -236,8 +235,6 @@ type Config struct {
 
 	// No heimdall service
 	WithoutHeimdall bool
-	// Heimdall services active
-	WithHeimdallMilestones bool
 	// Ethstats service
 	Ethstats string
 	// Consensus layer
@@ -248,7 +245,6 @@ type Config struct {
 	SentinelAddr                string
 	SentinelPort                uint64
 
-	OverrideCancunTime         *big.Int `toml:",omitempty"`
 	OverrideShanghaiTime       *big.Int `toml:",omitempty"`
 	OverrideOptimismCanyonTime *big.Int `toml:",omitempty"`
 
@@ -258,12 +254,6 @@ type Config struct {
 	RollupHistoricalRPC        string
 	RollupHistoricalRPCTimeout time.Duration
 	RollupDisableTxPoolGossip  bool
-
-	ForcePartialCommit bool
-
-	// Embedded Silkworm support
-	SilkwormEnabled bool
-	SilkwormPath    string
 }
 
 type Sync struct {

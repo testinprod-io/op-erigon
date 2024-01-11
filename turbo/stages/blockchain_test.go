@@ -50,7 +50,7 @@ import (
 	"github.com/ledgerwatch/erigon/ethdb/prune"
 	"github.com/ledgerwatch/erigon/params"
 	"github.com/ledgerwatch/erigon/turbo/services"
-	"github.com/ledgerwatch/erigon/turbo/stages/mock"
+	"github.com/ledgerwatch/erigon/turbo/stages"
 )
 
 // So we can deterministically seed different blockchains
@@ -60,7 +60,7 @@ var (
 )
 
 // makeBlockChain creates a deterministic chain of blocks rooted at parent.
-func makeBlockChain(parent *types.Block, n int, m *mock.MockSentry, seed int) *core.ChainPack {
+func makeBlockChain(parent *types.Block, n int, m *stages.MockSentry, seed int) *core.ChainPack {
 	chain, _ := core.GenerateChain(m.ChainConfig, parent, m.Engine, m.DB, n, func(i int, b *core.BlockGen) {
 		b.SetCoinbase(libcommon.Address{0: byte(seed), 19: byte(i)})
 	})
@@ -70,8 +70,8 @@ func makeBlockChain(parent *types.Block, n int, m *mock.MockSentry, seed int) *c
 // newCanonical creates a chain database, and injects a deterministic canonical
 // chain. Depending on the full flag, if creates either a full block chain or a
 // header only chain.
-func newCanonical(t *testing.T, n int) *mock.MockSentry {
-	m := mock.Mock(t)
+func newCanonical(t *testing.T, n int) *stages.MockSentry {
+	m := stages.Mock(t)
 
 	// Create and inject the requested chain
 	if n == 0 {
@@ -80,14 +80,14 @@ func newCanonical(t *testing.T, n int) *mock.MockSentry {
 
 	// Full block-chain requested
 	chain := makeBlockChain(m.Genesis, n, m, canonicalSeed)
-	if err := m.InsertChain(chain); err != nil {
+	if err := m.InsertChain(chain, nil); err != nil {
 		t.Fatal(err)
 	}
 	return m
 }
 
 // Test fork of length N starting from block i
-func testFork(t *testing.T, m *mock.MockSentry, i, n int, comparator func(td1, td2 *big.Int)) {
+func testFork(t *testing.T, m *stages.MockSentry, i, n int, comparator func(td1, td2 *big.Int)) {
 	// Copy old chain up to #i into a new db
 	canonicalMock := newCanonical(t, i)
 	var err error
@@ -146,7 +146,7 @@ func testFork(t *testing.T, m *mock.MockSentry, i, n int, comparator func(td1, t
 	})
 	require.NoError(t, err)
 
-	if err = m.InsertChain(blockChainB); err != nil {
+	if err = m.InsertChain(blockChainB, nil); err != nil {
 		t.Fatalf("failed to insert forking chain: %v", err)
 	}
 	currentBlockHash := blockChainB.TopBlock.Hash()
@@ -162,7 +162,7 @@ func testFork(t *testing.T, m *mock.MockSentry, i, n int, comparator func(td1, t
 	require.NoError(t, err)
 
 	// Sanity check that the forked chain can be imported into the original
-	if err := canonicalMock.InsertChain(blockChainB); err != nil {
+	if err := canonicalMock.InsertChain(blockChainB, nil); err != nil {
 		t.Fatalf("failed to import forked block chain: %v", err)
 	}
 	// Compare the total difficulties of the chains
@@ -174,7 +174,7 @@ func TestLastBlock(t *testing.T) {
 	var err error
 
 	chain := makeBlockChain(current(m, nil), 1, m, 0)
-	if err = m.InsertChain(chain); err != nil {
+	if err = m.InsertChain(chain, nil); err != nil {
 		t.Fatalf("Failed to insert block: %v", err)
 	}
 
@@ -275,7 +275,7 @@ func testBrokenChain(t *testing.T) {
 	chain := makeBlockChain(current(m, nil), 5, m, forkSeed)
 	brokenChain := chain.Slice(1, chain.Length())
 
-	if err := m.InsertChain(brokenChain); err == nil {
+	if err := m.InsertChain(brokenChain, nil); err == nil {
 		t.Errorf("broken block chain not reported")
 	}
 }
@@ -325,18 +325,20 @@ func testReorg(t *testing.T, first, second []int64, td int64) {
 		t.Fatalf("generate chain: %v", err)
 	}
 
-	if err = m.InsertChain(easyChain); err != nil {
-		t.Fatalf("failed to insert easy chain: %v", err)
-	}
-	if err = m.InsertChain(diffChain); err != nil {
-		t.Fatalf("failed to insert difficult chain: %v", err)
-	}
 	tx, err := m.DB.BeginRw(m.Ctx)
 	if err != nil {
 		fmt.Printf("beginro error: %v\n", err)
 		return
 	}
 	defer tx.Rollback()
+
+	if err = m.InsertChain(easyChain, tx); err != nil {
+		t.Fatalf("failed to insert easy chain: %v", err)
+	}
+	if err = m.InsertChain(diffChain, tx); err != nil {
+		t.Fatalf("failed to insert difficult chain: %v", err)
+	}
+
 	// Check that the chain is valid number and link wise
 	prev, err := m.BlockReader.CurrentBlock(tx)
 	require.NoError(err)
@@ -378,7 +380,7 @@ func testBadHashes(t *testing.T) {
 	core.BadHashes[chain.Headers[2].Hash()] = true
 	defer func() { delete(core.BadHashes, chain.Headers[2].Hash()) }()
 
-	err = m.InsertChain(chain)
+	err = m.InsertChain(chain, nil)
 	if !errors.Is(err, core.ErrBlacklistedHash) {
 		t.Errorf("error mismatch: have: %v, want: %v", err, core.ErrBlacklistedHash)
 	}
@@ -405,8 +407,8 @@ func TestChainTxReorgs(t *testing.T) {
 		signer = types.LatestSigner(gspec.Config)
 	)
 
-	m := mock.MockWithGenesis(t, gspec, key1, false)
-	m2 := mock.MockWithGenesis(t, gspec, key1, false)
+	m := stages.MockWithGenesis(t, gspec, key1, false)
+	m2 := stages.MockWithGenesis(t, gspec, key1, false)
 	defer m2.DB.Close()
 
 	// Create two transactions shared between the chains:
@@ -447,7 +449,7 @@ func TestChainTxReorgs(t *testing.T) {
 		t.Fatalf("generate chain: %v", err)
 	}
 	// Import the chain. This runs all block validation rules.
-	if err1 := m.InsertChain(chain); err1 != nil {
+	if err1 := m.InsertChain(chain, nil); err1 != nil {
 		t.Fatalf("failed to insert original chain: %v", err1)
 	}
 
@@ -474,7 +476,7 @@ func TestChainTxReorgs(t *testing.T) {
 		t.Fatalf("generate chain: %v", err)
 	}
 
-	if err := m.InsertChain(chain); err != nil {
+	if err := m.InsertChain(chain, nil); err != nil {
 		t.Fatalf("failed to insert forked chain: %v", err)
 	}
 	tx, err := m.DB.BeginRo(context.Background())
@@ -562,7 +564,7 @@ func TestCanonicalBlockRetrieval(t *testing.T) {
 	if err2 != nil {
 		t.Fatalf("generate chain: %v", err2)
 	}
-	err := m.InsertChain(chain)
+	err := m.InsertChain(chain, nil)
 	require.NoError(t, err)
 
 	tx, err := m.DB.BeginRo(m.Ctx)
@@ -608,7 +610,7 @@ func TestEIP155Transition(t *testing.T) {
 			Alloc:  types.GenesisAlloc{address: {Balance: funds}, deleteAddr: {Balance: new(big.Int)}},
 		}
 	)
-	m := mock.MockWithGenesis(t, gspec, key, false)
+	m := stages.MockWithGenesis(t, gspec, key, false)
 
 	chain, chainErr := core.GenerateChain(m.ChainConfig, m.Genesis, m.Engine, m.DB, 4, func(i int, block *core.BlockGen) {
 		var (
@@ -655,7 +657,7 @@ func TestEIP155Transition(t *testing.T) {
 		t.Fatalf("generate chain: %v", chainErr)
 	}
 
-	if chainErr = m.InsertChain(chain); chainErr != nil {
+	if chainErr = m.InsertChain(chain, nil); chainErr != nil {
 		t.Fatal(chainErr)
 	}
 	if err := m.DB.View(context.Background(), func(tx kv.Tx) error {
@@ -695,7 +697,7 @@ func TestEIP155Transition(t *testing.T) {
 	if chainErr != nil {
 		t.Fatalf("generate blocks: %v", chainErr)
 	}
-	if err := m.InsertChain(chain); err == nil {
+	if err := m.InsertChain(chain, nil); err == nil {
 		t.Errorf("expected error")
 	}
 }
@@ -731,7 +733,7 @@ func doModesTest(t *testing.T, pm prune.Mode) error {
 			Alloc:  types.GenesisAlloc{address: {Balance: funds}, deleteAddr: {Balance: new(big.Int)}},
 		}
 	)
-	m := mock.MockWithGenesisPruneMode(t, gspec, key, 128, pm, false)
+	m := stages.MockWithGenesisPruneMode(t, gspec, key, pm, false)
 
 	head := uint64(4)
 	chain, err := core.GenerateChain(m.ChainConfig, m.Genesis, m.Engine, m.DB, int(head), func(i int, block *core.BlockGen) {
@@ -779,7 +781,7 @@ func doModesTest(t *testing.T, pm prune.Mode) error {
 		return fmt.Errorf("generate blocks: %w", err)
 	}
 
-	if err = m.InsertChain(chain); err != nil {
+	if err = m.InsertChain(chain, nil); err != nil {
 		return err
 	}
 
@@ -953,7 +955,7 @@ func TestEIP161AccountRemoval(t *testing.T) {
 			Alloc: types.GenesisAlloc{address: {Balance: funds}},
 		}
 	)
-	m := mock.MockWithGenesis(t, gspec, key, false)
+	m := stages.MockWithGenesis(t, gspec, key, false)
 
 	chain, err := core.GenerateChain(m.ChainConfig, m.Genesis, m.Engine, m.DB, 3, func(i int, block *core.BlockGen) {
 		var (
@@ -977,47 +979,33 @@ func TestEIP161AccountRemoval(t *testing.T) {
 	if err != nil {
 		t.Fatalf("generate blocks: %v", err)
 	}
-
-	// account must exist pre eip 161
-	if err = m.InsertChain(chain.Slice(0, 1)); err != nil {
-		t.Fatal(err)
-	}
 	tx, err := m.DB.BeginRw(m.Ctx)
 	if err != nil {
 		fmt.Printf("beginro error: %v\n", err)
 		return
 	}
 	defer tx.Rollback()
+
+	// account must exist pre eip 161
+	if err = m.InsertChain(chain.Slice(0, 1), tx); err != nil {
+		t.Fatal(err)
+	}
 	if st := state.New(m.NewStateReader(tx)); !st.Exist(theAddr) {
 		t.Error("expected account to exist")
 	}
-	tx.Rollback()
 
 	// account needs to be deleted post eip 161
-	if err = m.InsertChain(chain.Slice(1, 2)); err != nil {
+	if err = m.InsertChain(chain.Slice(1, 2), tx); err != nil {
 		t.Fatal(err)
 	}
-	tx, err = m.DB.BeginRw(m.Ctx)
-	if err != nil {
-		fmt.Printf("beginro error: %v\n", err)
-		return
-	}
-	defer tx.Rollback()
 	if st := state.New(m.NewStateReader(tx)); st.Exist(theAddr) {
 		t.Error("account should not exist")
 	}
-	tx.Rollback()
 
 	// account mustn't be created post eip 161
-	if err = m.InsertChain(chain.Slice(2, 3)); err != nil {
+	if err = m.InsertChain(chain.Slice(2, 3), tx); err != nil {
 		t.Fatal(err)
 	}
-	tx, err = m.DB.BeginRw(m.Ctx)
-	if err != nil {
-		fmt.Printf("beginro error: %v\n", err)
-		return
-	}
-	defer tx.Rollback()
 	if st := state.New(m.NewStateReader(tx)); st.Exist(theAddr) {
 		t.Error("account should not exist")
 	}
@@ -1038,7 +1026,7 @@ func TestDoubleAccountRemoval(t *testing.T) {
 			Alloc:  types.GenesisAlloc{bankAddress: {Balance: bankFunds}},
 		}
 	)
-	m := mock.MockWithGenesis(t, gspec, bankKey, false)
+	m := stages.MockWithGenesis(t, gspec, bankKey, false)
 
 	var theAddr libcommon.Address
 
@@ -1069,14 +1057,14 @@ func TestDoubleAccountRemoval(t *testing.T) {
 		t.Fatalf("generate blocks: %v", err)
 	}
 
-	err = m.InsertChain(chain)
-	assert.NoError(t, err)
 	tx, err := m.DB.BeginRw(m.Ctx)
 	if err != nil {
 		fmt.Printf("beginro error: %v\n", err)
 		return
 	}
 	defer tx.Rollback()
+	err = m.InsertChain(chain, tx)
+	assert.NoError(t, err)
 
 	st := state.New(m.NewStateReader(tx))
 	assert.NoError(t, err)
@@ -1102,7 +1090,7 @@ func TestDoubleAccountRemoval(t *testing.T) {
 // https://github.com/ethereum/go-ethereum/pull/15941
 func TestBlockchainHeaderchainReorgConsistency(t *testing.T) {
 	// Generate a canonical chain to act as the main dataset
-	m, m2 := mock.Mock(t), mock.Mock(t)
+	m, m2 := stages.Mock(t), stages.Mock(t)
 
 	chain, err := core.GenerateChain(m.ChainConfig, m.Genesis, m.Engine, m.DB, 64, func(i int, b *core.BlockGen) { b.SetCoinbase(libcommon.Address{1}) })
 	if err != nil {
@@ -1129,7 +1117,7 @@ func TestBlockchainHeaderchainReorgConsistency(t *testing.T) {
 	// Import the canonical and fork chain side by side, verifying the current block
 	// and current header consistency
 	for i := 0; i < chain.Length(); i++ {
-		if err := m2.InsertChain(chain.Slice(i, i+1)); err != nil {
+		if err := m2.InsertChain(chain.Slice(i, i+1), nil); err != nil {
 			t.Fatalf("block %d: failed to insert into chain: %v", i, err)
 		}
 
@@ -1142,7 +1130,7 @@ func TestBlockchainHeaderchainReorgConsistency(t *testing.T) {
 			if b.Hash() != h.Hash() {
 				t.Errorf("block %d: current block/header mismatch: block #%d [%x…], header #%d [%x…]", i, b.Number(), b.Hash().Bytes()[:4], h.Number, h.Hash().Bytes()[:4])
 			}
-			if err := m2.InsertChain(forks[i]); err != nil {
+			if err := m2.InsertChain(forks[i], nil); err != nil {
 				t.Fatalf(" fork %d: failed to insert into chain: %v", i, err)
 			}
 			b, err = m.BlockReader.CurrentBlock(tx)
@@ -1165,7 +1153,7 @@ func TestBlockchainHeaderchainReorgConsistency(t *testing.T) {
 func TestLargeReorgTrieGC(t *testing.T) {
 	// Generate the original common chain segment and the two competing forks
 
-	m, m2 := mock.Mock(t), mock.Mock(t)
+	m, m2 := stages.Mock(t), stages.Mock(t)
 
 	shared, err := core.GenerateChain(m.ChainConfig, m.Genesis, m.Engine, m.DB, 64, func(i int, b *core.BlockGen) {
 		b.SetCoinbase(libcommon.Address{1})
@@ -1196,20 +1184,20 @@ func TestLargeReorgTrieGC(t *testing.T) {
 	}
 
 	// Import the shared chain and the original canonical one
-	if err := m2.InsertChain(shared); err != nil {
+	if err := m2.InsertChain(shared, nil); err != nil {
 		t.Fatalf("failed to insert shared chain: %v", err)
 	}
-	if err := m2.InsertChain(original); err != nil {
+	if err := m2.InsertChain(original, nil); err != nil {
 		t.Fatalf("failed to insert original chain: %v", err)
 	}
 	// Import the competitor chain without exceeding the canonical's TD and ensure
 	// we have not processed any of the blocks (protection against malicious blocks)
-	if err := m2.InsertChain(competitor.Slice(0, competitor.Length()-2)); err != nil {
+	if err := m2.InsertChain(competitor.Slice(0, competitor.Length()-2), nil); err != nil {
 		t.Fatalf("failed to insert competitor chain: %v", err)
 	}
 	// Import the head of the competitor chain, triggering the reorg and ensure we
 	// successfully reprocess all the stashed away blocks.
-	if err := m2.InsertChain(competitor.Slice(competitor.Length()-2, competitor.Length())); err != nil {
+	if err := m2.InsertChain(competitor.Slice(competitor.Length()-2, competitor.Length()), nil); err != nil {
 		t.Fatalf("failed to finalize competitor chain: %v", err)
 	}
 }
@@ -1223,7 +1211,7 @@ func TestLargeReorgTrieGC(t *testing.T) {
 //   - https://github.com/ethereum/go-ethereum/pull/18988
 func TestLowDiffLongChain(t *testing.T) {
 	// Generate a canonical chain to act as the main dataset
-	m := mock.Mock(t)
+	m := stages.Mock(t)
 
 	// We must use a pretty long chain to ensure that the fork doesn't overtake us
 	// until after at least 128 blocks post tip
@@ -1248,14 +1236,14 @@ func TestLowDiffLongChain(t *testing.T) {
 	}
 
 	// Import the canonical chain
-	m2 := mock.Mock(t)
+	m2 := stages.Mock(t)
 
-	if err := m2.InsertChain(chain); err != nil {
+	if err := m2.InsertChain(chain, nil); err != nil {
 		t.Fatalf("failed to insert into chain: %v", err)
 	}
 
 	// And now import the fork
-	if err := m2.InsertChain(fork); err != nil {
+	if err := m2.InsertChain(fork, nil); err != nil {
 		t.Fatalf("failed to insert into chain: %v", err)
 	}
 
@@ -1331,7 +1319,7 @@ func TestDeleteCreateRevert(t *testing.T) {
 			},
 		}
 	)
-	m := mock.MockWithGenesis(t, gspec, key, false)
+	m := stages.MockWithGenesis(t, gspec, key, false)
 
 	chain, err := core.GenerateChain(m.ChainConfig, m.Genesis, m.Engine, m.DB, 1, func(i int, b *core.BlockGen) {
 		b.SetCoinbase(libcommon.Address{1})
@@ -1348,7 +1336,7 @@ func TestDeleteCreateRevert(t *testing.T) {
 		t.Fatalf("generate blocks: %v", err)
 	}
 
-	if err := m.InsertChain(chain); err != nil {
+	if err := m.InsertChain(chain, nil); err != nil {
 		t.Fatalf("failed to insert into chain: %v", err)
 	}
 }
@@ -1437,7 +1425,7 @@ func TestDeleteRecreateSlots(t *testing.T) {
 			},
 		},
 	}
-	m := mock.MockWithGenesis(t, gspec, key, false)
+	m := stages.MockWithGenesis(t, gspec, key, false)
 	chain, err := core.GenerateChain(m.ChainConfig, m.Genesis, m.Engine, m.DB, 1, func(i int, b *core.BlockGen) {
 		b.SetCoinbase(libcommon.Address{1})
 		// One transaction to AA, to kill it
@@ -1453,7 +1441,7 @@ func TestDeleteRecreateSlots(t *testing.T) {
 		t.Fatalf("generate blocks: %v", err)
 	}
 	// Import the canonical chain
-	if err := m.InsertChain(chain); err != nil {
+	if err := m.InsertChain(chain, nil); err != nil {
 		t.Fatalf("failed to insert into chain: %v", err)
 	}
 	err = m.DB.View(m.Ctx, func(tx kv.Tx) error {
@@ -1554,7 +1542,7 @@ func TestCVE2020_26265(t *testing.T) {
 			},
 		},
 	}
-	m := mock.MockWithGenesis(t, gspec, key, false)
+	m := stages.MockWithGenesis(t, gspec, key, false)
 
 	chain, err := core.GenerateChain(m.ChainConfig, m.Genesis, m.Engine, m.DB, 1, func(i int, b *core.BlockGen) {
 		b.SetCoinbase(libcommon.Address{1})
@@ -1571,7 +1559,7 @@ func TestCVE2020_26265(t *testing.T) {
 		t.Fatalf("generate blocks: %v", err)
 	}
 	// Import the canonical chain
-	if err := m.InsertChain(chain); err != nil {
+	if err := m.InsertChain(chain, nil); err != nil {
 		t.Fatalf("failed to insert into chain: %v", err)
 	}
 	err = m.DB.View(m.Ctx, func(tx kv.Tx) error {
@@ -1621,7 +1609,7 @@ func TestDeleteRecreateAccount(t *testing.T) {
 			},
 		},
 	}
-	m := mock.MockWithGenesis(t, gspec, key, false)
+	m := stages.MockWithGenesis(t, gspec, key, false)
 
 	chain, err := core.GenerateChain(m.ChainConfig, m.Genesis, m.Engine, m.DB, 1, func(i int, b *core.BlockGen) {
 		b.SetCoinbase(libcommon.Address{1})
@@ -1638,7 +1626,7 @@ func TestDeleteRecreateAccount(t *testing.T) {
 		t.Fatalf("generate blocks: %v", err)
 	}
 	// Import the canonical chain
-	if err := m.InsertChain(chain); err != nil {
+	if err := m.InsertChain(chain, nil); err != nil {
 		t.Fatalf("failed to insert into chain: %v", err)
 	}
 	err = m.DB.View(m.Ctx, func(tx kv.Tx) error {
@@ -1747,7 +1735,7 @@ func TestDeleteRecreateSlotsAcrossManyBlocks(t *testing.T) {
 			},
 		},
 	}
-	m := mock.MockWithGenesis(t, gspec, key, false)
+	m := stages.MockWithGenesis(t, gspec, key, false)
 	var nonce uint64
 
 	type expectation struct {
@@ -1818,7 +1806,7 @@ func TestDeleteRecreateSlotsAcrossManyBlocks(t *testing.T) {
 	}
 	for i := range chain.Blocks {
 		blockNum := i + 1
-		if err := m.InsertChain(chain.Slice(i, i+1)); err != nil {
+		if err := m.InsertChain(chain.Slice(i, i+1), nil); err != nil {
 			t.Fatalf("block %d: failed to insert into chain: %v", i, err)
 		}
 		err = m.DB.View(m.Ctx, func(tx kv.Tx) error {
@@ -1936,7 +1924,7 @@ func TestInitThenFailCreateContract(t *testing.T) {
 			},
 		},
 	}
-	m := mock.MockWithGenesis(t, gspec, key, false)
+	m := stages.MockWithGenesis(t, gspec, key, false)
 	nonce := uint64(0)
 
 	chain, err := core.GenerateChain(m.ChainConfig, m.Genesis, m.Engine, m.DB, 4, func(i int, b *core.BlockGen) {
@@ -1961,7 +1949,7 @@ func TestInitThenFailCreateContract(t *testing.T) {
 		// First block tries to create, but fails
 		{
 			block := chain.Blocks[0]
-			if err := m.InsertChain(chain.Slice(0, 1)); err != nil {
+			if err := m.InsertChain(chain.Slice(0, 1), nil); err != nil {
 				t.Fatalf("block %d: failed to insert into chain: %v", block.NumberU64(), err)
 			}
 			statedb = state.New(m.NewHistoryStateReader(1, tx))
@@ -1971,7 +1959,7 @@ func TestInitThenFailCreateContract(t *testing.T) {
 		}
 		// Import the rest of the blocks
 		for i, block := range chain.Blocks[1:] {
-			if err := m.InsertChain(chain.Slice(1+i, 2+i)); err != nil {
+			if err := m.InsertChain(chain.Slice(1+i, 2+i), nil); err != nil {
 				t.Fatalf("block %d: failed to insert into chain: %v", block.NumberU64(), err)
 			}
 		}
@@ -2013,7 +2001,7 @@ func TestEIP2718Transition(t *testing.T) {
 			},
 		}
 	)
-	m := mock.MockWithGenesis(t, gspec, key, false)
+	m := stages.MockWithGenesis(t, gspec, key, false)
 
 	chain, err := core.GenerateChain(m.ChainConfig, m.Genesis, m.Engine, m.DB, 1, func(i int, b *core.BlockGen) {
 		b.SetCoinbase(libcommon.Address{1})
@@ -2045,7 +2033,7 @@ func TestEIP2718Transition(t *testing.T) {
 
 	// Import the canonical chain
 
-	if err = m.InsertChain(chain); err != nil {
+	if err = m.InsertChain(chain, nil); err != nil {
 		t.Fatalf("failed to insert into chain: %v", err)
 	}
 
@@ -2108,7 +2096,7 @@ func TestEIP1559Transition(t *testing.T) {
 		}
 		signer = types.LatestSigner(gspec.Config)
 	)
-	m := mock.MockWithGenesis(t, gspec, key1, false)
+	m := stages.MockWithGenesis(t, gspec, key1, false)
 
 	chain, err := core.GenerateChain(m.ChainConfig, m.Genesis, m.Engine, m.DB, 501, func(i int, b *core.BlockGen) {
 		if i == 500 {
@@ -2147,7 +2135,12 @@ func TestEIP1559Transition(t *testing.T) {
 	}
 	// Import the canonical chain
 
-	if err = m.InsertChain(chain); err != nil {
+	if err := m.DB.Update(m.Ctx, func(tx kv.RwTx) error {
+		if err = m.InsertChain(chain, tx); err != nil {
+			t.Fatalf("failed to insert into chain: %v", err)
+		}
+		return nil
+	}); err != nil {
 		t.Fatalf("failed to insert into chain: %v", err)
 	}
 
@@ -2195,7 +2188,7 @@ func TestEIP1559Transition(t *testing.T) {
 		t.Fatalf("generate chain: %v", err)
 	}
 
-	if err = m.InsertChain(chain); err != nil {
+	if err = m.InsertChain(chain, nil); err != nil {
 		t.Fatalf("failed to insert into chain: %v", err)
 	}
 
@@ -2225,7 +2218,7 @@ func TestEIP1559Transition(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func current(m *mock.MockSentry, tx kv.Tx) *types.Block {
+func current(m *stages.MockSentry, tx kv.Tx) *types.Block {
 	if tx != nil {
 		b, err := m.BlockReader.CurrentBlock(tx)
 		if err != nil {

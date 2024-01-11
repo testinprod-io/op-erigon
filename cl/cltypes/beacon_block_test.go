@@ -43,11 +43,10 @@ func TestBeaconBody(t *testing.T) {
 		Deposits:           deposits,
 		VoluntaryExits:     voluntaryExits,
 		SyncAggregate:      syncAggregate,
-		ExecutionPayload:   NewEth1BlockFromHeaderAndBody(block.Header(), block.RawBody(), &clparams.MainnetBeaconConfig),
+		ExecutionPayload:   NewEth1BlockFromHeaderAndBody(block.Header(), block.RawBody()),
 		ExecutionChanges:   executionChanges,
 		BlobKzgCommitments: blobKzgCommitments,
 		Version:            version,
-		beaconCfg:          &clparams.MainnetBeaconConfig,
 	}
 
 	// Test EncodeSSZ and DecodeSSZ

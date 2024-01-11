@@ -6,8 +6,8 @@ import (
 )
 
 type ProposerSlashing struct {
-	Header1 *SignedBeaconBlockHeader `json:"signed_header_1"`
-	Header2 *SignedBeaconBlockHeader `json:"signed_header_2"`
+	Header1 *SignedBeaconBlockHeader
+	Header2 *SignedBeaconBlockHeader
 }
 
 func (p *ProposerSlashing) EncodeSSZ(dst []byte) ([]byte, error) {
@@ -29,8 +29,8 @@ func (p *ProposerSlashing) HashSSZ() ([32]byte, error) {
 }
 
 type AttesterSlashing struct {
-	Attestation_1 *IndexedAttestation `json:"attestation_1"`
-	Attestation_2 *IndexedAttestation `json:"attestation_2"`
+	Attestation_1 *IndexedAttestation
+	Attestation_2 *IndexedAttestation
 }
 
 func (a *AttesterSlashing) EncodeSSZ(dst []byte) ([]byte, error) {

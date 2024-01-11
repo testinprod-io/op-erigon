@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 
-	"github.com/ledgerwatch/erigon/metrics"
 	"github.com/ledgerwatch/erigon/turbo/debug"
 
 	"github.com/ledgerwatch/erigon/cl/cltypes"
@@ -43,7 +42,7 @@ func main() {
 	)
 	if *pprof {
 		// Server for pprof
-		debug.StartPProf("localhost:6060", metrics.Setup("localhost:6060", log.Root()))
+		debug.StartPProf("localhost:6060", true)
 	}
 
 	if err != nil {

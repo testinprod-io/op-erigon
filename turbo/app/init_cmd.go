@@ -37,7 +37,7 @@ It expects the genesis file as argument.`,
 func initGenesis(ctx *cli.Context) error {
 	var logger log.Logger
 	var err error
-	if logger, _, err = debug.Setup(ctx, true /* rootLogger */); err != nil {
+	if logger, err = debug.Setup(ctx, true /* rootLogger */); err != nil {
 		return err
 	}
 	// Make sure we have a valid genesis JSON
@@ -61,7 +61,7 @@ func initGenesis(ctx *cli.Context) error {
 	stack := MakeConfigNodeDefault(ctx, logger)
 	defer stack.Close()
 
-	chaindb, err := node.OpenDatabase(stack.Config(), kv.ChainDB, "", false, logger)
+	chaindb, err := node.OpenDatabase(stack.Config(), kv.ChainDB, logger)
 	if err != nil {
 		utils.Fatalf("Failed to open database: %v", err)
 	}

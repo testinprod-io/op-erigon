@@ -20,10 +20,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/http/pprof" //nolint:gosec
+	_ "net/http/pprof" //nolint:gosec
 	"os"
 	"path/filepath"
 
+	metrics2 "github.com/VictoriaMetrics/metrics"
 	"github.com/ledgerwatch/log/v3"
 	"github.com/pelletier/go-toml"
 	"github.com/spf13/cobra"
@@ -31,7 +32,8 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/ledgerwatch/erigon/common/fdlimit"
-	"github.com/ledgerwatch/erigon/metrics"
+	"github.com/ledgerwatch/erigon/diagnostics"
+	"github.com/ledgerwatch/erigon/metrics/exp"
 	"github.com/ledgerwatch/erigon/turbo/logging"
 )
 
@@ -86,11 +88,10 @@ var Flags = []cli.Flag{
 }
 
 // SetupCobra sets up logging, profiling and tracing for cobra commands
-func SetupCobra(cmd *cobra.Command, filePrefix string) log.Logger {
+func SetupCobra(cmd *cobra.Command, filePrefix string) (log.Logger, error) {
 	// ensure we've read in config file details before setting up metrics etc.
 	if err := SetCobraFlagsFromConfigFile(cmd); err != nil {
 		log.Warn("failed setting config flags from yaml/toml file", "err", err)
-		panic(err)
 	}
 	RaiseFdLimit()
 	flags := cmd.Flags()
@@ -99,83 +100,68 @@ func SetupCobra(cmd *cobra.Command, filePrefix string) log.Logger {
 
 	traceFile, err := flags.GetString(traceFlag.Name)
 	if err != nil {
-		log.Error("failed setting config flags from yaml/toml file", "err", err)
-		panic(err)
+		return logger, err
 	}
 	cpuFile, err := flags.GetString(cpuprofileFlag.Name)
 	if err != nil {
-		log.Error("failed setting config flags from yaml/toml file", "err", err)
-		panic(err)
+		return logger, err
 	}
 
 	// profiling, tracing
 	if traceFile != "" {
 		if err2 := Handler.StartGoTrace(traceFile); err2 != nil {
-			return logger
+			return logger, err2
 		}
 	}
 	if cpuFile != "" {
 		if err2 := Handler.StartCPUProfile(cpuFile); err2 != nil {
-			return logger
+			return logger, err2
 		}
 	}
 
-	go ListenSignals(nil, logger)
+	go ListenSignals(nil)
 	pprof, err := flags.GetBool(pprofFlag.Name)
 	if err != nil {
-		log.Error("failed setting config flags from yaml/toml file", "err", err)
-		panic(err)
+		return logger, err
 	}
 	pprofAddr, err := flags.GetString(pprofAddrFlag.Name)
 	if err != nil {
-		log.Error("failed setting config flags from yaml/toml file", "err", err)
-		panic(err)
+		return logger, err
 	}
 	pprofPort, err := flags.GetInt(pprofPortFlag.Name)
 	if err != nil {
-		log.Error("failed setting config flags from yaml/toml file", "err", err)
-		panic(err)
+		return logger, err
 	}
 
 	metricsEnabled, err := flags.GetBool(metricsEnabledFlag.Name)
 	if err != nil {
-		log.Error("failed setting config flags from yaml/toml file", "err", err)
-		panic(err)
+		return logger, err
 	}
 	metricsAddr, err := flags.GetString(metricsAddrFlag.Name)
 	if err != nil {
-		log.Error("failed setting config flags from yaml/toml file", "err", err)
-		panic(err)
+		return logger, err
 	}
 	metricsPort, err := flags.GetInt(metricsPortFlag.Name)
 	if err != nil {
-		log.Error("failed setting config flags from yaml/toml file", "err", err)
-		panic(err)
+		return logger, err
 	}
-
-	var metricsMux *http.ServeMux
-	var metricsAddress string
 
 	if metricsEnabled && metricsAddr != "" {
-		metricsAddress = fmt.Sprintf("%s:%d", metricsAddr, metricsPort)
-		metricsMux = metrics.Setup(metricsAddress, logger)
+		address := fmt.Sprintf("%s:%d", metricsAddr, metricsPort)
+		exp.Setup(address, logger)
 	}
 
+	withMetrics := metricsEnabled && metricsAddr == ""
 	if pprof {
-		address := fmt.Sprintf("%s:%d", pprofAddr, pprofPort)
-		if address == metricsAddress {
-			StartPProf(address, metricsMux)
-		} else {
-			StartPProf(address, nil)
-		}
+		// metrics and pprof server
+		StartPProf(fmt.Sprintf("%s:%d", pprofAddr, pprofPort), withMetrics)
 	}
-
-	return logger
+	return logger, nil
 }
 
 // Setup initializes profiling and logging based on the CLI flags.
 // It should be called as early as possible in the program.
-func Setup(ctx *cli.Context, rootLogger bool) (log.Logger, *http.ServeMux, error) {
+func Setup(ctx *cli.Context, rootLogger bool) (log.Logger, error) {
 	// ensure we've read in config file details before setting up metrics etc.
 	if err := SetFlagsFromConfigFile(ctx); err != nil {
 		log.Warn("failed setting config flags from yaml/toml file", "err", err)
@@ -187,26 +173,30 @@ func Setup(ctx *cli.Context, rootLogger bool) (log.Logger, *http.ServeMux, error
 
 	if traceFile := ctx.String(traceFlag.Name); traceFile != "" {
 		if err := Handler.StartGoTrace(traceFile); err != nil {
-			return logger, nil, err
+			return logger, err
 		}
 	}
 
 	if cpuFile := ctx.String(cpuprofileFlag.Name); cpuFile != "" {
 		if err := Handler.StartCPUProfile(cpuFile); err != nil {
-			return logger, nil, err
+			return logger, err
 		}
 	}
 	pprofEnabled := ctx.Bool(pprofFlag.Name)
 	metricsEnabled := ctx.Bool(metricsEnabledFlag.Name)
 	metricsAddr := ctx.String(metricsAddrFlag.Name)
 
-	var metricsMux *http.ServeMux
-	var metricsAddress string
-
 	if metricsEnabled && (!pprofEnabled || metricsAddr != "") {
 		metricsPort := ctx.Int(metricsPortFlag.Name)
-		metricsAddress = fmt.Sprintf("%s:%d", metricsAddr, metricsPort)
-		metricsMux = metrics.Setup(metricsAddress, logger)
+		address := fmt.Sprintf("%s:%d", metricsAddr, metricsPort)
+		exp.Setup(address, logger)
+		diagnostics.SetupLogsAccess(ctx)
+		diagnostics.SetupDbAccess(ctx)
+		diagnostics.SetupCmdLineAccess()
+		diagnostics.SetupFlagsAccess(ctx)
+		diagnostics.SetupVersionAccess()
+		diagnostics.SetupBlockBodyDownload()
+		diagnostics.SetupHeaderDownloadStats()
 	}
 
 	// pprof server
@@ -214,34 +204,31 @@ func Setup(ctx *cli.Context, rootLogger bool) (log.Logger, *http.ServeMux, error
 		pprofHost := ctx.String(pprofAddrFlag.Name)
 		pprofPort := ctx.Int(pprofPortFlag.Name)
 		address := fmt.Sprintf("%s:%d", pprofHost, pprofPort)
-		if address == metricsAddress {
-			StartPProf(address, metricsMux)
-		} else {
-			StartPProf(address, nil)
-		}
+		// This context value ("metrics.addr") represents the utils.MetricsHTTPFlag.Name.
+		// It cannot be imported because it will cause a cyclical dependency.
+		withMetrics := metricsEnabled && metricsAddr == ""
+		StartPProf(address, withMetrics)
 	}
-
-	return logger, metricsMux, nil
+	return logger, nil
 }
 
-func StartPProf(address string, metricsMux *http.ServeMux) {
+func StartPProf(address string, withMetrics bool) {
+	// Hook go-metrics into expvar on any /debug/metrics request, load all vars
+	// from the registry into expvar, and execute regular expvar handler.
+	if withMetrics {
+		http.HandleFunc("/debug/metrics/prometheus", func(w http.ResponseWriter, req *http.Request) {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			metrics2.WritePrometheus(w, true)
+		})
+	}
 	cpuMsg := fmt.Sprintf("go tool pprof -lines -http=: http://%s/%s", address, "debug/pprof/profile?seconds=20")
 	heapMsg := fmt.Sprintf("go tool pprof -lines -http=: http://%s/%s", address, "debug/pprof/heap")
 	log.Info("Starting pprof server", "cpu", cpuMsg, "heap", heapMsg)
-
-	if metricsMux == nil {
-		go func() {
-			if err := http.ListenAndServe(address, nil); err != nil { // nolint:gosec
-				log.Error("Failure in running pprof server", "err", err)
-			}
-		}()
-	} else {
-		metricsMux.HandleFunc("/debug/pprof/", pprof.Index)
-		metricsMux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-		metricsMux.HandleFunc("/debug/pprof/profile", pprof.Profile)
-		metricsMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-		metricsMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
-	}
+	go func() {
+		if err := http.ListenAndServe(address, nil); err != nil { // nolint:gosec
+			log.Error("Failure in running pprof server", "err", err)
+		}
+	}()
 }
 
 // Exit stops all running profiles, flushing their output to the

@@ -19,10 +19,10 @@
       "0": 2
     },
     "producerDelay": {
-      "0": 4
+      "0": 6
     },
     "sprint": {
-      "0": 16
+      "0": 64
     },
     "backupMultiplier": {
       "0": 5
@@ -41,7 +41,8 @@
       }
     },
     "jaipurBlock": 0,
-    "delhiBlock": 0,
+    "delhiBlock":0,
+    "calcuttaBlock": 30,
     "indoreBlock": 0
   }
 }

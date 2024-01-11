@@ -1,57 +1,47 @@
 package core
 
 import (
+	"encoding/hex"
 	"fmt"
-	"strconv"
 
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/hexutility"
 
 	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/core/systemcontracts"
-	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/params"
 	"github.com/ledgerwatch/erigon/params/networkname"
 )
 
 func init() {
-	// Initialise SystemContractCodeLookup
+	// Initialise systemContractCodeLookup
 	for _, chainName := range []string{networkname.BorMainnetChainName, networkname.MumbaiChainName, networkname.BorDevnetChainName} {
 		byChain := map[libcommon.Address][]libcommon.CodeRecord{}
 		systemcontracts.SystemContractCodeLookup[chainName] = byChain
 		// Apply genesis with the block number 0
 		genesisBlock := GenesisBlockByChainName(chainName)
-		allocToCodeRecords(genesisBlock.Alloc, byChain, 0)
+		for addr, alloc := range genesisBlock.Alloc {
+			if len(alloc.Code) > 0 {
+				list := byChain[addr]
+				codeHash, err := common.HashData(alloc.Code)
+				if err != nil {
+					panic(fmt.Errorf("failed to hash system contract code: %s", err.Error()))
+				}
+				list = append(list, libcommon.CodeRecord{BlockNumber: 0, CodeHash: codeHash})
+				byChain[addr] = list
+			}
+		}
 		// Process upgrades
 		chainConfig := params.ChainConfigByChainName(chainName)
-		for blockNumStr, genesisAlloc := range chainConfig.Bor.BlockAlloc {
-			blockNum, err := strconv.ParseUint(blockNumStr, 10, 64)
-			if err != nil {
-				panic(fmt.Errorf("failed to parse block number in BlockAlloc: %s", err.Error()))
+		if chainConfig.Bor != nil && chainConfig.Bor.CalcuttaBlock != nil {
+			blockNum := chainConfig.Bor.CalcuttaBlock.Uint64()
+			if blockNum != 0 {
+				addCodeRecords(systemcontracts.CalcuttaUpgrade[chainName], blockNum, byChain)
 			}
-			alloc, err := types.DecodeGenesisAlloc(genesisAlloc)
-			if err != nil {
-				panic(fmt.Errorf("failed to decode block alloc: %v", err))
-			}
-			allocToCodeRecords(alloc, byChain, blockNum)
 		}
 	}
 
 	addGnosisSpecialCase()
-}
-
-func allocToCodeRecords(alloc types.GenesisAlloc, byChain map[libcommon.Address][]libcommon.CodeRecord, blockNum uint64) {
-	for addr, account := range alloc {
-		if len(account.Code) > 0 {
-			list := byChain[addr]
-			codeHash, err := common.HashData(account.Code)
-			if err != nil {
-				panic(fmt.Errorf("failed to hash system contract code: %s", err.Error()))
-			}
-			list = append(list, libcommon.CodeRecord{BlockNumber: blockNum, CodeHash: codeHash})
-			byChain[addr] = list
-		}
-	}
 }
 
 // some hard coding for gnosis chain here to solve a historical problem with the token contract being re-written
@@ -84,4 +74,20 @@ func addGnosisSpecialCase() {
 	})
 
 	byChain[address] = list
+}
+
+func addCodeRecords(upgrade *systemcontracts.Upgrade, blockNum uint64, byChain map[libcommon.Address][]libcommon.CodeRecord) {
+	for _, config := range upgrade.Configs {
+		list := byChain[config.ContractAddr]
+		code, err := hex.DecodeString(config.Code)
+		if err != nil {
+			panic(fmt.Errorf("failed to decode system contract code: %s", err.Error()))
+		}
+		codeHash, err := common.HashData(code)
+		if err != nil {
+			panic(fmt.Errorf("failed to hash system contract code: %s", err.Error()))
+		}
+		list = append(list, libcommon.CodeRecord{BlockNumber: blockNum, CodeHash: codeHash})
+		byChain[config.ContractAddr] = list
+	}
 }

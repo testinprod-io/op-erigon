@@ -21,7 +21,7 @@ package p2p
 import (
 	"net"
 
-	"github.com/ledgerwatch/erigon/metrics"
+	"github.com/VictoriaMetrics/metrics"
 )
 
 const (
@@ -34,7 +34,7 @@ var (
 	ingressTrafficMeter = metrics.GetOrCreateCounter(ingressMeterName)
 	egressConnectMeter  = metrics.GetOrCreateCounter("p2p_dials")
 	egressTrafficMeter  = metrics.GetOrCreateCounter(egressMeterName)
-	activePeerGauge     = metrics.GetOrCreateCounter("p2p_peers", true)
+	activePeerGauge     = metrics.GetOrCreateCounter("p2p_peers")
 )
 
 // meteredConn is a wrapper around a net.Conn that meters both the

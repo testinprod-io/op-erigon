@@ -14,7 +14,7 @@ import (
 
 func TestBeaconBlock(t *testing.T) {
 	_, tx := memdb.NewTestTx(t)
-	signedBeaconBlock := cltypes.NewSignedBeaconBlock(&clparams.MainnetBeaconConfig)
+	signedBeaconBlock := new(cltypes.SignedBeaconBlock)
 	require.NoError(t, signedBeaconBlock.DecodeSSZ(rawdb.SSZTestBeaconBlock, int(clparams.BellatrixVersion)))
 
 	root, err := signedBeaconBlock.Block.HashSSZ()
@@ -33,7 +33,7 @@ func TestBeaconBlock(t *testing.T) {
 
 func TestFinalizedBlockRoot(t *testing.T) {
 	_, tx := memdb.NewTestTx(t)
-	signedBeaconBlock := cltypes.NewSignedBeaconBlock(&clparams.MainnetBeaconConfig)
+	signedBeaconBlock := new(cltypes.SignedBeaconBlock)
 	require.NoError(t, signedBeaconBlock.DecodeSSZ(rawdb.SSZTestBeaconBlock, int(clparams.BellatrixVersion)))
 
 	root, err := signedBeaconBlock.Block.HashSSZ()

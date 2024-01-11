@@ -58,6 +58,7 @@ type HttpCfg struct {
 	HTTPTimeouts    rpccfg.HTTPTimeouts
 	AuthRpcTimeouts rpccfg.HTTPTimeouts
 	EvmCallTimeout  time.Duration
+	InternalCL      bool
 	LogDirVerbosity string
 	LogDirPath      string
 
@@ -69,7 +70,4 @@ type HttpCfg struct {
 	RollupHistoricalRPC        string
 	RollupHistoricalRPCTimeout time.Duration
 	RollupDisableTxPoolGossip  bool
-
-	// Ots API
-	OtsMaxPageSize uint64
 }

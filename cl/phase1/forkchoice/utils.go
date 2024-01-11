@@ -2,7 +2,6 @@ package forkchoice
 
 import (
 	"fmt"
-
 	"github.com/ledgerwatch/erigon/cl/transition"
 
 	libcommon "github.com/ledgerwatch/erigon-lib/common"

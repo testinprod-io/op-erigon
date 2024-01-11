@@ -23,6 +23,7 @@ import (
 
 	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/erigon-lib/chain"
+	"github.com/ledgerwatch/erigon/turbo/stages"
 
 	"github.com/ledgerwatch/log/v3"
 
@@ -31,7 +32,6 @@ import (
 	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/crypto"
 	"github.com/ledgerwatch/erigon/params"
-	"github.com/ledgerwatch/erigon/turbo/stages/mock"
 )
 
 func TestGenerateChain(t *testing.T) {
@@ -55,7 +55,7 @@ func TestGenerateChain(t *testing.T) {
 		Config: &chain.Config{HomesteadBlock: new(big.Int), ChainID: big.NewInt(1)},
 		Alloc:  types.GenesisAlloc{addr1: {Balance: big.NewInt(1000000)}},
 	}
-	m := mock.MockWithGenesis(t, gspec, key1, false)
+	m := stages.MockWithGenesis(t, gspec, key1, false)
 
 	// This call generates a chain of 5 blocks. The function runs for
 	// each block and adds different features to gen based on the
@@ -92,17 +92,18 @@ func TestGenerateChain(t *testing.T) {
 		fmt.Printf("generate chain: %v\n", err)
 	}
 
-	// Import the chain. This runs all block validation rules.
-	if err := m.InsertChain(chain); err != nil {
-		fmt.Printf("insert error%v\n", err)
-		return
-	}
 	tx, err := m.DB.BeginRw(m.Ctx)
 	if err != nil {
 		fmt.Printf("beginro error: %v\n", err)
 		return
 	}
 	defer tx.Rollback()
+
+	// Import the chain. This runs all block validation rules.
+	if err := m.InsertChain(chain, tx); err != nil {
+		fmt.Printf("insert error%v\n", err)
+		return
+	}
 
 	st := state.New(m.NewStateReader(tx))
 	if big.NewInt(5).Cmp(current(m, tx).Number()) != 0 {

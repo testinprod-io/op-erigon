@@ -42,11 +42,10 @@ type CallArgs struct {
 	GasPrice             *hexutil.Big       `json:"gasPrice"`
 	MaxPriorityFeePerGas *hexutil.Big       `json:"maxPriorityFeePerGas"`
 	MaxFeePerGas         *hexutil.Big       `json:"maxFeePerGas"`
-	MaxFeePerBlobGas     *hexutil.Big       `json:"maxFeePerBlobGas"`
+	MaxFeePerDataGas     *hexutil.Big       `json:"maxFeePerDataGas"`
 	Value                *hexutil.Big       `json:"value"`
 	Nonce                *hexutil.Uint64    `json:"nonce"`
 	Data                 *hexutility.Bytes  `json:"data"`
-	Input                *hexutility.Bytes  `json:"input"`
 	AccessList           *types2.AccessList `json:"accessList"`
 	ChainID              *hexutil.Big       `json:"chainId,omitempty"`
 }
@@ -85,7 +84,7 @@ func (args *CallArgs) ToMessage(globalGasCap uint64, baseFee *uint256.Int) (type
 		gasPrice         *uint256.Int
 		gasFeeCap        *uint256.Int
 		gasTipCap        *uint256.Int
-		maxFeePerBlobGas *uint256.Int
+		maxFeePerDataGas *uint256.Int
 	)
 	if baseFee == nil {
 		// If there's no basefee, then it must be a non-1559 execution
@@ -129,8 +128,8 @@ func (args *CallArgs) ToMessage(globalGasCap uint64, baseFee *uint256.Int) (type
 				gasPrice = math.U256Min(new(uint256.Int).Add(gasTipCap, baseFee), gasFeeCap)
 			}
 		}
-		if args.MaxFeePerBlobGas != nil {
-			maxFeePerBlobGas.SetFromBig(args.MaxFeePerBlobGas.ToInt())
+		if args.MaxFeePerDataGas != nil {
+			maxFeePerDataGas.SetFromBig(args.MaxFeePerDataGas.ToInt())
 		}
 	}
 
@@ -142,9 +141,7 @@ func (args *CallArgs) ToMessage(globalGasCap uint64, baseFee *uint256.Int) (type
 		}
 	}
 	var data []byte
-	if args.Input != nil {
-		data = *args.Input
-	} else if args.Data != nil {
+	if args.Data != nil {
 		data = *args.Data
 	}
 	var accessList types2.AccessList
@@ -152,7 +149,7 @@ func (args *CallArgs) ToMessage(globalGasCap uint64, baseFee *uint256.Int) (type
 		accessList = *args.AccessList
 	}
 
-	msg := types.NewMessage(addr, args.To, 0, value, gas, gasPrice, gasFeeCap, gasTipCap, data, accessList, false /* checkNonce */, false /* isFree */, true /* isFake */, maxFeePerBlobGas)
+	msg := types.NewMessage(addr, args.To, 0, value, gas, gasPrice, gasFeeCap, gasTipCap, data, accessList, false /* checkNonce */, false /* isFree */, true /* isFake */, maxFeePerDataGas)
 	return msg, nil
 }
 
@@ -288,14 +285,11 @@ func RPCMarshalHeader(head *types.Header) map[string]interface{} {
 	if head.WithdrawalsHash != nil {
 		result["withdrawalsRoot"] = head.WithdrawalsHash
 	}
-	if head.BlobGasUsed != nil {
-		result["blobGasUsed"] = (*hexutil.Uint64)(head.BlobGasUsed)
+	if head.DataGasUsed != nil {
+		result["dataGasUsed"] = (*hexutil.Uint64)(head.DataGasUsed)
 	}
-	if head.ExcessBlobGas != nil {
-		result["excessBlobGas"] = (*hexutil.Uint64)(head.ExcessBlobGas)
-	}
-	if head.ParentBeaconBlockRoot != nil {
-		result["parentBeaconBlockRoot"] = head.ParentBeaconBlockRoot
+	if head.ExcessDataGas != nil {
+		result["excessDataGas"] = (*hexutil.Uint64)(head.ExcessDataGas)
 	}
 
 	return result
@@ -395,7 +389,7 @@ type RPCTransaction struct {
 	GasPrice         *hexutil.Big       `json:"gasPrice,omitempty"`
 	Tip              *hexutil.Big       `json:"maxPriorityFeePerGas,omitempty"`
 	FeeCap           *hexutil.Big       `json:"maxFeePerGas,omitempty"`
-	MaxFeePerBlobGas *hexutil.Big       `json:"maxFeePerBlobGas,omitempty"`
+	MaxFeePerDataGas *hexutil.Big       `json:"maxFeePerDataGas,omitempty"`
 	Hash             libcommon.Hash     `json:"hash"`
 	Input            hexutility.Bytes   `json:"input"`
 	Nonce            hexutil.Uint64     `json:"nonce"`
@@ -502,8 +496,8 @@ func newRPCTransaction(tx types.Transaction, blockHash libcommon.Hash, blockNumb
 		result.Accesses = &t.AccessList
 		// if the transaction has been mined, compute the effective gas price
 		result.GasPrice = computeGasPrice(tx, blockHash, baseFee)
-		result.MaxFeePerBlobGas = (*hexutil.Big)(t.MaxFeePerBlobGas.ToBig())
-		result.BlobVersionedHashes = t.GetBlobHashes()
+		result.MaxFeePerDataGas = (*hexutil.Big)(t.MaxFeePerDataGas.ToBig())
+		result.BlobVersionedHashes = t.GetDataHashes()
 	}
 	signer := types.LatestSignerForChainID(chainId.ToBig())
 	var err error

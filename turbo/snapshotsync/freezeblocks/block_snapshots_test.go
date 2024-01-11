@@ -6,6 +6,7 @@ import (
 	"testing"
 	"testing/fstest"
 
+	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/erigon-lib/compress"
 	"github.com/ledgerwatch/erigon-lib/downloader/snaptype"
 	"github.com/ledgerwatch/erigon-lib/recsplit"
@@ -14,7 +15,6 @@ import (
 
 	"github.com/ledgerwatch/erigon/common/math"
 	"github.com/ledgerwatch/erigon/eth/ethconfig"
-	"github.com/ledgerwatch/erigon/params"
 	"github.com/ledgerwatch/erigon/params/networkname"
 	"github.com/ledgerwatch/erigon/turbo/snapshotsync/snapcfg"
 )
@@ -38,7 +38,7 @@ func createTestSegmentFile(t *testing.T, from, to uint64, name snaptype.Type, di
 	defer idx.Close()
 	err = idx.AddKey([]byte{1}, 0)
 	require.NoError(t, err)
-	err = idx.Build(context.Background())
+	err = idx.Build()
 	require.NoError(t, err)
 	if name == snaptype.Transactions {
 		idx, err := recsplit.NewRecSplit(recsplit.RecSplitArgs{
@@ -51,7 +51,7 @@ func createTestSegmentFile(t *testing.T, from, to uint64, name snaptype.Type, di
 		require.NoError(t, err)
 		err = idx.AddKey([]byte{1}, 0)
 		require.NoError(t, err)
-		err = idx.Build(context.Background())
+		err = idx.Build()
 		require.NoError(t, err)
 		defer idx.Close()
 	}
@@ -75,7 +75,7 @@ func TestMergeSnapshots(t *testing.T) {
 	defer s.Close()
 	require.NoError(s.ReopenFolder())
 	{
-		merger := NewMerger(dir, 1, log.LvlInfo, nil, params.MainnetChainConfig, nil, logger)
+		merger := NewMerger(dir, 1, log.LvlInfo, uint256.Int{}, nil, logger)
 		ranges := merger.FindMergeRanges(s.Ranges())
 		require.True(len(ranges) > 0)
 		err := merger.Merge(context.Background(), s, ranges, s.Dir(), false)
@@ -90,7 +90,7 @@ func TestMergeSnapshots(t *testing.T) {
 	require.Equal(5, a)
 
 	{
-		merger := NewMerger(dir, 1, log.LvlInfo, nil, params.MainnetChainConfig, nil, logger)
+		merger := NewMerger(dir, 1, log.LvlInfo, uint256.Int{}, nil, logger)
 		ranges := merger.FindMergeRanges(s.Ranges())
 		require.True(len(ranges) == 0)
 		err := merger.Merge(context.Background(), s, ranges, s.Dir(), false)
@@ -212,23 +212,23 @@ func TestParseCompressedFileName(t *testing.T) {
 		require.NoError(err)
 		return s.Name()
 	}
-	_, ok := snaptype.ParseFileName("", stat("a"))
-	require.False(ok)
-	_, ok = snaptype.ParseFileName("", stat("1-a"))
-	require.False(ok)
-	_, ok = snaptype.ParseFileName("", stat("1-2-a"))
-	require.False(ok)
-	_, ok = snaptype.ParseFileName("", stat("1-2-bodies.info"))
-	require.False(ok)
-	_, ok = snaptype.ParseFileName("", stat("1-2-bodies.seg"))
-	require.False(ok)
-	_, ok = snaptype.ParseFileName("", stat("v2-1-2-bodies.seg"))
-	require.True(ok)
-	_, ok = snaptype.ParseFileName("", stat("v0-1-2-bodies.seg"))
-	require.True(ok)
+	_, err := snaptype.ParseFileName("", stat("a"))
+	require.Error(err)
+	_, err = snaptype.ParseFileName("", stat("1-a"))
+	require.Error(err)
+	_, err = snaptype.ParseFileName("", stat("1-2-a"))
+	require.Error(err)
+	_, err = snaptype.ParseFileName("", stat("1-2-bodies.info"))
+	require.Error(err)
+	_, err = snaptype.ParseFileName("", stat("1-2-bodies.seg"))
+	require.Error(err)
+	_, err = snaptype.ParseFileName("", stat("v2-1-2-bodies.seg"))
+	require.Error(err)
+	_, err = snaptype.ParseFileName("", stat("v0-1-2-bodies.seg"))
+	require.Error(err)
 
-	f, ok := snaptype.ParseFileName("", stat("v1-1-2-bodies.seg"))
-	require.True(ok)
+	f, err := snaptype.ParseFileName("", stat("v1-1-2-bodies.seg"))
+	require.NoError(err)
 	require.Equal(f.T, snaptype.Bodies)
 	require.Equal(1_000, int(f.From))
 	require.Equal(2_000, int(f.To))

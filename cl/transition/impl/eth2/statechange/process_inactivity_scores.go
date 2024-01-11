@@ -1,29 +1,28 @@
 package statechange
 
 import (
-	"github.com/ledgerwatch/erigon/cl/abstract"
 	"github.com/ledgerwatch/erigon/cl/phase1/core/state"
 	"github.com/ledgerwatch/erigon/cl/utils"
 )
 
 // ProcessInactivityScores will updates the inactivity registry of each validator.
-func ProcessInactivityScores(s abstract.BeaconState, eligibleValidatorsIndicies []uint64, unslashedIndicies [][]bool) error {
-	if state.Epoch(s) == s.BeaconConfig().GenesisEpoch {
+func ProcessInactivityScores(s *state.BeaconState) error {
+	if state.Epoch(s.BeaconState) == s.BeaconConfig().GenesisEpoch {
 		return nil
 	}
-
-	for _, validatorIndex := range eligibleValidatorsIndicies {
+	previousEpoch := state.PreviousEpoch(s.BeaconState)
+	for _, validatorIndex := range state.EligibleValidatorsIndicies(s.BeaconState) {
 		// retrieve validator inactivity score index.
 		score, err := s.ValidatorInactivityScore(int(validatorIndex))
 		if err != nil {
 			return err
 		}
-		if unslashedIndicies[s.BeaconConfig().TimelyTargetFlagIndex][validatorIndex] {
+		if state.IsUnslashedParticipatingIndex(s.BeaconState, previousEpoch, validatorIndex, int(s.BeaconConfig().TimelyTargetFlagIndex)) {
 			score -= utils.Min64(1, score)
 		} else {
 			score += s.BeaconConfig().InactivityScoreBias
 		}
-		if !state.InactivityLeaking(s) {
+		if !state.InactivityLeaking(s.BeaconState) {
 			score -= utils.Min64(s.BeaconConfig().InactivityScoreRecoveryRate, score)
 		}
 		if err := s.SetValidatorInactivityScore(int(validatorIndex), score); err != nil {

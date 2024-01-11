@@ -52,7 +52,7 @@ func VerifyEip1559Header(config *chain.Config, parent, header *types.Header, ski
 	expectedBaseFee := CalcBaseFee(config, parent, header.Time)
 	if header.BaseFee.Cmp(expectedBaseFee) != 0 {
 		return fmt.Errorf("invalid baseFee: have %s, want %s, parentBaseFee %s, parentGasUsed %d",
-			header.BaseFee, expectedBaseFee, parent.BaseFee, parent.GasUsed)
+			expectedBaseFee, header.BaseFee, parent.BaseFee, parent.GasUsed)
 	}
 	return nil
 }

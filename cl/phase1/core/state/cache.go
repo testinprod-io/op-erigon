@@ -17,9 +17,11 @@ import (
 
 type HashFunc func([]byte) ([32]byte, error)
 
-// CachingBeaconState is a cached wrapper around a raw CachingBeaconState provider
-type CachingBeaconState struct {
+// BeaconState is a cached wrapper around a raw BeaconState provider
+type BeaconState struct {
+
 	// embedded BeaconState
+	// TODO: perhaps refactor and make a method BeaconState() which returns a pointer to raw.BeaconState
 	*raw.BeaconState
 
 	// Internals
@@ -31,30 +33,31 @@ type CachingBeaconState struct {
 	totalActiveBalanceRootCache uint64
 	proposerIndex               *uint64
 	previousStateRoot           common.Hash
+	// Configs
 }
 
-func New(cfg *clparams.BeaconChainConfig) *CachingBeaconState {
-	state := &CachingBeaconState{
+func New(cfg *clparams.BeaconChainConfig) *BeaconState {
+	state := &BeaconState{
 		BeaconState: raw.New(cfg),
 	}
 	state.initBeaconState()
 	return state
 }
 
-func NewFromRaw(r *raw.BeaconState) *CachingBeaconState {
-	state := &CachingBeaconState{
+func NewFromRaw(r *raw.BeaconState) *BeaconState {
+	state := &BeaconState{
 		BeaconState: r,
 	}
 	state.initBeaconState()
 	return state
 }
 
-func (b *CachingBeaconState) SetPreviousStateRoot(root libcommon.Hash) {
+func (b *BeaconState) SetPreviousStateRoot(root libcommon.Hash) {
 	b.previousStateRoot = root
 }
 
-func (b *CachingBeaconState) _updateProposerIndex() (err error) {
-	epoch := Epoch(b)
+func (b *BeaconState) _updateProposerIndex() (err error) {
+	epoch := Epoch(b.BeaconState)
 
 	hash := sha256.New()
 	beaconConfig := b.BeaconConfig()
@@ -84,13 +87,13 @@ func (b *CachingBeaconState) _updateProposerIndex() (err error) {
 }
 
 // _initializeValidatorsPhase0 initializes the validators matching flags based on previous/current attestations
-func (b *CachingBeaconState) _initializeValidatorsPhase0() error {
+func (b *BeaconState) _initializeValidatorsPhase0() error {
 	// Previous Pending attestations
 	if b.Slot() == 0 {
 		return nil
 	}
 
-	previousEpochRoot, err := GetBlockRoot(b, PreviousEpoch(b))
+	previousEpochRoot, err := GetBlockRoot(b.BeaconState, PreviousEpoch(b.BeaconState))
 	if err != nil {
 		return err
 	}
@@ -138,7 +141,7 @@ func (b *CachingBeaconState) _initializeValidatorsPhase0() error {
 	if b.CurrentEpochAttestationsLength() == 0 {
 		return nil
 	}
-	currentEpochRoot, err := GetBlockRoot(b, Epoch(b))
+	currentEpochRoot, err := GetBlockRoot(b.BeaconState, Epoch(b.BeaconState))
 	if err != nil {
 		return err
 	}
@@ -183,8 +186,8 @@ func (b *CachingBeaconState) _initializeValidatorsPhase0() error {
 	})
 }
 
-func (b *CachingBeaconState) _refreshActiveBalances() {
-	epoch := Epoch(b)
+func (b *BeaconState) _refreshActiveBalances() {
+	epoch := Epoch(b.BeaconState)
 	b.totalActiveBalanceCache = new(uint64)
 	*b.totalActiveBalanceCache = 0
 	b.ForEachValidator(func(validator solid.Validator, idx, total int) bool {
@@ -197,7 +200,7 @@ func (b *CachingBeaconState) _refreshActiveBalances() {
 	b.totalActiveBalanceRootCache = utils.IntegerSquareRoot(*b.totalActiveBalanceCache)
 }
 
-func (b *CachingBeaconState) initCaches() error {
+func (b *BeaconState) initCaches() error {
 	var err error
 	if b.activeValidatorsCache, err = lru.New[uint64, []uint64]("beacon_active_validators_cache", 5); err != nil {
 		return err
@@ -208,14 +211,13 @@ func (b *CachingBeaconState) initCaches() error {
 	return nil
 }
 
-func (b *CachingBeaconState) initBeaconState() error {
+func (b *BeaconState) initBeaconState() error {
 	b._refreshActiveBalances()
 
 	b.publicKeyIndicies = make(map[[48]byte]uint64)
 
 	b.ForEachValidator(func(validator solid.Validator, i, total int) bool {
 		b.publicKeyIndicies[validator.PublicKey()] = uint64(i)
-
 		return true
 	})
 

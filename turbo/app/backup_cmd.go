@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"github.com/ledgerwatch/erigon-lib/common"
 	"os"
 	"path/filepath"
 
@@ -14,6 +13,8 @@ import (
 	"github.com/ledgerwatch/erigon/cmd/utils/flags"
 	"github.com/ledgerwatch/erigon/turbo/backup"
 	"github.com/ledgerwatch/erigon/turbo/debug"
+	"github.com/ledgerwatch/erigon/turbo/logging"
+	"github.com/ledgerwatch/log/v3"
 	"github.com/urfave/cli/v2"
 )
 
@@ -44,7 +45,7 @@ TODO:
 		&BackupLabelsFlag,
 		&BackupTablesFlag,
 		&WarmupThreadsFlag,
-	}),
+	}, debug.Flags, logging.Flags),
 }
 
 var (
@@ -76,12 +77,7 @@ CloudDrives (and ssd) have bad-latency and good-parallel-throughput - then havin
 )
 
 func doBackup(cliCtx *cli.Context) error {
-	logger, _, err := debug.Setup(cliCtx, true /* rootLogger */)
-	if err != nil {
-		return err
-	}
-
-	defer logger.Info("backup done")
+	defer log.Info("backup done")
 
 	ctx := cliCtx.Context
 	dirs := datadir.New(cliCtx.String(utils.DataDirFlag.Name))
@@ -95,14 +91,14 @@ func doBackup(cliCtx *cli.Context) error {
 	var lables = []kv.Label{kv.ChainDB, kv.TxPoolDB, kv.DownloaderDB}
 	if cliCtx.IsSet(BackupToPageSizeFlag.Name) {
 		lables = lables[:0]
-		for _, l := range common.CliString2Array(cliCtx.String(BackupLabelsFlag.Name)) {
+		for _, l := range utils.SplitAndTrim(cliCtx.String(BackupLabelsFlag.Name)) {
 			lables = append(lables, kv.UnmarshalLabel(l))
 		}
 	}
 
 	var tables []string
 	if cliCtx.IsSet(BackupTablesFlag.Name) {
-		tables = common.CliString2Array(cliCtx.String(BackupTablesFlag.Name))
+		tables = utils.SplitAndTrim(cliCtx.String(BackupTablesFlag.Name))
 	}
 
 	readAheadThreads := backup.ReadAheadThreads
@@ -137,9 +133,9 @@ func doBackup(cliCtx *cli.Context) error {
 		if err := os.MkdirAll(to, 0740); err != nil { //owner: rw, group: r, others: -
 			return fmt.Errorf("mkdir: %w, %s", err, to)
 		}
-		logger.Info("[backup] start", "label", label)
-		fromDB, toDB := backup.OpenPair(from, to, label, targetPageSize, logger)
-		if err := backup.Kv2kv(ctx, fromDB, toDB, nil, readAheadThreads, logger); err != nil {
+		log.Info("[backup] start", "label", label)
+		fromDB, toDB := backup.OpenPair(from, to, label, targetPageSize)
+		if err := backup.Kv2kv(ctx, fromDB, toDB, nil, readAheadThreads); err != nil {
 			return err
 		}
 	}

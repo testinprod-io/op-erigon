@@ -1,8 +1,6 @@
 package solid
 
 import (
-	"encoding/json"
-
 	"github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/types/ssz"
 	ssz2 "github.com/ledgerwatch/erigon/cl/ssz"
@@ -25,26 +23,7 @@ type IterableSSZ[T any] interface {
 	ssz.HashableSSZ
 }
 
-type Uint64ListSSZ interface {
-	IterableSSZ[uint64]
-	json.Marshaler
-	json.Unmarshaler
-}
-
-type Uint64VectorSSZ interface {
-	IterableSSZ[uint64]
-	json.Marshaler
-	json.Unmarshaler
-}
-
-type HashListSSZ interface {
-	IterableSSZ[common.Hash]
-	json.Marshaler
-	json.Unmarshaler
-}
-
-type HashVectorSSZ interface {
-	IterableSSZ[common.Hash]
-	json.Marshaler
-	json.Unmarshaler
-}
+type Uint64VectorSSZ IterableSSZ[uint64]
+type Uint64ListSSZ IterableSSZ[uint64]
+type HashListSSZ IterableSSZ[common.Hash]
+type HashVectorSSZ IterableSSZ[common.Hash]

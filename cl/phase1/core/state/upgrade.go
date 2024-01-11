@@ -8,7 +8,7 @@ import (
 	"github.com/ledgerwatch/erigon/cl/utils"
 )
 
-func (b *CachingBeaconState) UpgradeToAltair() error {
+func (b *BeaconState) UpgradeToAltair() error {
 	b.previousStateRoot = libcommon.Hash{}
 	epoch := Epoch(b.BeaconState)
 	// update version
@@ -60,7 +60,7 @@ func (b *CachingBeaconState) UpgradeToAltair() error {
 	return nil
 }
 
-func (b *CachingBeaconState) UpgradeToBellatrix() error {
+func (b *BeaconState) UpgradeToBellatrix() error {
 	b.previousStateRoot = libcommon.Hash{}
 	epoch := Epoch(b.BeaconState)
 	// update version
@@ -75,7 +75,7 @@ func (b *CachingBeaconState) UpgradeToBellatrix() error {
 	return nil
 }
 
-func (b *CachingBeaconState) UpgradeToCapella() error {
+func (b *BeaconState) UpgradeToCapella() error {
 	b.previousStateRoot = libcommon.Hash{}
 	epoch := Epoch(b.BeaconState)
 	// update version
@@ -97,7 +97,7 @@ func (b *CachingBeaconState) UpgradeToCapella() error {
 	return nil
 }
 
-func (b *CachingBeaconState) UpgradeToDeneb() error {
+func (b *BeaconState) UpgradeToDeneb() error {
 	b.previousStateRoot = libcommon.Hash{}
 	epoch := Epoch(b.BeaconState)
 	// update version

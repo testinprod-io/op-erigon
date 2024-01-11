@@ -26,7 +26,7 @@ import (
 	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/eth/stagedsync"
 	"github.com/ledgerwatch/erigon/params"
-	"github.com/ledgerwatch/erigon/turbo/stages/mock"
+	"github.com/ledgerwatch/erigon/turbo/stages"
 )
 
 // Tests that simple header verification works, for both good and bad blocks.
@@ -36,8 +36,7 @@ func TestHeaderVerification(t *testing.T) {
 		gspec  = &types.Genesis{Config: params.TestChainConfig}
 		engine = ethash.NewFaker()
 	)
-	checkStateRoot := true
-	m := mock.MockWithGenesisEngine(t, gspec, engine, false, checkStateRoot)
+	m := stages.MockWithGenesisEngine(t, gspec, engine, false)
 
 	chain, err := core.GenerateChain(m.ChainConfig, m.Genesis, m.Engine, m.DB, 8, nil)
 	if err != nil {
@@ -62,7 +61,7 @@ func TestHeaderVerification(t *testing.T) {
 		}); err != nil {
 			panic(err)
 		}
-		if err = m.InsertChain(chain.Slice(i, i+1)); err != nil {
+		if err = m.InsertChain(chain.Slice(i, i+1), nil); err != nil {
 			t.Fatalf("test %d: error inserting the block: %v", i, err)
 		}
 
@@ -77,8 +76,7 @@ func TestHeaderWithSealVerification(t *testing.T) {
 		gspec  = &types.Genesis{Config: params.TestChainAuraConfig}
 		engine = ethash.NewFaker()
 	)
-	checkStateRoot := true
-	m := mock.MockWithGenesisEngine(t, gspec, engine, false, checkStateRoot)
+	m := stages.MockWithGenesisEngine(t, gspec, engine, false)
 
 	chain, err := core.GenerateChain(m.ChainConfig, m.Genesis, m.Engine, m.DB, 8, nil)
 	if err != nil {
@@ -104,7 +102,7 @@ func TestHeaderWithSealVerification(t *testing.T) {
 		}); err != nil {
 			panic(err)
 		}
-		if err = m.InsertChain(chain.Slice(i, i+1)); err != nil {
+		if err = m.InsertChain(chain.Slice(i, i+1), nil); err != nil {
 			t.Fatalf("test %d: error inserting the block: %v", i, err)
 		}
 

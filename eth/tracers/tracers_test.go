@@ -32,7 +32,7 @@ import (
 	"github.com/ledgerwatch/erigon/crypto"
 	"github.com/ledgerwatch/erigon/params"
 	"github.com/ledgerwatch/erigon/tests"
-	"github.com/ledgerwatch/erigon/turbo/stages/mock"
+	"github.com/ledgerwatch/erigon/turbo/stages"
 	"github.com/stretchr/testify/require"
 
 	"github.com/holiman/uint256"
@@ -70,16 +70,14 @@ func TestPrestateTracerCreate2(t *testing.T) {
 		Origin:   origin,
 		GasPrice: uint256.NewInt(1),
 	}
-	excessBlobGas := uint64(50000)
 	context := evmtypes.BlockContext{
-		CanTransfer:   core.CanTransfer,
-		Transfer:      core.Transfer,
-		Coinbase:      libcommon.Address{},
-		BlockNumber:   8000000,
-		Time:          5,
-		Difficulty:    big.NewInt(0x30000),
-		GasLimit:      uint64(6000000),
-		ExcessBlobGas: &excessBlobGas,
+		CanTransfer: core.CanTransfer,
+		Transfer:    core.Transfer,
+		Coinbase:    libcommon.Address{},
+		BlockNumber: 8000000,
+		Time:        5,
+		Difficulty:  big.NewInt(0x30000),
+		GasLimit:    uint64(6000000),
 	}
 	context.BaseFee = uint256.NewInt(0)
 	alloc := types.GenesisAlloc{}
@@ -97,7 +95,7 @@ func TestPrestateTracerCreate2(t *testing.T) {
 		Balance: big.NewInt(500000000000000),
 	}
 
-	m := mock.Mock(t)
+	m := stages.Mock(t)
 	tx, err := m.DB.BeginRw(m.Ctx)
 	require.NoError(t, err)
 	defer tx.Rollback()
@@ -115,7 +113,7 @@ func TestPrestateTracerCreate2(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to prepare transaction for tracing: %v", err)
 	}
-	st := core.NewStateTransition(evm, msg, new(core.GasPool).AddGas(txn.GetGas()).AddBlobGas(txn.GetBlobGas()))
+	st := core.NewStateTransition(evm, msg, new(core.GasPool).AddGas(txn.GetGas()).AddDataGas(txn.GetDataGas()))
 	if _, err = st.TransitionDb(false, false); err != nil {
 		t.Fatalf("failed to execute transaction: %v", err)
 	}

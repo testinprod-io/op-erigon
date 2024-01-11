@@ -5,6 +5,7 @@ import (
 
 	"github.com/ledgerwatch/erigon/consensus/bor/heimdall/span"
 	"github.com/ledgerwatch/erigon/consensus/bor/valset"
+	"github.com/ledgerwatch/log/v3"
 
 	proto "github.com/maticnetwork/polyproto/heimdall"
 	protoutils "github.com/maticnetwork/polyproto/utils"
@@ -15,14 +16,14 @@ func (h *HeimdallGRPCClient) Span(ctx context.Context, spanID uint64) (*span.Hei
 		ID: spanID,
 	}
 
-	h.logger.Info("Fetching span", "spanID", spanID)
+	log.Info("Fetching span", "spanID", spanID)
 
 	res, err := h.client.Span(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 
-	h.logger.Info("Fetched span", "spanID", spanID)
+	log.Info("Fetched span", "spanID", spanID)
 
 	return parseSpan(res.Result), nil
 }

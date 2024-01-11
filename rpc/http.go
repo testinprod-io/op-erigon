@@ -63,12 +63,12 @@ func (hc *httpConn) remoteAddr() string {
 	return hc.url
 }
 
-func (hc *httpConn) ReadBatch() ([]*jsonrpcMessage, bool, error) {
+func (hc *httpConn) readBatch() ([]*jsonrpcMessage, bool, error) {
 	<-hc.closeCh
 	return nil, false, io.EOF
 }
 
-func (hc *httpConn) Close() {
+func (hc *httpConn) close() {
 	hc.closeOnce.Do(func() { close(hc.closeCh) })
 }
 
@@ -250,7 +250,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("content-type", contentType)
 	codec := newHTTPServerConn(r, w)
-	defer codec.Close()
+	defer codec.close()
 	var stream *jsoniter.Stream
 	if !s.disableStreaming {
 		stream = jsoniter.NewStream(jsoniter.ConfigDefault, w, 4096)

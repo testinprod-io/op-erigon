@@ -1,8 +1,9 @@
 package cli
 
 import (
-	"github.com/ledgerwatch/erigon/cmd/utils"
 	"github.com/urfave/cli/v2"
+
+	"github.com/ledgerwatch/erigon/cmd/utils"
 )
 
 // DefaultFlags contains all flags that are used and supported by Erigon binary.
@@ -16,9 +17,7 @@ var DefaultFlags = []cli.Flag{
 	&utils.TxPoolNoLocalsFlag,
 	&utils.TxPoolPriceLimitFlag,
 	&utils.TxPoolPriceBumpFlag,
-	&utils.TxPoolBlobPriceBumpFlag,
 	&utils.TxPoolAccountSlotsFlag,
-	&utils.TxPoolBlobSlotsFlag,
 	&utils.TxPoolGlobalSlotsFlag,
 	&utils.TxPoolGlobalBaseFeeSlotsFlag,
 	&utils.TxPoolAccountQueueFlag,
@@ -89,7 +88,6 @@ var DefaultFlags = []cli.Flag{
 	&utils.SnapStopFlag,
 	&utils.DbPageSizeFlag,
 	&utils.DbSizeLimitFlag,
-	&utils.ForcePartialCommitFlag,
 	&utils.TorrentPortFlag,
 	&utils.TorrentMaxPeersFlag,
 	&utils.TorrentConnsPerFileFlag,
@@ -136,6 +134,7 @@ var DefaultFlags = []cli.Flag{
 	&utils.MinerSigningKeyFileFlag,
 	&utils.SentryAddrFlag,
 	&utils.SentryLogPeerInfoFlag,
+	&utils.SentryDropUselessPeers,
 	&utils.DownloaderAddrFlag,
 	&utils.DisableIPV4,
 	&utils.DisableIPV6,
@@ -143,14 +142,9 @@ var DefaultFlags = []cli.Flag{
 	&utils.DownloaderVerifyFlag,
 	&HealthCheckFlag,
 	&utils.HeimdallURLFlag,
-	&utils.WebSeedsFlag,
 	&utils.WithoutHeimdallFlag,
 	&utils.HeimdallgRPCAddressFlag,
-	&utils.BorBlockPeriodFlag,
-	&utils.BorBlockSizeFlag,
-	&utils.WithHeimdallMilestones,
 	&utils.EthStatsURLFlag,
-	&utils.OverrideCancunFlag,
 	&utils.OverrideShanghaiTime,
 	&utils.OverrideOptimismCanyonFlag,
 	&utils.RollupSequencerHTTPFlag,
@@ -167,9 +161,4 @@ var DefaultFlags = []cli.Flag{
 	&utils.SentinelPortFlag,
 
 	&utils.GenesisPathFlag,
-	&utils.OtsSearchMaxCapFlag,
-
-	&utils.SilkwormPathFlag,
-
-	&utils.TrustedSetupFile,
 }

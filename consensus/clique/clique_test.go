@@ -31,7 +31,7 @@ import (
 	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/crypto"
 	"github.com/ledgerwatch/erigon/params"
-	"github.com/ledgerwatch/erigon/turbo/stages/mock"
+	"github.com/ledgerwatch/erigon/turbo/stages"
 	"github.com/ledgerwatch/log/v3"
 )
 
@@ -58,8 +58,7 @@ func TestReimportMirroredState(t *testing.T) {
 		Config: params.AllCliqueProtocolChanges,
 	}
 	copy(genspec.ExtraData[clique.ExtraVanity:], addr[:])
-	checkStateRoot := true
-	m := mock.MockWithGenesisEngine(t, genspec, engine, false, checkStateRoot)
+	m := stages.MockWithGenesisEngine(t, genspec, engine, false)
 
 	// Generate a batch of blocks, each properly signed
 	getHeader := func(hash libcommon.Hash, number uint64) (h *types.Header) {
@@ -106,7 +105,7 @@ func TestReimportMirroredState(t *testing.T) {
 	}
 
 	// Insert the first two blocks and make sure the chain is valid
-	if err := m.InsertChain(chain.Slice(0, 2)); err != nil {
+	if err := m.InsertChain(chain.Slice(0, 2), nil); err != nil {
 		t.Fatalf("failed to insert initial blocks: %v", err)
 	}
 	if err := m.DB.View(m.Ctx, func(tx kv.Tx) error {
@@ -123,7 +122,7 @@ func TestReimportMirroredState(t *testing.T) {
 	// Simulate a crash by creating a new chain on top of the database, without
 	// flushing the dirty states out. Insert the last block, triggering a sidechain
 	// reimport.
-	if err := m.InsertChain(chain.Slice(2, chain.Length())); err != nil {
+	if err := m.InsertChain(chain.Slice(2, chain.Length()), nil); err != nil {
 		t.Fatalf("failed to insert final block: %v", err)
 	}
 	if err := m.DB.View(m.Ctx, func(tx kv.Tx) error {

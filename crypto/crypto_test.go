@@ -20,11 +20,10 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"encoding/hex"
+	"golang.org/x/crypto/sha3"
 	"os"
 	"reflect"
 	"testing"
-
-	"golang.org/x/crypto/sha3"
 
 	"github.com/holiman/uint256"
 	libcommon "github.com/ledgerwatch/erigon-lib/common"

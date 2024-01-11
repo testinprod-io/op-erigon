@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon/core/vm/evmtypes"
 	"github.com/ledgerwatch/erigon/params"
 
@@ -40,7 +39,7 @@ func TestInterpreterReadonly(t *testing.T) {
 
 		dummyContract := NewContract(
 			&dummyContractRef{},
-			libcommon.Address{},
+			&dummyContractRef{},
 			new(uint256.Int),
 			0,
 			false,
@@ -293,7 +292,7 @@ func TestReadonlyBasicCases(t *testing.T) {
 
 				dummyContract := NewContract(
 					&dummyContractRef{},
-					libcommon.Address{},
+					&dummyContractRef{},
 					new(uint256.Int),
 					0,
 					false,
@@ -385,7 +384,7 @@ func (st *testSequential) Run(_ *Contract, _ []byte, _ bool) ([]byte, error) {
 
 	nextContract := NewContract(
 		&dummyContractRef{},
-		libcommon.Address{},
+		&dummyContractRef{},
 		new(uint256.Int),
 		0,
 		false,

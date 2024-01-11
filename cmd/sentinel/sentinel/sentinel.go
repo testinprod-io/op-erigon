@@ -21,8 +21,8 @@ import (
 	"net"
 	"time"
 
+	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon/cl/cltypes"
-	"github.com/ledgerwatch/erigon/cl/persistence"
 	"github.com/ledgerwatch/erigon/cmd/sentinel/sentinel/handlers"
 	"github.com/ledgerwatch/erigon/cmd/sentinel/sentinel/handshake"
 	"github.com/ledgerwatch/erigon/cmd/sentinel/sentinel/peers"
@@ -68,7 +68,7 @@ type Sentinel struct {
 	metadataV2 *cltypes.Metadata
 	handshaker *handshake.HandShaker
 
-	db persistence.RawBeaconBlockChain
+	db kv.RoDB
 
 	discoverConfig       discover.Config
 	pubsub               *pubsub.PubSub
@@ -230,7 +230,7 @@ func (s *Sentinel) pubsubOptions() []pubsub.Option {
 func New(
 	ctx context.Context,
 	cfg *SentinelConfig,
-	db persistence.RawBeaconBlockChain,
+	db kv.RoDB,
 	logger log.Logger,
 ) (*Sentinel, error) {
 	s := &Sentinel{
@@ -276,14 +276,6 @@ func New(
 		}
 		opts = append(opts, libp2p.ResourceManager(rmgr))
 	}
-
-	gater, err := NewGater(cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	opts = append(opts, libp2p.ConnectionGater(gater))
-
 	host, err := libp2p.New(opts...)
 	if err != nil {
 		return nil, err
@@ -347,13 +339,7 @@ func (s *Sentinel) HasTooManyPeers() bool {
 }
 
 func (s *Sentinel) GetPeersCount() int {
-	// sub := s.subManager.GetMatchingSubscription(string(BeaconBlockTopic))
-
-	// if sub == nil {
 	return len(s.host.Network().Peers())
-	// }
-
-	// return len(sub.topic.ListPeers())
 }
 
 func (s *Sentinel) Host() host.Host {
@@ -370,6 +356,10 @@ func (s *Sentinel) GossipManager() *GossipManager {
 
 func (s *Sentinel) Config() *SentinelConfig {
 	return s.cfg
+}
+
+func (s *Sentinel) DB() kv.RoDB {
+	return s.db
 }
 
 func (s *Sentinel) Status() *cltypes.Status {

@@ -24,7 +24,7 @@ on:
   
 jobs:
   hive:
-    runs-on: ubuntu-latest-m
+    runs-on: ubuntu-latest
     steps:
       - uses: AutoModality/action-clean@v1
       - uses: actions/checkout@v3

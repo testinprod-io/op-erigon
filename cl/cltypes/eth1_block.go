@@ -16,36 +16,35 @@ import (
 
 // ETH1Block represents a block structure CL-side.
 type Eth1Block struct {
-	ParentHash    libcommon.Hash    `json:"parent_hash"`
-	FeeRecipient  libcommon.Address `json:"fee_recipient"`
-	StateRoot     libcommon.Hash    `json:"state_root"`
-	ReceiptsRoot  libcommon.Hash    `json:"receipts_root"`
-	LogsBloom     types.Bloom       `json:"logs_bloom"`
-	PrevRandao    libcommon.Hash    `json:"prev_randao"`
-	BlockNumber   uint64            `json:"block_number"`
-	GasLimit      uint64            `json:"gas_limit"`
-	GasUsed       uint64            `json:"gas_used"`
-	Time          uint64            `json:"timestamp"`
-	Extra         *solid.ExtraData  `json:"extra_data"`
-	BaseFeePerGas libcommon.Hash    `json:"base_fee_per_gas"`
+	ParentHash    libcommon.Hash
+	FeeRecipient  libcommon.Address
+	StateRoot     libcommon.Hash
+	ReceiptsRoot  libcommon.Hash
+	LogsBloom     types.Bloom
+	PrevRandao    libcommon.Hash
+	BlockNumber   uint64
+	GasLimit      uint64
+	GasUsed       uint64
+	Time          uint64
+	Extra         *solid.ExtraData
+	BaseFeePerGas [32]byte
 	// Extra fields
-	BlockHash     libcommon.Hash                    `json:"block_hash"`
-	Transactions  *solid.TransactionsSSZ            `json:"transactions"`
-	Withdrawals   *solid.ListSSZ[*types.Withdrawal] `json:"withdrawals,omitempty"`
-	BlobGasUsed   uint64                            `json:"blob_gas_used,omitempty"`
-	ExcessBlobGas uint64                            `json:"excess_blob_gas,omitempty"`
+	BlockHash     libcommon.Hash
+	Transactions  *solid.TransactionsSSZ
+	Withdrawals   *solid.ListSSZ[*types.Withdrawal]
+	DataGasUsed   uint64
+	ExcessDataGas uint64
 	// internals
-	version   clparams.StateVersion
-	beaconCfg *clparams.BeaconChainConfig
+	version clparams.StateVersion
 }
 
 // NewEth1Block creates a new Eth1Block.
-func NewEth1Block(version clparams.StateVersion, beaconCfg *clparams.BeaconChainConfig) *Eth1Block {
-	return &Eth1Block{version: version, beaconCfg: beaconCfg}
+func NewEth1Block(version clparams.StateVersion) *Eth1Block {
+	return &Eth1Block{version: version}
 }
 
 // NewEth1BlockFromHeaderAndBody with given header/body.
-func NewEth1BlockFromHeaderAndBody(header *types.Header, body *types.RawBody, beaconCfg *clparams.BeaconChainConfig) *Eth1Block {
+func NewEth1BlockFromHeaderAndBody(header *types.Header, body *types.RawBody) *Eth1Block {
 	baseFeeBytes := header.BaseFee.Bytes()
 	for i, j := 0, len(baseFeeBytes)-1; i < j; i, j = i+1, j-1 {
 		baseFeeBytes[i], baseFeeBytes[j] = baseFeeBytes[j], baseFeeBytes[i]
@@ -70,13 +69,12 @@ func NewEth1BlockFromHeaderAndBody(header *types.Header, body *types.RawBody, be
 		BaseFeePerGas: baseFee32,
 		BlockHash:     header.Hash(),
 		Transactions:  solid.NewTransactionsSSZFromTransactions(body.Transactions),
-		Withdrawals:   solid.NewStaticListSSZFromList(body.Withdrawals, int(beaconCfg.MaxWithdrawalsPerPayload), 44),
-		beaconCfg:     beaconCfg,
+		Withdrawals:   solid.NewStaticListSSZFromList(body.Withdrawals, 16, 44),
 	}
 
-	if header.BlobGasUsed != nil && header.ExcessBlobGas != nil {
-		block.BlobGasUsed = *header.BlobGasUsed
-		block.ExcessBlobGas = *header.ExcessBlobGas
+	if header.DataGasUsed != nil && header.ExcessDataGas != nil {
+		block.DataGasUsed = *header.DataGasUsed
+		block.ExcessDataGas = *header.ExcessDataGas
 		block.version = clparams.DenebVersion
 	} else if header.WithdrawalsHash != nil {
 		block.version = clparams.CapellaVersion
@@ -104,10 +102,10 @@ func (b *Eth1Block) PayloadHeader() (*Eth1Header, error) {
 		}
 	}
 
-	var blobGasUsed, excessBlobGas uint64
+	var dataGasUsed, excessDataGas uint64
 	if b.version >= clparams.DenebVersion {
-		blobGasUsed = b.BlobGasUsed
-		excessBlobGas = b.ExcessBlobGas
+		dataGasUsed = b.DataGasUsed
+		excessDataGas = b.ExcessDataGas
 	}
 
 	return &Eth1Header{
@@ -126,8 +124,8 @@ func (b *Eth1Block) PayloadHeader() (*Eth1Header, error) {
 		BlockHash:        b.BlockHash,
 		TransactionsRoot: transactionsRoot,
 		WithdrawalsRoot:  withdrawalsRoot,
-		BlobGasUsed:      blobGasUsed,
-		ExcessBlobGas:    excessBlobGas,
+		DataGasUsed:      dataGasUsed,
+		ExcessDataGas:    excessDataGas,
 		version:          b.version,
 	}, nil
 }
@@ -145,13 +143,13 @@ func (b *Eth1Block) EncodingSizeSSZ() (size int) {
 
 	if b.version >= clparams.CapellaVersion {
 		if b.Withdrawals == nil {
-			b.Withdrawals = solid.NewStaticListSSZ[*types.Withdrawal](int(b.beaconCfg.MaxWithdrawalsPerPayload), 44)
+			b.Withdrawals = solid.NewStaticListSSZ[*types.Withdrawal](16, 44)
 		}
 		size += b.Withdrawals.EncodingSizeSSZ() + 4
 	}
 
 	if b.version >= clparams.DenebVersion {
-		size += 8 * 2 // BlobGasUsed + ExcessBlobGas
+		size += 8 * 2 // DataGasUsed + ExcessDataGas
 	}
 
 	return
@@ -161,7 +159,7 @@ func (b *Eth1Block) EncodingSizeSSZ() (size int) {
 func (b *Eth1Block) DecodeSSZ(buf []byte, version int) error {
 	b.Extra = solid.NewExtraData()
 	b.Transactions = &solid.TransactionsSSZ{}
-	b.Withdrawals = solid.NewStaticListSSZ[*types.Withdrawal](int(b.beaconCfg.MaxWithdrawalsPerPayload), 44)
+	b.Withdrawals = solid.NewStaticListSSZ[*types.Withdrawal](16, 44)
 	b.version = clparams.StateVersion(version)
 	return ssz2.UnmarshalSSZ(buf, version, b.getSchema()...)
 }
@@ -183,7 +181,7 @@ func (b *Eth1Block) getSchema() []interface{} {
 		s = append(s, b.Withdrawals)
 	}
 	if b.version >= clparams.DenebVersion {
-		s = append(s, &b.BlobGasUsed, &b.ExcessBlobGas)
+		s = append(s, &b.DataGasUsed, &b.ExcessDataGas)
 	}
 	return s
 }
@@ -230,15 +228,15 @@ func (b *Eth1Block) RlpHeader() (*types.Header, error) {
 	}
 
 	if b.version >= clparams.DenebVersion {
-		blobGasUsed := b.BlobGasUsed
-		header.BlobGasUsed = &blobGasUsed
-		excessBlobGas := b.ExcessBlobGas
-		header.ExcessBlobGas = &excessBlobGas
+		dataGasUsed := b.DataGasUsed
+		header.DataGasUsed = &dataGasUsed
+		excessDataGas := b.ExcessDataGas
+		header.ExcessDataGas = &excessDataGas
 	}
 
 	// If the header hash does not match the block hash, return an error.
 	if header.Hash() != b.BlockHash {
-		return nil, fmt.Errorf("cannot derive rlp header: mismatching hash: %s != %s", header.Hash(), b.BlockHash)
+		return nil, fmt.Errorf("cannot derive rlp header: mismatching hash")
 	}
 
 	return header, nil
@@ -251,8 +249,8 @@ func (b *Eth1Block) Version() clparams.StateVersion {
 // Body returns the equivalent raw body (only eth1 body section).
 func (b *Eth1Block) Body() *types.RawBody {
 	withdrawals := make([]*types.Withdrawal, b.Withdrawals.Len())
-	b.Withdrawals.Range(func(idx int, w *types.Withdrawal, _ int) bool {
-		withdrawals[idx] = w
+	b.Withdrawals.Range(func(_ int, w *types.Withdrawal, _ int) bool {
+		withdrawals = append(withdrawals, w)
 		return true
 	})
 	return &types.RawBody{

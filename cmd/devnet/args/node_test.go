@@ -12,7 +12,7 @@ import (
 func TestNodeArgs(t *testing.T) {
 	asMap := map[string]struct{}{}
 
-	nodeArgs, _ := args.AsArgs(args.BlockProducer{
+	nodeArgs, _ := args.AsArgs(args.Miner{
 		Node: args.Node{
 			DataDir:        filepath.Join("data", fmt.Sprintf("%d", 1)),
 			PrivateApiAddr: "localhost:9092",
@@ -24,7 +24,7 @@ func TestNodeArgs(t *testing.T) {
 		asMap[arg] = struct{}{}
 	}
 
-	for _, arg := range producingNodeArgs("data", 1) {
+	for _, arg := range miningNodeArgs("data", 1) {
 		if _, ok := asMap[arg]; !ok {
 			t.Fatal(arg, "missing")
 		}
@@ -36,7 +36,7 @@ func TestNodeArgs(t *testing.T) {
 		t.Fatal(asMap, "not found")
 	}
 
-	nodeArgs, _ = args.AsArgs(args.NonBlockProducer{
+	nodeArgs, _ = args.AsArgs(args.NonMiner{
 		Node: args.Node{
 			DataDir:        filepath.Join("data", fmt.Sprintf("%d", 2)),
 			StaticPeers:    "enode",
@@ -48,7 +48,7 @@ func TestNodeArgs(t *testing.T) {
 		asMap[arg] = struct{}{}
 	}
 
-	for _, arg := range nonProducingNodeArgs("data", 2, "enode") {
+	for _, arg := range nonMiningNodeArgs("data", 2, "enode") {
 		if _, ok := asMap[arg]; !ok {
 			t.Fatal(arg, "missing")
 		}
@@ -147,7 +147,7 @@ const (
 )
 
 // miningNodeArgs returns custom args for starting a mining node
-func producingNodeArgs(dataDir string, nodeNumber int) []string {
+func miningNodeArgs(dataDir string, nodeNumber int) []string {
 	nodeDataDir := filepath.Join(dataDir, fmt.Sprintf("%d", nodeNumber))
 	dataDirArg, _ := parameterFromArgument(dataDirArg, nodeDataDir)
 	chainType, _ := parameterFromArgument(chainArg, chainParam)
@@ -167,7 +167,7 @@ func producingNodeArgs(dataDir string, nodeNumber int) []string {
 }
 
 // nonMiningNodeArgs returns custom args for starting a non-mining node
-func nonProducingNodeArgs(dataDir string, nodeNumber int, enode string) []string {
+func nonMiningNodeArgs(dataDir string, nodeNumber int, enode string) []string {
 	nodeDataDir := filepath.Join(dataDir, fmt.Sprintf("%d", nodeNumber))
 	dataDirArg, _ := parameterFromArgument(dataDirArg, nodeDataDir)
 	chainType, _ := parameterFromArgument(chainArg, chainParam)

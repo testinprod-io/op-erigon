@@ -1,9 +1,9 @@
 package devnet
 
 import (
-	"context"
-	"math/big"
+	go_context "context"
 
+	"github.com/ledgerwatch/erigon/cmd/devnet/devnetutils"
 	"github.com/ledgerwatch/log/v3"
 	"github.com/urfave/cli/v2"
 )
@@ -15,45 +15,34 @@ const (
 	ckNetwork
 	ckNode
 	ckCliContext
-	ckDevnet
 )
 
 type Context interface {
-	context.Context
+	go_context.Context
 	WithValue(key, value interface{}) Context
-	WithCurrentNetwork(selector interface{}) Context
-	WithCurrentNode(selector interface{}) Context
 }
 
-type devnetContext struct {
-	context.Context
+type context struct {
+	go_context.Context
 }
 
-func (c devnetContext) WithValue(key, value interface{}) Context {
-	return devnetContext{context.WithValue(c, key, value)}
+func (c *context) WithValue(key, value interface{}) Context {
+	return &context{go_context.WithValue(c, key, value)}
 }
 
-func (c devnetContext) WithCurrentNetwork(selector interface{}) Context {
-	return WithCurrentNetwork(c, selector)
-}
-
-func (c devnetContext) WithCurrentNode(selector interface{}) Context {
-	return WithCurrentNode(c, selector)
-}
-
-func WithNetwork(ctx context.Context, nw *Network) Context {
-	return devnetContext{context.WithValue(context.WithValue(ctx, ckNetwork, nw), ckLogger, nw.Logger)}
-}
-
-func AsContext(ctx context.Context) Context {
+func AsContext(ctx go_context.Context) Context {
 	if ctx, ok := ctx.(Context); ok {
 		return ctx
 	}
 
-	return devnetContext{ctx}
+	return &context{ctx}
 }
 
-func Logger(ctx context.Context) log.Logger {
+func WithNetwork(ctx go_context.Context, nw *Network) Context {
+	return &context{go_context.WithValue(go_context.WithValue(ctx, ckNetwork, nw), ckLogger, nw.Logger)}
+}
+
+func Logger(ctx go_context.Context) log.Logger {
 	if logger, ok := ctx.Value(ckLogger).(log.Logger); ok {
 		return logger
 	}
@@ -66,103 +55,18 @@ type cnode struct {
 	node     Node
 }
 
-type cnet struct {
-	selector interface{}
-	network  *Network
+func WithCurrentNode(ctx go_context.Context, selector interface{}) Context {
+	return &context{go_context.WithValue(ctx, ckNode, &cnode{selector: selector})}
 }
 
-func WithDevnet(ctx context.Context, cliCtx *cli.Context, devnet Devnet, logger log.Logger) Context {
-	return WithCliContext(
-		context.WithValue(
-			context.WithValue(ctx, ckDevnet, devnet),
-			ckLogger, logger), cliCtx)
+func WithCliContext(ctx go_context.Context, cliCtx *cli.Context) Context {
+	return &context{go_context.WithValue(ctx, ckCliContext, cliCtx)}
 }
 
-func WithCurrentNetwork(ctx context.Context, selector interface{}) Context {
-	if current := CurrentNetwork(ctx); current != nil {
-		if devnet, ok := ctx.Value(ckDevnet).(Devnet); ok {
-			selected := devnet.SelectNetwork(ctx, selector)
-
-			if selected == current {
-				if ctx, ok := ctx.(devnetContext); ok {
-					return ctx
-				}
-				return devnetContext{ctx}
-			}
-		}
-	}
-
-	if current := CurrentNode(ctx); current != nil {
-		ctx = context.WithValue(ctx, ckNode, nil)
-	}
-
-	return devnetContext{context.WithValue(ctx, ckNetwork, &cnet{selector: selector})}
-}
-
-func WithCurrentNode(ctx context.Context, selector interface{}) Context {
-	if node, ok := selector.(Node); ok {
-		return devnetContext{context.WithValue(ctx, ckNode, &cnode{node: node})}
-	}
-
-	return devnetContext{context.WithValue(ctx, ckNode, &cnode{selector: selector})}
-}
-
-func WithCliContext(ctx context.Context, cliCtx *cli.Context) Context {
-	return devnetContext{context.WithValue(ctx, ckCliContext, cliCtx)}
-}
-
-func CliContext(ctx context.Context) *cli.Context {
-	return ctx.Value(ckCliContext).(*cli.Context)
-}
-
-func CurrentChainID(ctx context.Context) *big.Int {
-	if network := CurrentNetwork(ctx); network != nil {
-		return network.ChainID()
-	}
-
-	return &big.Int{}
-}
-
-func CurrentChainName(ctx context.Context) string {
-	if network := CurrentNetwork(ctx); network != nil {
-		return network.Chain
-	}
-
-	return ""
-}
-
-func Networks(ctx context.Context) []*Network {
-	if devnet, ok := ctx.Value(ckDevnet).(Devnet); ok {
-		return devnet
-	}
-
-	return nil
-}
-
-func CurrentNetwork(ctx context.Context) *Network {
-	if cn, ok := ctx.Value(ckNetwork).(*cnet); ok {
-		if cn.network == nil {
-			if devnet, ok := ctx.Value(ckDevnet).(Devnet); ok {
-				cn.network = devnet.SelectNetwork(ctx, cn.selector)
-			}
-		}
-
-		return cn.network
-	}
-
-	if current := CurrentNode(ctx); current != nil {
-		if n, ok := current.(*node); ok {
-			return n.network
-		}
-	}
-
-	return nil
-}
-
-func CurrentNode(ctx context.Context) Node {
+func CurrentNode(ctx go_context.Context) Node {
 	if cn, ok := ctx.Value(ckNode).(*cnode); ok {
 		if cn.node == nil {
-			if network := CurrentNetwork(ctx); network != nil {
+			if network, ok := ctx.Value(ckNetwork).(*Network); ok {
 				cn.node = network.SelectNode(ctx, cn.selector)
 			}
 		}
@@ -173,8 +77,8 @@ func CurrentNode(ctx context.Context) Node {
 	return nil
 }
 
-func SelectNode(ctx context.Context, selector ...interface{}) Node {
-	if network := CurrentNetwork(ctx); network != nil {
+func SelectNode(ctx go_context.Context, selector ...interface{}) Node {
+	if network, ok := ctx.Value(ckNetwork).(*Network); ok {
 		if len(selector) > 0 {
 			return network.SelectNode(ctx, selector[0])
 		}
@@ -183,23 +87,23 @@ func SelectNode(ctx context.Context, selector ...interface{}) Node {
 			return current
 		}
 
-		return network.FirstNode()
+		return network.AnyNode(ctx)
 	}
 
 	return nil
 }
 
-func SelectBlockProducer(ctx context.Context, selector ...interface{}) Node {
-	if network := CurrentNetwork(ctx); network != nil {
+func SelectMiner(ctx go_context.Context, selector ...interface{}) Node {
+	if network, ok := ctx.Value(ckNetwork).(*Network); ok {
 		if len(selector) > 0 {
-			blockProducers := network.BlockProducers()
+			miners := network.Miners()
 			switch selector := selector[0].(type) {
 			case int:
-				if selector < len(blockProducers) {
-					return blockProducers[selector]
+				if selector < len(miners) {
+					return miners[selector]
 				}
 			case NodeSelector:
-				for _, node := range blockProducers {
+				for _, node := range miners {
 					if selector.Test(ctx, node) {
 						return node
 					}
@@ -207,29 +111,29 @@ func SelectBlockProducer(ctx context.Context, selector ...interface{}) Node {
 			}
 		}
 
-		if current := CurrentNode(ctx); current != nil && current.IsBlockProducer() {
+		if current := CurrentNode(ctx); current != nil && current.IsMiner() {
 			return current
 		}
 
-		if blockProducers := network.BlockProducers(); len(blockProducers) > 0 {
-			return blockProducers[0]
+		if miners := network.Miners(); len(miners) > 0 {
+			return miners[devnetutils.RandomInt(len(miners)-1)]
 		}
 	}
 
 	return nil
 }
 
-func SelectNonBlockProducer(ctx context.Context, selector ...interface{}) Node {
-	if network := CurrentNetwork(ctx); network != nil {
+func SelectNonMiner(ctx go_context.Context, selector ...interface{}) Node {
+	if network, ok := ctx.Value(ckNetwork).(*Network); ok {
 		if len(selector) > 0 {
-			nonBlockProducers := network.NonBlockProducers()
+			nonMiners := network.NonMiners()
 			switch selector := selector[0].(type) {
 			case int:
-				if selector < len(nonBlockProducers) {
-					return nonBlockProducers[selector]
+				if selector < len(nonMiners) {
+					return nonMiners[selector]
 				}
 			case NodeSelector:
-				for _, node := range nonBlockProducers {
+				for _, node := range nonMiners {
 					if selector.Test(ctx, node) {
 						return node
 					}
@@ -237,12 +141,12 @@ func SelectNonBlockProducer(ctx context.Context, selector ...interface{}) Node {
 			}
 		}
 
-		if current := CurrentNode(ctx); current != nil && !current.IsBlockProducer() {
+		if current := CurrentNode(ctx); current != nil && !current.IsMiner() {
 			return current
 		}
 
-		if nonBlockProducers := network.NonBlockProducers(); len(nonBlockProducers) > 0 {
-			return nonBlockProducers[0]
+		if nonMiners := network.NonMiners(); len(nonMiners) > 0 {
+			return nonMiners[devnetutils.RandomInt(len(nonMiners)-1)]
 		}
 	}
 

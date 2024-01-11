@@ -1,40 +1,42 @@
 package handler
 
 import (
-	"errors"
+	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/ledgerwatch/erigon-lib/common"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon/cl/clparams"
+	"github.com/ledgerwatch/erigon/cl/beacon/types"
 	"github.com/ledgerwatch/erigon/cl/fork"
+	"github.com/ledgerwatch/log/v3"
 )
 
 type genesisReponse struct {
-	GenesisTime          uint64           `json:"genesis_time,omitempty"`
-	GenesisValidatorRoot common.Hash      `json:"genesis_validator_root,omitempty"`
-	GenesisForkVersion   libcommon.Bytes4 `json:"genesis_fork_version,omitempty"`
+	GenesisTime          uint64       `json:"genesis_time,omitempty"`
+	GenesisValidatorRoot common.Hash  `json:"genesis_validator_root,omitempty"`
+	GenesisForkVersion   types.Bytes4 `json:"genesis_fork_version,omitempty"`
 }
 
-func (a *ApiHandler) getGenesis(r *http.Request) (data any, finalized *bool, version *clparams.StateVersion, httpStatus int, err error) {
+func (a *ApiHandler) getGenesis(w http.ResponseWriter, _ *http.Request) {
 	if a.genesisCfg == nil {
-		err = errors.New("Genesis Config is missing")
-		httpStatus = http.StatusNotFound
+		w.WriteHeader(http.StatusNotFound)
+		io.WriteString(w, "Genesis Config is missing")
 		return
 	}
 
 	digest, err := fork.ComputeForkDigest(a.beaconChainCfg, a.genesisCfg)
 	if err != nil {
-		err = errors.New("Failed to compute fork digest")
-		httpStatus = http.StatusInternalServerError
+		w.WriteHeader(http.StatusInternalServerError)
+		io.WriteString(w, "Failed to compute fork digest")
+		log.Error("[Beacon API] genesis handler failed", err)
 		return
 	}
 
-	data = &genesisReponse{
+	w.Header().Set("Content-Type", "Application/json")
+	w.WriteHeader(http.StatusAccepted)
+	json.NewEncoder(w).Encode(genesisReponse{
 		GenesisTime:          a.genesisCfg.GenesisTime,
 		GenesisValidatorRoot: a.genesisCfg.GenesisValidatorRoot,
-		GenesisForkVersion:   digest,
-	}
-	httpStatus = http.StatusAccepted
-	return
+		GenesisForkVersion:   types.Bytes4(digest),
+	})
 }

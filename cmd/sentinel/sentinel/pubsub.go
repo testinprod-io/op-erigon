@@ -43,7 +43,6 @@ const (
 	VoluntaryExitTopic           TopicName = "voluntary_exit"
 	ProposerSlashingTopic        TopicName = "proposer_slashing"
 	AttesterSlashingTopic        TopicName = "attester_slashing"
-	BlsToExecutionChangeTopic    TopicName = "bls_to_execution_change"
 	BlobSidecarTopic             TopicName = "blob_sidecar_%d" // This topic needs an index
 )
 
@@ -56,29 +55,20 @@ var BeaconBlockSsz = GossipTopic{
 	Name:     BeaconBlockTopic,
 	CodecStr: SSZSnappyCodec,
 }
-
 var BeaconAggregateAndProofSsz = GossipTopic{
 	Name:     BeaconAggregateAndProofTopic,
 	CodecStr: SSZSnappyCodec,
 }
-
 var VoluntaryExitSsz = GossipTopic{
 	Name:     VoluntaryExitTopic,
 	CodecStr: SSZSnappyCodec,
 }
-
 var ProposerSlashingSsz = GossipTopic{
 	Name:     ProposerSlashingTopic,
 	CodecStr: SSZSnappyCodec,
 }
-
 var AttesterSlashingSsz = GossipTopic{
 	Name:     AttesterSlashingTopic,
-	CodecStr: SSZSnappyCodec,
-}
-
-var BlsToExecutionChangeSsz = GossipTopic{
-	Name:     BlsToExecutionChangeTopic,
 	CodecStr: SSZSnappyCodec,
 }
 

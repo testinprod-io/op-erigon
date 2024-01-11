@@ -17,18 +17,18 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path"
 
 	"github.com/ledgerwatch/erigon/cl/beacon"
+	"github.com/ledgerwatch/erigon/cl/beacon/handler"
 	"github.com/ledgerwatch/erigon/cl/freezer"
-	"github.com/ledgerwatch/erigon/cl/persistence"
-	"github.com/ledgerwatch/erigon/cl/persistence/db_config"
 	"github.com/ledgerwatch/erigon/cl/phase1/core"
 	"github.com/ledgerwatch/erigon/cl/phase1/core/state"
 	"github.com/ledgerwatch/erigon/cl/phase1/execution_client"
 
+	"github.com/ledgerwatch/erigon-lib/gointerfaces/remote"
 	"github.com/ledgerwatch/log/v3"
 	"github.com/urfave/cli/v2"
+	"google.golang.org/grpc"
 
 	"github.com/ledgerwatch/erigon/cl/cltypes"
 	"github.com/ledgerwatch/erigon/cl/fork"
@@ -53,21 +53,19 @@ func main() {
 }
 
 func runCaplinNode(cliCtx *cli.Context) error {
-	ctx, cn := context.WithCancel(context.Background())
-	defer cn()
-
+	ctx := context.Background()
 	cfg, err := lcCli.SetupConsensusClientCfg(cliCtx)
 	if err != nil {
 		log.Error("[Phase1] Could not initialize caplin", "err", err)
 	}
-	if _, _, err := debug.Setup(cliCtx, true /* root logger */); err != nil {
+	if _, err := debug.Setup(cliCtx, true /* root logger */); err != nil {
 		return err
 	}
 	log.Root().SetHandler(log.LvlFilterHandler(log.Lvl(cfg.LogLvl), log.StderrHandler))
 	log.Info("[Phase1]", "chain", cliCtx.String(flags.Chain.Name))
-	log.Info("[Phase1] Running Caplin")
+	log.Info("[Phase1] Running Caplin", "cfg", cfg)
 	// Either start from genesis or a checkpoint
-	var state *state.CachingBeaconState
+	var state *state.BeaconState
 	if cfg.InitialSync {
 		state = cfg.InitalState
 	} else {
@@ -107,15 +105,26 @@ func runCaplinNode(cliCtx *cli.Context) error {
 		log.Error("[Checkpoint Sync] Failed", "reason", err)
 		return err
 	}
-	var executionEngine execution_client.ExecutionEngine
-	if cfg.RunEngineAPI {
-		fmt.Println(cfg.EngineAPIAddr)
-		cc, err := execution_client.NewExecutionClientRPC(ctx, cfg.JwtSecret, cfg.EngineAPIAddr, cfg.EngineAPIPort)
+	var engine execution_client.ExecutionEngine
+	if cfg.ErigonPrivateApi != "" {
+		cc, err := grpc.Dial(cfg.ErigonPrivateApi, grpc.WithInsecure())
 		if err != nil {
-			log.Error("could not start engine api", "err", err)
+			log.Error("could not connect to erigon private api", "err", err)
 		}
-		log.Info("Started Engine API RPC Client", "addr", cfg.EngineAPIAddr)
-		executionEngine = cc
+		defer cc.Close()
+		engine = execution_client.NewExecutionEnginePhase1FromClient(ctx, remote.NewETHBACKENDClient(cc))
+	}
+
+	if !cfg.NoBeaconApi {
+		apiHandler := handler.NewApiHandler(cfg.GenesisCfg, cfg.BeaconCfg)
+		go beacon.ListenAndServe(apiHandler, &beacon.RouterConfiguration{
+			Protocol:        cfg.BeaconProtocol,
+			Address:         cfg.BeaconAddr,
+			ReadTimeTimeout: cfg.BeaconApiReadTimeout,
+			WriteTimeout:    cfg.BeaconApiWriteTimeout,
+			IdleTimeout:     cfg.BeaconApiWriteTimeout,
+		})
+		log.Info("Beacon API started", "addr", cfg.BeaconAddr)
 	}
 
 	var caplinFreezer freezer.Freezer
@@ -125,18 +134,5 @@ func runCaplinNode(cliCtx *cli.Context) error {
 		}
 	}
 
-	caplinDBPath := path.Join(cfg.DataDir, "caplin")
-	rawdb := persistence.AferoRawBeaconBlockChainFromOsPath(cfg.BeaconCfg, caplinDBPath)
-	beaconDB, sqlDB, err := caplin1.OpenCaplinDatabase(ctx, db_config.DefaultDatabaseConfiguration, cfg.BeaconCfg, rawdb, caplinDBPath, executionEngine)
-	if err != nil {
-		return err
-	}
-	return caplin1.RunCaplinPhase1(ctx, sentinel, executionEngine, cfg.BeaconCfg, cfg.GenesisCfg, state, caplinFreezer, sqlDB, rawdb, beaconDB, cfg.Dirs.Tmp, beacon.RouterConfiguration{
-		Protocol:        cfg.BeaconProtocol,
-		Address:         cfg.BeaconAddr,
-		ReadTimeTimeout: cfg.BeaconApiReadTimeout,
-		WriteTimeout:    cfg.BeaconApiWriteTimeout,
-		IdleTimeout:     cfg.BeaconApiWriteTimeout,
-		Active:          !cfg.NoBeaconApi,
-	})
+	return caplin1.RunCaplinPhase1(ctx, sentinel, cfg.BeaconCfg, cfg.GenesisCfg, engine, state, caplinFreezer)
 }

@@ -3,16 +3,13 @@ package main
 import (
 	"errors"
 	"fmt"
-	"net/http"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 
-	"github.com/ledgerwatch/erigon-lib/common/datadir"
+	"github.com/VictoriaMetrics/metrics"
 	"github.com/ledgerwatch/erigon-lib/common/dbg"
-	"github.com/ledgerwatch/erigon/diagnostics"
-	"github.com/ledgerwatch/erigon/metrics"
 	"github.com/ledgerwatch/log/v3"
 	"github.com/pelletier/go-toml"
 	"github.com/urfave/cli/v2"
@@ -51,16 +48,13 @@ func runErigon(cliCtx *cli.Context) error {
 	configFilePath := cliCtx.String(utils.ConfigFlag.Name)
 	if configFilePath != "" {
 		if err := setFlagsFromConfigFile(cliCtx, configFilePath); err != nil {
-			log.Error("failed setting config flags from yaml/toml file", "err", err)
-			return err
+			log.Warn("failed setting config flags from yaml/toml file", "err", err)
 		}
 	}
 
 	var logger log.Logger
 	var err error
-	var metricsMux *http.ServeMux
-
-	if logger, metricsMux, err = debug.Setup(cliCtx, true /* root logger */); err != nil {
+	if logger, err = debug.Setup(cliCtx, true /* root logger */); err != nil {
 		return err
 	}
 
@@ -71,22 +65,13 @@ func runErigon(cliCtx *cli.Context) error {
 	erigonInfoGauge.Set(1)
 
 	nodeCfg := node.NewNodConfigUrfave(cliCtx, logger)
-	if err := datadir.ApplyMigrations(nodeCfg.Dirs); err != nil {
-		return err
-	}
-
 	ethCfg := node.NewEthConfigUrfave(cliCtx, nodeCfg, logger)
 
-	ethNode, err := node.New(cliCtx.Context, nodeCfg, ethCfg, logger)
+	ethNode, err := node.New(nodeCfg, ethCfg, logger)
 	if err != nil {
 		log.Error("Erigon startup", "err", err)
 		return err
 	}
-
-	if metricsMux != nil {
-		diagnostics.Setup(cliCtx, metricsMux, ethNode)
-	}
-
 	err = ethNode.Serve()
 	if err != nil {
 		log.Error("error while serving an Erigon node", "err", err)

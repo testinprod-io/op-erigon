@@ -11,24 +11,24 @@ import (
 	"time"
 
 	"github.com/c2h5oh/datasize"
-	"github.com/erigontech/mdbx-go/mdbx"
 	common2 "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/dbg"
 	"github.com/ledgerwatch/erigon-lib/kv"
 	mdbx2 "github.com/ledgerwatch/erigon-lib/kv/mdbx"
 	"github.com/ledgerwatch/log/v3"
+	"github.com/torquem-ch/mdbx-go/mdbx"
 	"golang.org/x/exp/maps"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 )
 
-func OpenPair(from, to string, label kv.Label, targetPageSize datasize.ByteSize, logger log.Logger) (kv.RoDB, kv.RwDB) {
+func OpenPair(from, to string, label kv.Label, targetPageSize datasize.ByteSize) (kv.RoDB, kv.RwDB) {
 	const ThreadsHardLimit = 9_000
-	src := mdbx2.NewMDBX(logger).Path(from).
+	src := mdbx2.NewMDBX(log.New()).Path(from).
 		Label(label).
 		RoTxsLimiter(semaphore.NewWeighted(ThreadsHardLimit)).
 		WithTableCfg(func(_ kv.TableCfg) kv.TableCfg { return kv.TablesCfgByLabel(label) }).
-		Flags(func(flags uint) uint { return flags | mdbx.Accede }).
+		Flags(func(flags uint) uint { return flags | mdbx.Readonly | mdbx.Accede }).
 		MustOpen()
 	if targetPageSize <= 0 {
 		targetPageSize = datasize.ByteSize(src.PageSize())
@@ -37,18 +37,17 @@ func OpenPair(from, to string, label kv.Label, targetPageSize datasize.ByteSize,
 	if err != nil {
 		panic(err)
 	}
-	dst := mdbx2.NewMDBX(logger).Path(to).
+	dst := mdbx2.NewMDBX(log.New()).Path(to).
 		Label(label).
 		PageSize(targetPageSize.Bytes()).
 		MapSize(datasize.ByteSize(info.Geo.Upper)).
-		GrowthStep(8 * datasize.GB).
-		Flags(func(flags uint) uint { return flags | mdbx.WriteMap }).
+		Flags(func(flags uint) uint { return flags | mdbx.NoMemInit | mdbx.WriteMap }).
 		WithTableCfg(func(_ kv.TableCfg) kv.TableCfg { return kv.TablesCfgByLabel(label) }).
 		MustOpen()
 	return src, dst
 }
 
-func Kv2kv(ctx context.Context, src kv.RoDB, dst kv.RwDB, tables []string, readAheadThreads int, logger log.Logger) error {
+func Kv2kv(ctx context.Context, src kv.RoDB, dst kv.RwDB, tables []string, readAheadThreads int) error {
 	srcTx, err1 := src.BeginRo(ctx)
 	if err1 != nil {
 		return err1
@@ -73,15 +72,15 @@ func Kv2kv(ctx context.Context, src kv.RoDB, dst kv.RwDB, tables []string, readA
 		if b.IsDeprecated {
 			continue
 		}
-		if err := backupTable(ctx, src, srcTx, dst, name, readAheadThreads, logEvery, logger); err != nil {
+		if err := backupTable(ctx, src, srcTx, dst, name, readAheadThreads, logEvery); err != nil {
 			return err
 		}
 	}
-	logger.Info("done")
+	log.Info("done")
 	return nil
 }
 
-func backupTable(ctx context.Context, src kv.RoDB, srcTx kv.Tx, dst kv.RwDB, table string, readAheadThreads int, logEvery *time.Ticker, logger log.Logger) error {
+func backupTable(ctx context.Context, src kv.RoDB, srcTx kv.Tx, dst kv.RwDB, table string, readAheadThreads int, logEvery *time.Ticker) error {
 	var total uint64
 	wg := sync.WaitGroup{}
 	defer wg.Wait()
@@ -99,16 +98,12 @@ func backupTable(ctx context.Context, src kv.RoDB, srcTx kv.Tx, dst kv.RwDB, tab
 	}
 	total, _ = srcC.Count()
 
-	if err := dst.Update(ctx, func(tx kv.RwTx) error {
-		return tx.ClearBucket(table)
-	}); err != nil {
-		return err
-	}
-	dstTx, err := dst.BeginRw(ctx)
-	if err != nil {
-		return err
+	dstTx, err1 := dst.BeginRw(ctx)
+	if err1 != nil {
+		return err1
 	}
 	defer dstTx.Rollback()
+	_ = dstTx.ClearBucket(table)
 
 	c, err := dstTx.RwCursor(table)
 	if err != nil {
@@ -124,26 +119,24 @@ func backupTable(ctx context.Context, src kv.RoDB, srcTx kv.Tx, dst kv.RwDB, tab
 
 		if isDupsort {
 			if err = casted.AppendDup(k, v); err != nil {
-				return err
+				panic(err)
 			}
 		} else {
 			if err = c.Append(k, v); err != nil {
-				return err
+				panic(err)
 			}
 		}
 
 		i++
-		if i%100_000 == 0 {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case <-logEvery.C:
-				var m runtime.MemStats
-				dbg.ReadMemStats(&m)
-				logger.Info("Progress", "table", table, "progress", fmt.Sprintf("%.1fm/%.1fm", float64(i)/1_000_000, float64(total)/1_000_000), "key", hex.EncodeToString(k),
-					"alloc", common2.ByteCount(m.Alloc), "sys", common2.ByteCount(m.Sys))
-			default:
-			}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-logEvery.C:
+			var m runtime.MemStats
+			dbg.ReadMemStats(&m)
+			log.Info("Progress", "table", table, "progress", fmt.Sprintf("%.1fm/%.1fm", float64(i)/1_000_000, float64(total)/1_000_000), "key", hex.EncodeToString(k),
+				"alloc", common2.ByteCount(m.Alloc), "sys", common2.ByteCount(m.Sys))
+		default:
 		}
 	}
 	// migrate bucket sequences to native mdbx implementation
@@ -161,7 +154,7 @@ func backupTable(ctx context.Context, src kv.RoDB, srcTx kv.Tx, dst kv.RwDB, tab
 	return nil
 }
 
-const ReadAheadThreads = 1024
+const ReadAheadThreads = 128
 
 func WarmupTable(ctx context.Context, db kv.RoDB, bucket string, lvl log.Lvl, readAheadThreads int) {
 	var ThreadsLimit = readAheadThreads
@@ -192,15 +185,9 @@ func WarmupTable(ctx context.Context, db kv.RoDB, bucket string, lvl log.Lvl, re
 						return err
 					}
 					for it.HasNext() {
-						k, v, err := it.Next()
+						_, _, err = it.Next()
 						if err != nil {
 							return err
-						}
-						if len(k) > 0 {
-							_, _ = k[0], k[len(k)-1]
-						}
-						if len(v) > 0 {
-							_, _ = v[0], v[len(v)-1]
 						}
 						progress.Add(1)
 						select {
@@ -227,15 +214,9 @@ func WarmupTable(ctx context.Context, db kv.RoDB, bucket string, lvl log.Lvl, re
 					return err
 				}
 				for it.HasNext() {
-					k, v, err := it.Next()
+					_, _, err = it.Next()
 					if err != nil {
 						return err
-					}
-					if len(k) > 0 {
-						_, _ = k[0], k[len(k)-1]
-					}
-					if len(v) > 0 {
-						_, _ = v[0], v[len(v)-1]
 					}
 					select {
 					case <-ctx.Done():

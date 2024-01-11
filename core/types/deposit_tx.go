@@ -71,12 +71,8 @@ func (tx DepositTx) GetTo() *libcommon.Address {
 	return tx.To
 }
 
-func (tx DepositTx) GetBlobGas() uint64 {
+func (ct DepositTx) GetDataGas() uint64 {
 	return 0
-}
-
-func (tx DepositTx) GetBlobHashes() []libcommon.Hash {
-	return []libcommon.Hash{}
 }
 
 func (tx DepositTx) GetGas() uint64 {

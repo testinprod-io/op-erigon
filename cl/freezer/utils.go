@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/ledgerwatch/erigon-lib/types/ssz"
-	"github.com/ledgerwatch/erigon/cmd/sentinel/sentinel/communication/ssz_snappy"
+	"github.com/ledgerwatch/erigon/cl/utils"
 )
 
 type marshalerHashable interface {
@@ -17,8 +17,12 @@ func PutObjectSSZIntoFreezer(objectName, freezerNamespace string, numericalId ui
 	if record == nil {
 		return nil
 	}
-	buffer := new(bytes.Buffer)
-	if err := ssz_snappy.EncodeAndWrite(buffer, object); err != nil {
+	var buffer bytes.Buffer
+	encoded, err := object.EncodeSSZ(nil)
+	if err != nil {
+		return err
+	}
+	if _, err = buffer.Write(utils.CompressSnappy(encoded)); err != nil {
 		return err
 	}
 	id := fmt.Sprintf("%d", numericalId)
@@ -28,5 +32,5 @@ func PutObjectSSZIntoFreezer(objectName, freezerNamespace string, numericalId ui
 		return err
 	}
 
-	return record.Put(buffer, h[:], freezerNamespace, objectName, id)
+	return record.Put(&buffer, h[:], freezerNamespace, objectName, id)
 }

@@ -32,7 +32,6 @@ import (
 
 	"github.com/ledgerwatch/erigon-lib/chain"
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/fixedgas"
 	types2 "github.com/ledgerwatch/erigon-lib/types"
 
 	"github.com/ledgerwatch/erigon/common"
@@ -67,9 +66,9 @@ type Transaction interface {
 	GetEffectiveGasTip(baseFee *uint256.Int) *uint256.Int
 	GetFeeCap() *uint256.Int
 	Cost() *uint256.Int
-	GetBlobHashes() []libcommon.Hash
+	GetDataHashes() []libcommon.Hash
 	GetGas() uint64
-	GetBlobGas() uint64
+	GetDataGas() uint64
 	GetValue() *uint256.Int
 	Time() time.Time
 	GetTo() *libcommon.Address
@@ -424,7 +423,7 @@ func (s *TxByPriceAndTime) Pop() interface{} {
 	old := *s
 	n := len(old)
 	x := old[n-1]
-	old[n-1] = nil // avoid memory leak
+	old[n-1] = nil
 	*s = old[0 : n-1]
 	return x
 }
@@ -552,7 +551,6 @@ func (t *TransactionsFixedOrder) Peek() Transaction {
 
 // Shift replaces the current best head with the next one from the same account.
 func (t *TransactionsFixedOrder) Shift() {
-	t.Transactions[0] = nil // avoid memory leak
 	t.Transactions = t.Transactions[1:]
 }
 
@@ -560,7 +558,6 @@ func (t *TransactionsFixedOrder) Shift() {
 // the same account. This should be used when a transaction cannot be executed
 // and hence all subsequent ones should be discarded from the same account.
 func (t *TransactionsFixedOrder) Pop() {
-	t.Transactions[0] = nil // avoid memory leak
 	t.Transactions = t.Transactions[1:]
 }
 
@@ -574,12 +571,12 @@ type Message struct {
 	gasPrice         uint256.Int
 	feeCap           uint256.Int
 	tip              uint256.Int
-	maxFeePerBlobGas uint256.Int
+	maxFeePerDataGas uint256.Int
 	data             []byte
 	accessList       types2.AccessList
 	checkNonce       bool
 	isFree           bool
-	blobHashes       []libcommon.Hash
+	dataHashes       []libcommon.Hash
 	isFake           bool
 
 	isSystemTx  bool
@@ -588,10 +585,7 @@ type Message struct {
 	l1CostGas   RollupGasData
 }
 
-func NewMessage(from libcommon.Address, to *libcommon.Address, nonce uint64, amount *uint256.Int, gasLimit uint64,
-	gasPrice *uint256.Int, feeCap, tip *uint256.Int, data []byte, accessList types2.AccessList, checkNonce bool,
-	isFree bool, isFake bool, maxFeePerBlobGas *uint256.Int,
-) Message {
+func NewMessage(from libcommon.Address, to *libcommon.Address, nonce uint64, amount *uint256.Int, gasLimit uint64, gasPrice *uint256.Int, feeCap, tip *uint256.Int, data []byte, accessList types2.AccessList, checkNonce bool, isFree bool, isFake bool, maxFeePerDataGas *uint256.Int) Message {
 	m := Message{
 		from:       from,
 		to:         to,
@@ -613,8 +607,8 @@ func NewMessage(from libcommon.Address, to *libcommon.Address, nonce uint64, amo
 	if feeCap != nil {
 		m.feeCap.Set(feeCap)
 	}
-	if maxFeePerBlobGas != nil {
-		m.maxFeePerBlobGas.Set(maxFeePerBlobGas)
+	if maxFeePerDataGas != nil {
+		m.maxFeePerDataGas.Set(maxFeePerDataGas)
 	}
 	return m
 }
@@ -659,14 +653,12 @@ func (m Message) IsSystemTx() bool             { return m.isSystemTx }
 func (m Message) IsDepositTx() bool            { return m.isDepositTx }
 func (m Message) Mint() *uint256.Int           { return m.mint }
 func (m Message) RollupDataGas() RollupGasData { return m.l1CostGas }
-
-func (m Message) BlobGas() uint64 { return fixedgas.BlobGasPerBlob * uint64(len(m.blobHashes)) }
-
-func (m Message) MaxFeePerBlobGas() *uint256.Int {
-	return &m.maxFeePerBlobGas
+func (m Message) DataGas() uint64              { return chain.DataGasPerBlob * uint64(len(m.dataHashes)) }
+func (m Message) MaxFeePerDataGas() *uint256.Int {
+	return &m.maxFeePerDataGas
 }
 
-func (m Message) BlobHashes() []libcommon.Hash { return m.blobHashes }
+func (m Message) DataHashes() []libcommon.Hash { return m.dataHashes }
 
 func DecodeSSZ(data []byte, dest codec.Deserializable) error {
 	err := dest.Deserialize(codec.NewDecodingReader(bytes.NewReader(data), uint64(len(data))))

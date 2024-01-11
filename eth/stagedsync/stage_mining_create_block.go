@@ -8,7 +8,7 @@ import (
 	"math/big"
 	"time"
 
-	mapset "github.com/deckarep/golang-set/v2"
+	mapset "github.com/deckarep/golang-set"
 	"github.com/ledgerwatch/erigon-lib/chain"
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon/turbo/services"
@@ -198,15 +198,15 @@ func SpawnMiningCreateBlockStage(s *StageState, tx kv.RwTx, cfg MiningCreateBloc
 	}
 	type envT struct {
 		signer    *types.Signer
-		ancestors mapset.Set[libcommon.Hash] // ancestor set (used for checking uncle parent validity)
-		family    mapset.Set[libcommon.Hash] // family set (used for checking uncle invalidity)
-		uncles    mapset.Set[libcommon.Hash] // uncle set
+		ancestors mapset.Set // ancestor set (used for checking uncle parent validity)
+		family    mapset.Set // family set (used for checking uncle invalidity)
+		uncles    mapset.Set // uncle set
 	}
 	env := &envT{
 		signer:    types.MakeSigner(&cfg.chainConfig, blockNum, timestamp),
-		ancestors: mapset.NewSet[libcommon.Hash](),
-		family:    mapset.NewSet[libcommon.Hash](),
-		uncles:    mapset.NewSet[libcommon.Hash](),
+		ancestors: mapset.NewSet(),
+		family:    mapset.NewSet(),
+		uncles:    mapset.NewSet(),
 	}
 
 	header := core.MakeEmptyHeader(parent, &cfg.chainConfig, timestamp, targetGasLimit)
@@ -232,7 +232,6 @@ func SpawnMiningCreateBlockStage(s *StageState, tx kv.RwTx, cfg MiningCreateBloc
 
 	if cfg.blockBuilderParameters != nil {
 		header.MixDigest = cfg.blockBuilderParameters.PrevRandao
-		header.ParentBeaconBlockRoot = cfg.blockBuilderParameters.ParentBeaconBlockRoot
 
 		current.Header = header
 		current.Uncles = nil
@@ -250,9 +249,14 @@ func SpawnMiningCreateBlockStage(s *StageState, tx kv.RwTx, cfg MiningCreateBloc
 	}
 
 	// analog of miner.Worker.updateSnapshot
-	var makeUncles = func(proposedUncles mapset.Set[libcommon.Hash]) []*types.Header {
+	var makeUncles = func(proposedUncles mapset.Set) []*types.Header {
 		var uncles []*types.Header
-		proposedUncles.Each(func(hash libcommon.Hash) bool {
+		proposedUncles.Each(func(item interface{}) bool {
+			hash, ok := item.(libcommon.Hash)
+			if !ok {
+				return false
+			}
+
 			uncle, exist := localUncles[hash]
 			if !exist {
 				uncle, exist = remoteUncles[hash]

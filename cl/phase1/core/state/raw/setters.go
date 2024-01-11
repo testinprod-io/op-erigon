@@ -38,12 +38,12 @@ func (b *BeaconState) SetStateRootAt(index int, root libcommon.Hash) {
 
 func (b *BeaconState) SetWithdrawalCredentialForValidatorAtIndex(index int, creds libcommon.Hash) {
 	b.markLeaf(ValidatorsLeafIndex)
-	b.validators.SetWithdrawalCredentialForValidatorAtIndex(index, creds)
+	b.validators.Get(index).SetWithdrawalCredentials(creds)
 }
 
 func (b *BeaconState) SetExitEpochForValidatorAtIndex(index int, epoch uint64) {
 	b.markLeaf(ValidatorsLeafIndex)
-	b.validators.SetExitEpochForValidatorAtIndex(index, epoch)
+	b.validators.Get(index).SetExitEpoch(epoch)
 }
 
 func (b *BeaconState) SetWithdrawableEpochForValidatorAtIndex(index int, epoch uint64) error {
@@ -51,23 +51,23 @@ func (b *BeaconState) SetWithdrawableEpochForValidatorAtIndex(index int, epoch u
 		return ErrInvalidValidatorIndex
 	}
 	b.markLeaf(ValidatorsLeafIndex)
-	b.validators.SetWithdrawableEpochForValidatorAtIndex(index, epoch)
+	b.validators.Get(index).SetWithdrawableEpoch(epoch)
 	return nil
 }
 
 func (b *BeaconState) SetEffectiveBalanceForValidatorAtIndex(index int, balance uint64) {
 	b.markLeaf(ValidatorsLeafIndex)
-	b.validators.SetEffectiveBalanceForValidatorAtIndex(index, balance)
+	b.validators.Get(index).SetEffectiveBalance(balance)
 }
 
 func (b *BeaconState) SetActivationEpochForValidatorAtIndex(index int, epoch uint64) {
 	b.markLeaf(ValidatorsLeafIndex)
-	b.validators.SetActivationEpochForValidatorAtIndex(index, epoch)
+	b.validators.Get(index).SetActivationEpoch(epoch)
 }
 
 func (b *BeaconState) SetActivationEligibilityEpochForValidatorAtIndex(index int, epoch uint64) {
 	b.markLeaf(ValidatorsLeafIndex)
-	b.validators.SetActivationEligibilityEpochForValidatorAtIndex(index, epoch)
+	b.validators.Get(index).SetActivationEligibilityEpoch(epoch)
 }
 
 func (b *BeaconState) SetEth1Data(eth1Data *cltypes.Eth1Data) {
@@ -95,7 +95,7 @@ func (b *BeaconState) SetValidatorSlashed(index int, slashed bool) error {
 		return ErrInvalidValidatorIndex
 	}
 	b.markLeaf(ValidatorsLeafIndex)
-	b.validators.SetValidatorSlashed(index, slashed)
+	b.validators.Get(index).SetSlashed(slashed)
 	return nil
 }
 

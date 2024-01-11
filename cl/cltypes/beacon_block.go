@@ -23,62 +23,49 @@ const (
 )
 
 type SignedBeaconBlock struct {
-	Signature libcommon.Bytes96 `json:"signature"`
-	Block     *BeaconBlock      `json:"message"`
+	Signature [96]byte
+	Block     *BeaconBlock
 }
 
 type BeaconBlock struct {
-	Slot          uint64         `json:"slot"`
-	ProposerIndex uint64         `json:"proposer_index"`
-	ParentRoot    libcommon.Hash `json:"parent_root"`
-	StateRoot     libcommon.Hash `json:"state_root"`
-	Body          *BeaconBody    `json:"body"`
+	Slot          uint64
+	ProposerIndex uint64
+	ParentRoot    libcommon.Hash
+	StateRoot     libcommon.Hash
+	Body          *BeaconBody
 }
 
 type BeaconBody struct {
 	// A byte array used for randomness in the beacon chain
-	RandaoReveal libcommon.Bytes96 `json:"randao_reveal"`
+	RandaoReveal [96]byte
 	// Data related to the Ethereum 1.0 chain
-	Eth1Data *Eth1Data `json:"eth1_data"`
+	Eth1Data *Eth1Data
 	// A byte array used to customize validators' behavior
-	Graffiti libcommon.Hash `json:"graffit"`
+	Graffiti [32]byte
 	// A list of slashing events for validators who included invalid blocks in the chain
-	ProposerSlashings *solid.ListSSZ[*ProposerSlashing] `json:"proposer_slashings"`
+	ProposerSlashings *solid.ListSSZ[*ProposerSlashing]
 	// A list of slashing events for validators who included invalid attestations in the chain
-	AttesterSlashings *solid.ListSSZ[*AttesterSlashing] `json:"attester_slashings"`
+	AttesterSlashings *solid.ListSSZ[*AttesterSlashing]
 	// A list of attestations included in the block
-	Attestations *solid.ListSSZ[*solid.Attestation] `json:"attestations"`
+	Attestations *solid.ListSSZ[*solid.Attestation]
 	// A list of deposits made to the Ethereum 1.0 chain
-	Deposits *solid.ListSSZ[*Deposit] `json:"deposits"`
+	Deposits *solid.ListSSZ[*Deposit]
 	// A list of validators who have voluntarily exited the beacon chain
-	VoluntaryExits *solid.ListSSZ[*SignedVoluntaryExit] `json:"voluntary_exits"`
+	VoluntaryExits *solid.ListSSZ[*SignedVoluntaryExit]
 	// A summary of the current state of the beacon chain
-	SyncAggregate *SyncAggregate `json:"sync_aggregate,omitempty"`
+	SyncAggregate *SyncAggregate
 	// Data related to crosslink records and executing operations on the Ethereum 2.0 chain
-	ExecutionPayload *Eth1Block `json:"execution_payload,omitempty"`
+	ExecutionPayload *Eth1Block
 	// Withdrawals Diffs for Execution Layer
-	ExecutionChanges *solid.ListSSZ[*SignedBLSToExecutionChange] `json:"execution_changes,omitempty"`
+	ExecutionChanges *solid.ListSSZ[*SignedBLSToExecutionChange]
 	// The commitments for beacon chain blobs
 	// With a max of 4 per block
-	BlobKzgCommitments *solid.ListSSZ[*KZGCommitment] `json:"blob_kzg_commitments,omitempty"`
+	BlobKzgCommitments *solid.ListSSZ[*KZGCommitment]
 	// The version of the beacon chain
-	Version   clparams.StateVersion `json:"-"`
-	beaconCfg *clparams.BeaconChainConfig
+	Version clparams.StateVersion
 }
 
 // Getters
-
-func NewSignedBeaconBlock(beaconCfg *clparams.BeaconChainConfig) *SignedBeaconBlock {
-	return &SignedBeaconBlock{Block: NewBeaconBlock(beaconCfg)}
-}
-
-func NewBeaconBlock(beaconCfg *clparams.BeaconChainConfig) *BeaconBlock {
-	return &BeaconBlock{Body: NewBeaconBody(beaconCfg)}
-}
-
-func NewBeaconBody(beaconCfg *clparams.BeaconChainConfig) *BeaconBody {
-	return &BeaconBody{beaconCfg: beaconCfg}
-}
 
 // Version returns beacon block version.
 func (b *SignedBeaconBlock) Version() clparams.StateVersion {
@@ -91,7 +78,7 @@ func (b *BeaconBlock) Version() clparams.StateVersion {
 }
 
 func (b *BeaconBody) EncodeSSZ(dst []byte) ([]byte, error) {
-	return ssz2.MarshalSSZ(dst, b.getSchema(false)...)
+	return ssz2.MarshalSSZ(dst, b.getSchema()...)
 }
 
 func (b *BeaconBody) EncodingSizeSSZ() (size int) {
@@ -103,7 +90,7 @@ func (b *BeaconBody) EncodingSizeSSZ() (size int) {
 		b.SyncAggregate = &SyncAggregate{}
 	}
 	if b.ExecutionPayload == nil {
-		b.ExecutionPayload = NewEth1Block(b.Version, b.beaconCfg)
+		b.ExecutionPayload = &Eth1Block{}
 	}
 	if b.ProposerSlashings == nil {
 		b.ProposerSlashings = solid.NewStaticListSSZ[*ProposerSlashing](MaxProposerSlashings, 416)
@@ -121,7 +108,7 @@ func (b *BeaconBody) EncodingSizeSSZ() (size int) {
 		b.VoluntaryExits = solid.NewStaticListSSZ[*SignedVoluntaryExit](MaxVoluntaryExits, 112)
 	}
 	if b.ExecutionPayload == nil {
-		b.ExecutionPayload = NewEth1Block(b.Version, b.beaconCfg)
+		b.ExecutionPayload = new(Eth1Block)
 	}
 	if b.ExecutionChanges == nil {
 		b.ExecutionChanges = solid.NewStaticListSSZ[*SignedBLSToExecutionChange](MaxExecutionChanges, 172)
@@ -155,20 +142,20 @@ func (b *BeaconBody) DecodeSSZ(buf []byte, version int) error {
 		return fmt.Errorf("[BeaconBody] err: %s", ssz.ErrLowBufferSize)
 	}
 
-	err := ssz2.UnmarshalSSZ(buf, version, b.getSchema(false)...)
+	err := ssz2.UnmarshalSSZ(buf, version, b.getSchema()...)
 	return err
 }
 
 func (b *BeaconBody) HashSSZ() ([32]byte, error) {
-	return merkle_tree.HashTreeRoot(b.getSchema(false)...)
+	return merkle_tree.HashTreeRoot(b.getSchema()...)
 }
 
-func (b *BeaconBody) getSchema(storage bool) []interface{} {
+func (b *BeaconBody) getSchema() []interface{} {
 	s := []interface{}{b.RandaoReveal[:], b.Eth1Data, b.Graffiti[:], b.ProposerSlashings, b.AttesterSlashings, b.Attestations, b.Deposits, b.VoluntaryExits}
 	if b.Version >= clparams.AltairVersion {
 		s = append(s, b.SyncAggregate)
 	}
-	if b.Version >= clparams.BellatrixVersion && !storage {
+	if b.Version >= clparams.BellatrixVersion {
 		s = append(s, b.ExecutionPayload)
 	}
 	if b.Version >= clparams.CapellaVersion {
@@ -186,12 +173,13 @@ func (b *BeaconBlock) EncodeSSZ(buf []byte) (dst []byte, err error) {
 
 func (b *BeaconBlock) EncodingSizeSSZ() int {
 	if b.Body == nil {
-		return 80
+		b.Body = new(BeaconBody)
 	}
 	return 80 + b.Body.EncodingSizeSSZ()
 }
 
 func (b *BeaconBlock) DecodeSSZ(buf []byte, version int) error {
+	b.Body = new(BeaconBody)
 	return ssz2.UnmarshalSSZ(buf, version, &b.Slot, &b.ProposerIndex, b.ParentRoot[:], b.StateRoot[:], b.Body)
 }
 
@@ -205,12 +193,13 @@ func (b *SignedBeaconBlock) EncodeSSZ(buf []byte) ([]byte, error) {
 
 func (b *SignedBeaconBlock) EncodingSizeSSZ() int {
 	if b.Block == nil {
-		return 100
+		b.Block = new(BeaconBlock)
 	}
 	return 100 + b.Block.EncodingSizeSSZ()
 }
 
 func (b *SignedBeaconBlock) DecodeSSZ(buf []byte, s int) error {
+	b.Block = new(BeaconBlock)
 	return ssz2.UnmarshalSSZ(buf, s, b.Block, b.Signature[:])
 }
 

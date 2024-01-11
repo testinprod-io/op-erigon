@@ -54,15 +54,16 @@ func importChain(cliCtx *cli.Context) error {
 		utils.Fatalf("This command requires an argument.")
 	}
 
-	logger, _, err := debug.Setup(cliCtx, true /* rootLogger */)
-	if err != nil {
+	var logger log.Logger
+	var err error
+	if logger, err = debug.Setup(cliCtx, true /* rootLogger */); err != nil {
 		return err
 	}
 
 	nodeCfg := turboNode.NewNodConfigUrfave(cliCtx, logger)
 	ethCfg := turboNode.NewEthConfigUrfave(cliCtx, nodeCfg, logger)
 
-	stack := makeConfigNode(cliCtx.Context, nodeCfg, logger)
+	stack := makeConfigNode(nodeCfg, logger)
 	defer stack.Close()
 
 	ethereum, err := eth.New(stack, ethCfg, logger)
@@ -220,8 +221,8 @@ func InsertChain(ethereum *eth.Ethereum, chain *core.ChainPack, logger log.Logge
 	sentryControlServer.Hd.MarkAllVerified()
 	blockReader, _ := ethereum.BlockIO()
 
-	hook := stages.NewHook(ethereum.SentryCtx(), ethereum.ChainDB(), ethereum.Notifications(), ethereum.StagedSync(), blockReader, ethereum.ChainConfig(), logger, sentryControlServer.UpdateHead)
-	err := stages.StageLoopIteration(ethereum.SentryCtx(), ethereum.ChainDB(), nil, ethereum.StagedSync(), initialCycle, logger, blockReader, hook, false)
+	hook := stages.NewHook(ethereum.SentryCtx(), ethereum.Notifications(), ethereum.StagedSync(), blockReader, ethereum.ChainConfig(), logger, sentryControlServer.UpdateHead)
+	err := stages.StageLoopIteration(ethereum.SentryCtx(), ethereum.ChainDB(), nil, ethereum.StagedSync(), initialCycle, logger, blockReader, hook)
 	if err != nil {
 		return err
 	}

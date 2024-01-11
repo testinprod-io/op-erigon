@@ -14,14 +14,14 @@ import (
 var stateEncoded []byte
 
 func TestUpgradeAndExpectedWithdrawals(t *testing.T) {
-	s := New(&clparams.MainnetBeaconConfig)
-	utils.DecodeSSZSnappy(s, stateEncoded, int(clparams.Phase0Version))
-	require.NoError(t, s.UpgradeToAltair())
-	require.NoError(t, s.UpgradeToBellatrix())
-	require.NoError(t, s.UpgradeToCapella())
-	require.NoError(t, s.UpgradeToDeneb())
+	state := New(&clparams.MainnetBeaconConfig)
+	utils.DecodeSSZSnappy(state, stateEncoded, int(clparams.Phase0Version))
+	require.NoError(t, state.UpgradeToAltair())
+	require.NoError(t, state.UpgradeToBellatrix())
+	require.NoError(t, state.UpgradeToCapella())
+	require.NoError(t, state.UpgradeToDeneb())
 	// now WITHDRAWAAALLLLSSSS
-	w := ExpectedWithdrawals(s)
+	w := ExpectedWithdrawals(state.BeaconState)
 	assert.Empty(t, w)
 
 }

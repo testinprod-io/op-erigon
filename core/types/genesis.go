@@ -41,34 +41,37 @@ var ErrGenesisNoConfig = errors.New("genesis has no chain configuration")
 // Genesis specifies the header fields, state of a genesis block. It also defines hard
 // fork switch-over blocks through the chain configuration.
 type Genesis struct {
-	Config     *chain.Config  `json:"config"`
-	Nonce      uint64         `json:"nonce"`
-	Timestamp  uint64         `json:"timestamp"`
-	ExtraData  []byte         `json:"extraData"`
-	GasLimit   uint64         `json:"gasLimit"   gencodec:"required"`
-	Difficulty *big.Int       `json:"difficulty" gencodec:"required"`
-	Mixhash    common.Hash    `json:"mixHash"`
-	Coinbase   common.Address `json:"coinbase"`
-	Alloc      GenesisAlloc   `json:"alloc"      gencodec:"required"`
-
-	AuRaStep uint64 `json:"auRaStep"`
-	AuRaSeal []byte `json:"auRaSeal"`
+	Config        *chain.Config  `json:"config"`
+	Nonce         uint64         `json:"nonce"`
+	Timestamp     uint64         `json:"timestamp"`
+	ExtraData     []byte         `json:"extraData"`
+	GasLimit      uint64         `json:"gasLimit"   gencodec:"required"`
+	Difficulty    *big.Int       `json:"difficulty" gencodec:"required"`
+	Mixhash       common.Hash    `json:"mixHash"`
+	Coinbase      common.Address `json:"coinbase"`
+	BaseFee       *big.Int       `json:"baseFeePerGas"`
+	DataGasUsed   *uint64        `json:"dataGasUsed"`
+	ExcessDataGas *uint64        `json:"excessDataGas"`
+	Alloc         GenesisAlloc   `json:"alloc"      gencodec:"required"`
+	AuRaStep      uint64         `json:"auRaStep"`
+	AuRaSeal      []byte         `json:"auRaSeal"`
 
 	// These fields are used for consensus tests. Please don't use them
 	// in actual genesis blocks.
 	Number     uint64      `json:"number"`
 	GasUsed    uint64      `json:"gasUsed"`
 	ParentHash common.Hash `json:"parentHash"`
-
-	// Header fields added in London and later hard forks
-	BaseFee               *big.Int     `json:"baseFeePerGas"`         // EIP-1559
-	BlobGasUsed           *uint64      `json:"blobGasUsed"`           // EIP-4844
-	ExcessBlobGas         *uint64      `json:"excessBlobGas"`         // EIP-4844
-	ParentBeaconBlockRoot *common.Hash `json:"parentBeaconBlockRoot"` // EIP-4788
 }
 
 // GenesisAlloc specifies the initial state that is part of the genesis block.
 type GenesisAlloc map[common.Address]GenesisAccount
+
+type AuthorityRoundSeal struct {
+	/// Seal step.
+	Step uint64 `json:"step"`
+	/// Seal signature.
+	Signature common.Hash `json:"signature"`
+}
 
 func (ga *GenesisAlloc) UnmarshalJSON(data []byte) error {
 	m := make(map[common2.UnprefixedAddress]GenesisAccount)
@@ -80,21 +83,6 @@ func (ga *GenesisAlloc) UnmarshalJSON(data []byte) error {
 		(*ga)[common.Address(addr)] = a
 	}
 	return nil
-}
-
-func DecodeGenesisAlloc(i interface{}) (GenesisAlloc, error) {
-	var alloc GenesisAlloc
-
-	b, err := json.Marshal(i)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := json.Unmarshal(b, &alloc); err != nil {
-		return nil, err
-	}
-
-	return alloc, nil
 }
 
 // GenesisAccount is an account in the state of the genesis block.
@@ -118,8 +106,8 @@ type genesisSpecMarshaling struct {
 	Number        math.HexOrDecimal64
 	Difficulty    *math.HexOrDecimal256
 	BaseFee       *math.HexOrDecimal256
-	BlobGasUsed   *math.HexOrDecimal64
-	ExcessBlobGas *math.HexOrDecimal64
+	DataGasUsed   *math.HexOrDecimal64
+	ExcessDataGas *math.HexOrDecimal64
 	Alloc         map[common2.UnprefixedAddress]GenesisAccount
 }
 

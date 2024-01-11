@@ -2,15 +2,13 @@ package eth2
 
 import (
 	"fmt"
-
 	"github.com/Giulio2002/bls"
-	"github.com/ledgerwatch/erigon/cl/abstract"
 	"github.com/ledgerwatch/erigon/cl/cltypes"
 	"github.com/ledgerwatch/erigon/cl/fork"
 	"github.com/ledgerwatch/erigon/cl/phase1/core/state"
 )
 
-func (I *impl) VerifyTransition(s abstract.BeaconState, currentBlock *cltypes.BeaconBlock) error {
+func (I *impl) VerifyTransition(s *state.BeaconState, currentBlock *cltypes.BeaconBlock) error {
 	if !I.FullValidation {
 		return nil
 	}
@@ -24,7 +22,10 @@ func (I *impl) VerifyTransition(s abstract.BeaconState, currentBlock *cltypes.Be
 	return nil
 }
 
-func (I *impl) VerifyBlockSignature(s abstract.BeaconState, block *cltypes.SignedBeaconBlock) error {
+func (I *impl) VerifyBlockSignature(s *state.BeaconState, block *cltypes.SignedBeaconBlock) error {
+	if !I.FullValidation {
+		return nil
+	}
 	valid, err := verifyBlockSignature(s, block)
 	if err != nil {
 		return fmt.Errorf("error validating block signature: %v", err)
@@ -35,12 +36,12 @@ func (I *impl) VerifyBlockSignature(s abstract.BeaconState, block *cltypes.Signe
 	return nil
 }
 
-func verifyBlockSignature(s abstract.BeaconState, block *cltypes.SignedBeaconBlock) (bool, error) {
+func verifyBlockSignature(s *state.BeaconState, block *cltypes.SignedBeaconBlock) (bool, error) {
 	proposer, err := s.ValidatorForValidatorIndex(int(block.Block.ProposerIndex))
 	if err != nil {
 		return false, err
 	}
-	domain, err := s.GetDomain(s.BeaconConfig().DomainBeaconProposer, state.Epoch(s))
+	domain, err := s.GetDomain(s.BeaconConfig().DomainBeaconProposer, state.Epoch(s.BeaconState))
 	if err != nil {
 		return false, err
 	}

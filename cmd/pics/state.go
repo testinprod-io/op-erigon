@@ -25,7 +25,7 @@ import (
 	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/crypto"
 	"github.com/ledgerwatch/erigon/params"
-	"github.com/ledgerwatch/erigon/turbo/stages/mock"
+	"github.com/ledgerwatch/erigon/turbo/stages"
 	"github.com/ledgerwatch/erigon/turbo/trie"
 	"github.com/ledgerwatch/erigon/visual"
 )
@@ -285,7 +285,7 @@ func initialState1() error {
 		// this code generates a log
 		signer = types.MakeSigner(params.AllProtocolChanges, 1, 0)
 	)
-	m := mock.MockWithGenesis(nil, gspec, key, false)
+	m := stages.MockWithGenesis(nil, gspec, key, false)
 	defer m.DB.Close()
 
 	contractBackend := backends.NewSimulatedBackendWithConfig(gspec.Alloc, gspec.Config, gspec.GasLimit)
@@ -414,7 +414,7 @@ func initialState1() error {
 	if err != nil {
 		return err
 	}
-	m2 := mock.MockWithGenesis(nil, gspec, key, false)
+	m2 := stages.MockWithGenesis(nil, gspec, key, false)
 	defer m2.DB.Close()
 
 	if err = hexPalette(); err != nil {
@@ -430,13 +430,13 @@ func initialState1() error {
 	// BLOCKS
 
 	for i := 0; i < chain.Length(); i++ {
-		if err = m2.InsertChain(chain.Slice(i, i+1)); err != nil {
+		if err = m2.InsertChain(chain.Slice(i, i+1), nil); err != nil {
 			return err
 		}
 		if err = stateDatabaseComparison(m.DB, m2.DB, i+1); err != nil {
 			return err
 		}
-		if err = m.InsertChain(chain.Slice(i, i+1)); err != nil {
+		if err = m.InsertChain(chain.Slice(i, i+1), nil); err != nil {
 			return err
 		}
 	}

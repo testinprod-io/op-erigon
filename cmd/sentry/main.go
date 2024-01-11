@@ -6,6 +6,7 @@ import (
 
 	"github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/datadir"
+	"github.com/ledgerwatch/log/v3"
 	"github.com/spf13/cobra"
 
 	"github.com/ledgerwatch/erigon/cmd/sentry/sentry"
@@ -93,7 +94,12 @@ var rootCmd = &cobra.Command{
 			return err
 		}
 
-		logger := debug.SetupCobra(cmd, "sentry")
+		var logger log.Logger
+		if logger, err = debug.SetupCobra(cmd, "sentry"); err != nil {
+			logger.Error("Setting up", "error", err)
+			return err
+		}
+
 		return sentry.Sentry(cmd.Context(), dirs, sentryAddr, discoveryDNS, p2pConfig, protocol, healthCheck, logger)
 	},
 }

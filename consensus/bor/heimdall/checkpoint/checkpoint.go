@@ -1,7 +1,6 @@
 package checkpoint
 
 import (
-	"fmt"
 	"math/big"
 
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
@@ -15,18 +14,6 @@ type Checkpoint struct {
 	RootHash   libcommon.Hash    `json:"root_hash"`
 	BorChainID string            `json:"bor_chain_id"`
 	Timestamp  uint64            `json:"timestamp"`
-}
-
-func (m Checkpoint) String() string {
-	return fmt.Sprintf(
-		"Checkpoint {%v (%d:%d) %v %v %v}",
-		m.Proposer.String(),
-		m.StartBlock,
-		m.EndBlock,
-		m.RootHash.Hex(),
-		m.BorChainID,
-		m.Timestamp,
-	)
 }
 
 type CheckpointResponse struct {

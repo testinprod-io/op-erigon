@@ -224,9 +224,14 @@ func (command *Command) ExecuteContext(ctx context.Context, runFunc func(ctx con
 		debug.Exit()
 	}
 	command.command.RunE = func(cmd *cobra.Command, args []string) error {
-		logger := debug.SetupCobra(cmd, "sentry")
+		var logger log.Logger
+		var err error
+		if logger, err = debug.SetupCobra(cmd, "observer"); err != nil {
+			logger.Error("Setting up", "error", err)
+			return err
+		}
 		defer debug.Exit()
-		err := runFunc(cmd.Context(), command.flags, logger)
+		err = runFunc(cmd.Context(), command.flags, logger)
 		if errors.Is(err, context.Canceled) {
 			return nil
 		}

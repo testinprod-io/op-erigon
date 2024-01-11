@@ -151,20 +151,19 @@ func ReadBorTransactionWithBlockHash(db kv.Tx, borTxHash libcommon.Hash, blockHa
 
 // ReadBorTransaction returns a specific bor (fake) transaction by txn hash, along with
 // its added positional metadata.
-func ReadBorTransaction(db kv.Tx, borTxHash libcommon.Hash) (types.Transaction, error) {
+func ReadBorTransaction(db kv.Tx, borTxHash libcommon.Hash) (types.Transaction, libcommon.Hash, uint64, uint64, error) {
 	blockNumber, err := ReadBorTxLookupEntry(db, borTxHash)
 	if err != nil {
-		return nil, err
+		return nil, libcommon.Hash{}, 0, 0, err
 	}
 	if blockNumber == nil {
-		return nil, errors.New("missing block number")
+		return nil, libcommon.Hash{}, 0, 0, errors.New("missing block number")
 	}
 
-	borTx, err := computeBorTransactionForBlockNumber(db, *blockNumber)
-	return borTx, err
+	return computeBorTransactionForBlockNumber(db, *blockNumber)
 }
 
-func ReadBorTxLookupEntry(db kv.Getter, borTxHash libcommon.Hash) (*uint64, error) {
+func ReadBorTxLookupEntry(db kv.Tx, borTxHash libcommon.Hash) (*uint64, error) {
 	blockNumBytes, err := db.GetOne(kv.BorTxLookup, borTxHash.Bytes())
 	if err != nil {
 		return nil, err
@@ -177,25 +176,58 @@ func ReadBorTxLookupEntry(db kv.Getter, borTxHash libcommon.Hash) (*uint64, erro
 	return &blockNum, nil
 }
 
-func computeBorTransactionForBlockNumber(db kv.Tx, blockNumber uint64) (types.Transaction, error) {
+// ReadBorTransactionForBlockNumber returns a bor (fake) transaction by block number, along with
+// its added positional metadata.
+func ReadBorTransactionForBlockNumber(db kv.Tx, blockNumber uint64) (types.Transaction, libcommon.Hash, uint64, uint64, error) {
+	if !HasBorReceipts(db, blockNumber) {
+		return nil, libcommon.Hash{}, 0, 0, nil
+	}
+	return computeBorTransactionForBlockNumber(db, blockNumber)
+}
+
+func computeBorTransactionForBlockNumber(db kv.Tx, blockNumber uint64) (types.Transaction, libcommon.Hash, uint64, uint64, error) {
 	blockHash, err := ReadCanonicalHash(db, blockNumber)
 	if err != nil {
-		return nil, err
+		return nil, libcommon.Hash{}, 0, 0, err
 	}
 	if blockHash == (libcommon.Hash{}) {
-		return nil, errors.New("missing block hash")
+		return nil, libcommon.Hash{}, 0, 0, errors.New("missing block hash")
 	}
 
-	return types.NewBorTransaction(), nil
+	return computeBorTransactionForBlockNumberAndHash(db, blockNumber, blockHash)
+}
+
+// ReadBorTransactionForBlockNumberAndHash returns a bor (fake) transaction by block number and block hash, along with
+// its added positional metadata.
+func ReadBorTransactionForBlockNumberAndHash(db kv.Tx, blockNumber uint64, blockHash libcommon.Hash) (types.Transaction, libcommon.Hash, uint64, uint64, error) {
+	if !HasBorReceipts(db, blockNumber) {
+		return nil, libcommon.Hash{}, 0, 0, nil
+	}
+	return computeBorTransactionForBlockNumberAndHash(db, blockNumber, blockHash)
+}
+
+func computeBorTransactionForBlockNumberAndHash(db kv.Tx, blockNumber uint64, blockHash libcommon.Hash) (types.Transaction, libcommon.Hash, uint64, uint64, error) {
+	bodyForStorage, err := ReadStorageBody(db, blockHash, blockNumber)
+	if err != nil {
+		return nil, libcommon.Hash{}, 0, 0, err
+	}
+
+	var tx types.Transaction = types.NewBorTransaction()
+	return tx, blockHash, blockNumber, uint64(bodyForStorage.TxAmount), nil
 }
 
 // ReadBorTransactionForBlock retrieves a specific bor (fake) transaction associated with a block, along with
 // its added positional metadata.
-func ReadBorTransactionForBlock(db kv.Tx, blockNum uint64) types.Transaction {
-	if !HasBorReceipts(db, blockNum) {
-		return nil
+func ReadBorTransactionForBlock(db kv.Tx, block *types.Block) (types.Transaction, libcommon.Hash, uint64, uint64) {
+	if !HasBorReceipts(db, block.NumberU64()) {
+		return nil, libcommon.Hash{}, 0, 0
 	}
-	return types.NewBorTransaction()
+	return computeBorTransactionForBlock(db, block)
+}
+
+func computeBorTransactionForBlock(db kv.Tx, block *types.Block) (types.Transaction, libcommon.Hash, uint64, uint64) {
+	var tx types.Transaction = types.NewBorTransaction()
+	return tx, block.Hash(), block.NumberU64(), uint64(len(block.Transactions()))
 }
 
 // TruncateBorReceipts removes all bor receipt for given block number or newer

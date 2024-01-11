@@ -164,7 +164,7 @@ _Let's stay Optimistic_ 🔴
 
 # Erigon
 
-Erigon is an implementation of Ethereum (execution layer with embeddable consensus layer), on the efficiency
+Erigon is an implementation of Ethereum (execution client with light client for consensus layer), on the efficiency
 frontier. [Archive Node](https://ethereum.org/en/developers/docs/nodes-and-clients/archive-nodes/#what-is-an-archive-node)
 by default.
 
@@ -221,7 +221,7 @@ System Requirements
 
 * Gnosis Chain Archive: 370GB (January 2023).
 
-* Polygon Mainnet Archive: 5TB. (April 2022). `--prune.*.older 15768000`: 5.1Tb (Sept 2023). Polygon Mumbai Archive: 1TB. (April 2022).
+* Polygon Mainnet Archive: 5TB. Polygon Mumbai Archive: 1TB. (April 2022).
 
 SSD or NVMe. Do not recommend HDD - on HDD Erigon will always stay N blocks behind chain tip, but not fall behind.
 Bear in mind that SSD performance deteriorates when close to capacity.
@@ -238,10 +238,10 @@ Usage
 
 ### Getting Started
 
-For building the latest release (this will be suitable for most users just wanting to run a node):
+For building the latest stable release (this will be suitable for most users just wanting to run a node):
 
 ```sh
-git clone --branch release/<x.xx> --single-branch https://github.com/ledgerwatch/erigon.git
+git clone --branch stable --single-branch https://github.com/ledgerwatch/erigon.git
 cd erigon
 make erigon
 ./build/bin/erigon
@@ -275,7 +275,7 @@ Running `make help` will list and describe the convenience commands available in
 ### Datadir structure
 
 - chaindata: recent blocks, state, recent state history. low-latency disk recommended.
-- snapshots: old blocks, old state history. can symlink/mount it to cheaper disk. mostly immutable. must have ~100gb free space (for merge recent files to bigger one).
+- snapshots: old blocks, old state history. can symlink/mount it to cheaper disk. mostly immutable.
 - temp: can grow to ~100gb, but usually empty. can symlink/mount it to cheaper disk.
 - txpool: pending transactions. safe to remove.
 - nodes:  p2p peers. safe to remove.
@@ -454,7 +454,7 @@ Erigon can be used as an Execution Layer (EL) for Consensus Layer clients (CL). 
 If your CL client is on a different device, add `--authrpc.addr 0.0.0.0` ([Engine API] listens on localhost by default)
 as well as `--authrpc.vhosts <CL host>` where `<CL host>` is your source host or `any`.
 
-[Engine API]: https://github.com/ethereum/execution-apis/blob/main/src/engine
+[Engine API]: https://github.com/ethereum/execution-apis/blob/main/src/engine/specification.md
 
 In order to establish a secure connection between the Consensus Layer and the Execution Layer, a JWT secret key is
 automatically generated.
@@ -665,7 +665,7 @@ Windows support for docker-compose is not ready yet. Please help us with .ps1 po
 
 `docker compose up prometheus grafana`, [detailed docs](./cmd/prometheus/Readme.md).
 
-###
+###       
 
 old data
 
@@ -694,58 +694,59 @@ Detailed explanation: [./docs/programmers_guide/db_faq.md](./docs/programmers_gu
 
 ### Default Ports and Firewalls
 
-
-
 #### `erigon` ports
 
-
-| Component | Port  | Protocol  | Purpose                     | Should Expose |
-| --------- | ----- | --------- | --------------------------- | ------------- |
-| engine    | 9090  | TCP       | gRPC Server                 | Private       |
-| engine    | 42069 | TCP & UDP | Snap sync (Bittorrent)      | Public        |
-| engine    | 8551  | TCP       | Engine API (JWT auth)       | Private       |
-| sentry    | 30303 | TCP & UDP | eth/68 peering              | Public        |
-| sentry    | 30304 | TCP & UDP | eth/67 peering              | Public        |
-| sentry    | 9091  | TCP       | incoming gRPC Connections   | Private       |
-| rpcdaemon | 8545  | TCP       | HTTP & WebSockets & GraphQL | Private       |
-
-
-
+| Port  | Protocol  |        Purpose         | Expose  |
+|:-----:|:---------:|:----------------------:|:-------:|
+| 30303 | TCP & UDP |     eth/66 peering     | Public  |
+| 30304 | TCP & UDP |     eth/67 peering     | Public  |
+| 9090  |    TCP    |    gRPC Connections    | Private |
+| 42069 | TCP & UDP | Snap sync (Bittorrent) | Public  |
+| 6060  |    TCP    |    Metrics or Pprof    | Private |
+| 8551  |    TCP    | Engine API (JWT auth)  | Private |
 
 Typically, 30303 and 30304 are exposed to the internet to allow incoming peering connections. 9090 is exposed only
 internally for rpcdaemon or other connections, (e.g. rpcdaemon -> erigon).
 Port 8551 (JWT authenticated) is exposed only internally for [Engine API] JSON-RPC queries from the Consensus Layer
 node.
 
+#### `RPC` ports
 
+| Port | Protocol |           Purpose           | Expose  |
+|:----:|:--------:|:---------------------------:|:-------:|
+| 8545 |   TCP    | HTTP & WebSockets & GraphQL | Private |
 
+Typically, 8545 is exposed only internally for JSON-RPC queries. Both HTTP and WebSocket and GraphQL are on the same
+port.
 
+#### `sentry` ports
 
-#### `caplin` ports
-| Component | Port | Protocol | Purpose          | Should Expose |
-| --------- | ---- | -------- | ---------------- | ------------- |
-| sentinel  | 4000 | UDP      | Peering          | Public        |
-| sentinel  | 4001 | TCP      | Peering          | Public        |
-| sentinel  | 7777 | TCP      | gRPC Connections | Private       |
+| Port  | Protocol  |     Purpose      | Expose  |
+|:-----:|:---------:|:----------------:|:-------:|
+| 30303 | TCP & UDP |     Peering      | Public  |
+| 9091  |    TCP    | gRPC Connections | Private |
 
+Typically, a sentry process will run one eth/xx protocol (e.g. eth/66) and will be exposed to the internet on 30303.
+Port
+9091 is for internal gRCP connections (e.g erigon -> sentry).
 
-If you are using `--internalcl` aka `caplin` as your consensus client, then also look at the chart above
+#### `sentinel` ports
 
+| Port | Protocol |     Purpose      | Expose  |
+|:----:|:--------:|:----------------:|:-------:|
+| 4000 |   UDP    |     Peering      | Public  |
+| 4001 |   TCP    |     Peering      | Public  |
+| 7777 |   TCP    | gRPC Connections | Private |
 
-#### `shared` ports
+#### Other ports
 
-| Component | Port  | Protocol  | Purpose                     | Should Expose |
-| --------- | ----- | --------- | --------------------------- | ------------- |
-| all       | 6060 | TCP      | pprof            | Private       |
-| all       | 6060 | TCP      | metrics          | Private       |
-
+| Port | Protocol | Purpose | Expose  |
+|:----:|:--------:|:-------:|:-------:|
+| 6060 |   TCP    |  pprof  | Private |
+| 6060 |   TCP    | metrics | Private |
 
 Optional flags can be enabled that enable pprof or metrics (or both) - however, they both run on 6060 by default, so
-
 you'll have to change one if you want to run both at the same time. use `--help` with the binary for more info.
-
-
-#### `other` ports
 
 Reserved for future use: **gRPC ports**: `9092` consensus engine, `9093` snapshot downloader, `9094` TxPool
 
@@ -755,7 +756,7 @@ Reserved for future use: **gRPC ports**: `9092` consensus engine, `9093` snapsho
 0.0.0.0/8             "This" Network             RFC 1122, Section 3.2.1.3
 10.0.0.0/8            Private-Use Networks       RFC 1918
 100.64.0.0/10         Carrier-Grade NAT (CGN)    RFC 6598, Section 7
-127.16.0.0/12         Private-Use Networks       RFC 1918
+127.16.0.0/12         Private-Use Networks       RFC 1918 
 169.254.0.0/16        Link Local                 RFC 3927
 172.16.0.0/12         Private-Use Networks       RFC 1918
 192.0.0.0/24          IETF Protocol Assignments  RFC 5736
@@ -763,13 +764,13 @@ Reserved for future use: **gRPC ports**: `9092` consensus engine, `9093` snapsho
 192.88.99.0/24        6to4 Relay Anycast         RFC 3068
 192.168.0.0/16        Private-Use Networks       RFC 1918
 198.18.0.0/15         Network Interconnect
-Device Benchmark Testing   RFC 2544
+                      Device Benchmark Testing   RFC 2544
 198.51.100.0/24       TEST-NET-2                 RFC 5737
 203.0.113.0/24        TEST-NET-3                 RFC 5737
 224.0.0.0/4           Multicast                  RFC 3171
 240.0.0.0/4           Reserved for Future Use    RFC 1112, Section 4
 255.255.255.255/32    Limited Broadcast          RFC 919, Section 7
-RFC 922, Section 7
+                                                 RFC 922, Section 7
 ```
 
 Same in [IpTables syntax](https://ethereum.stackexchange.com/questions/6386/how-to-prevent-being-blacklisted-for-running-an-ethereum-client/13068#13068)
@@ -778,9 +779,9 @@ Same in [IpTables syntax](https://ethereum.stackexchange.com/questions/6386/how-
 
 - Get stack trace: `kill -SIGUSR1 <pid>`, get trace and stop: `kill -6 <pid>`
 - Get CPU profiling: add `--pprof flag`
-    run `go tool pprof -png  http://127.0.0.1:6060/debug/pprof/profile\?seconds\=20 > cpu.png`
+  run `go tool pprof -png  http://127.0.0.1:6060/debug/pprof/profile\?seconds\=20 > cpu.png`
 - Get RAM profiling: add `--pprof flag`
-    run `go tool pprof -inuse_space -png  http://127.0.0.1:6060/debug/pprof/heap > mem.png`
+  run `go tool pprof -inuse_space -png  http://127.0.0.1:6060/debug/pprof/heap > mem.png`
 
 ### How to run local devnet?
 
@@ -798,22 +799,52 @@ in [post](https://www.fullstaq.com/knowledge-hub/blogs/docker-and-the-host-files
 
 https://github.com/mathMakesArt/Erigon-on-RPi-4
 
-### How to change db pagesize
-
-[post](https://github.com/ledgerwatch/erigon/blob/devel/cmd/integration/Readme.md#copy-data-to-another-db)
-
-
 Getting in touch
 ================
 
 ### Erigon Discord Server
 
-The main discussions are happening on our Discord server. To get an invite, send an email to `bloxster [at] proton.me` with
+The main discussions are happening on our Discord server. To get an invite, send an email to `tg [at] torquem.ch` with
 your name, occupation, a brief explanation of why you want to join the Discord, and how you heard about Erigon.
 
 ### Reporting security issues/concerns
 
 Send an email to `security [at] torquem.ch`.
+
+### Team
+
+Core contributors (in alphabetical order of first names):
+
+* Alex Sharov ([AskAlexSharov](https://twitter.com/AskAlexSharov))
+
+* Alexey Akhunov ([@realLedgerwatch](https://twitter.com/realLedgerwatch))
+
+* Andrea Lanfranchi([@AndreaLanfranchi](https://github.com/AndreaLanfranchi))
+
+* Andrew Ashikhmin ([yperbasis](https://github.com/yperbasis))
+
+* Artem Vorotnikov ([vorot93](https://github.com/vorot93))
+
+* Boris Petrov ([b00ris](https://github.com/b00ris))
+
+* Eugene Danilenko ([JekaMas](https://github.com/JekaMas))
+
+* Igor Mandrigin ([@mandrigin](https://twitter.com/mandrigin))
+
+* Giulio Rebuffo ([Giulio2002](https://github.com/Giulio2002))
+
+* Thomas Jay Rush ([@tjayrush](https://twitter.com/tjayrush))
+
+Thanks to:
+
+* All contributors of Erigon
+
+* All contributors of Go-Ethereum
+
+* Our special respect and gratitude is to the core team of [Go-Ethereum](https://github.com/ethereum/go-ethereum). Keep
+  up the great job!
+
+Happy testing! 🥤
 
 Known issues
 ============
@@ -835,20 +866,20 @@ Next tools show correct memory usage of Erigon:
 
 - `vmmap -summary PID | grep -i "Physical footprint"`. Without `grep` you can see details
     - `section MALLOC ZONE column Resident Size` shows App memory usage, `section REGION TYPE column Resident Size`
-        shows OS pages cache size.
+      shows OS pages cache size.
 - `Prometheus` dashboard shows memory of Go app without OS pages cache (`make prometheus`, open in
-    browser `localhost:3000`, credentials `admin/admin`)
+  browser `localhost:3000`, credentials `admin/admin`)
 - `cat /proc/<PID>/smaps`
 
-    Erigon uses ~4Gb of RAM during genesis sync and ~1Gb during normal work. OS pages cache can utilize unlimited amount of
-    memory.
+Erigon uses ~4Gb of RAM during genesis sync and ~1Gb during normal work. OS pages cache can utilize unlimited amount of
+memory.
 
-    **Warning:** Multiple instances of Erigon on same machine will touch Disk concurrently, it impacts performance - one of
-    main Erigon optimisations: "reduce Disk random access".
-    "Blocks Execution stage" still does many random reads - this is reason why it's slowest stage. We do not recommend
-    running
-    multiple genesis syncs on same Disk. If genesis sync passed, then it's fine to run multiple Erigon instances on same
-    Disk.
+**Warning:** Multiple instances of Erigon on same machine will touch Disk concurrently, it impacts performance - one of
+main Erigon optimisations: "reduce Disk random access".
+"Blocks Execution stage" still does many random reads - this is reason why it's slowest stage. We do not recommend
+running
+multiple genesis syncs on same Disk. If genesis sync passed, then it's fine to run multiple Erigon instances on same
+Disk.
 
 ### Blocks Execution is slow on cloud-network-drives
 

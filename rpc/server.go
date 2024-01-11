@@ -48,7 +48,7 @@ type Server struct {
 	methodAllowList AllowList
 	idgen           func() ID
 	run             int32
-	codecs          mapset.Set // mapset.Set[ServerCodec] requires go 1.20
+	codecs          mapset.Set
 
 	batchConcurrency uint
 	disableStreaming bool
@@ -92,7 +92,7 @@ func (s *Server) RegisterName(name string, receiver interface{}) error {
 //
 // Note that codec options are no longer supported.
 func (s *Server) ServeCodec(codec ServerCodec, options CodecOption) {
-	defer codec.Close()
+	defer codec.close()
 
 	// Don't serve if server is stopped.
 	if atomic.LoadInt32(&s.run) == 0 {
@@ -121,7 +121,7 @@ func (s *Server) serveSingleRequest(ctx context.Context, codec ServerCodec, stre
 	h.allowSubscribe = false
 	defer h.close(io.EOF, nil)
 
-	reqs, batch, err := codec.ReadBatch()
+	reqs, batch, err := codec.readBatch()
 	if err != nil {
 		if err != io.EOF {
 			codec.writeJSON(ctx, errorMessage(&invalidMessageError{"parse error"}))
@@ -146,7 +146,7 @@ func (s *Server) Stop() {
 	if atomic.CompareAndSwapInt32(&s.run, 1, 0) {
 		s.logger.Info("RPC server shutting down")
 		s.codecs.Each(func(c interface{}) bool {
-			c.(ServerCodec).Close()
+			c.(ServerCodec).close()
 			return true
 		})
 	}

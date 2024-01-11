@@ -10,9 +10,9 @@ import (
 )
 
 type Eth1Data struct {
-	Root         libcommon.Hash `json:"deposit_root"`
-	DepositCount uint64         `json:"deposit_count"`
-	BlockHash    libcommon.Hash `json:"block_hash"`
+	Root         libcommon.Hash
+	DepositCount uint64
+	BlockHash    libcommon.Hash
 }
 
 func (e *Eth1Data) Copy() *Eth1Data {
