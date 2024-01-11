@@ -125,6 +125,11 @@ func WriteGenesisBlock(tx kv.RwTx, genesis *types.Genesis, overrideShanghaiTime,
 				}
 			} else if config.ChainID.Cmp(params.OptimismMainnetChainConfig.ChainID) == 0 {
 				config.RegolithTime = params.OptimismMainnetChainConfig.RegolithTime
+				if overrideOptimismCanyonTime == nil {
+					// fall back to default hardfork time
+					config.ShanghaiTime = params.OptimismMainnetChainConfig.ShanghaiTime
+					config.CanyonTime = params.OptimismMainnetChainConfig.CanyonTime
+				}
 			}
 		}
 	}

@@ -22,5 +22,7 @@
         "eip1559Elasticity": 6,
         "eip1559Denominator": 50
     },
-    "regolithTime": 0
+    "regolithTime": 0,
+    "shanghaiTime": 1704992401,
+    "canyonTime": 1704992401
 }
