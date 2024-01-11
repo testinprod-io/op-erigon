@@ -716,6 +716,8 @@ func GenesisBlockByChainName(chain string) *types.Genesis {
 	}
 }
 
+// loadOPStackGenesisByChainName loads genesis block corresponding to the chain name from superchain regsitry.
+// This implementation is based on op-geth(https://github.com/ethereum-optimism/op-geth/blob/c7871bc4454ffc924eb128fa492975b30c9c46ad/core/superchain.go#L13)
 func loadOPStackGenesisByChainName(name string) (*types.Genesis, error) {
 	opStackChainCfg := params.OPStackChainConfigByName(name)
 	if opStackChainCfg == nil {

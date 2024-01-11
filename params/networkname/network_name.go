@@ -22,7 +22,6 @@ const (
 	LegacyOPGoerliChainName  = "optimism-goerli"
 )
 
-// OPMainnetChainName is excluded due to genesis alloc mismatch:
 var All = []string{
 	MainnetChainName,
 	HoleskyChainName,

@@ -37,6 +37,8 @@ var (
 	chaosnetRegolithTime = big.NewInt(1692156862)
 )
 
+// OPStackChainConfigByName loads chain config corresponding to the chain name from superchain registry.
+// This implementation is based on optimism monorepo(https://github.com/ethereum-optimism/optimism/blob/op-node/v1.4.1/op-node/chaincfg/chains.go#L59)
 func OPStackChainConfigByName(name string) *superchain.ChainConfig {
 	// Handle legacy name aliases
 	name = networkname.HandleLegacyName(name)
@@ -48,6 +50,7 @@ func OPStackChainConfigByName(name string) *superchain.ChainConfig {
 	return nil
 }
 
+// OPStackChainConfigByGenesisHash loads chain config corresponding to the genesis hash from superchain registry.
 func OPStackChainConfigByGenesisHash(genesisHash common.Hash) *superchain.ChainConfig {
 	for _, chainCfg := range superchain.OPChains {
 		if bytes.Equal(chainCfg.Genesis.L2.Hash[:], genesisHash.Bytes()) {
@@ -57,6 +60,7 @@ func OPStackChainConfigByGenesisHash(genesisHash common.Hash) *superchain.ChainC
 	return nil
 }
 
+// ChainConfigByOpStackChainName loads chain config corresponding to the chain name from superchain registry, and builds erigon chain config.
 func ChainConfigByOpStackChainName(name string) *chain.Config {
 	opStackChainCfg := OPStackChainConfigByName(name)
 	if opStackChainCfg == nil {
@@ -65,6 +69,7 @@ func ChainConfigByOpStackChainName(name string) *chain.Config {
 	return LoadSuperChainConfig(opStackChainCfg)
 }
 
+// ChainConfigByOpStackGenesisHash loads chain config corresponding to the genesis hash from superchain registry, and builds erigon chain config.
 func ChainConfigByOpStackGenesisHash(genesisHash common.Hash) *chain.Config {
 	opStackChainCfg := OPStackChainConfigByGenesisHash(genesisHash)
 	if opStackChainCfg == nil {
@@ -73,6 +78,8 @@ func ChainConfigByOpStackGenesisHash(genesisHash common.Hash) *chain.Config {
 	return LoadSuperChainConfig(opStackChainCfg)
 }
 
+// LoadSuperChainConfig loads superchain config from superchain registry for given chain, and builds erigon chain config.
+// This implementation is based on op-geth(https://github.com/ethereum-optimism/op-geth/blob/c7871bc4454ffc924eb128fa492975b30c9c46ad/params/superchain.go#L39)
 func LoadSuperChainConfig(opStackChainCfg *superchain.ChainConfig) *chain.Config {
 	superchainConfig, ok := superchain.Superchains[opStackChainCfg.Superchain]
 	if !ok {
