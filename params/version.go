@@ -44,7 +44,7 @@ const (
 const (
 	OPVersionMajor    = 0          // Major version component of the current release
 	OPVersionMinor    = 2          // Minor version component of the current release
-	OPVersionMicro    = 0          // Patch version component of the current release
+	OPVersionMicro    = 1          // Patch version component of the current release
 	OPVersionModifier = "unstable" // Version metadata to append to the version string
 )
 
