@@ -36,8 +36,6 @@ var All = []string{
 	OPDevnetChainName,
 }
 
-// core/allocs/optimism_mainnet.json is empty because its size is too big > 300MB
-
 func HandleLegacyName(name string) string {
 	switch name {
 	case LegacyOPDevnetChainName:
