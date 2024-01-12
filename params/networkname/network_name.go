@@ -13,9 +13,13 @@ const (
 	BorE2ETestChain2ValName = "bor-e2e-test-2Val"
 	ChiadoChainName         = "chiado"
 
-	OptimismDevnetChainName  = "optimism-devnet"
-	OptimismMainnetChainName = "optimism-mainnet"
-	OptimismGoerliChainName  = "optimism-goerli"
+	OPDevnetChainName  = "op-devnet"
+	OPMainnetChainName = "op-mainnet"
+	OPGoerliChainName  = "op-goerli"
+
+	LegacyOPDevnetChainName  = "optimism-devnet"
+	LegacyOPMainnetChainName = "optimism-mainnet"
+	LegacyOPGoerliChainName  = "optimism-goerli"
 )
 
 var All = []string{
@@ -28,9 +32,19 @@ var All = []string{
 	BorDevnetChainName,
 	GnosisChainName,
 	ChiadoChainName,
-	OptimismGoerliChainName,
-	OptimismDevnetChainName,
+	OPGoerliChainName,
+	OPDevnetChainName,
 }
 
-// OptimismMainnetChainName is excluded due to genesis alloc mismatch:
-// core/allocs/optimism_mainnet.json is empty because its size is too big > 300MB
+func HandleLegacyName(name string) string {
+	switch name {
+	case LegacyOPDevnetChainName:
+		return OPDevnetChainName
+	case LegacyOPGoerliChainName:
+		return OPGoerliChainName
+	case LegacyOPMainnetChainName:
+		return OPMainnetChainName
+	default:
+		return name
+	}
+}

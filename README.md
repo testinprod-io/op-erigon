@@ -47,15 +47,13 @@ You can use every flag erigon has. But there are some required flags and newly a
 
 ### `--datadir`
 **[Required]**
-op-erigon cannot execute state transition before the bedrock update. So preconfigured data file is required to run the node. It includes blocks and states of the pre-bedrock chain.
+op-erigon cannot execute state transition before the bedrock update. So if the chain was created before bedrock update, preconfigured data file is required to run the node. It includes blocks and states of the pre-bedrock chain.
 
 You can download the chain data from following links:
 - Optimism Mainnet:
   - [https://op-erigon-backup.mainnet.testinprod.io](https://op-erigon-backup.mainnet.testinprod.io)
   - Compressed: 115 GB, Uncompressed: 380 GB.
-- Optimism Goerli Testnet
-  - [https://op-erigon-backup.goerli.testinprod.io](https://op-erigon-backup.goerli.testinprod.io)
-  - Compressed: 4.7 GB, Uncompressed: 14 GB.
+  - Including blocks up to [105235064](https://optimistic.etherscan.io/block/105235064) (June 2023)
 
 ### `--externalcl`
 **[Deprecated]**
@@ -71,13 +69,13 @@ Authenticated RPC configs that specify engine API connection info for the consen
 **[New flag / Optional]** 
 HTTP endpoint of the sequencer. op-erigon will route `eth_sendRawTransaction` calls to this URL. This is **required** for transaction submission since Bedrock does not currently have a public mempool. Refer to the documentation for the network you are participating in to get the correct URL.
 
-For the Optimism Mainnet, set the sequencer endpoint: `https://mainnet-sequencer.optimism.io`.
+For the OP-Mainnet, set the sequencer endpoint: `https://mainnet-sequencer.optimism.io`.
 
-For the Optimism Goerli Testnet, set the sequencer endpoint: `https://goerli-sequencer.optimism.io`
+For the OP-Sepolia Testnet, set the sequencer endpoint: `https://sepolia-sequencer.optimism.io`
 
 ### `--rollup.historicalrpc`
 **[New flag / Optional]** 
-The historical RPC endpoint. op-erigon queries historical execution data that op-erigon does not support to historical RPC—for example, pre-bedrock executions. For Optimism Goerli Testnet, please set this value to the Legacy Geth endpoint.
+The historical RPC endpoint. op-erigon queries historical execution data that op-erigon does not support to historical RPC—for example, pre-bedrock executions. For OP-Sepolia Testnet, please set this value to the Legacy Geth endpoint.
 
 For more information about legacy geth, refer the [Optimism's node operator guide](https://community.optimism.io/docs/developers/bedrock/node-operator-guide/#legacy-geth).
 
@@ -89,9 +87,15 @@ Disables transaction pool gossiping. Though this is not required, it's useful to
 **[Optional]** 
 Disable P2P. Execution-layer peering is currently not supported in the Optimism protocol. Though this is not required, it saves resources since TX pool gossip is currently not available.
 
+## Support Chains
+op-erigon supports every OP Stack chains listed in [superchain-registry](https://github.com/ethereum-optimism/superchain-registry).
+You can config any superchain easily by setting `--chain` flag with the chain name written in the superchain registry, in lowercase. (e.g. `op-mainnet`, `base-sepolia`, etc.)
+### Caution
+If the chain was created before bedrock update, you need to download **pre-bedrock chain data**. See the following example to sync op-mainnet!
+
 ## Example: Running An Optimism Mainnet Node
-### 1. Download and decompress the chain data
-You can download the preconfigured chain data from [https://op-erigon-backup.mainnet.testinprod.io](https://op-erigon-backup.mainnet.testinprod.io). Compressed: 115 GB, Uncompressed: 380 GB.
+### 1. Download and decompress the pre-bedrock chain data
+You can download the pre-bedrock chain data from [https://op-erigon-backup.mainnet.testinprod.io](https://op-erigon-backup.mainnet.testinprod.io). Compressed: 115 GB, Uncompressed: 380 GB.
 ```bash
 wget -c -O "backup.tar.gz" https://op-erigon-backup.mainnet.testinprod.io
 tar -zxvf backup.tar.gz
@@ -125,7 +129,7 @@ $ ./build/bin/erigon \
     --rollup.sequencerhttp="https://mainnet-sequencer.optimism.io" \
     --rollup.historicalrpc="https://mainnet.optimism.io" \
     --rollup.disabletxpoolgossip=true \
-    --chain=optimism-mainnet \
+    --chain=op-mainnet \
     --nodiscover
 ```
 2. Use the Docker image: You can get the official Docker image from [testinprod/op-erigon](https://hub.docker.com/r/testinprod/op-erigon).
@@ -140,7 +144,7 @@ $ op-node \
     --l1=$L1_RPC_ENDPOINT \
     --l2=$OP_ERIGON_ENGINE_API_ENDPOINT \
     --l2.jwt-secret=$JWT_SECRET_FILE \
-    --network=mainnet \
+    --network=op-mainnet \
     --rpc.addr=0.0.0.0 \
     --rpc.port=9545
 ```

@@ -18,6 +18,7 @@ import (
 	account_services "github.com/ledgerwatch/erigon/cmd/devnet/services/accounts"
 	"github.com/ledgerwatch/erigon/cmd/devnet/services/polygon"
 	"github.com/ledgerwatch/erigon/cmd/devnet/transactions"
+	"github.com/ledgerwatch/erigon/cmd/utils"
 	"github.com/ledgerwatch/erigon/core/types"
 
 	"github.com/ledgerwatch/erigon-lib/common/metrics"
@@ -233,7 +234,7 @@ func action(ctx *cli.Context) error {
 		}()
 	}
 
-	if ctx.String(ChainFlag.Name) == networkname.DevChainName {
+	if utils.GetChainNameFromFlag(ctx) == networkname.DevChainName {
 		transactions.MaxNumberOfEmptyBlockChecks = 30
 	}
 
@@ -304,7 +305,7 @@ func action(ctx *cli.Context) error {
 
 func initDevnet(ctx *cli.Context, logger log.Logger) (devnet.Devnet, error) {
 	dataDir := ctx.String(DataDirFlag.Name)
-	chain := ctx.String(ChainFlag.Name)
+	chain := utils.GetChainNameFromFlag(ctx)
 
 	faucetSource := accounts.NewAccount("faucet-source")
 

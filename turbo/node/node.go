@@ -65,7 +65,7 @@ type Params struct {
 
 func NewNodConfigUrfave(ctx *cli.Context, logger log.Logger) *nodecfg.Config {
 	// If we're running a known preset, log it for convenience.
-	chain := ctx.String(utils.ChainFlag.Name)
+	chain := networkname.HandleLegacyName(ctx.String(utils.ChainFlag.Name))
 	switch chain {
 	case networkname.HoleskyChainName:
 		logger.Info("Starting Erigon on Holesky testnet...")
@@ -81,18 +81,12 @@ func NewNodConfigUrfave(ctx *cli.Context, logger log.Logger) *nodecfg.Config {
 		logger.Info("Starting Erigon on Bor Mainnet...")
 	case networkname.BorDevnetChainName:
 		logger.Info("Starting Erigon on Bor Devnet...")
-	case networkname.OptimismMainnetChainName:
-		logger.Info("Starting Erigon on Optimism Mainnet...")
-	case networkname.OptimismDevnetChainName:
-		logger.Info("Starting Erigon on Optimism Devnet...")
-	case networkname.OptimismGoerliChainName:
-		logger.Info("Starting Erigon on Optimism Görli testnet...")
 	case "", networkname.MainnetChainName:
 		if !ctx.IsSet(utils.NetworkIdFlag.Name) {
 			logger.Info("Starting Erigon on Ethereum mainnet...")
 		}
 	default:
-		logger.Info("Starting Erigon on", "devnet", chain)
+		logger.Info("Starting Erigon on", "chain", chain)
 	}
 
 	nodeConfig := NewNodeConfig()

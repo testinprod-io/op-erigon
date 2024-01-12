@@ -119,8 +119,6 @@ def:
             - "params/config.go"
             - "core/genesis.go"
             - "params/networkname/network_name.go"
-            - "params/chainspecs/optimism-goerli.json"
-            - "core/allocs/optimism-goerli.json"
     - title: "User API enhancements"
       description: |
         Encode the Deposit Tx properties, the L1 costs, and daisy-chain RPC-calls for pre-Bedrock historical data
