@@ -2,7 +2,10 @@ package eth1
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"time"
+
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/gointerfaces"
 	"github.com/ledgerwatch/erigon-lib/gointerfaces/execution"
@@ -72,17 +75,17 @@ func (e *EthereumExecutionModule) UpdateForkChoice(ctx context.Context, req *exe
 	// So we wait at most the amount specified by req.Timeout before just sending out
 	go e.updateForkChoice(ctx, blockHash, safeHash, finalizedHash, outcomeCh)
 
-	// op-node does not support asynchronous forkChoiceUpdated without block building.
-	// Disable asynchronous forkChoiceUpdated for op-erigon
-	//fcuTimer := time.NewTimer(time.Duration(req.Timeout) * time.Millisecond)
+	fcuTimer := time.NewTimer(time.Duration(req.Timeout) * time.Millisecond)
 
 	select {
-	//case <-fcuTimer.C:
-	//	e.logger.Debug("treating forkChoiceUpdated as asynchronous as it is taking too long")
-	//	return &execution.ForkChoiceReceipt{
-	//		LatestValidHash: gointerfaces.ConvertHashToH256(libcommon.Hash{}),
-	//		Status:          execution.ExecutionStatus_Busy,
-	//	}, nil
+	case <-fcuTimer.C:
+		e.logger.Debug("treating forkChoiceUpdated as asynchronous as it is taking too long")
+		// op-node does not handle SYNCING as asynchronous forkChoiceUpdated. must return error.
+		return nil, errors.New("forkChoiceUpdated timeout")
+		//return &execution.ForkChoiceReceipt{
+		//	LatestValidHash: gointerfaces.ConvertHashToH256(libcommon.Hash{}),
+		//	Status:          execution.ExecutionStatus_Busy,
+		//}, nil
 	case outcome := <-outcomeCh:
 		return outcome.receipt, outcome.err
 	}
@@ -102,10 +105,12 @@ func writeForkChoiceHashes(tx kv.RwTx, blockHash, safeHash, finalizedHash libcom
 
 func (e *EthereumExecutionModule) updateForkChoice(ctx context.Context, blockHash, safeHash, finalizedHash libcommon.Hash, outcomeCh chan forkchoiceOutcome) {
 	if !e.semaphore.TryAcquire(1) {
-		sendForkchoiceReceiptWithoutWaiting(outcomeCh, &execution.ForkChoiceReceipt{
-			LatestValidHash: gointerfaces.ConvertHashToH256(libcommon.Hash{}),
-			Status:          execution.ExecutionStatus_Busy,
-		})
+		// op-node does not handle SYNCING as asynchronous forkChoiceUpdated. must return error.
+		sendForkchoiceErrorWithoutWaiting(outcomeCh, errors.New("cannot update forkchoice. execution service is busy"))
+		//sendForkchoiceReceiptWithoutWaiting(outcomeCh, &execution.ForkChoiceReceipt{
+		//	LatestValidHash: gointerfaces.ConvertHashToH256(libcommon.Hash{}),
+		//	Status:          execution.ExecutionStatus_Busy,
+		//})
 		return
 	}
 	defer e.semaphore.Release(1)
