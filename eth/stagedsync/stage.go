@@ -87,6 +87,7 @@ func (u UnwindReason) IsBadBlock() bool {
 var StagedUnwind = UnwindReason{nil, nil}
 var ExecUnwind = UnwindReason{nil, nil}
 var ForkChoice = UnwindReason{nil, nil}
+var OPReorgToAncestor = UnwindReason{nil, nil}
 
 func BadBlock(badBlock libcommon.Hash, err error) UnwindReason {
 	return UnwindReason{&badBlock, err}
