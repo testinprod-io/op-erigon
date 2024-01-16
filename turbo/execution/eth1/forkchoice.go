@@ -80,7 +80,8 @@ func (e *EthereumExecutionModule) UpdateForkChoice(ctx context.Context, req *exe
 	select {
 	case <-fcuTimer.C:
 		e.logger.Debug("treating forkChoiceUpdated as asynchronous as it is taking too long")
-		// op-node does not handle SYNCING as asynchronous forkChoiceUpdated. must return error.
+		// op-node does not handle SYNCING as asynchronous forkChoiceUpdated.
+		// return an error and make op-node retry
 		return nil, errors.New("forkChoiceUpdated timeout")
 		//return &execution.ForkChoiceReceipt{
 		//	LatestValidHash: gointerfaces.ConvertHashToH256(libcommon.Hash{}),
@@ -105,7 +106,8 @@ func writeForkChoiceHashes(tx kv.RwTx, blockHash, safeHash, finalizedHash libcom
 
 func (e *EthereumExecutionModule) updateForkChoice(ctx context.Context, blockHash, safeHash, finalizedHash libcommon.Hash, outcomeCh chan forkchoiceOutcome) {
 	if !e.semaphore.TryAcquire(1) {
-		// op-node does not handle SYNCING as asynchronous forkChoiceUpdated. must return error.
+		// op-node does not handle SYNCING as asynchronous forkChoiceUpdated.
+		// return an error and make op-node retry
 		sendForkchoiceErrorWithoutWaiting(outcomeCh, errors.New("cannot update forkchoice. execution service is busy"))
 		//sendForkchoiceReceiptWithoutWaiting(outcomeCh, &execution.ForkChoiceReceipt{
 		//	LatestValidHash: gointerfaces.ConvertHashToH256(libcommon.Hash{}),
