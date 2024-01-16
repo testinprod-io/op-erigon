@@ -131,6 +131,7 @@ func RootCommand() (*cobra.Command, *httpcfg.HttpCfg) {
 	rootCmd.PersistentFlags().StringVar(&cfg.RollupHistoricalRPC, utils.RollupHistoricalRPCFlag.Name, "", "RPC endpoint for historical data")
 	rootCmd.PersistentFlags().DurationVar(&cfg.RollupHistoricalRPCTimeout, utils.RollupHistoricalRPCTimeoutFlag.Name, rpccfg.DefaultHistoricalRPCTimeout, "Timeout for historical RPC requests")
 
+	rootCmd.PersistentFlags().BoolVar(&cfg.AllowUnprotectedTxs, utils.AllowUnprotectedTxs.Name, utils.AllowUnprotectedTxs.Value, utils.AllowUnprotectedTxs.Usage)
 	rootCmd.PersistentFlags().Uint64Var(&cfg.OtsMaxPageSize, utils.OtsSearchMaxCapFlag.Name, utils.OtsSearchMaxCapFlag.Value, utils.OtsSearchMaxCapFlag.Usage)
 
 	if err := rootCmd.MarkPersistentFlagFilename("rpc.accessList", "json"); err != nil {
@@ -487,7 +488,7 @@ func RemoteServices(ctx context.Context, cfg httpcfg.HttpCfg, logger log.Logger,
 				}
 				// Skip the compatibility check, until we have a schema in erigon-lib
 
-				engine = bor.NewRo(borKv, blockReader,
+				engine = bor.NewRo(cc, borKv, blockReader,
 					span.NewChainSpanner(contract.ValidatorSet(), cc, true, logger),
 					contract.NewGenesisContractsClient(cc, cc.Bor.ValidatorContract, cc.Bor.StateReceiverContract, logger), logger)
 
@@ -831,7 +832,7 @@ func (e *remoteConsensusEngine) init(db kv.RoDB, blockReader services.FullBlockR
 			return false
 		}
 
-		e.engine = bor.NewRo(borKv, blockReader,
+		e.engine = bor.NewRo(cc, borKv, blockReader,
 			span.NewChainSpanner(contract.ValidatorSet(), cc, true, logger),
 			contract.NewGenesisContractsClient(cc, cc.Bor.ValidatorContract, cc.Bor.StateReceiverContract, logger), logger)
 	} else {
