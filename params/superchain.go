@@ -107,8 +107,8 @@ func LoadSuperChainConfig(opStackChainCfg *superchain.ChainConfig) *chain.Config
 		ArrowGlacierBlock:             common.Big0,
 		GrayGlacierBlock:              common.Big0,
 		MergeNetsplitBlock:            common.Big0,
-		ShanghaiTime:                  new(big.Int).SetUint64(*superchainConfig.Config.CanyonTime),  // Shanghai activates with Canyon
-		CancunTime:                    new(big.Int).SetUint64(*superchainConfig.Config.EcotoneTime), // CancunTime activates with Ecotone
+		ShanghaiTime:                  nil,
+		CancunTime:                    nil,
 		PragueTime:                    nil,
 		BedrockBlock:                  common.Big0,
 		RegolithTime:                  big.NewInt(0),
@@ -122,6 +122,13 @@ func LoadSuperChainConfig(opStackChainCfg *superchain.ChainConfig) *chain.Config
 			EIP1559Denominator:       50,
 			EIP1559DenominatorCanyon: 250,
 		},
+	}
+
+	if superchainConfig.Config.CanyonTime != nil {
+		out.ShanghaiTime = new(big.Int).SetUint64(*superchainConfig.Config.CanyonTime) // Shanghai activates with Canyon
+	}
+	if superchainConfig.Config.EcotoneTime != nil {
+		out.CancunTime = new(big.Int).SetUint64(*superchainConfig.Config.EcotoneTime) // CancunTime activates with Ecotone
 	}
 
 	// note: no actual parameters are being loaded, yet.
