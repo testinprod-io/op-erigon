@@ -825,6 +825,9 @@ func (p *TxPool) validateTx(txn *types.TxSlot, isLocal bool, stateCache kvcache.
 	if txn.Type == types.DepositTxType {
 		return txpoolcfg.TxTypeNotSupported
 	}
+	if p.cfg.Optimism && txn.Type == types.BlobTxType {
+		return txpoolcfg.TxTypeNotSupported
+	}
 
 	isShanghai := p.isShanghai()
 	if isShanghai {

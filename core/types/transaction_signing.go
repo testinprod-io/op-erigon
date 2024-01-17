@@ -45,7 +45,7 @@ func MakeSigner(config *chain.Config, blockNumber uint64, blockTime uint64) *Sig
 	}
 	signer.unprotected = true
 	switch {
-	case config.IsCancun(blockTime):
+	case config.IsCancun(blockTime) && !config.IsOptimism():
 		// All transaction types are still supported
 		signer.protected = true
 		signer.accessList = true
@@ -100,7 +100,7 @@ func LatestSigner(config *chain.Config) *Signer {
 	signer.chainID.Set(chainId)
 	signer.chainIDMul.Mul(chainId, u256.Num2)
 	if config.ChainID != nil {
-		if config.CancunTime != nil {
+		if config.CancunTime != nil && !config.IsOptimism() {
 			signer.blob = true
 		}
 		if config.LondonBlock != nil {

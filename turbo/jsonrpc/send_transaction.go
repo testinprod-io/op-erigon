@@ -23,6 +23,24 @@ func (api *APIImpl) SendRawTransaction(ctx context.Context, encodedTx hexutility
 		return common.Hash{}, err
 	}
 
+	// this has been moved to prior to adding of transactions to capture the
+	// pre state of the db - which is used for logging in the messages below
+	tx, err := api.db.BeginRo(ctx)
+	if err != nil {
+		return common.Hash{}, err
+	}
+
+	defer tx.Rollback()
+
+	cc, err := api.chainConfig(tx)
+	if err != nil {
+		return common.Hash{}, err
+	}
+
+	if cc.IsOptimism() && txn.Type() == types.BlobTxType {
+		return common.Hash{}, types.ErrTxTypeNotSupported
+	}
+
 	if api.seqRPCService != nil {
 		if err := api.seqRPCService.CallContext(ctx, nil, "eth_sendRawTransaction", hexutil.Encode(encodedTx)); err != nil {
 			return common.Hash{}, err
@@ -37,20 +55,6 @@ func (api *APIImpl) SendRawTransaction(ctx context.Context, encodedTx hexutility
 	}
 	if !txn.Protected() && !api.AllowUnprotectedTxs {
 		return common.Hash{}, errors.New("only replay-protected (EIP-155) transactions allowed over RPC")
-	}
-
-	// this has been moved to prior to adding of transactions to capture the
-	// pre state of the db - which is used for logging in the messages below
-	tx, err := api.db.BeginRo(ctx)
-	if err != nil {
-		return common.Hash{}, err
-	}
-
-	defer tx.Rollback()
-
-	cc, err := api.chainConfig(tx)
-	if err != nil {
-		return common.Hash{}, err
 	}
 
 	if txn.Protected() {

@@ -107,8 +107,8 @@ func LoadSuperChainConfig(opStackChainCfg *superchain.ChainConfig) *chain.Config
 		ArrowGlacierBlock:             common.Big0,
 		GrayGlacierBlock:              common.Big0,
 		MergeNetsplitBlock:            common.Big0,
-		ShanghaiTime:                  new(big.Int).SetUint64(*superchainConfig.Config.CanyonTime), // Shanghai activates with Canyon
-		CancunTime:                    nil,
+		ShanghaiTime:                  new(big.Int).SetUint64(*superchainConfig.Config.CanyonTime),  // Shanghai activates with Canyon
+		CancunTime:                    new(big.Int).SetUint64(*superchainConfig.Config.EcotoneTime), // CancunTime activates with Ecotone
 		PragueTime:                    nil,
 		BedrockBlock:                  common.Big0,
 		RegolithTime:                  big.NewInt(0),
