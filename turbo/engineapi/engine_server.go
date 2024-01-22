@@ -425,7 +425,10 @@ func (s *EngineServer) getPayload(ctx context.Context, payloadId uint64, version
 		BlockValue:       (*hexutil.Big)(gointerfaces.ConvertH256ToUint256Int(data.BlockValue).ToBig()),
 		BlobsBundle:      engine_types.ConvertBlobsFromRpc(data.BlobsBundle),
 	}
-	if s.config.IsCancun(ts) && version >= clparams.DenebVersion {
+	if s.config.IsOptimism() && s.config.IsCancun(ts) && version >= clparams.DenebVersion {
+		if data.ParentBeaconBlockRoot == nil {
+			panic("missing ParentBeaconBlockRoot in Cancun block")
+		}
 		parentBeaconBlockRoot := libcommon.Hash(gointerfaces.ConvertH256ToHash(data.ParentBeaconBlockRoot))
 		response.ParentBeaconBlockRoot = &parentBeaconBlockRoot
 	}
