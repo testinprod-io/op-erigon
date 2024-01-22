@@ -1729,7 +1729,7 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 
 	if ctx.IsSet(OverrideCancunFlag.Name) {
 		cfg.OverrideCancunTime = flags.GlobalBig(ctx, OverrideCancunFlag.Name)
-		cfg.TxPool.OverrideCancunTime = cfg.OverrideCancunTime
+
 	}
 	if ctx.IsSet(OverrideShanghaiTime.Name) {
 		cfg.OverrideShanghaiTime = flags.GlobalBig(ctx, OverrideShanghaiTime.Name)
@@ -1754,6 +1754,7 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 		cfg.OverrideOptimismEcotoneTime = flags.GlobalBig(ctx, OverrideOptimismEcotoneFlag.Name)
 		// Cancun hardfork is included in Ecotone hardfork
 		cfg.OverrideCancunTime = flags.GlobalBig(ctx, OverrideOptimismEcotoneFlag.Name)
+		cfg.TxPool.OverrideCancunTime = flags.GlobalBig(ctx, OverrideOptimismEcotoneFlag.Name)
 	}
 	if ctx.IsSet(OverrideCancunFlag.Name) && ctx.IsSet(OverrideOptimismEcotoneFlag.Name) {
 		overrideCancunTime := flags.GlobalBig(ctx, OverrideCancunFlag.Name)
