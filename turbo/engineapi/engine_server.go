@@ -427,7 +427,7 @@ func (s *EngineServer) getPayload(ctx context.Context, payloadId uint64, version
 	}
 	if s.config.IsOptimism() && s.config.IsCancun(ts) && version >= clparams.DenebVersion {
 		if data.ParentBeaconBlockRoot == nil {
-			panic("missing ParentBeaconBlockRoot in Cancun block")
+			panic("missing ParentBeaconBlockRoot in Ecotone block")
 		}
 		parentBeaconBlockRoot := libcommon.Hash(gointerfaces.ConvertH256ToHash(data.ParentBeaconBlockRoot))
 		response.ParentBeaconBlockRoot = &parentBeaconBlockRoot
