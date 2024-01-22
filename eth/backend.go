@@ -328,6 +328,9 @@ func New(stack *node.Node, config *ethconfig.Config, logger log.Logger) (*Ethere
 		if chainConfig.CanyonTime == nil {
 			log.Warn("Optimism CanyonTime has not been set")
 		}
+		if chainConfig.EcotoneTime == nil {
+			log.Warn("Optimism EcotoneTime has not been set")
+		}
 	}
 
 	if err := backend.setUpSnapDownloader(ctx, config.Downloader); err != nil {
