@@ -146,8 +146,8 @@ func (tm *TransactionMisc) computeRollupGas(tx interface {
 		log.Error("failed to encode tx for L1 cost computation", "err", err)
 	}
 	total := RollupCostData{
-		Zeroes: c.zeroes,
-		Ones:   c.ones,
+		zeroes: c.zeroes,
+		ones:   c.ones,
 	}
 	tm.rollupGas.Store(total)
 	return total
@@ -655,10 +655,10 @@ func (m *Message) ChangeGas(globalGasCap, desiredGas uint64) {
 	m.gasLimit = gas
 }
 
-func (m Message) IsSystemTx() bool              { return m.isSystemTx }
-func (m Message) IsDepositTx() bool             { return m.isDepositTx }
-func (m Message) Mint() *uint256.Int            { return m.mint }
-func (m Message) RollupDataGas() RollupCostData { return m.l1CostGas }
+func (m Message) IsSystemTx() bool               { return m.isSystemTx }
+func (m Message) IsDepositTx() bool              { return m.isDepositTx }
+func (m Message) Mint() *uint256.Int             { return m.mint }
+func (m Message) RollupCostData() RollupCostData { return m.l1CostGas }
 
 func (m Message) BlobGas() uint64 { return fixedgas.BlobGasPerBlob * uint64(len(m.blobHashes)) }
 
