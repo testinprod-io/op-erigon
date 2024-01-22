@@ -16,6 +16,7 @@ import (
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/holiman/uint256"
+	"github.com/ledgerwatch/erigon-lib/kv/membatch"
 	"github.com/ledgerwatch/log/v3"
 	"golang.org/x/net/context"
 
@@ -23,7 +24,6 @@ import (
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/fixedgas"
 	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon-lib/kv/memdb"
 	types2 "github.com/ledgerwatch/erigon-lib/types"
 
 	"github.com/ledgerwatch/erigon/consensus"
@@ -135,8 +135,11 @@ func SpawnMiningExecStage(s *StageState, tx kv.RwTx, cfg MiningExecCfg, quit <-c
 		} else if !cfg.noTxPool {
 
 			yielded := mapset.NewSet[[32]byte]()
-			simulationTx := memdb.NewMemoryBatch(tx, cfg.tmpdir)
-			defer simulationTx.Rollback()
+			var simulationTx kv.StatelessRwTx
+			m := membatch.NewHashBatch(tx, quit, cfg.tmpdir, logger)
+			defer m.Close()
+			simulationTx = m
+
 			executionAt, err := s.ExecutionAt(tx)
 			if err != nil {
 				return err
@@ -200,7 +203,7 @@ func getNextTransactions(
 	header *types.Header,
 	amount uint16,
 	executionAt uint64,
-	simulationTx *memdb.MemoryMutation,
+	simulationTx kv.StatelessRwTx,
 	alreadyYielded mapset.Set[[32]byte],
 	logger log.Logger,
 ) (types.TransactionsStream, int, error) {
@@ -257,7 +260,7 @@ func getNextTransactions(
 	return types.NewTransactionsFixedOrder(txs), count, nil
 }
 
-func filterBadTransactions(transactions []types.Transaction, config chain.Config, blockNumber uint64, baseFee *big.Int, simulationTx *memdb.MemoryMutation, logger log.Logger) ([]types.Transaction, error) {
+func filterBadTransactions(transactions []types.Transaction, config chain.Config, blockNumber uint64, baseFee *big.Int, simulationTx kv.StatelessRwTx, logger log.Logger) ([]types.Transaction, error) {
 	initialCnt := len(transactions)
 	var filtered []types.Transaction
 	gasBailout := false

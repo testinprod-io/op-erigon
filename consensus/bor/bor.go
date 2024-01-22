@@ -28,6 +28,9 @@ import (
 
 	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/consensus"
+	"github.com/ledgerwatch/erigon/consensus/bor/finality"
+	"github.com/ledgerwatch/erigon/consensus/bor/finality/flags"
+	"github.com/ledgerwatch/erigon/consensus/bor/finality/whitelist"
 	"github.com/ledgerwatch/erigon/consensus/bor/heimdall"
 	"github.com/ledgerwatch/erigon/consensus/bor/heimdall/span"
 	"github.com/ledgerwatch/erigon/consensus/bor/statefull"
@@ -39,9 +42,6 @@ import (
 	"github.com/ledgerwatch/erigon/core/types/accounts"
 	"github.com/ledgerwatch/erigon/crypto"
 	"github.com/ledgerwatch/erigon/crypto/cryptopool"
-	"github.com/ledgerwatch/erigon/eth/borfinality"
-	"github.com/ledgerwatch/erigon/eth/borfinality/flags"
-	"github.com/ledgerwatch/erigon/eth/borfinality/whitelist"
 	"github.com/ledgerwatch/erigon/rlp"
 	"github.com/ledgerwatch/erigon/rpc"
 	"github.com/ledgerwatch/erigon/turbo/services"
@@ -442,12 +442,22 @@ func (w rwWrapper) BeginRwNosync(ctx context.Context) (kv.RwTx, error) {
 }
 
 // This is used by the rpcdaemon which needs read only access to the provided data services
-func NewRo(db kv.RoDB, blockReader services.FullBlockReader, spanner Spanner,
+func NewRo(chainConfig *chain.Config, db kv.RoDB, blockReader services.FullBlockReader, spanner Spanner,
 	genesisContracts GenesisContract, logger log.Logger) *Bor {
+	// get bor config
+	borConfig := chainConfig.Bor
+
+	// Set any missing consensus parameters to their defaults
+	if borConfig != nil && borConfig.CalculateSprint(0) == 0 {
+		borConfig.Sprint = defaultSprintLength
+	}
+
 	recents, _ := lru.NewARC[libcommon.Hash, *Snapshot](inmemorySnapshots)
 	signatures, _ := lru.NewARC[libcommon.Hash, libcommon.Address](inmemorySignatures)
 
 	return &Bor{
+		chainConfig: chainConfig,
+		config:      borConfig,
 		DB:          rwWrapper{db},
 		blockReader: blockReader,
 		logger:      logger,
@@ -1302,7 +1312,7 @@ func (f FinalityAPIFunc) GetRootHash(start uint64, end uint64) (string, error) {
 func (c *Bor) Start(chainDB kv.RwDB) {
 	if flags.Milestone {
 		whitelist.RegisterService(c.DB)
-		borfinality.Whitelist(c.HeimdallClient, c.DB, chainDB, c.blockReader, c.logger,
+		finality.Whitelist(c.HeimdallClient, c.DB, chainDB, c.blockReader, c.logger,
 			FinalityAPIFunc(func(start uint64, end uint64) (string, error) {
 				ctx := context.Background()
 				tx, err := chainDB.BeginRo(ctx)

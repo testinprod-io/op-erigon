@@ -133,7 +133,7 @@ func SpawnMiningCreateBlockStage(s *StageState, tx kv.RwTx, cfg MiningCreateBloc
 				if err = stages.SaveStageProgress(tx, stages.MiningExecution, executionAt); err != nil {
 					return err
 				}
-				s.state.UnwindTo(expectedExecutionAt, libcommon.Hash{})
+				s.state.UnwindTo(expectedExecutionAt, OPReorgToAncestor)
 				return nil
 			}
 			executionAt = expectedExecutionAt
