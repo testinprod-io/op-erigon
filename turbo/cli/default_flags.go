@@ -154,6 +154,7 @@ var DefaultFlags = []cli.Flag{
 	&utils.OverrideCancunFlag,
 	&utils.OverrideShanghaiTime,
 	&utils.OverrideOptimismCanyonFlag,
+	&utils.OverrideOptimismEcotoneFlag,
 	&utils.RollupSequencerHTTPFlag,
 	&utils.RollupHistoricalRPCFlag,
 	&utils.RollupHistoricalRPCTimeoutFlag,
