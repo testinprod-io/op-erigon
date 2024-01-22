@@ -24,11 +24,11 @@ import (
 	"math/big"
 )
 
-type RollupGasData struct {
+type RollupCostData struct {
 	Zeroes, Ones uint64
 }
 
-func (r RollupGasData) DataGas(time uint64, cfg *chain.Config) (gas uint64) {
+func (r RollupCostData) DataGas(time uint64, cfg *chain.Config) (gas uint64) {
 	gas = r.Zeroes * params.TxDataZeroGas
 	if cfg.IsRegolith(time) {
 		gas += r.Ones * params.TxDataNonZeroGasEIP2028
@@ -39,7 +39,7 @@ func (r RollupGasData) DataGas(time uint64, cfg *chain.Config) (gas uint64) {
 }
 
 type RollupMessage interface {
-	RollupDataGas() RollupGasData
+	RollupDataGas() RollupCostData
 	IsDepositTx() bool
 }
 

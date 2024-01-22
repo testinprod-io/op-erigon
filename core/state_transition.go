@@ -92,7 +92,7 @@ type Message interface {
 	Mint() *uint256.Int
 	IsSystemTx() bool
 	IsDepositTx() bool
-	RollupDataGas() types.RollupGasData
+	RollupDataGas() types.RollupCostData
 
 	Nonce() uint64
 	CheckNonce() bool
