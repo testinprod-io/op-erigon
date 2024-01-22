@@ -200,13 +200,18 @@ func (e *EthereumExecutionModule) GetAssembledBlock(ctx context.Context, req *ex
 		}
 	}
 
+	data := execution.AssembledBlockData{
+		ExecutionPayload: payload,
+		BlockValue:       gointerfaces.ConvertUint256IntToH256(blockValue),
+		BlobsBundle:      blobsBundle,
+	}
+
+	if header.ParentBeaconBlockRoot != nil {
+		data.ParentBeaconBlockRoot = gointerfaces.ConvertHashToH256(*header.ParentBeaconBlockRoot)
+	}
+
 	return &execution.GetAssembledBlockResponse{
-		Data: &execution.AssembledBlockData{
-			ExecutionPayload:      payload,
-			BlockValue:            gointerfaces.ConvertUint256IntToH256(blockValue),
-			BlobsBundle:           blobsBundle,
-			ParentBeaconBlockRoot: gointerfaces.ConvertHashToH256(*header.ParentBeaconBlockRoot),
-		},
+		Data: &data,
 		Busy: false,
 	}, nil
 }
