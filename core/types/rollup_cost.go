@@ -138,7 +138,7 @@ func NewL1CostFunc(config *chain.Config, statedb StateGetter) L1CostFunc {
 				var l1BlobBaseFee, l1FeeScalarsInt uint256.Int
 				statedb.GetState(L1BlockAddr, &L1BlobBaseFeeSlot, &l1BlobBaseFee)
 				statedb.GetState(L1BlockAddr, &L1FeeScalarsSlot, &l1FeeScalarsInt)
-				l1FeeScalars := l1FeeScalarsInt.Bytes()
+				l1FeeScalars := l1FeeScalarsInt.Bytes32()
 
 				// Edge case: the very first Ecotone block requires we use the Bedrock cost
 				// function. We detect this scenario by checking if the Ecotone parameters are
