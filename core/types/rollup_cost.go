@@ -99,17 +99,6 @@ type L1CostFunc func(rcd RollupCostData, blockTime uint64) *uint256.Int
 // receipts.
 type l1CostFunc func(rcd RollupCostData) (fee, gasUsed *uint256.Int)
 
-func NewRollupCostData(data []byte) (out RollupCostData) {
-	for _, b := range data {
-		if b == 0 {
-			out.zeroes++
-		} else {
-			out.ones++
-		}
-	}
-	return out
-}
-
 // NewL1CostFunc returns a function used for calculating data availability fees, or nil if this is
 // not an op-stack chain.
 func NewL1CostFunc(config *chain.Config, statedb StateGetter) L1CostFunc {
