@@ -420,11 +420,20 @@ func (s *EngineServer) getPayload(ctx context.Context, payloadId uint64, version
 		return nil, &rpc.UnsupportedForkError{Message: "Unsupported fork"}
 	}
 
-	return &engine_types.GetPayloadResponse{
+	response := engine_types.GetPayloadResponse{
 		ExecutionPayload: engine_types.ConvertPayloadFromRpc(data.ExecutionPayload),
 		BlockValue:       (*hexutil.Big)(gointerfaces.ConvertH256ToUint256Int(data.BlockValue).ToBig()),
 		BlobsBundle:      engine_types.ConvertBlobsFromRpc(data.BlobsBundle),
-	}, nil
+	}
+	if s.config.IsOptimism() && s.config.IsCancun(ts) && version >= clparams.DenebVersion {
+		if data.ParentBeaconBlockRoot == nil {
+			panic("missing ParentBeaconBlockRoot in Ecotone block")
+		}
+		parentBeaconBlockRoot := libcommon.Hash(gointerfaces.ConvertH256ToHash(data.ParentBeaconBlockRoot))
+		response.ParentBeaconBlockRoot = &parentBeaconBlockRoot
+	}
+
+	return &response, nil
 }
 
 // engineForkChoiceUpdated either states new block head or request the assembling of a new block

@@ -92,6 +92,9 @@ type GetPayloadResponse struct {
 	BlockValue            *hexutil.Big      `json:"blockValue"`
 	BlobsBundle           *BlobsBundleV1    `json:"blobsBundle"`
 	ShouldOverrideBuilder bool              `json:"shouldOverrideBuilder"`
+
+	// OP-Stack: Ecotone specific fields
+	ParentBeaconBlockRoot *common.Hash `json:"parentBeaconBlockRoot,omitempty"`
 }
 
 type StringifiedError struct{ err error }
