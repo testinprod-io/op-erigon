@@ -13,7 +13,7 @@ import (
 )
 
 // This file is based on op-geth
-// https://github.com/ethereum-optimism/op-geth/commit/e4177034f5bec308de5b9b53b0bf7b2d9381f4d3
+// https://github.com/ethereum-optimism/op-geth/commit/a290ca164a36c80a8d106d88bd482b6f82220bef
 
 var (
 	basefee  = uint256.NewInt(1000 * 1e6)
