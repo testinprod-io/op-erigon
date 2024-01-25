@@ -312,7 +312,7 @@ func TestCanEncodeAndDecodeBodyTransactions(t *testing.T) {
 		},
 		AccessList: accesses,
 	}
-	sig2 := common.Hex2Bytes("3dbacc8d0259f2508625e97fdfc57cd85fdd16e5821bc2c10bdd1a52649e8335476e10695b183a87b0aa292a7f4b78ef0c3fbe62aa2c42c84e1d9c3da159ef1401")
+	sig2 := libcommon.Hex2Bytes("3dbacc8d0259f2508625e97fdfc57cd85fdd16e5821bc2c10bdd1a52649e8335476e10695b183a87b0aa292a7f4b78ef0c3fbe62aa2c42c84e1d9c3da159ef1401")
 	tx2, _ = tx2.WithSignature(*LatestSignerForChainID(big.NewInt(1)), sig2)
 	// Create DynamicFeeTransaction tx.
 	feeCap, _ := uint256.FromBig(big.NewInt(2))
@@ -328,7 +328,7 @@ func TestCanEncodeAndDecodeBodyTransactions(t *testing.T) {
 		Tip:        u256.Num0,
 		AccessList: accesses,
 	}
-	tx3, _ = tx3.WithSignature(*LatestSignerForChainID(big.NewInt(1)), common.Hex2Bytes("fe38ca4e44a30002ac54af7cf922a6ac2ba11b7d22f548e8ecb3f51f41cb31b06de6a5cbae13c0c856e33acf021b51819636cfc009d39eafb9f606d546e305a800"))
+	tx3, _ = tx3.WithSignature(*LatestSignerForChainID(big.NewInt(1)), libcommon.Hex2Bytes("fe38ca4e44a30002ac54af7cf922a6ac2ba11b7d22f548e8ecb3f51f41cb31b06de6a5cbae13c0c856e33acf021b51819636cfc009d39eafb9f606d546e305a800"))
 	// Create Deposit tx.
 	sourceHash := libcommon.HexToHash("0x89c99d90b79719238d2645c7642f2c9295246e80775b38cfd162b696817fbd50")
 	var tx4 Transaction = &DepositTx{
@@ -353,12 +353,12 @@ func TestCanEncodeAndDecodeBodyTransactions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rlpBytes := common.CopyBytes(writer.Bytes())
+	rlpBytes := libcommon.CopyBytes(writer.Bytes())
 	writer.Reset()
 	writer.WriteString(hexutility.Encode(rlpBytes))
 
 	var resultBody Body
-	fromHex := common.CopyBytes(common.FromHex(writer.String()))
+	fromHex := libcommon.CopyBytes(common.FromHex(writer.String()))
 	bodyReader := bytes.NewReader(fromHex)
 	stream := rlp.NewStream(bodyReader, 0)
 

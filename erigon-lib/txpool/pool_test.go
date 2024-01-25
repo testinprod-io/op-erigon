@@ -952,7 +952,7 @@ func TestDepositTxValidateTx(t *testing.T) {
 
 	shanghaiTime := big.NewInt(0)
 	cache := &kvcache.DummyCache{}
-	pool, err := New(ch, coreDB, cfg, cache, *u256.N1, shanghaiTime, nil, logger)
+	pool, err := New(ch, coreDB, cfg, cache, *u256.N1, shanghaiTime, nil, nil, 0, logger)
 	asrt.NoError(err)
 	ctx := context.Background()
 	tx, err := coreDB.BeginRw(ctx)
@@ -1001,7 +1001,7 @@ func TestDropRemote(t *testing.T) {
 	cfg.NoTxGossip = true
 
 	sendersCache := kvcache.New(kvcache.DefaultCoherentConfig)
-	txPool, err := New(ch, coreDB, cfg, sendersCache, *u256.N1, nil, nil, logger)
+	txPool, err := New(ch, coreDB, cfg, sendersCache, *u256.N1, nil, nil, nil, 0, logger)
 	assert.NoError(err)
 	require.True(txPool != nil)
 	txPoolDropRemote := NewTxPoolDropRemote(txPool)

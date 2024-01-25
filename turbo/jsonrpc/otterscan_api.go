@@ -124,22 +124,22 @@ func (api *OtterscanAPIImpl) relayToHistoricalBackend(ctx context.Context, resul
 func (api *OtterscanAPIImpl) translateCaptureStart(gethTrace *GethTrace, tracer vm.EVMLogger, vmenv *vm.EVM) error {
 	from := common.HexToAddress(gethTrace.From)
 	to := common.HexToAddress(gethTrace.To)
-	input, err := hexutil.Decode(gethTrace.Input)
+	input, err := hexutil2.Decode(gethTrace.Input)
 	if err != nil {
-		if err != hexutil.ErrEmptyString {
+		if err != hexutil2.ErrEmptyString {
 			return err
 		}
 		input = []byte{}
 	}
-	valueBig, err := hexutil.DecodeBig(gethTrace.Value)
+	valueBig, err := hexutil2.DecodeBig(gethTrace.Value)
 	if err != nil {
-		if err != hexutil.ErrEmptyString {
+		if err != hexutil2.ErrEmptyString {
 			return err
 		}
 		valueBig = big.NewInt(0)
 	}
 	value, _ := uint256.FromBig(valueBig)
-	gas, err := hexutil.DecodeUint64(gethTrace.Gas)
+	gas, err := hexutil2.DecodeUint64(gethTrace.Gas)
 	if err != nil {
 		return err
 	}
@@ -174,22 +174,22 @@ func (api *OtterscanAPIImpl) translateOpcode(typStr string) (vm.OpCode, error) {
 func (api *OtterscanAPIImpl) translateCaptureEnter(gethTrace *GethTrace, tracer vm.EVMLogger, vmenv *vm.EVM) error {
 	from := common.HexToAddress(gethTrace.From)
 	to := common.HexToAddress(gethTrace.To)
-	input, err := hexutil.Decode(gethTrace.Input)
+	input, err := hexutil2.Decode(gethTrace.Input)
 	if err != nil {
-		if err != hexutil.ErrEmptyString {
+		if err != hexutil2.ErrEmptyString {
 			return err
 		}
 		input = []byte{}
 	}
-	valueBig, err := hexutil.DecodeBig(gethTrace.Value)
+	valueBig, err := hexutil2.DecodeBig(gethTrace.Value)
 	if err != nil {
-		if err != hexutil.ErrEmptyString {
+		if err != hexutil2.ErrEmptyString {
 			return err
 		}
 		valueBig = big.NewInt(0)
 	}
 	value, _ := uint256.FromBig(valueBig)
-	gas, err := hexutil.DecodeUint64(gethTrace.Gas)
+	gas, err := hexutil2.DecodeUint64(gethTrace.Gas)
 	if err != nil {
 		return err
 	}
@@ -204,13 +204,13 @@ func (api *OtterscanAPIImpl) translateCaptureEnter(gethTrace *GethTrace, tracer 
 }
 
 func (api *OtterscanAPIImpl) translateCaptureExit(gethTrace *GethTrace, tracer vm.EVMLogger) error {
-	usedGas, err := hexutil.DecodeUint64(gethTrace.GasUsed)
+	usedGas, err := hexutil2.DecodeUint64(gethTrace.GasUsed)
 	if err != nil {
 		return err
 	}
-	output, err := hexutil.Decode(gethTrace.Output)
+	output, err := hexutil2.Decode(gethTrace.Output)
 	if err != nil {
-		if err != hexutil.ErrEmptyString {
+		if err != hexutil2.ErrEmptyString {
 			return err
 		}
 		output = []byte{}
@@ -309,13 +309,13 @@ func (api *OtterscanAPIImpl) runTracer(ctx context.Context, tx kv.Tx, hash commo
 				return nil, err
 			}
 		}
-		usedGas, err := hexutil.DecodeUint64(treeResult.GasUsed)
+		usedGas, err := hexutil2.DecodeUint64(treeResult.GasUsed)
 		if err != nil {
 			return nil, err
 		}
-		returnData, err := hexutil.Decode(treeResult.Output)
+		returnData, err := hexutil2.Decode(treeResult.Output)
 		if err != nil {
-			if err != hexutil.ErrEmptyString {
+			if err != hexutil2.ErrEmptyString {
 				return nil, err
 			}
 			returnData = []byte{}
