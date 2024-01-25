@@ -14,7 +14,7 @@ import (
 	"github.com/ledgerwatch/erigon-lib/common/dbg"
 	proto_downloader "github.com/ledgerwatch/erigon-lib/gointerfaces/downloader"
 	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon-lib/kv/memdb"
+	"github.com/ledgerwatch/erigon-lib/kv/membatchwithdb"
 	"github.com/ledgerwatch/erigon-lib/state"
 	"github.com/ledgerwatch/erigon/consensus"
 	"github.com/ledgerwatch/erigon/params"
@@ -24,6 +24,7 @@ import (
 	"github.com/ledgerwatch/log/v3"
 
 	"github.com/ledgerwatch/erigon/cmd/sentry/sentry"
+	"github.com/ledgerwatch/erigon/consensus"
 	"github.com/ledgerwatch/erigon/consensus/bor/finality/flags"
 	"github.com/ledgerwatch/erigon/consensus/bor/heimdall"
 	"github.com/ledgerwatch/erigon/consensus/misc"
@@ -35,7 +36,10 @@ import (
 	"github.com/ledgerwatch/erigon/eth/stagedsync"
 	"github.com/ledgerwatch/erigon/eth/stagedsync/stages"
 	"github.com/ledgerwatch/erigon/p2p"
+	"github.com/ledgerwatch/erigon/turbo/engineapi/engine_helpers"
+	"github.com/ledgerwatch/erigon/turbo/services"
 	"github.com/ledgerwatch/erigon/turbo/shards"
+	"github.com/ledgerwatch/erigon/turbo/silkworm"
 	"github.com/ledgerwatch/erigon/turbo/stages/bodydownload"
 	"github.com/ledgerwatch/erigon/turbo/stages/headerdownload"
 )
@@ -265,7 +269,7 @@ func (h *Hook) afterRun(tx kv.Tx, finishProgressBefore uint64) error {
 	blockReader := h.blockReader
 	// -- send notifications START
 	//TODO: can this 2 headers be 1
-	var headHeader, currentHeder *types.Header
+	var headHeader, currentHeader *types.Header
 
 	// Update sentry status for peers to see our sync status
 	var headTd *big.Int
@@ -282,7 +286,7 @@ func (h *Hook) afterRun(tx kv.Tx, finishProgressBefore uint64) error {
 		return err
 	}
 	headHeader = rawdb.ReadHeader(tx, headHash, head)
-	currentHeder = rawdb.ReadCurrentHeader(tx)
+	currentHeader = rawdb.ReadCurrentHeader(tx)
 	finalizedHeaderHash := rawdb.ReadForkchoiceFinalized(tx)
 	if fb := rawdb.ReadHeaderNumber(tx, finalizedHeaderHash); fb != nil {
 		finalizedBlock = *fb
@@ -309,24 +313,23 @@ func (h *Hook) afterRun(tx kv.Tx, finishProgressBefore uint64) error {
 			return nil
 		}
 	}
-	if notifications != nil && notifications.Accumulator != nil && currentHeder != nil {
-		pendingBaseFee := misc.CalcBaseFee(h.chainConfig, currentHeder, 0)
-		if currentHeder.Number.Uint64() == 0 {
-			notifications.Accumulator.StartChange(0, currentHeder.Hash(), nil, false)
+	if notifications != nil && notifications.Accumulator != nil && currentHeader != nil {
+
+		pendingBaseFee := misc.CalcBaseFee(h.chainConfig, currentHeader, 0)
+		if currentHeader.Number.Uint64() == 0 {
+			notifications.Accumulator.StartChange(0, currentHeader.Hash(), nil, false)
 		}
-		var pendingBlobFee uint64 = params.MinBlobGasPrice
-		excessBlobGas := misc.CalcExcessBlobGas(currentHeder)
-		if currentHeder.ExcessBlobGas != nil {
-			f, err := misc.GetBlobGasPrice(excessBlobGas)
+		pendingBlobFee := h.chainConfig.GetMinBlobGasPrice()
+		if currentHeader.ExcessBlobGas != nil {
+			excessBlobGas := misc.CalcExcessBlobGas(h.chainConfig, currentHeader)
+			f, err := misc.GetBlobGasPrice(h.chainConfig, excessBlobGas)
 			if err != nil {
 				return err
 			}
-			if f != nil && f.Cmp(uint256.NewInt(1)) >= 0 {
-				pendingBlobFee = f.Uint64()
-			}
+			pendingBlobFee = f.Uint64()
 		}
 
-		notifications.Accumulator.SendAndReset(h.ctx, notifications.StateChangesConsumer, pendingBaseFee.Uint64(), pendingBlobFee, currentHeder.GasLimit, finalizedBlock)
+		notifications.Accumulator.SendAndReset(h.ctx, notifications.StateChangesConsumer, pendingBaseFee.Uint64(), pendingBlobFee, currentHeader.GasLimit, finalizedBlock)
 	}
 	// -- send notifications END
 	return nil
@@ -345,7 +348,7 @@ func MiningStep(ctx context.Context, kv kv.RwDB, mining *stagedsync.Sync, tmpDir
 	}
 	defer tx.Rollback()
 
-	miningBatch := memdb.NewMemoryBatch(tx, tmpDir)
+	miningBatch := membatchwithdb.NewMemoryBatch(tx, tmpDir)
 	defer miningBatch.Rollback()
 
 	if err = mining.Run(nil, miningBatch, false /* firstCycle */); err != nil {

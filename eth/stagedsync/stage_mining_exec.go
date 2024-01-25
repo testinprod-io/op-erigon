@@ -22,7 +22,6 @@ import (
 
 	"github.com/ledgerwatch/erigon-lib/chain"
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/fixedgas"
 	"github.com/ledgerwatch/erigon-lib/kv"
 	types2 "github.com/ledgerwatch/erigon-lib/types"
 
@@ -217,7 +216,7 @@ func getNextTransactions(
 			remainingGas := header.GasLimit - header.GasUsed
 			remainingBlobGas := uint64(0)
 			if header.BlobGasUsed != nil {
-				remainingBlobGas = fixedgas.MaxBlobGasPerBlock - *header.BlobGasUsed
+				remainingBlobGas = cfg.chainConfig.GetMaxBlobGasPerBlock() - *header.BlobGasUsed
 			}
 			if onTime, count, err = cfg.txPool2.YieldBest(amount, &txSlots, poolTx, executionAt, remainingGas, remainingBlobGas, alreadyYielded); err != nil {
 				return err
@@ -385,7 +384,7 @@ func addTransactionsToMiningBlock(logPrefix string, current *MiningBlock, chainC
 	tcount := 0
 	gasPool := new(core.GasPool).AddGas(header.GasLimit - header.GasUsed)
 	if header.BlobGasUsed != nil {
-		gasPool.AddBlobGas(fixedgas.MaxBlobGasPerBlock - *header.BlobGasUsed)
+		gasPool.AddBlobGas(chainConfig.GetMaxBlobGasPerBlock() - *header.BlobGasUsed)
 	}
 	signer := types.MakeSigner(&chainConfig, header.Number.Uint64(), header.Time)
 

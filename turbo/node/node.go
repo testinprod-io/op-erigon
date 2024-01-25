@@ -4,6 +4,7 @@ package node
 import (
 	"context"
 
+	"github.com/ledgerwatch/erigon-lib/chain/networkname"
 	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon/cmd/utils"
 	"github.com/ledgerwatch/erigon/eth"
@@ -11,7 +12,6 @@ import (
 	"github.com/ledgerwatch/erigon/node"
 	"github.com/ledgerwatch/erigon/node/nodecfg"
 	"github.com/ledgerwatch/erigon/params"
-	"github.com/ledgerwatch/erigon/params/networkname"
 	erigoncli "github.com/ledgerwatch/erigon/turbo/cli"
 	"github.com/ledgerwatch/log/v3"
 	"github.com/urfave/cli/v2"
@@ -118,7 +118,7 @@ func New(
 		utils.Fatalf("Failed to create Erigon node: %v", err)
 	}
 
-	ethereum, err := eth.New(node, ethConfig, logger)
+	ethereum, err := eth.New(ctx, node, ethConfig, logger)
 	if err != nil {
 		return nil, err
 	}
