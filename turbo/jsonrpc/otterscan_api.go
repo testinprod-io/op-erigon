@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	hexutil2 "github.com/ledgerwatch/erigon-lib/common/hexutil"
 	"math/big"
 	"sync"
 
@@ -20,7 +21,6 @@ import (
 	"github.com/ledgerwatch/erigon/core/vm/evmtypes"
 	"github.com/ledgerwatch/erigon/eth/tracers"
 
-	"github.com/ledgerwatch/erigon/common/hexutil"
 	"github.com/ledgerwatch/erigon/consensus/ethash"
 	"github.com/ledgerwatch/erigon/core"
 	"github.com/ledgerwatch/erigon/core/rawdb"
@@ -124,22 +124,22 @@ func (api *OtterscanAPIImpl) relayToHistoricalBackend(ctx context.Context, resul
 func (api *OtterscanAPIImpl) translateCaptureStart(gethTrace *GethTrace, tracer vm.EVMLogger, vmenv *vm.EVM) error {
 	from := common.HexToAddress(gethTrace.From)
 	to := common.HexToAddress(gethTrace.To)
-	input, err := hexutil.Decode(gethTrace.Input)
+	input, err := hexutil2.Decode(gethTrace.Input)
 	if err != nil {
-		if err != hexutil.ErrEmptyString {
+		if err != hexutil2.ErrEmptyString {
 			return err
 		}
 		input = []byte{}
 	}
-	valueBig, err := hexutil.DecodeBig(gethTrace.Value)
+	valueBig, err := hexutil2.DecodeBig(gethTrace.Value)
 	if err != nil {
-		if err != hexutil.ErrEmptyString {
+		if err != hexutil2.ErrEmptyString {
 			return err
 		}
 		valueBig = big.NewInt(0)
 	}
 	value, _ := uint256.FromBig(valueBig)
-	gas, err := hexutil.DecodeUint64(gethTrace.Gas)
+	gas, err := hexutil2.DecodeUint64(gethTrace.Gas)
 	if err != nil {
 		return err
 	}
@@ -174,22 +174,22 @@ func (api *OtterscanAPIImpl) translateOpcode(typStr string) (vm.OpCode, error) {
 func (api *OtterscanAPIImpl) translateCaptureEnter(gethTrace *GethTrace, tracer vm.EVMLogger, vmenv *vm.EVM) error {
 	from := common.HexToAddress(gethTrace.From)
 	to := common.HexToAddress(gethTrace.To)
-	input, err := hexutil.Decode(gethTrace.Input)
+	input, err := hexutil2.Decode(gethTrace.Input)
 	if err != nil {
-		if err != hexutil.ErrEmptyString {
+		if err != hexutil2.ErrEmptyString {
 			return err
 		}
 		input = []byte{}
 	}
-	valueBig, err := hexutil.DecodeBig(gethTrace.Value)
+	valueBig, err := hexutil2.DecodeBig(gethTrace.Value)
 	if err != nil {
-		if err != hexutil.ErrEmptyString {
+		if err != hexutil2.ErrEmptyString {
 			return err
 		}
 		valueBig = big.NewInt(0)
 	}
 	value, _ := uint256.FromBig(valueBig)
-	gas, err := hexutil.DecodeUint64(gethTrace.Gas)
+	gas, err := hexutil2.DecodeUint64(gethTrace.Gas)
 	if err != nil {
 		return err
 	}
@@ -204,13 +204,13 @@ func (api *OtterscanAPIImpl) translateCaptureEnter(gethTrace *GethTrace, tracer 
 }
 
 func (api *OtterscanAPIImpl) translateCaptureExit(gethTrace *GethTrace, tracer vm.EVMLogger) error {
-	usedGas, err := hexutil.DecodeUint64(gethTrace.GasUsed)
+	usedGas, err := hexutil2.DecodeUint64(gethTrace.GasUsed)
 	if err != nil {
 		return err
 	}
-	output, err := hexutil.Decode(gethTrace.Output)
+	output, err := hexutil2.Decode(gethTrace.Output)
 	if err != nil {
-		if err != hexutil.ErrEmptyString {
+		if err != hexutil2.ErrEmptyString {
 			return err
 		}
 		output = []byte{}
@@ -309,13 +309,13 @@ func (api *OtterscanAPIImpl) runTracer(ctx context.Context, tx kv.Tx, hash commo
 				return nil, err
 			}
 		}
-		usedGas, err := hexutil.DecodeUint64(treeResult.GasUsed)
+		usedGas, err := hexutil2.DecodeUint64(treeResult.GasUsed)
 		if err != nil {
 			return nil, err
 		}
-		returnData, err := hexutil.Decode(treeResult.Output)
+		returnData, err := hexutil2.Decode(treeResult.Output)
 		if err != nil {
-			if err != hexutil.ErrEmptyString {
+			if err != hexutil2.ErrEmptyString {
 				return nil, err
 			}
 			returnData = []byte{}
@@ -680,7 +680,7 @@ func (api *OtterscanAPIImpl) traceBlocks(ctx context.Context, addr common.Addres
 	return results[:totalBlocksTraced], hasMore, nil
 }
 
-func (api *OtterscanAPIImpl) delegateGetBlockByNumber(tx kv.Tx, b *types.Block, number rpc.BlockNumber, inclTx bool) (map[string]interface{}, error) {
+func delegateGetBlockByNumber(tx kv.Tx, b *types.Block, number rpc.BlockNumber, inclTx bool) (map[string]interface{}, error) {
 	td, err := rawdb.ReadTd(tx, b.Hash(), b.NumberU64())
 	if err != nil {
 		return nil, err
@@ -691,7 +691,7 @@ func (api *OtterscanAPIImpl) delegateGetBlockByNumber(tx kv.Tx, b *types.Block, 
 	if !inclTx {
 		delete(response, "transactions") // workaround for https://github.com/ledgerwatch/erigon/issues/4989#issuecomment-1218415666
 	}
-	response["totalDifficulty"] = (*hexutil.Big)(td)
+	response["totalDifficulty"] = (*hexutil2.Big)(td)
 	response["transactionCount"] = b.Transactions().Len()
 
 	if err == nil && number == rpc.PendingBlockNumber {
@@ -713,7 +713,7 @@ type internalIssuance struct {
 	Issuance    string `json:"issuance,omitempty"`
 }
 
-func (api *OtterscanAPIImpl) delegateIssuance(tx kv.Tx, block *types.Block, chainConfig *chain.Config) (internalIssuance, error) {
+func delegateIssuance(tx kv.Tx, block *types.Block, chainConfig *chain.Config) (internalIssuance, error) {
 	if chainConfig.Ethash == nil {
 		// Clique for example has no issuance
 		return internalIssuance{}, nil
@@ -727,19 +727,14 @@ func (api *OtterscanAPIImpl) delegateIssuance(tx kv.Tx, block *types.Block, chai
 	}
 
 	var ret internalIssuance
-	ret.BlockReward = hexutil.EncodeBig(minerReward.ToBig())
-	ret.Issuance = hexutil.EncodeBig(issuance.ToBig())
+	ret.BlockReward = hexutil2.EncodeBig(minerReward.ToBig())
+	ret.Issuance = hexutil2.EncodeBig(issuance.ToBig())
 	issuance.Sub(&issuance, &minerReward)
-	ret.UncleReward = hexutil.EncodeBig(issuance.ToBig())
+	ret.UncleReward = hexutil2.EncodeBig(issuance.ToBig())
 	return ret, nil
 }
 
-func (api *OtterscanAPIImpl) delegateBlockFees(ctx context.Context, tx kv.Tx, block *types.Block, senders []common.Address, chainConfig *chain.Config) (uint64, uint64, error) {
-	receipts, err := api.getReceipts(ctx, tx, chainConfig, block, senders)
-	if err != nil {
-		return 0, 0, fmt.Errorf("getReceipts error: %v", err)
-	}
-
+func delegateBlockFees(ctx context.Context, tx kv.Tx, block *types.Block, senders []common.Address, chainConfig *chain.Config, receipts types.Receipts) (uint64, uint64, error) {
 	gasUsedDepositTx := uint64(0)
 	fees := uint64(0)
 	for _, receipt := range receipts {
@@ -797,7 +792,7 @@ func (api *OtterscanAPIImpl) GetBlockTransactions(ctx context.Context, number rp
 		return nil, err
 	}
 
-	getBlockRes, err := api.delegateGetBlockByNumber(tx, b, number, true)
+	getBlockRes, err := delegateGetBlockByNumber(tx, b, number, true)
 	if err != nil {
 		return nil, err
 	}

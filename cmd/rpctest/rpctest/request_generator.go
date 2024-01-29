@@ -3,6 +3,7 @@ package rpctest
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/ledgerwatch/erigon-lib/common/hexutil"
 	"net/http"
 	"strings"
 	"time"
@@ -11,8 +12,6 @@ import (
 
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/hexutility"
-
-	"github.com/ledgerwatch/erigon/common/hexutil"
 )
 
 type CallResult struct {
@@ -42,6 +41,11 @@ func (g *RequestGenerator) getBlockByNumber(blockNum uint64, withTxs bool) strin
 func (g *RequestGenerator) getBlockByHash(hash libcommon.Hash, withTxs bool) string {
 	const template = `{"jsonrpc":"2.0","method":"eth_getBlockByHash","params":["0x%x",%t],"id":%d}`
 	return fmt.Sprintf(template, hash, withTxs, g.reqID)
+}
+
+func (g *RequestGenerator) getTransactionByHash(hash string) string {
+	const template = `{"jsonrpc":"2.0","method":"eth_getTransactionByHash","params":["%s"],"id":%d}`
+	return fmt.Sprintf(template, hash, g.reqID)
 }
 
 func (g *RequestGenerator) storageRangeAt(hash libcommon.Hash, i int, to *libcommon.Address, nextKey libcommon.Hash) string {
