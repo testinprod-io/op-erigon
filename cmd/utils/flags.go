@@ -47,10 +47,6 @@ import (
 	"github.com/ledgerwatch/erigon-lib/direct"
 	downloadercfg2 "github.com/ledgerwatch/erigon-lib/downloader/downloadercfg"
 	"github.com/ledgerwatch/erigon-lib/txpool/txpoolcfg"
-	"github.com/ledgerwatch/log/v3"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-	"github.com/urfave/cli/v2"
 
 	"github.com/ledgerwatch/erigon/cl/clparams"
 	"github.com/ledgerwatch/erigon/cmd/downloader/downloadernat"

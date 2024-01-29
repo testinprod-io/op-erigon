@@ -275,7 +275,7 @@ func (api *APIImpl) GetTransactionByBlockNumberAndIndex(ctx context.Context, blo
 		if len(receipts) <= int(txIndex) {
 			return nil, fmt.Errorf("block has less receipts than expected: %d <= %d, block: %d", len(receipts), int(txIndex), block.NumberU64())
 		}
-		return newRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), receipts[txIndex]), nil
+		return NewRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), receipts[txIndex]), nil
 	}
 
 	return NewRPCTransaction(txs[txIndex], hash, blockNum, uint64(txIndex), block.BaseFee(), nil), nil

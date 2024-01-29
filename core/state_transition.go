@@ -208,8 +208,8 @@ func (st *StateTransition) buyGas(gasBailout bool) error {
 		return fmt.Errorf("%w: address %v", ErrInsufficientFunds, st.msg.From().Hex())
 	}
 	var l1Cost *uint256.Int
-	if fn := st.evm.Context().L1CostFunc; fn != nil && !st.msg.IsFake() {
-		l1Cost = fn(st.evm.Context().BlockNumber, st.evm.Context().Time, st.msg)
+	if fn := st.evm.Context.L1CostFunc; fn != nil && !st.msg.IsFake() {
+		l1Cost = fn(st.evm.Context.BlockNumber, st.evm.Context.Time, st.msg)
 	}
 	if l1Cost != nil {
 		gasVal = gasVal.Add(gasVal, l1Cost)
@@ -306,7 +306,7 @@ func (st *StateTransition) preCheck(gasBailout bool) error {
 		st.gas += st.msg.Gas() // Add gas here in order to be able to execute calls.
 		// Don't touch the gas pool for system transactions
 		if st.msg.IsSystemTx() {
-			if st.evm.ChainConfig().IsOptimismRegolith(st.evm.Context().Time) {
+			if st.evm.ChainConfig().IsOptimismRegolith(st.evm.Context.Time) {
 				return fmt.Errorf("%w: address %v", ErrSystemTxNotSupported,
 					st.msg.From().Hex())
 			}
@@ -390,7 +390,6 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*Executi
 		st.state.AddBalance(st.msg.From(), mint)
 	}
 	snap := st.state.Snapshot()
-	coinbase := st.evm.Context.Coinbase
 
 	result, err := st.innerTransitionDb(refunds, gasBailout)
 	// Failed deposits must still be included. Unless we cannot produce the block at all due to the gas limit.
@@ -404,7 +403,7 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*Executi
 		gasUsed := st.msg.Gas()
 		// Regolith changes this behaviour so the actual gas used is reported.
 		// In this case the tx is invalid so is recorded as using all gas.
-		if st.msg.IsSystemTx() && !st.evm.ChainConfig().IsRegolith(st.evm.Context().Time) {
+		if st.msg.IsSystemTx() && !st.evm.ChainConfig().IsRegolith(st.evm.Context.Time) {
 			gasUsed = 0
 		}
 		result = &ExecutionResult{
@@ -419,7 +418,7 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*Executi
 }
 
 func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*ExecutionResult, error) {
-	coinbase := st.evm.Context().Coinbase
+	coinbase := st.evm.Context.Coinbase
 	var input1 *uint256.Int
 	var input2 *uint256.Int
 	if st.isBor {
@@ -569,11 +568,11 @@ func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*Ex
 		)
 	}
 	if optimismConfig := st.evm.ChainConfig().Optimism; optimismConfig != nil {
-		st.state.AddBalance(params.OptimismBaseFeeRecipient, new(uint256.Int).Mul(uint256.NewInt(st.gasUsed()), st.evm.Context().BaseFee))
-		if st.evm.Context().L1CostFunc == nil { // Erigon EVM context is used in many unexpected/hacky ways, let's panic if it's misconfigured
+		st.state.AddBalance(params.OptimismBaseFeeRecipient, new(uint256.Int).Mul(uint256.NewInt(st.gasUsed()), st.evm.Context.BaseFee))
+		if st.evm.Context.L1CostFunc == nil { // Erigon EVM context is used in many unexpected/hacky ways, let's panic if it's misconfigured
 			panic("missing L1 cost func in block context, please configure l1 cost when using optimism config to run EVM")
 		}
-		if cost := st.evm.Context().L1CostFunc(st.evm.Context().BlockNumber, st.evm.Context().Time, st.msg); cost != nil {
+		if cost := st.evm.Context.L1CostFunc(st.evm.Context.BlockNumber, st.evm.Context.Time, st.msg); cost != nil {
 			st.state.AddBalance(params.OptimismL1FeeRecipient, cost)
 		}
 	}

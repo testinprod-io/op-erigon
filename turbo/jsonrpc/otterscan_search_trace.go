@@ -3,7 +3,6 @@ package jsonrpc
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/ledgerwatch/erigon-lib/chain"
 	"github.com/ledgerwatch/erigon-lib/common"

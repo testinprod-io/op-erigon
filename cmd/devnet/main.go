@@ -21,7 +21,6 @@ import (
 	_ "github.com/ledgerwatch/erigon/cmd/devnet/contracts/steps"
 	"github.com/ledgerwatch/erigon/cmd/utils"
 
-	"github.com/ledgerwatch/erigon-lib/common/metrics"
 	"github.com/ledgerwatch/erigon/cmd/devnet/devnet"
 	"github.com/ledgerwatch/erigon/cmd/devnet/devnetutils"
 	"github.com/ledgerwatch/erigon/cmd/devnet/requests"

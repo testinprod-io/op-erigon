@@ -59,7 +59,7 @@ func applyTransaction(config *chain.Config, engine consensus.EngineReader, gp *G
 	evm.Reset(txContext, ibs)
 
 	nonce := tx.GetNonce()
-	if msg.IsDepositTx() && config.IsOptimismRegolith(evm.Context().Time) {
+	if msg.IsDepositTx() && config.IsOptimismRegolith(evm.Context.Time) {
 		nonce = ibs.GetNonce(msg.From())
 	}
 
@@ -90,12 +90,12 @@ func applyTransaction(config *chain.Config, engine consensus.EngineReader, gp *G
 		receipt.TxHash = tx.Hash()
 		receipt.GasUsed = result.UsedGas
 
-		if msg.IsDepositTx() && config.IsOptimismRegolith(evm.Context().Time) {
+		if msg.IsDepositTx() && config.IsOptimismRegolith(evm.Context.Time) {
 			// The actual nonce for deposit transactions is only recorded from Regolith onwards and
 			// otherwise must be nil.
 			receipt.DepositNonce = &nonce
 
-			if config.IsOptimismCanyon(evm.Context().Time) {
+			if config.IsOptimismCanyon(evm.Context.Time) {
 				receipt.DepositReceiptVersion = new(uint64)
 				*receipt.DepositReceiptVersion = types.CanyonDepositReceiptVersion
 			}
