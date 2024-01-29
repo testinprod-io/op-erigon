@@ -1,8 +1,6 @@
 package raw
 
 import (
-	"fmt"
-
 	"github.com/ledgerwatch/erigon/cl/clparams"
 	"github.com/ledgerwatch/erigon/cl/cltypes"
 	"github.com/ledgerwatch/erigon/cl/cltypes/solid"
@@ -23,7 +21,6 @@ func (b *BeaconState) CopyInto(dst *BeaconState) error {
 		dst.eth1DataVotes.Append(value.Copy())
 		return true
 	})
-
 	dst.eth1DepositIndex = b.eth1DepositIndex
 	b.validators.CopyTo(dst.validators)
 	b.balances.CopyTo(dst.balances)
@@ -31,9 +28,20 @@ func (b *BeaconState) CopyInto(dst *BeaconState) error {
 	b.slashings.CopyTo(dst.slashings)
 	b.previousEpochParticipation.CopyTo(dst.previousEpochParticipation)
 	b.currentEpochParticipation.CopyTo(dst.currentEpochParticipation)
+	dst.currentEpochAttestations.Clear()
+	dst.previousEpochAttestations.Clear()
+	b.currentEpochAttestations.Range(func(index int, value *solid.PendingAttestation, length int) bool {
+		dst.currentEpochAttestations.Append(value)
+		return true
+	})
+	b.previousEpochAttestations.Range(func(index int, value *solid.PendingAttestation, length int) bool {
+		dst.previousEpochAttestations.Append(value)
+		return true
+	})
 	dst.finalizedCheckpoint = b.finalizedCheckpoint.Copy()
 	dst.currentJustifiedCheckpoint = b.currentJustifiedCheckpoint.Copy()
 	dst.previousJustifiedCheckpoint = b.previousJustifiedCheckpoint.Copy()
+	dst.justificationBits = b.justificationBits.Copy()
 	if b.version == clparams.Phase0Version {
 		dst.init()
 		return nil
@@ -41,7 +49,6 @@ func (b *BeaconState) CopyInto(dst *BeaconState) error {
 	dst.currentSyncCommittee = b.currentSyncCommittee.Copy()
 	dst.nextSyncCommittee = b.nextSyncCommittee.Copy()
 	b.inactivityScores.CopyTo(dst.inactivityScores)
-	dst.justificationBits = b.justificationBits.Copy()
 
 	if b.version >= clparams.BellatrixVersion {
 		dst.latestExecutionPayloadHeader = b.latestExecutionPayloadHeader.Copy()
@@ -65,6 +72,5 @@ func (b *BeaconState) CopyInto(dst *BeaconState) error {
 
 func (b *BeaconState) Copy() (*BeaconState, error) {
 	copied := New(b.BeaconConfig())
-	fmt.Println(copied.slashings)
 	return copied, b.CopyInto(copied)
 }

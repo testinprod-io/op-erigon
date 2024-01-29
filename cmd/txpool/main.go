@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -85,6 +86,7 @@ func init() {
 	rootCmd.PersistentFlags().DurationVar(&commitEvery, utils.TxPoolCommitEveryFlag.Name, utils.TxPoolCommitEveryFlag.Value, utils.TxPoolCommitEveryFlag.Usage)
 	rootCmd.PersistentFlags().BoolVar(&optimism, "txpool.optimism", txpoolcfg.DefaultConfig.Optimism, "Enable Optimism Bedrock to make txpool account for L1 cost of transactions")
 	rootCmd.PersistentFlags().BoolVar(&noTxGossip, "txpool.disabletxpoolgossip", txpoolcfg.DefaultConfig.NoTxGossip, "Disable transaction pool gossip")
+	rootCmd.PersistentFlags().BoolVar(&noTxGossip, utils.TxPoolGossipDisableFlag.Name, utils.TxPoolGossipDisableFlag.Value, utils.TxPoolGossipDisableFlag.Usage)
 	rootCmd.Flags().StringSliceVar(&traceSenders, utils.TxPoolTraceSendersFlag.Name, []string{}, utils.TxPoolTraceSendersFlag.Usage)
 }
 
@@ -151,6 +153,7 @@ func doTxpool(ctx context.Context, logger log.Logger) error {
 	cfg.BlobSlots = blobSlots
 	cfg.PriceBump = priceBump
 	cfg.BlobPriceBump = blobPriceBump
+	cfg.NoGossip = noTxGossip
 
 	cfg.Optimism = optimism
 	cfg.NoTxGossip = noTxGossip

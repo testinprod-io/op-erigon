@@ -270,8 +270,8 @@ download speed by flag `--torrent.download.rate=20mb`. <code>🔬 See [Downloade
 
 Use `--datadir` to choose where to store data.
 
-Use `--chain=gnosis` for [Gnosis Chain](https://www.gnosis.io/), `--chain=bor-mainnet` for Polygon Mainnet,
-and `--chain=mumbai` for Polygon Mumbai.
+Use `--chain=gnosis` for [Gnosis Chain](https://www.gnosis.io/), `--chain=bor-mainnet` for Polygon Mainnet, 
+`--chain=mumbai` for Polygon Mumbai and `--chain=amoy` for Polygon Amoy.
 For Gnosis Chain you need a [Consensus Layer](#beacon-chain-consensus-layer) client alongside
 Erigon (https://docs.gnosischain.com/node/guide/beacon).
 
@@ -383,7 +383,7 @@ Windows users may run erigon in 3 possible ways:
     * [Git](https://git-scm.com/downloads) for Windows must be installed. If you're cloning this repository is very
       likely you already have it
     * [GO Programming Language](https://golang.org/dl/) must be installed. Minimum required version is 1.20
-    * GNU CC Compiler at least version 10 (is highly suggested that you install `chocolatey` package manager - see
+    * GNU CC Compiler at least version 13 (is highly suggested that you install `chocolatey` package manager - see
       following point)
     * If you need to build MDBX tools (i.e. `.\wmake.ps1 db-tools`)
       then [Chocolatey package manager](https://chocolatey.org/) for Windows must be installed. By Chocolatey you need
@@ -727,6 +727,14 @@ node.
 | sentinel  | 4001 | TCP      | Peering          | Public        |
 
 If you are using `--internalcl` aka `caplin` as your consensus client, then also look at the chart above
+
+#### `beaconAPI` ports
+
+| Component | Port | Protocol | Purpose          | Should Expose |
+|-----------|------|----------|------------------|---------------|
+| REST  | 5555 | TCP      | REST          | Public        |
+
+If you are using `--internalcl` aka `caplin` as your consensus client and `--beacon.api` then also look at the chart above
 
 #### `shared` ports
 

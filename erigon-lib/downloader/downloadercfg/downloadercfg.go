@@ -29,6 +29,7 @@ import (
 	lg "github.com/anacrolix/log"
 	"github.com/anacrolix/torrent"
 	"github.com/c2h5oh/datasize"
+	"github.com/ledgerwatch/erigon-lib/chain/snapcfg"
 	"github.com/ledgerwatch/erigon-lib/common/datadir"
 	"github.com/ledgerwatch/erigon-lib/common/dir"
 	"github.com/ledgerwatch/log/v3"
@@ -51,6 +52,7 @@ type Cfg struct {
 	WebSeedUrls                     []*url.URL
 	WebSeedFiles                    []string
 	WebSeedS3Tokens                 []string
+	ExpectedTorrentFilesHashes      snapcfg.Preverified
 	DownloadTorrentFilesFromWebseed bool
 	ChainName                       string
 
@@ -59,7 +61,10 @@ type Cfg struct {
 
 func Default() *torrent.ClientConfig {
 	torrentConfig := torrent.NewDefaultClientConfig()
-	torrentConfig.PieceHashersPerTorrent = runtime.NumCPU()
+	// better don't increase because erigon periodically producing "new seedable files" - and adding them to downloader.
+	// it must not impact chain tip sync - so, limit resources to minimum by default.
+	// but when downloader is started as a separated process - rise it to max
+	//torrentConfig.PieceHashersPerTorrent = cmp.Max(1, runtime.NumCPU()-1)
 
 	torrentConfig.MinDialTimeout = 6 * time.Second    //default: 3s
 	torrentConfig.HandshakesTimeout = 8 * time.Second //default: 4s
@@ -150,26 +155,44 @@ func New(dirs datadir.Dirs, version string, verbosity lg.Level, downloadRate, up
 	webseedFileProviders := make([]string, 0, len(webseedUrlsOrFiles))
 	webseedS3Providers := make([]string, 0, len(webseedUrlsOrFiles))
 	for _, webseed := range webseedUrlsOrFiles {
-		if strings.HasPrefix(webseed, "v") { // has marker v1/v2/...
-			webseedS3Providers = append(webseedS3Providers, webseed)
-			continue
-		}
-		uri, err := url.ParseRequestURI(webseed)
-		if err != nil {
-			if strings.HasSuffix(webseed, ".toml") && dir.FileExist(webseed) {
-				webseedFileProviders = append(webseedFileProviders, webseed)
+		if !strings.HasPrefix(webseed, "v") { // has marker v1/v2/...
+			uri, err := url.ParseRequestURI(webseed)
+			if err != nil {
+				if strings.HasSuffix(webseed, ".toml") && dir.FileExist(webseed) {
+					webseedFileProviders = append(webseedFileProviders, webseed)
+				}
+				continue
 			}
+			webseedHttpProviders = append(webseedHttpProviders, uri)
 			continue
 		}
-		webseedHttpProviders = append(webseedHttpProviders, uri)
+
+		if strings.HasPrefix(webseed, "v1:") {
+			withoutVerisonPrefix := webseed[3:]
+			if !strings.HasPrefix(withoutVerisonPrefix, "https:") {
+				webseedS3Providers = append(webseedS3Providers, webseed)
+				continue
+			}
+			uri, err := url.ParseRequestURI(withoutVerisonPrefix)
+			if err != nil {
+				log.Warn("[webseed] can't parse url", "err", err, "url", withoutVerisonPrefix)
+				continue
+			}
+			webseedHttpProviders = append(webseedHttpProviders, uri)
+		} else {
+			continue
+		}
 	}
 	localCfgFile := filepath.Join(dirs.DataDir, "webseed.toml") // datadir/webseed.toml allowed
 	if dir.FileExist(localCfgFile) {
 		webseedFileProviders = append(webseedFileProviders, localCfgFile)
 	}
+	//TODO: if don't pass "downloaded files list here" (which we store in db) - synced erigon will download new .torrent files. And erigon can't work with "unfinished" files.
+	snapCfg := snapcfg.KnownCfg(chainName, nil, nil)
 	return &Cfg{Dirs: dirs, ChainName: chainName,
 		ClientConfig: torrentConfig, DownloadSlots: downloadSlots,
 		WebSeedUrls: webseedHttpProviders, WebSeedFiles: webseedFileProviders, WebSeedS3Tokens: webseedS3Providers,
+		DownloadTorrentFilesFromWebseed: false, ExpectedTorrentFilesHashes: snapCfg.Preverified,
 	}, nil
 }
 

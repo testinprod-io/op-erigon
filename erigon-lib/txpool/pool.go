@@ -59,6 +59,7 @@ import (
 	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon-lib/kv/kvcache"
 	"github.com/ledgerwatch/erigon-lib/kv/mdbx"
+	"github.com/ledgerwatch/erigon-lib/metrics"
 	"github.com/ledgerwatch/erigon-lib/txpool/txpoolcfg"
 	"github.com/ledgerwatch/erigon-lib/types"
 )
@@ -70,10 +71,10 @@ var (
 	writeToDBTimer          = metrics.NewSummary(`pool_write_to_db`)
 	propagateToNewPeerTimer = metrics.NewSummary(`pool_propagate_to_new_peer`)
 	propagateNewTxsTimer    = metrics.NewSummary(`pool_propagate_new_txs`)
-	writeToDBBytesCounter   = metrics.GetOrCreateCounter(`pool_write_to_db_bytes`)
-	pendingSubCounter       = metrics.GetOrCreateCounter(`txpool_pending`)
-	queuedSubCounter        = metrics.GetOrCreateCounter(`txpool_queued`)
-	basefeeSubCounter       = metrics.GetOrCreateCounter(`txpool_basefee`)
+	writeToDBBytesCounter   = metrics.GetOrCreateGauge(`pool_write_to_db_bytes`)
+	pendingSubCounter       = metrics.GetOrCreateGauge(`txpool_pending`)
+	queuedSubCounter        = metrics.GetOrCreateGauge(`txpool_queued`)
+	basefeeSubCounter       = metrics.GetOrCreateGauge(`txpool_basefee`)
 )
 
 // Pool is interface for the transaction pool
@@ -386,7 +387,7 @@ func (p *TxPool) OnNewBlock(ctx context.Context, stateChanges *remote.StateChang
 		return err
 	}
 
-	defer newBlockTimer.UpdateDuration(time.Now())
+	defer newBlockTimer.ObserveDuration(time.Now())
 	//t := time.Now()
 
 	coreDB, cache := p.coreDBWithCache()
@@ -509,7 +510,7 @@ func (p *TxPool) processRemoteTxs(ctx context.Context) error {
 		return fmt.Errorf("txpool not started yet")
 	}
 
-	defer processBatchTxsTimer.UpdateDuration(time.Now())
+	defer processBatchTxsTimer.ObserveDuration(time.Now())
 	coreDB, cache := p.coreDBWithCache()
 	coreTx, err := coreDB.BeginRo(ctx)
 	if err != nil {
@@ -806,7 +807,14 @@ func (p *TxPool) CountContent() (int, int, int) {
 	return p.pending.Len(), p.baseFee.Len(), p.queued.Len()
 }
 func (p *TxPool) AddRemoteTxs(_ context.Context, newTxs types.TxSlots) {
-	defer addRemoteTxsTimer.UpdateDuration(time.Now())
+	if p.cfg.NoGossip {
+		// if no gossip, then
+		// disable adding remote transactions
+		// consume remote tx from fetch
+		return
+	}
+
+	defer addRemoteTxsTimer.ObserveDuration(time.Now())
 	p.lock.Lock()
 	defer p.lock.Unlock()
 	for i, txn := range newTxs.Txs {
@@ -1740,6 +1748,11 @@ func promote(pending *PendingPool, baseFee, queued *SubPool, pendingBaseFee uint
 	}
 }
 
+// txMaxBroadcastSize is the max size of a transaction that will be broadcasted.
+// All transactions with a higher size will be announced and need to be fetched
+// by the peer.
+const txMaxBroadcastSize = 4 * 1024
+
 // MainLoop - does:
 // send pending byHash to p2p:
 //   - new byHash
@@ -1787,7 +1800,7 @@ func MainLoop(ctx context.Context, db kv.RwDB, coreDB kv.RoDB, p *TxPool, newTxs
 					p.logger.Error("[txpool] flush is local history", "err", err)
 					continue
 				}
-				writeToDBBytesCounter.Set(written)
+				writeToDBBytesCounter.SetUint64(written)
 				p.logger.Debug("[txpool] Commit", "written_kb", written/1024, "in", time.Since(t))
 			}
 		case announcements := <-newTxs:
@@ -1804,13 +1817,13 @@ func MainLoop(ctx context.Context, db kv.RwDB, coreDB kv.RoDB, p *TxPool, newTxs
 				if announcements.Len() == 0 {
 					return
 				}
-				defer propagateNewTxsTimer.UpdateDuration(time.Now())
+				defer propagateNewTxsTimer.ObserveDuration(time.Now())
 
 				announcements = announcements.DedupCopy()
 
 				notifyMiningAboutNewSlots()
 
-				if p.cfg.NoTxGossip {
+				if p.cfg.NoGossip {
 					// drain newTxs for emptying newTx channel
 					// newTx channel will be filled only with local transactions
 					// early return to avoid outbound transaction propagation
@@ -1847,7 +1860,8 @@ func MainLoop(ctx context.Context, db kv.RwDB, coreDB kv.RoDB, p *TxPool, newTxs
 							localTxSizes = append(localTxSizes, size)
 							localTxHashes = append(localTxHashes, hash...)
 
-							if t != types.BlobTxType { // "Nodes MUST NOT automatically broadcast blob transactions to their peers" - EIP-4844
+							// "Nodes MUST NOT automatically broadcast blob transactions to their peers" - EIP-4844
+							if t != types.BlobTxType {
 								localTxRlps = append(localTxRlps, slotRlp)
 								broadCastedHashes = append(broadCastedHashes, hash...)
 							}
@@ -1855,7 +1869,9 @@ func MainLoop(ctx context.Context, db kv.RwDB, coreDB kv.RoDB, p *TxPool, newTxs
 							remoteTxTypes = append(remoteTxTypes, t)
 							remoteTxSizes = append(remoteTxSizes, size)
 							remoteTxHashes = append(remoteTxHashes, hash...)
-							if t != types.BlobTxType { // "Nodes MUST NOT automatically broadcast blob transactions to their peers" - EIP-4844
+
+							// "Nodes MUST NOT automatically broadcast blob transactions to their peers" - EIP-4844
+							if t != types.BlobTxType && len(slotRlp) < txMaxBroadcastSize {
 								remoteTxRlps = append(remoteTxRlps, slotRlp)
 							}
 						}
@@ -1870,25 +1886,29 @@ func MainLoop(ctx context.Context, db kv.RwDB, coreDB kv.RoDB, p *TxPool, newTxs
 					newSlotsStreams.Broadcast(&proto_txpool.OnAddReply{RplTxs: slotsRlp}, p.logger)
 				}
 
-				// first broadcast all local txs to all peers, then non-local to random sqrt(peersAmount) peers
-				txSentTo := send.BroadcastPooledTxs(localTxRlps)
+				// broadcast local transactions
+				const localTxsBroadcastMaxPeers uint64 = 10
+				txSentTo := send.BroadcastPooledTxs(localTxRlps, localTxsBroadcastMaxPeers)
 				for i, peer := range txSentTo {
 					p.logger.Info("Local tx broadcasted", "txHash", hex.EncodeToString(broadCastedHashes.At(i)), "to peer", peer)
 				}
-				hashSentTo := send.AnnouncePooledTxs(localTxTypes, localTxSizes, localTxHashes)
+				hashSentTo := send.AnnouncePooledTxs(localTxTypes, localTxSizes, localTxHashes, localTxsBroadcastMaxPeers*2)
 				for i := 0; i < localTxHashes.Len(); i++ {
 					hash := localTxHashes.At(i)
 					p.logger.Info("local tx announced", "tx_hash", hex.EncodeToString(hash), "to peer", hashSentTo[i], "baseFee", p.pendingBaseFee.Load())
 				}
-				send.BroadcastPooledTxs(remoteTxRlps)
-				send.AnnouncePooledTxs(remoteTxTypes, remoteTxSizes, remoteTxHashes)
+
+				// broadcast remote transactions
+				const remoteTxsBroadcastMaxPeers uint64 = 3
+				send.BroadcastPooledTxs(remoteTxRlps, remoteTxsBroadcastMaxPeers)
+				send.AnnouncePooledTxs(remoteTxTypes, remoteTxSizes, remoteTxHashes, remoteTxsBroadcastMaxPeers*2)
 			}()
 		case <-syncToNewPeersEvery.C: // new peer
 			newPeers := p.recentlyConnectedPeers.GetAndClean()
 			if len(newPeers) == 0 {
 				continue
 			}
-			if p.cfg.NoTxGossip {
+			if p.cfg.NoGossip {
 				// avoid transaction gossiping for new peers
 				log.Debug("[txpool] tx gossip disabled", "state", "sync new peers")
 				continue
@@ -1899,7 +1919,7 @@ func MainLoop(ctx context.Context, db kv.RwDB, coreDB kv.RoDB, p *TxPool, newTxs
 			var sizes []uint32
 			types, sizes, hashes = p.AppendAllAnnouncements(types, sizes, hashes[:0])
 			go send.PropagatePooledTxsToPeersList(newPeers, types, sizes, hashes)
-			propagateToNewPeerTimer.UpdateDuration(t)
+			propagateToNewPeerTimer.ObserveDuration(t)
 		}
 	}
 }
@@ -1925,7 +1945,7 @@ func (p *TxPool) flushNoFsync(ctx context.Context, db kv.RwDB) (written uint64, 
 }
 
 func (p *TxPool) flush(ctx context.Context, db kv.RwDB) (written uint64, err error) {
-	defer writeToDBTimer.UpdateDuration(time.Now())
+	defer writeToDBTimer.ObserveDuration(time.Now())
 	// 1. get global lock on txpool and flush it to db, without fsync (to release lock asap)
 	// 2. then fsync db without txpool lock
 	written, err = p.flushNoFsync(ctx, db)
@@ -2210,9 +2230,9 @@ func (p *TxPool) logStats() {
 	}
 	ctx = append(ctx, "alloc", common.ByteCount(m.Alloc), "sys", common.ByteCount(m.Sys))
 	p.logger.Info("[txpool] stat", ctx...)
-	pendingSubCounter.Set(uint64(p.pending.Len()))
-	basefeeSubCounter.Set(uint64(p.baseFee.Len()))
-	queuedSubCounter.Set(uint64(p.queued.Len()))
+	pendingSubCounter.SetInt(p.pending.Len())
+	basefeeSubCounter.SetInt(p.baseFee.Len())
+	queuedSubCounter.SetInt(p.queued.Len())
 }
 
 // Deprecated need switch to streaming-like

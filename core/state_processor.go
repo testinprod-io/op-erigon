@@ -103,7 +103,7 @@ func applyTransaction(config *chain.Config, engine consensus.EngineReader, gp *G
 
 		// if the transaction created a contract, store the creation address in the receipt.
 		if msg.To() == nil {
-			receipt.ContractAddress = crypto.CreateAddress(evm.TxContext().Origin, nonce)
+			receipt.ContractAddress = crypto.CreateAddress(evm.Origin, nonce)
 		}
 		// Set the receipt logs and create a bloom for filtering
 		receipt.Logs = ibs.GetLogs(tx.Hash())
