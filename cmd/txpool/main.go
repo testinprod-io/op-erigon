@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -59,6 +58,9 @@ var (
 	optimism   bool
 	noTxGossip bool
 
+	// For legacy --txpool.disabletxpoolgossip flag
+	noTxGossipLegacy bool
+
 	commitEvery time.Duration
 )
 
@@ -85,7 +87,7 @@ func init() {
 	rootCmd.PersistentFlags().Uint64Var(&blobPriceBump, "txpool.blobpricebump", txpoolcfg.DefaultConfig.BlobPriceBump, "Price bump percentage to replace an existing blob (type-3) transaction")
 	rootCmd.PersistentFlags().DurationVar(&commitEvery, utils.TxPoolCommitEveryFlag.Name, utils.TxPoolCommitEveryFlag.Value, utils.TxPoolCommitEveryFlag.Usage)
 	rootCmd.PersistentFlags().BoolVar(&optimism, "txpool.optimism", txpoolcfg.DefaultConfig.Optimism, "Enable Optimism Bedrock to make txpool account for L1 cost of transactions")
-	rootCmd.PersistentFlags().BoolVar(&noTxGossip, "txpool.disabletxpoolgossip", txpoolcfg.DefaultConfig.NoTxGossip, "Disable transaction pool gossip")
+	rootCmd.PersistentFlags().BoolVar(&noTxGossipLegacy, "txpool.disabletxpoolgossip", utils.TxPoolGossipDisableFlag.Value, "[Deprecated] Disable transaction pool gossip")
 	rootCmd.PersistentFlags().BoolVar(&noTxGossip, utils.TxPoolGossipDisableFlag.Name, utils.TxPoolGossipDisableFlag.Value, utils.TxPoolGossipDisableFlag.Usage)
 	rootCmd.Flags().StringSliceVar(&traceSenders, utils.TxPoolTraceSendersFlag.Name, []string{}, utils.TxPoolTraceSendersFlag.Usage)
 }
@@ -155,8 +157,12 @@ func doTxpool(ctx context.Context, logger log.Logger) error {
 	cfg.BlobPriceBump = blobPriceBump
 	cfg.NoGossip = noTxGossip
 
+	if noTxGossipLegacy && !noTxGossip {
+		logger.Warn("--txpool.disabletxpoolgossip flag is deprecated. use --txpool.gossip.disable")
+		cfg.NoGossip = noTxGossip
+	}
+
 	cfg.Optimism = optimism
-	cfg.NoTxGossip = noTxGossip
 
 	cacheConfig := kvcache.DefaultCoherentConfig
 	cacheConfig.MetricsLabel = "txpool"

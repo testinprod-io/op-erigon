@@ -97,8 +97,7 @@ type Pool interface {
 	AddNewGoodPeer(peerID types.PeerID)
 }
 
-var _ Pool = (*TxPool)(nil)           // compile-time interface check
-var _ Pool = (*TxPoolDropRemote)(nil) // compile-time interface check
+var _ Pool = (*TxPool)(nil) // compile-time interface check
 
 // SubPoolMarker is an ordered bitset of five bits that's used to sort transactions into sub-pools. Bits meaning:
 // 1. Absence of nonce gaps. Set to 1 for transactions whose nonce is N, state nonce for the sender is M, and there are transactions for all nonces between M and N from the same sender. Set to 0 is the transaction's nonce is divided from the state nonce by one or more nonce gaps.
@@ -234,11 +233,6 @@ type TxPool struct {
 	l1Cost L1CostFn
 }
 
-// disables adding remote transactions
-type TxPoolDropRemote struct {
-	*TxPool
-}
-
 func New(newTxs chan types.Announcements, coreDB kv.RoDB, cfg txpoolcfg.Config, cache kvcache.Cache,
 	chainID uint256.Int, shanghaiTime, agraBlock, cancunTime *big.Int, maxBlobsPerBlock uint64, logger log.Logger,
 ) (*TxPool, error) {
@@ -309,10 +303,6 @@ func New(newTxs chan types.Announcements, coreDB kv.RoDB, cfg txpoolcfg.Config, 
 	}
 
 	return res, nil
-}
-
-func NewTxPoolDropRemote(txPool *TxPool) *TxPoolDropRemote {
-	return &TxPoolDropRemote{TxPool: txPool}
 }
 
 func RawRLPTxToOptimismL1CostFn(payload []byte) (L1CostFn, error) {
@@ -2259,11 +2249,6 @@ func (p *TxPool) deprecatedForEach(_ context.Context, f func(rlp []byte, sender 
 		}
 		return true
 	})
-}
-
-func (p *TxPoolDropRemote) AddRemoteTxs(ctx context.Context, newTxs types.TxSlots) {
-	// disable adding remote transactions
-	// consume remote tx from fetch
 }
 
 var PoolChainConfigKey = []byte("chain_config")

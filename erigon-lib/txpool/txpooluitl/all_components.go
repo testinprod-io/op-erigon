@@ -150,9 +150,6 @@ func AllComponents(ctx context.Context, cfg txpoolcfg.Config, cache kvcache.Cach
 		return nil, nil, nil, nil, nil, err
 	}
 	pool = txpool.Pool(txPool)
-	if cfg.NoTxGossip {
-		pool = txpool.Pool(txpool.NewTxPoolDropRemote(txPool))
-	}
 
 	fetch := txpool.NewFetch(ctx, sentryClients, pool, stateChangesClient, chainDB, txPoolDB, *chainID, logger)
 	//fetch.ConnectCore()
