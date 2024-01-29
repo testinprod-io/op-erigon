@@ -261,7 +261,7 @@ release: git-submodules
 	@docker manifest create testinprod/op-erigon:latest \
     	--amend testinprod/op-erigon:$$(echo ${VERSION} | cut -c 2- )-amd64 \
     	--amend testinprod/op-erigon:$$(echo ${VERSION} | cut -c 2- )-arm64
-	@if echo "$(VERSION)" | grep -iq "rc"; then docker manifest push testinprod/op-erigon:latest; fi
+	@if ! echo "$(VERSION)" | grep -iq "rc"; then docker manifest push testinprod/op-erigon:latest; fi
 
 # since DOCKER_UID, DOCKER_GID are default initialized to the current user uid/gid,
 # we need separate envvars to facilitate creation of the erigon user on the host OS.
