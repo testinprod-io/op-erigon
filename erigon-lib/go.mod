@@ -2,7 +2,7 @@ module github.com/ledgerwatch/erigon-lib
 
 go 1.20
 
-replace github.com/ledgerwatch/interfaces v0.0.0-20231011121315-f58b806039f0 => github.com/testinprod-io/erigon-interfaces v0.0.0-20240125080756-c4b63f55fb80
+replace github.com/ledgerwatch/interfaces v0.0.0-20231031050643-c86352e41520 => github.com/testinprod-io/erigon-interfaces v0.0.0-20240129031053-da9b0a87fe2a
 
 //for local dev:
 //replace github.com/ledgerwatch/interfaces  v0.0.0-20230825231422-5501cfd6e5af => ../erigon-interfaces
@@ -48,7 +48,7 @@ require (
 	golang.org/x/crypto v0.15.0
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	golang.org/x/sync v0.5.0
-	golang.org/x/sys v0.14.0
+	golang.org/x/sys v0.15.0
 	golang.org/x/time v0.4.0
 	google.golang.org/grpc v1.59.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.3.0

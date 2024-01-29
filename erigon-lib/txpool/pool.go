@@ -35,7 +35,6 @@ import (
 
 	"github.com/ledgerwatch/erigon-lib/rlp"
 
-	"github.com/VictoriaMetrics/metrics"
 	gokzg4844 "github.com/crate-crypto/go-kzg-4844"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/go-stack/stack"
