@@ -461,12 +461,14 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 
 	if payloadAttributes != nil {
 		timestamp := uint64(payloadAttributes.Timestamp)
-		if !s.config.IsCancun(timestamp) && version >= clparams.DenebVersion { // V3 before cancun
-			if payloadAttributes.ParentBeaconBlockRoot == nil {
-				return nil, &rpc.InvalidParamsError{Message: "Beacon Root missing"}
-			}
-			return nil, &rpc.UnsupportedForkError{Message: "Unsupported fork"}
-		}
+		// op-node sends V3 before Cancun, without beacon root.
+		// so we must allow V3 before cancun to support forkChoiceUpdated backward compatibility
+		//if !s.config.IsCancun(timestamp) && version >= clparams.DenebVersion { // V3 before cancun
+		//	if payloadAttributes.ParentBeaconBlockRoot == nil {
+		//		return nil, &rpc.InvalidParamsError{Message: "Beacon Root missing"}
+		//	}
+		//	return nil, &rpc.UnsupportedForkError{Message: "Unsupported fork"}
+		//}
 		if s.config.IsCancun(timestamp) && version < clparams.DenebVersion { // Not V3 after cancun
 			if payloadAttributes.ParentBeaconBlockRoot != nil {
 				return nil, &rpc.InvalidParamsError{Message: "Unexpected Beacon Root"}
@@ -528,7 +530,7 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 		req.Withdrawals = engine_types.ConvertWithdrawalsToRpc(payloadAttributes.Withdrawals)
 	}
 
-	if version >= clparams.DenebVersion {
+	if payloadAttributes.ParentBeaconBlockRoot != nil && version >= clparams.DenebVersion {
 		req.ParentBeaconBlockRoot = gointerfaces.ConvertHashToH256(*payloadAttributes.ParentBeaconBlockRoot)
 	}
 
