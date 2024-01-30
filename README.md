@@ -79,8 +79,14 @@ The historical RPC endpoint. op-erigon queries historical execution data that op
 
 For more information about legacy geth, refer the [Optimism's node operator guide](https://community.optimism.io/docs/developers/bedrock/node-operator-guide/#legacy-geth).
 
-### `--rollup.disabletxpoolgossip`
-**[New flag / Optional]** 
+### `--db.size.limit=8TB`
+**[Required]**
+Existing nodes whose MDBX page size equals 4kb must add --db.size.limit=8TB flag. Otherwise you will get MDBX_TOO_LARGE error. To check the current page size you can use `make db-tools && ./build/bin/mdbx_stat datadir/chaindata`.
+If your chain is the one of `op-mainnet` & `op-goerli`, or your chain is synced before version `v2.55`, this flag is **REQUIRED**
+
+
+### `--txpool.gossip.disable`
+**[Optional]** 
 Disables transaction pool gossiping. Though this is not required, it's useful to set this to true since transaction pool gossip is currently unsupported in the Optimism protocol. If not provided, default value is set to `false`.
 
 ### `--maxpeers=0`, `--nodiscover`
@@ -128,8 +134,9 @@ $ ./build/bin/erigon \
     --authrpc.jwtsecret=$JWT_SECRET_FILE \
     --rollup.sequencerhttp="https://mainnet-sequencer.optimism.io" \
     --rollup.historicalrpc="https://mainnet.optimism.io" \
-    --rollup.disabletxpoolgossip=true \
+    --txpool.gossip.disable=true \
     --chain=op-mainnet \
+    --db.size.limit=8TB \
     --nodiscover
 ```
 2. Use the Docker image: You can get the official Docker image from [testinprod/op-erigon](https://hub.docker.com/r/testinprod/op-erigon).
