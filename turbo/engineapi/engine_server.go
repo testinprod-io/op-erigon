@@ -414,8 +414,7 @@ func (s *EngineServer) getPayload(ctx context.Context, payloadId uint64, version
 	data := resp.Data
 
 	ts := data.ExecutionPayload.Timestamp
-	if (!s.config.IsCancun(ts) && version >= clparams.DenebVersion) ||
-		(s.config.IsCancun(ts) && version < clparams.DenebVersion) {
+	if s.config.IsCancun(ts) && version < clparams.DenebVersion {
 		return nil, &rpc.UnsupportedForkError{Message: "Unsupported fork"}
 	}
 
