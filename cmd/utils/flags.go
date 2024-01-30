@@ -1782,9 +1782,6 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 	if ctx.IsSet(RollupHistoricalRPCTimeoutFlag.Name) {
 		cfg.RollupHistoricalRPCTimeout = ctx.Duration(RollupHistoricalRPCTimeoutFlag.Name)
 	}
-	if ctx.IsSet(RollupDisableTxPoolGossipFlag.Name) {
-		cfg.RollupDisableTxPoolGossip = ctx.Bool(RollupDisableTxPoolGossipFlag.Name)
-	}
 	// Override any default configs for hard coded networks.
 	chain := GetChainNameFromFlag(ctx)
 
@@ -1883,6 +1880,12 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 
 	if ctx.IsSet(TxPoolGossipDisableFlag.Name) {
 		cfg.DisableTxPoolGossip = ctx.Bool(TxPoolGossipDisableFlag.Name)
+	}
+	if ctx.IsSet(RollupDisableTxPoolGossipFlag.Name) {
+		logger.Warn("--rollup.disabletxpoolgossip flag is deprecated. use --txpool.gossip.disable")
+		if !ctx.IsSet(TxPoolGossipDisableFlag.Name) {
+			cfg.DisableTxPoolGossip = ctx.Bool(RollupDisableTxPoolGossipFlag.Name)
+		}
 	}
 }
 

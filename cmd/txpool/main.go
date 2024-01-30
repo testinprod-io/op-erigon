@@ -159,7 +159,7 @@ func doTxpool(ctx context.Context, logger log.Logger) error {
 
 	if noTxGossipLegacy && !noTxGossip {
 		logger.Warn("--txpool.disabletxpoolgossip flag is deprecated. use --txpool.gossip.disable")
-		cfg.NoGossip = noTxGossip
+		cfg.NoGossip = noTxGossipLegacy
 	}
 
 	cfg.Optimism = optimism
