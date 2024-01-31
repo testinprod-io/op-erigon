@@ -672,7 +672,7 @@ func (api *OtterscanAPIImpl) traceBlocks(ctx context.Context, addr common.Addres
 		totalBlocksTraced++
 
 		eg.Go(func() error {
-			// don't return error from searchTraceBlock - to avoid 1 block fail impact to other blocks
+			// don't return error from searchTraceBlock if canceled - to avoid 1 block fail impact to other blocks
 			// if return error - `errgroup` will interrupt all other goroutines
 			// but passing `ctx` - then user still can cancel request
 			select {
@@ -680,6 +680,7 @@ func (api *OtterscanAPIImpl) traceBlocks(ctx context.Context, addr common.Addres
 				// do not return error because error already returned at problematic goroutine
 				return nil
 			default:
+				// return err if not canceled. it means db inconsistency detected
 				return api.searchTraceBlock(ctx, addr, chainConfig, i, nextBlock, results)
 			}
 		})

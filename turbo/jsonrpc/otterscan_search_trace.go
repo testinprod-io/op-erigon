@@ -2,7 +2,6 @@ package jsonrpc
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/ledgerwatch/erigon-lib/chain"
@@ -32,7 +31,7 @@ func (api *OtterscanAPIImpl) searchTraceBlock(ctx context.Context, addr common.A
 	// searchTraceBlock goroutine will sequentially search every block written in CallTraceSet
 	// when mismatch, causing cpu hike. To avoid this, when inconsistency found, early terminate.
 	found, result, err := api.traceBlock(newdbtx, ctx, bNum, addr, chainConfig)
-	if !found && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
+	if !found && result != nil {
 		// tx execution result and callFromToProvider() result mismatch
 		return fmt.Errorf("search trace failure: inconsistency at block %d", bNum)
 	}
