@@ -645,10 +645,6 @@ func (api *OtterscanAPIImpl) SearchTransactionsAfter(ctx context.Context, addr c
 }
 
 func (api *OtterscanAPIImpl) traceBlocks(ctx context.Context, addr common.Address, chainConfig *chain.Config, pageSize, resultCount uint16, callFromToProvider BlockProvider) ([]*TransactionsWithReceipts, bool, error) {
-	errCh := make(chan error, 1)
-	traceCtx, traceCtxCancel := context.WithCancel(context.Background())
-	defer traceCtxCancel()
-
 	// Estimate the common case of user address having at most 1 interaction/block and
 	// trace N := remaining page matches as number of blocks to trace concurrently.
 	// TODO: this is not optimimal for big contract addresses; implement some better heuristics.
@@ -679,17 +675,19 @@ func (api *OtterscanAPIImpl) traceBlocks(ctx context.Context, addr common.Addres
 			// don't return error from searchTraceBlock - to avoid 1 block fail impact to other blocks
 			// if return error - `errgroup` will interrupt all other goroutines
 			// but passing `ctx` - then user still can cancel request
-			api.searchTraceBlock(ctx, traceCtx, traceCtxCancel, errCh, addr, chainConfig, i, nextBlock, results)
-			return nil
+			select {
+			case <-ctx.Done():
+				// do not return error because error already returned at problematic goroutine
+				return nil
+			default:
+				return api.searchTraceBlock(ctx, addr, chainConfig, i, nextBlock, results)
+			}
 		})
 	}
 	if err := eg.Wait(); err != nil {
 		return nil, false, err
 	}
 
-	if traceCtx.Err() != nil && len(errCh) == 1 {
-		return nil, false, <-errCh
-	}
 	return results[:totalBlocksTraced], hasMore, nil
 }
 
