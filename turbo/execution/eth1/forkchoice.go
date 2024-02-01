@@ -291,6 +291,10 @@ func (e *EthereumExecutionModule) updateForkChoice(ctx context.Context, blockHas
 		sendForkchoiceErrorWithoutWaiting(outcomeCh, err)
 		return
 	}
+	if err := stages.SaveStageProgress(tx, stages.BlockHashes, fcuHeader.Number.Uint64()); err != nil {
+		sendForkchoiceErrorWithoutWaiting(outcomeCh, err)
+		return
+	}
 	if err := stages.SaveStageProgress(tx, stages.Bodies, fcuHeader.Number.Uint64()); err != nil {
 		sendForkchoiceErrorWithoutWaiting(outcomeCh, err)
 		return
@@ -323,8 +327,6 @@ func (e *EthereumExecutionModule) updateForkChoice(ctx context.Context, blockHas
 		status = execution.ExecutionStatus_BadBlock
 		if log {
 			e.logger.Warn("bad forkchoice", "head", headHash, "hash", blockHash)
-			h, _ := e.getHeader(ctx, tx, headHash, *headNumber)
-			fmt.Println(h.Hash())
 		}
 	} else {
 		valid, err := e.verifyForkchoiceHashes(ctx, tx, blockHash, finalizedHash, safeHash)

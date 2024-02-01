@@ -439,7 +439,7 @@ func (tx DepositTx) copy() *DepositTx {
 		Value:               new(uint256.Int),
 		Gas:                 tx.Gas,
 		IsSystemTransaction: tx.IsSystemTransaction,
-		Data:                common.CopyBytes(tx.Data),
+		Data:                libcommon.CopyBytes(tx.Data),
 	}
 	if tx.Mint != nil {
 		cpy.Mint = new(uint256.Int).Set(tx.Mint)

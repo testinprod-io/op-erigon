@@ -5,29 +5,28 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/ledgerwatch/erigon-lib/common/hexutil"
+	"github.com/ledgerwatch/erigon/cl/clparams"
 	"math/big"
 	"reflect"
 	"sync"
 	"time"
 
-	"github.com/ledgerwatch/erigon-lib/gointerfaces"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	libstate "github.com/ledgerwatch/erigon-lib/state"
+	"github.com/ledgerwatch/log/v3"
 
 	"github.com/ledgerwatch/erigon-lib/chain"
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/fixedgas"
 	"github.com/ledgerwatch/erigon-lib/common/hexutility"
+	"github.com/ledgerwatch/erigon-lib/gointerfaces"
 	"github.com/ledgerwatch/erigon-lib/gointerfaces/execution"
 	"github.com/ledgerwatch/erigon-lib/gointerfaces/txpool"
+	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon-lib/kv/kvcache"
-	"github.com/ledgerwatch/log/v3"
+	libstate "github.com/ledgerwatch/erigon-lib/state"
 
-	"github.com/ledgerwatch/erigon/cl/clparams"
 	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/cli"
 	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/cli/httpcfg"
 	"github.com/ledgerwatch/erigon/common"
-	"github.com/ledgerwatch/erigon/common/hexutil"
 	"github.com/ledgerwatch/erigon/common/math"
 	"github.com/ledgerwatch/erigon/consensus"
 	"github.com/ledgerwatch/erigon/consensus/merge"
@@ -122,7 +121,7 @@ func (s *EngineServer) validatePayloadBlobs(req *engine_types.ExecutionPayload,
 	for _, txn := range *transactions {
 		actualBlobHashes = append(actualBlobHashes, txn.GetBlobHashes()...)
 	}
-	if len(actualBlobHashes) > int(fixedgas.MaxBlobsPerBlock) || req.BlobGasUsed.Uint64() > fixedgas.MaxBlobGasPerBlock {
+	if len(actualBlobHashes) > int(s.config.GetMaxBlobsPerBlock()) || req.BlobGasUsed.Uint64() > s.config.GetMaxBlobGasPerBlock() {
 		s.logger.Warn("[NewPayload] blobs/blobGasUsed exceeds max per block",
 			"count", len(actualBlobHashes), "BlobGasUsed", req.BlobGasUsed.Uint64())
 		bad, latestValidHash := s.hd.IsBadHeaderPoS(req.ParentHash)
@@ -415,8 +414,7 @@ func (s *EngineServer) getPayload(ctx context.Context, payloadId uint64, version
 	data := resp.Data
 
 	ts := data.ExecutionPayload.Timestamp
-	if (!s.config.IsCancun(ts) && version >= clparams.DenebVersion) ||
-		(s.config.IsCancun(ts) && version < clparams.DenebVersion) {
+	if s.config.IsCancun(ts) && version < clparams.DenebVersion {
 		return nil, &rpc.UnsupportedForkError{Message: "Unsupported fork"}
 	}
 
@@ -462,12 +460,14 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 
 	if payloadAttributes != nil {
 		timestamp := uint64(payloadAttributes.Timestamp)
-		if !s.config.IsCancun(timestamp) && version >= clparams.DenebVersion { // V3 before cancun
-			if payloadAttributes.ParentBeaconBlockRoot == nil {
-				return nil, &rpc.InvalidParamsError{Message: "Beacon Root missing"}
-			}
-			return nil, &rpc.UnsupportedForkError{Message: "Unsupported fork"}
-		}
+		// op-node sends V3 before Cancun, without beacon root.
+		// so we must allow V3 before cancun to support forkChoiceUpdated backward compatibility
+		//if !s.config.IsCancun(timestamp) && version >= clparams.DenebVersion { // V3 before cancun
+		//	if payloadAttributes.ParentBeaconBlockRoot == nil {
+		//		return nil, &rpc.InvalidParamsError{Message: "Beacon Root missing"}
+		//	}
+		//	return nil, &rpc.UnsupportedForkError{Message: "Unsupported fork"}
+		//}
 		if s.config.IsCancun(timestamp) && version < clparams.DenebVersion { // Not V3 after cancun
 			if payloadAttributes.ParentBeaconBlockRoot != nil {
 				return nil, &rpc.InvalidParamsError{Message: "Unexpected Beacon Root"}
@@ -529,7 +529,7 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 		req.Withdrawals = engine_types.ConvertWithdrawalsToRpc(payloadAttributes.Withdrawals)
 	}
 
-	if version >= clparams.DenebVersion {
+	if payloadAttributes.ParentBeaconBlockRoot != nil && version >= clparams.DenebVersion {
 		req.ParentBeaconBlockRoot = gointerfaces.ConvertHashToH256(*payloadAttributes.ParentBeaconBlockRoot)
 	}
 

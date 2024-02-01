@@ -22,6 +22,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 	"sort"
 	"strings"
@@ -34,6 +35,7 @@ import (
 	"github.com/erigontech/mdbx-go/mdbx"
 	stack2 "github.com/go-stack/stack"
 	"github.com/ledgerwatch/erigon-lib/common/dbg"
+	"github.com/ledgerwatch/erigon-lib/common/dir"
 	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon-lib/kv/iter"
 	"github.com/ledgerwatch/erigon-lib/kv/order"
@@ -167,6 +169,10 @@ func (opts MdbxOpts) Readonly() MdbxOpts {
 	opts.flags = opts.flags | mdbx.Readonly
 	return opts
 }
+func (opts MdbxOpts) Accede() MdbxOpts {
+	opts.flags = opts.flags | mdbx.Accede
+	return opts
+}
 
 func (opts MdbxOpts) SyncPeriod(period time.Duration) MdbxOpts {
 	opts.syncPeriod = period
@@ -219,7 +225,9 @@ func PathDbMap() map[string]kv.RoDB {
 	return maps.Clone(pathDbMap)
 }
 
-func (opts MdbxOpts) Open() (kv.RwDB, error) {
+var ErrDBDoesNotExists = fmt.Errorf("can't create database - because opening in `Accede` mode. probably another (main) process can create it")
+
+func (opts MdbxOpts) Open(ctx context.Context) (kv.RwDB, error) {
 	if dbg.WriteMap() {
 		opts = opts.WriteMap() //nolint
 	}
@@ -235,6 +243,24 @@ func (opts MdbxOpts) Open() (kv.RwDB, error) {
 	if dbg.MdbxReadAhead() {
 		opts = opts.Flags(func(u uint) uint { return u &^ mdbx.NoReadahead }) //nolint
 	}
+	if opts.flags&mdbx.Accede != 0 || opts.flags&mdbx.Readonly != 0 {
+		for retry := 0; ; retry++ {
+			exists := dir.FileExist(filepath.Join(opts.path, "mdbx.dat"))
+			if exists {
+				break
+			}
+			if retry >= 5 {
+				return nil, fmt.Errorf("%w, label: %s, path: %s", ErrDBDoesNotExists, opts.label.String(), opts.path)
+			}
+			select {
+			case <-time.After(500 * time.Millisecond):
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			}
+		}
+
+	}
+
 	env, err := mdbx.NewEnv()
 	if err != nil {
 		return nil, err
@@ -277,13 +303,13 @@ func (opts MdbxOpts) Open() (kv.RwDB, error) {
 	}
 
 	opts.pageSize = uint64(in.PageSize)
-
-	//nolint
-	if opts.flags&mdbx.Accede == 0 && opts.flags&mdbx.Readonly == 0 {
+	if opts.label == kv.ChainDB {
+		opts.log.Info("[db] chaindata", "sizeLimit", opts.mapSize, "pageSize", opts.pageSize)
 	}
+
 	// erigon using big transactions
 	// increase "page measured" options. need do it after env.Open() because default are depend on pageSize known only after env.Open()
-	if opts.flags&mdbx.Readonly == 0 {
+	if !opts.HasFlag(mdbx.Accede) && !opts.HasFlag(mdbx.Readonly) {
 		// 1/8 is good for transactions with a lot of modifications - to reduce invalidation size.
 		// But Erigon app now using Batch and etl.Collectors to avoid writing to DB frequently changing data.
 		// It means most of our writes are: APPEND or "single UPSERT per key during transaction"
@@ -397,7 +423,7 @@ func (opts MdbxOpts) Open() (kv.RwDB, error) {
 }
 
 func (opts MdbxOpts) MustOpen() kv.RwDB {
-	db, err := opts.Open()
+	db, err := opts.Open(context.Background())
 	if err != nil {
 		panic(fmt.Errorf("fail to open mdbx: %w", err))
 	}
@@ -420,13 +446,18 @@ type MdbxKV struct {
 
 func (db *MdbxKV) PageSize() uint64 { return db.opts.pageSize }
 func (db *MdbxKV) ReadOnly() bool   { return db.opts.HasFlag(mdbx.Readonly) }
+func (db *MdbxKV) Accede() bool     { return db.opts.HasFlag(mdbx.Accede) }
+
+func (db *MdbxKV) CHandle() unsafe.Pointer {
+	return db.env.CHandle()
+}
 
 // openDBIs - first trying to open existing DBI's in RO transaction
 // otherwise re-try by RW transaction
 // it allow open DB from another process - even if main process holding long RW transaction
 func (db *MdbxKV) openDBIs(buckets []string) error {
-	if db.ReadOnly() {
-		if err := db.View(context.Background(), func(tx kv.Tx) error {
+	if db.ReadOnly() || db.Accede() {
+		return db.View(context.Background(), func(tx kv.Tx) error {
 			for _, name := range buckets {
 				if db.buckets[name].IsDeprecated {
 					continue
@@ -436,25 +467,20 @@ func (db *MdbxKV) openDBIs(buckets []string) error {
 				}
 			}
 			return tx.Commit() // when open db as read-only, commit of this RO transaction is required
-		}); err != nil {
-			return err
-		}
-	} else {
-		if err := db.Update(context.Background(), func(tx kv.RwTx) error {
-			for _, name := range buckets {
-				if db.buckets[name].IsDeprecated {
-					continue
-				}
-				if err := tx.(kv.BucketMigrator).CreateBucket(name); err != nil {
-					return err
-				}
-			}
-			return nil
-		}); err != nil {
-			return err
-		}
+		})
 	}
-	return nil
+
+	return db.Update(context.Background(), func(tx kv.RwTx) error {
+		for _, name := range buckets {
+			if db.buckets[name].IsDeprecated {
+				continue
+			}
+			if err := tx.(kv.BucketMigrator).CreateBucket(name); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 // Close closes db
@@ -584,6 +610,7 @@ func (db *MdbxKV) AllTables() kv.TableCfg {
 	return db.buckets
 }
 
+func (tx *MdbxTx) IsRo() bool     { return tx.readOnly }
 func (tx *MdbxTx) ViewID() uint64 { return tx.tx.ID() }
 
 func (tx *MdbxTx) CollectMetrics() {
@@ -633,9 +660,7 @@ func (tx *MdbxTx) CollectMetrics() {
 }
 
 // ListBuckets - all buckets stored as keys of un-named bucket
-func (tx *MdbxTx) ListBuckets() ([]string, error) {
-	return tx.tx.ListDBI()
-}
+func (tx *MdbxTx) ListBuckets() ([]string, error) { return tx.tx.ListDBI() }
 
 func (db *MdbxKV) View(ctx context.Context, f func(tx kv.Tx) error) (err error) {
 	// can't use db.env.View method - because it calls commit for read transactions - it conflicts with write transactions.
@@ -705,7 +730,7 @@ func (tx *MdbxTx) CreateBucket(name string) error {
 
 	var flags = tx.db.buckets[name].Flags
 	var nativeFlags uint
-	if !tx.db.ReadOnly() {
+	if !(tx.db.ReadOnly() || tx.db.Accede()) {
 		nativeFlags |= mdbx.Create
 	}
 
@@ -803,7 +828,7 @@ func (tx *MdbxTx) Commit() error {
 
 	latency, err := tx.tx.Commit()
 	if err != nil {
-		return err
+		return fmt.Errorf("lable: %s, %w", tx.db.opts.label, err)
 	}
 
 	if tx.db.opts.label == kv.ChainDB {

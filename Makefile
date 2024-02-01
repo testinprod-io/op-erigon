@@ -1,4 +1,4 @@
-GO = go # if using docker, should not need to be installed/linked
+GO ?= go # if using docker, should not need to be installed/linked
 GOBIN = $(CURDIR)/build/bin
 UNAME = $(shell uname) # Supported: Darwin, Linux
 DOCKER := $(shell command -v docker 2> /dev/null)
@@ -42,8 +42,8 @@ default: all
 
 ## go-version:                        print and verify go version
 go-version:
-	@if [ $(shell $(GO) version | cut -c 16-17) -lt 19 ]; then \
-		echo "minimum required Golang version is 1.19"; \
+	@if [ $(shell $(GO) version | cut -c 16-17) -lt 20 ]; then \
+		echo "minimum required Golang version is 1.20"; \
 		exit 1 ;\
 	fi
 
@@ -106,6 +106,7 @@ erigon: go-version erigon.cmd
 	@rm -f $(GOBIN)/tg # Remove old binary to prevent confusion where users still use it because of the scripts
 
 COMMANDS += devnet
+COMMANDS += capcli
 COMMANDS += downloader
 COMMANDS += hack
 COMMANDS += integration
@@ -119,7 +120,7 @@ COMMANDS += txpool
 COMMANDS += verkle
 COMMANDS += evm
 COMMANDS += sentinel
-COMMANDS += caplin-phase1
+COMMANDS += caplin
 COMMANDS += caplin-regression
 
 
@@ -260,7 +261,7 @@ release: git-submodules
 	@docker manifest create testinprod/op-erigon:latest \
     	--amend testinprod/op-erigon:$$(echo ${VERSION} | cut -c 2- )-amd64 \
     	--amend testinprod/op-erigon:$$(echo ${VERSION} | cut -c 2- )-arm64
-	@if echo "$(VERSION)" | grep -iq "rc"; then docker manifest push testinprod/op-erigon:latest; fi
+	@if ! echo "$(VERSION)" | grep -iq "rc"; then docker manifest push testinprod/op-erigon:latest; fi
 
 # since DOCKER_UID, DOCKER_GID are default initialized to the current user uid/gid,
 # we need separate envvars to facilitate creation of the erigon user on the host OS.
