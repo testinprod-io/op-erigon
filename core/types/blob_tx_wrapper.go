@@ -370,8 +370,8 @@ func (txw *BlobTxWrapper) DecodeRLP(s *rlp.Stream) error {
 	return s.ListEnd()
 }
 
-func (txw *BlobTxWrapper) RollupDataGas() RollupGasData {
-	return txw.Tx.RollupDataGas()
+func (txw *BlobTxWrapper) RollupCostData() RollupCostData {
+	return txw.Tx.RollupCostData()
 }
 
 // We deliberately encode only the transaction payload because the only case we need to serialize

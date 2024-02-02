@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/ledgerwatch/erigon-lib/chain"
 	"math"
 	"math/big"
 	"reflect"
@@ -38,6 +39,16 @@ import (
 )
 
 var (
+	ecotoneTestConfig = func() *chain.Config {
+		conf := *params.OptimismTestConfig // copy the config
+		conf.EcotoneTime = big.NewInt(0)
+		return &conf
+	}()
+	depNonce1     = uint64(7)
+	depNonce2     = uint64(8)
+	blockNumber   = big.NewInt(5)
+	blockTime     = uint64(10)
+	blockHash     = libcommon.BytesToHash([]byte{0x03, 0x14})
 	legacyReceipt = &Receipt{
 		Status:            ReceiptStatusFailed,
 		CumulativeGasUsed: 1,
@@ -237,6 +248,54 @@ func encodeAsStoredReceiptRLP(want *Receipt) ([]byte, error) {
 	return rlp.EncodeToBytes(stored)
 }
 
+func diffDerivedFields(t *testing.T, receipts Receipts, txs Transactions, blockHash libcommon.Hash, blockNumber *big.Int) {
+	logIndex := uint(0)
+	for i := range receipts {
+		if receipts[i].Type != txs[i].Type() {
+			t.Errorf("receipts[%d].Type = %d, want %d", i, receipts[i].Type, txs[i].Type())
+		}
+		if receipts[i].TxHash != txs[i].Hash() {
+			t.Errorf("receipts[%d].TxHash = %s, want %s", i, receipts[i].TxHash.String(), txs[i].Hash().String())
+		}
+		if receipts[i].BlockHash != blockHash {
+			t.Errorf("receipts[%d].BlockHash = %s, want %s", i, receipts[i].BlockHash.String(), blockHash.String())
+		}
+		if receipts[i].BlockNumber.Cmp(blockNumber) != 0 {
+			t.Errorf("receipts[%c].BlockNumber = %s, want %s", i, receipts[i].BlockNumber.String(), blockNumber.String())
+		}
+		if receipts[i].TransactionIndex != uint(i) {
+			t.Errorf("receipts[%d].TransactionIndex = %d, want %d", i, receipts[i].TransactionIndex, i)
+		}
+		if receipts[i].GasUsed != txs[i].GetGas() {
+			t.Errorf("receipts[%d].GasUsed = %d, want %d", i, receipts[i].GasUsed, txs[i].GetGas())
+		}
+		if txs[i].GetTo() != nil && receipts[i].ContractAddress != (libcommon.Address{}) {
+			t.Errorf("receipts[%d].ContractAddress = %s, want %s", i, receipts[i].ContractAddress.String(), (libcommon.Address{}).String())
+		}
+		for j := range receipts[i].Logs {
+			if receipts[i].Logs[j].BlockNumber != blockNumber.Uint64() {
+				t.Errorf("receipts[%d].Logs[%d].BlockNumber = %d, want %d", i, j, receipts[i].Logs[j].BlockNumber, blockNumber.Uint64())
+			}
+			if receipts[i].Logs[j].BlockHash != blockHash {
+				t.Errorf("receipts[%d].Logs[%d].BlockHash = %s, want %s", i, j, receipts[i].Logs[j].BlockHash.String(), blockHash.String())
+			}
+			if receipts[i].Logs[j].TxHash != txs[i].Hash() {
+				t.Errorf("receipts[%d].Logs[%d].TxHash = %s, want %s", i, j, receipts[i].Logs[j].TxHash.String(), txs[i].Hash().String())
+			}
+			if receipts[i].Logs[j].TxHash != txs[i].Hash() {
+				t.Errorf("receipts[%d].Logs[%d].TxHash = %s, want %s", i, j, receipts[i].Logs[j].TxHash.String(), txs[i].Hash().String())
+			}
+			if receipts[i].Logs[j].TxIndex != uint(i) {
+				t.Errorf("receipts[%d].Logs[%d].TransactionIndex = %d, want %d", i, j, receipts[i].Logs[j].TxIndex, i)
+			}
+			if receipts[i].Logs[j].Index != logIndex {
+				t.Errorf("receipts[%d].Logs[%d].Index = %d, want %d", i, j, receipts[i].Logs[j].Index, logIndex)
+			}
+			logIndex++
+		}
+	}
+}
+
 // Tests that receipt data can be correctly derived from the contextual infos
 func TestDeriveFields(t *testing.T) {
 	// Create a few transactions to have receipts for
@@ -394,54 +453,12 @@ func TestDeriveFields(t *testing.T) {
 	// Iterate over all the computed fields and check that they're correct
 	signer := MakeSigner(params.TestChainConfig, number.Uint64(), 0)
 
-	logIndex := uint(0)
+	diffDerivedFields(t, receipts, txs, hash, number)
 	for i := range receipts {
-		if receipts[i].Type != txs[i].Type() {
-			t.Errorf("receipts[%d].Type = %d, want %d", i, receipts[i].Type, txs[i].Type())
-		}
-		if receipts[i].TxHash != txs[i].Hash() {
-			t.Errorf("receipts[%d].TxHash = %s, want %s", i, receipts[i].TxHash.String(), txs[i].Hash().String())
-		}
-		if receipts[i].BlockHash != hash {
-			t.Errorf("receipts[%d].BlockHash = %s, want %s", i, receipts[i].BlockHash.String(), hash.String())
-		}
-		if receipts[i].BlockNumber.Cmp(number) != 0 {
-			t.Errorf("receipts[%c].BlockNumber = %s, want %s", i, receipts[i].BlockNumber.String(), number.String())
-		}
-		if receipts[i].TransactionIndex != uint(i) {
-			t.Errorf("receipts[%d].TransactionIndex = %d, want %d", i, receipts[i].TransactionIndex, i)
-		}
-		if receipts[i].GasUsed != txs[i].GetGas() {
-			t.Errorf("receipts[%d].GasUsed = %d, want %d", i, receipts[i].GasUsed, txs[i].GetGas())
-		}
-		if txs[i].GetTo() != nil && receipts[i].ContractAddress != (libcommon.Address{}) {
-			t.Errorf("receipts[%d].ContractAddress = %s, want %s", i, receipts[i].ContractAddress.String(), (libcommon.Address{}).String())
-		}
 		from, _ := txs[i].Sender(*signer)
 		contractAddress := crypto.CreateAddress(from, nonces[i])
 		if txs[i].GetTo() == nil && receipts[i].ContractAddress != contractAddress {
 			t.Errorf("receipts[%d].ContractAddress = %s, want %s", i, receipts[i].ContractAddress.String(), contractAddress.String())
-		}
-		for j := range receipts[i].Logs {
-			if receipts[i].Logs[j].BlockNumber != number.Uint64() {
-				t.Errorf("receipts[%d].Logs[%d].BlockNumber = %d, want %d", i, j, receipts[i].Logs[j].BlockNumber, number.Uint64())
-			}
-			if receipts[i].Logs[j].BlockHash != hash {
-				t.Errorf("receipts[%d].Logs[%d].BlockHash = %s, want %s", i, j, receipts[i].Logs[j].BlockHash.String(), hash.String())
-			}
-			if receipts[i].Logs[j].TxHash != txs[i].Hash() {
-				t.Errorf("receipts[%d].Logs[%d].TxHash = %s, want %s", i, j, receipts[i].Logs[j].TxHash.String(), txs[i].Hash().String())
-			}
-			if receipts[i].Logs[j].TxHash != txs[i].Hash() {
-				t.Errorf("receipts[%d].Logs[%d].TxHash = %s, want %s", i, j, receipts[i].Logs[j].TxHash.String(), txs[i].Hash().String())
-			}
-			if receipts[i].Logs[j].TxIndex != uint(i) {
-				t.Errorf("receipts[%d].Logs[%d].TransactionIndex = %d, want %d", i, j, receipts[i].Logs[j].TxIndex, i)
-			}
-			if receipts[i].Logs[j].Index != logIndex {
-				t.Errorf("receipts[%d].Logs[%d].Index = %d, want %d", i, j, receipts[i].Logs[j].Index, logIndex)
-			}
-			logIndex++
 		}
 	}
 }
@@ -701,4 +718,146 @@ func TestReceiptJSON(t *testing.T) {
 			}
 		})
 	}
+}
+
+// This method is based on op-geth
+// https://github.com/ethereum-optimism/op-geth/commit/a290ca164a36c80a8d106d88bd482b6f82220bef
+func getOptimismTxReceipts(
+	t *testing.T, l1AttributesPayload []byte,
+	l1GasPrice, l1GasUsed *uint256.Int, feeScalar *big.Float, l1Fee *uint256.Int) (Transactions, Receipts) {
+	//to4 := common.HexToAddress("0x4")
+	// Create a few transactions to have receipts for
+	txs := Transactions{
+		&DepositTx{
+			To:    nil, // contract creation
+			Value: uint256.NewInt(6),
+			Gas:   50,
+			Data:  l1AttributesPayload,
+		},
+		emptyTx,
+	}
+
+	// Create the corresponding receipts
+	receipts := Receipts{
+		&Receipt{
+			Type:              DepositTxType,
+			PostState:         libcommon.Hash{5}.Bytes(),
+			CumulativeGasUsed: 50,
+			Logs: []*Log{
+				{
+					Address: libcommon.BytesToAddress([]byte{0x33}),
+					// derived fields:
+					BlockNumber: blockNumber.Uint64(),
+					TxHash:      txs[0].Hash(),
+					TxIndex:     0,
+					BlockHash:   blockHash,
+					Index:       0,
+				},
+				{
+					Address: libcommon.BytesToAddress([]byte{0x03, 0x33}),
+					// derived fields:
+					BlockNumber: blockNumber.Uint64(),
+					TxHash:      txs[0].Hash(),
+					TxIndex:     0,
+					BlockHash:   blockHash,
+					Index:       1,
+				},
+			},
+			TxHash:           txs[0].Hash(),
+			ContractAddress:  libcommon.HexToAddress("0x3bb898b4bbe24f68a4e9be46cfe72d1787fd74f4"),
+			GasUsed:          50,
+			BlockHash:        blockHash,
+			BlockNumber:      blockNumber,
+			TransactionIndex: 0,
+			DepositNonce:     &depNonce1,
+		},
+		&Receipt{
+			Type:              LegacyTxType,
+			PostState:         libcommon.Hash{4}.Bytes(),
+			CumulativeGasUsed: 50,
+			Logs:              []*Log{},
+			// derived fields:
+			TxHash:           txs[1].Hash(),
+			GasUsed:          0,
+			BlockHash:        blockHash,
+			BlockNumber:      blockNumber,
+			TransactionIndex: 1,
+			L1GasPrice:       l1GasPrice.ToBig(),
+			L1GasUsed:        l1GasUsed.ToBig(),
+			L1Fee:            l1Fee.ToBig(),
+			FeeScalar:        feeScalar,
+		},
+	}
+	return txs, receipts
+}
+
+// This method is based on op-geth
+// https://github.com/ethereum-optimism/op-geth/commit/a290ca164a36c80a8d106d88bd482b6f82220bef
+func checkBedrockReceipts(t *testing.T, receipts Receipts, txs Transactions, blockHash libcommon.Hash, blockNumber *big.Int) {
+	diffDerivedFields(t, receipts, txs, blockHash, blockNumber)
+
+	// Check that we preserved the invariant: l1Fee = l1GasPrice * l1GasUsed * l1FeeScalar
+	// but with more difficult int math...
+	l2Rcpt := receipts[1]
+	l1GasCost := new(big.Int).Mul(l2Rcpt.L1GasPrice, l2Rcpt.L1GasUsed)
+	l1Fee := new(big.Float).Mul(new(big.Float).SetInt(l1GasCost), l2Rcpt.FeeScalar)
+	require.Equal(t, new(big.Float).SetInt(l2Rcpt.L1Fee), l1Fee)
+}
+
+// This test is based on op-geth
+// https://github.com/ethereum-optimism/op-geth/commit/a290ca164a36c80a8d106d88bd482b6f82220bef
+func TestDeriveOptimismBedrockTxReceipts(t *testing.T) {
+	// Bedrock style l1 attributes with L1Scalar=7_000_000 (becomes 7 after division), L1Overhead=50, L1BaseFee=1000*1e6
+	payload := common.Hex2Bytes("015d8eb900000000000000000000000000000000000000000000000000000000000004d200000000000000000000000000000000000000000000000000000000000004d2000000000000000000000000000000000000000000000000000000003b9aca0000000000000000000000000000000000000000000000000000000000000004d200000000000000000000000000000000000000000000000000000000000004d200000000000000000000000000000000000000000000000000000000000004d2000000000000000000000000000000000000000000000000000000000000003200000000000000000000000000000000000000000000000000000000006acfc0015d8eb900000000000000000000000000000000000000000000000000000000000004d200000000000000000000000000000000000000000000000000000000000004d2000000000000000000000000000000000000000000000000000000003b9aca0000000000000000000000000000000000000000000000000000000000000004d200000000000000000000000000000000000000000000000000000000000004d200000000000000000000000000000000000000000000000000000000000004d2000000000000000000000000000000000000000000000000000000000000003200000000000000000000000000000000000000000000000000000000006acfc0")
+	// the parameters we use below are defined in rollup_test.go
+	l1GasPrice := basefee
+	l1GasUsed := bedrockGas
+	feeScalar := big.NewFloat(float64(scalar.Uint64() / 1e6))
+	l1Fee := bedrockFee
+	txs, receipts := getOptimismTxReceipts(t, payload, l1GasPrice, l1GasUsed, feeScalar, l1Fee)
+	senders := []libcommon.Address{libcommon.HexToAddress("0x0"), libcommon.HexToAddress("0x0")}
+
+	// Re-derive receipts.
+	clearComputedFieldsOnReceipts(t, receipts)
+	err := receipts.DeriveFields(params.OptimismTestConfig, blockHash, blockNumber.Uint64(), blockTime, txs, senders)
+	if err != nil {
+		t.Fatalf("DeriveFields(...) = %v, want <nil>", err)
+	}
+	checkBedrockReceipts(t, receipts, txs, blockHash, blockNumber)
+
+	// Should get same result with the Ecotone config because it will assume this is "first ecotone block"
+	// if it sees the bedrock style L1 attributes.
+	clearComputedFieldsOnReceipts(t, receipts)
+	err = receipts.DeriveFields(ecotoneTestConfig, blockHash, blockNumber.Uint64(), blockTime, txs, senders)
+	if err != nil {
+		t.Fatalf("DeriveFields(...) = %v, want <nil>", err)
+	}
+	checkBedrockReceipts(t, receipts, txs, blockHash, blockNumber)
+}
+
+// This test is based on op-geth
+// https://github.com/ethereum-optimism/op-geth/commit/a290ca164a36c80a8d106d88bd482b6f82220bef
+func TestDeriveOptimismEcotoneTxReceipts(t *testing.T) {
+	// Ecotone style l1 attributes with baseFeeScalar=2, blobBaseFeeScalar=3, baseFee=1000*1e6, blobBaseFee=10*1e6
+	payload := common.Hex2Bytes("440a5e20000000020000000300000000000004d200000000000004d200000000000004d2000000000000000000000000000000000000000000000000000000003b9aca00000000000000000000000000000000000000000000000000000000000098968000000000000000000000000000000000000000000000000000000000000004d200000000000000000000000000000000000000000000000000000000000004d2")
+	// the parameters we use below are defined in rollup_test.go
+	l1GasPrice := basefee
+	l1GasUsed := ecotoneGas
+	l1Fee := ecotoneFee
+	txs, receipts := getOptimismTxReceipts(t, payload, l1GasPrice, l1GasUsed, nil /*feeScalar*/, l1Fee)
+	senders := []libcommon.Address{libcommon.HexToAddress("0x0"), libcommon.HexToAddress("0x0")}
+
+	// Re-derive receipts.
+	clearComputedFieldsOnReceipts(t, receipts)
+	err := receipts.DeriveFields(params.OptimismTestConfig, blockHash, blockNumber.Uint64(), blockTime, txs, senders)
+	if err == nil {
+		t.Fatalf("expected error from deriving ecotone receipts with pre-ecotone config, got none")
+	}
+
+	clearComputedFieldsOnReceipts(t, receipts)
+	err = receipts.DeriveFields(ecotoneTestConfig, blockHash, blockNumber.Uint64(), blockTime, txs, senders)
+	if err != nil {
+		t.Fatalf("DeriveFields(...) = %v, want <nil>", err)
+	}
+	diffDerivedFields(t, receipts, txs, blockHash, blockNumber)
 }

@@ -429,7 +429,7 @@ func (tx AccessListTx) AsMessage(s Signer, _ *big.Int, rules *chain.Rules) (Mess
 		data:       tx.Data,
 		accessList: tx.AccessList,
 		checkNonce: true,
-		l1CostGas:  tx.RollupDataGas(),
+		l1CostGas:  tx.RollupCostData(),
 	}
 
 	if !rules.IsBerlin {
@@ -522,6 +522,6 @@ func (tx *AccessListTx) Sender(signer Signer) (libcommon.Address, error) {
 	return addr, nil
 }
 
-func (tx *AccessListTx) RollupDataGas() RollupGasData {
+func (tx *AccessListTx) RollupCostData() RollupCostData {
 	return tx.computeRollupGas(tx)
 }

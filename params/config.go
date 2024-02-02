@@ -173,6 +173,16 @@ var (
 	}
 
 	TestRules = TestChainConfig.Rules(0, 0)
+
+	// This is an Optimism chain config with bedrock starting a block 5, introduced for historical endpoint testing, largely based on the clique config
+	OptimismTestConfig = func() *chain.Config {
+		conf := *AllCliqueProtocolChanges // copy the config
+		conf.Clique = nil
+		conf.TerminalTotalDifficultyPassed = true
+		conf.BedrockBlock = big.NewInt(5)
+		conf.Optimism = &chain.OptimismConfig{EIP1559Elasticity: 50, EIP1559Denominator: 10}
+		return &conf
+	}()
 )
 
 type ConsensusSnapshotConfig struct {
