@@ -19,6 +19,7 @@ package core
 import (
 	"github.com/ledgerwatch/erigon-lib/chain"
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
+	"github.com/ledgerwatch/erigon-lib/opstack"
 
 	"github.com/ledgerwatch/erigon/consensus"
 	"github.com/ledgerwatch/erigon/core/state"
@@ -130,7 +131,7 @@ func ApplyTransaction(config *chain.Config, blockHashFunc func(n uint64) libcomm
 	cfg.SkipAnalysis = SkipAnalysis(config, header.Number.Uint64())
 
 	blockContext := NewEVMBlockContext(header, blockHashFunc, engine, author)
-	blockContext.L1CostFunc = types.NewL1CostFunc(config, ibs)
+	blockContext.L1CostFunc = opstack.NewL1CostFunc(config, ibs)
 	vmenv := vm.NewEVM(blockContext, evmtypes.TxContext{}, ibs, config, cfg)
 
 	return applyTransaction(config, engine, gp, ibs, stateWriter, header, tx, usedGas, usedBlobGas, vmenv, cfg)

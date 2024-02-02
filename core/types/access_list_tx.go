@@ -522,6 +522,6 @@ func (tx *AccessListTx) Sender(signer Signer) (libcommon.Address, error) {
 	return addr, nil
 }
 
-func (tx *AccessListTx) RollupCostData() RollupCostData {
+func (tx *AccessListTx) RollupCostData() types2.RollupCostData {
 	return tx.computeRollupGas(tx)
 }

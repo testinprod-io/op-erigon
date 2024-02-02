@@ -7,6 +7,7 @@ import (
 
 	"github.com/ledgerwatch/erigon-lib/chain"
 	"github.com/ledgerwatch/erigon-lib/common"
+	"github.com/ledgerwatch/erigon-lib/opstack"
 	types2 "github.com/ledgerwatch/erigon-lib/types"
 
 	"github.com/ledgerwatch/erigon/core/types"
@@ -35,7 +36,7 @@ type BlockContext struct {
 	ExcessBlobGas *uint64        // Provides information for handling data blobs
 
 	// L1CostFunc returns the L1 cost of the rollup message, the function may be nil, or return nil
-	L1CostFunc types.L1CostFunc
+	L1CostFunc opstack.L1CostFunc
 }
 
 // TxContext provides the EVM with information about a transaction.
