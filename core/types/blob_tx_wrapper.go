@@ -370,7 +370,7 @@ func (txw *BlobTxWrapper) DecodeRLP(s *rlp.Stream) error {
 	return s.ListEnd()
 }
 
-func (txw *BlobTxWrapper) RollupCostData() RollupCostData {
+func (txw *BlobTxWrapper) RollupCostData() types2.RollupCostData {
 	return txw.Tx.RollupCostData()
 }
 

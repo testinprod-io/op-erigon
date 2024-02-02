@@ -17,7 +17,7 @@
 // This file implements OP stack L1 cost calculation, based on op-geth
 // https://github.com/ethereum-optimism/op-geth/commit/a290ca164a36c80a8d106d88bd482b6f82220bef
 
-package types
+package opstack
 
 import (
 	"bytes"
@@ -27,7 +27,8 @@ import (
 	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/erigon-lib/chain"
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon/params"
+	"github.com/ledgerwatch/erigon-lib/common/fixedgas"
+	"github.com/ledgerwatch/erigon-lib/types"
 	"github.com/ledgerwatch/log/v3"
 )
 
@@ -44,6 +45,9 @@ const (
 	// array. baseFeeScalar is in the first four bytes of the segment, blobBaseFeeScalar the next
 	// four.
 	scalarSectionStart = 32 - BaseFeeScalarSlotOffset - 4
+
+	LegacyL1InfoBytes  = 4 + 32*8
+	EcotoneL1InfoBytes = 164
 )
 
 func init() {
@@ -81,23 +85,17 @@ var (
 	emptyScalars = make([]byte, 8)
 )
 
-// RollupCostData is a transaction structure that caches data for quickly computing the data
-// availablility costs for the transaction.
-type RollupCostData struct {
-	zeroes, ones uint64
-}
-
 type StateGetter interface {
 	GetState(addr libcommon.Address, key *libcommon.Hash, value *uint256.Int)
 }
 
 // L1CostFunc is used in the state transition to determine the data availability fee charged to the
 // sender of non-Deposit transactions.  It returns nil if no data availability fee is charged.
-type L1CostFunc func(rcd RollupCostData, blockTime uint64) *uint256.Int
+type L1CostFunc func(rcd types.RollupCostData, blockTime uint64) *uint256.Int
 
 // l1CostFunc is an internal version of L1CostFunc that also returns the gasUsed for use in
 // receipts.
-type l1CostFunc func(rcd RollupCostData) (fee, gasUsed *uint256.Int)
+type l1CostFunc func(rcd types.RollupCostData) (fee, gasUsed *uint256.Int)
 
 // NewL1CostFunc returns a function used for calculating data availability fees, or nil if this is
 // not an op-stack chain.
@@ -107,8 +105,8 @@ func NewL1CostFunc(config *chain.Config, statedb StateGetter) L1CostFunc {
 	}
 	forBlock := ^uint64(0)
 	var cachedFunc l1CostFunc
-	return func(rollupCostData RollupCostData, blockTime uint64) *uint256.Int {
-		if rollupCostData == (RollupCostData{}) {
+	return func(rollupCostData types.RollupCostData, blockTime uint64) *uint256.Int {
+		if rollupCostData == (types.RollupCostData{}) {
 			return nil // Do not charge if there is no rollup cost-data (e.g. RPC call or deposit).
 		}
 		if forBlock != blockTime {
@@ -166,15 +164,15 @@ func newL1CostFuncBedrock(config *chain.Config, statedb StateGetter, blockTime u
 // newL1CostFuncBedrockHelper is lower level version of newL1CostFuncBedrock that expects already
 // extracted parameters
 func newL1CostFuncBedrockHelper(l1BaseFee, overhead, scalar *uint256.Int, isRegolith bool) l1CostFunc {
-	return func(rollupCostData RollupCostData) (fee, gasUsed *uint256.Int) {
-		if rollupCostData == (RollupCostData{}) {
+	return func(rollupCostData types.RollupCostData) (fee, gasUsed *uint256.Int) {
+		if rollupCostData == (types.RollupCostData{}) {
 			return nil, nil // Do not charge if there is no rollup cost-data (e.g. RPC call or deposit)
 		}
-		gas := rollupCostData.zeroes * params.TxDataZeroGas
+		gas := rollupCostData.Zeroes * fixedgas.TxDataZeroGas
 		if isRegolith {
-			gas += rollupCostData.ones * params.TxDataNonZeroGasEIP2028
+			gas += rollupCostData.Ones * fixedgas.TxDataNonZeroGasEIP2028
 		} else {
-			gas += (rollupCostData.ones + 68) * params.TxDataNonZeroGasEIP2028
+			gas += (rollupCostData.Ones + 68) * fixedgas.TxDataNonZeroGasEIP2028
 		}
 		gasWithOverhead := uint256.NewInt(gas)
 		gasWithOverhead.Add(gasWithOverhead, overhead)
@@ -186,8 +184,8 @@ func newL1CostFuncBedrockHelper(l1BaseFee, overhead, scalar *uint256.Int, isRego
 // newL1CostFuncEcotone returns an l1 cost function suitable for the Ecotone upgrade except for the
 // very first block of the upgrade.
 func newL1CostFuncEcotone(l1BaseFee, l1BlobBaseFee, l1BaseFeeScalar, l1BlobBaseFeeScalar *uint256.Int) l1CostFunc {
-	return func(costData RollupCostData) (fee, calldataGasUsed *uint256.Int) {
-		calldataGas := (costData.zeroes * params.TxDataZeroGas) + (costData.ones * params.TxDataNonZeroGasEIP2028)
+	return func(costData types.RollupCostData) (fee, calldataGasUsed *uint256.Int) {
+		calldataGas := (costData.Zeroes * fixedgas.TxDataZeroGas) + (costData.Ones * fixedgas.TxDataNonZeroGasEIP2028)
 		calldataGasUsed = new(uint256.Int).SetUint64(calldataGas)
 
 		// Ecotone L1 cost function:
@@ -216,9 +214,9 @@ func newL1CostFuncEcotone(l1BaseFee, l1BlobBaseFee, l1BaseFeeScalar, l1BlobBaseF
 	}
 }
 
-// extractL1GasParams extracts the gas parameters necessary to compute gas costs from L1 block info
+// ExtractL1GasParams extracts the gas parameters necessary to compute gas costs from L1 block info
 // calldata.
-func extractL1GasParams(config *chain.Config, time uint64, data []byte) (l1BaseFee *uint256.Int, costFunc l1CostFunc, feeScalar *big.Float, err error) {
+func ExtractL1GasParams(config *chain.Config, time uint64, data []byte) (l1BaseFee *uint256.Int, costFunc l1CostFunc, feeScalar *big.Float, err error) {
 	if config.IsEcotone(time) {
 		// edge case: for the very first Ecotone block we still need to use the Bedrock
 		// function. We detect this edge case by seeing if the function selector is the old one
@@ -227,9 +225,13 @@ func extractL1GasParams(config *chain.Config, time uint64, data []byte) (l1BaseF
 			return
 		}
 	}
+	return extractL1GasParamsLegacy(config.IsRegolith(time), data)
+}
+
+func extractL1GasParamsLegacy(isRegolith bool, data []byte) (l1BaseFee *uint256.Int, costFunc l1CostFunc, feeScalar *big.Float, err error) {
 	// data consists of func selector followed by 7 ABI-encoded parameters (32 bytes each)
-	if len(data) < 4+32*8 {
-		return nil, nil, nil, fmt.Errorf("expected at least %d L1 info bytes, got %d", 4+32*8, len(data))
+	if len(data) < LegacyL1InfoBytes {
+		return nil, nil, nil, fmt.Errorf("expected at least %d L1 info bytes, got %d", LegacyL1InfoBytes, len(data))
 	}
 	data = data[4:]                                          // trim function selector
 	l1BaseFee = new(uint256.Int).SetBytes(data[32*2 : 32*3]) // arg index 2
@@ -238,14 +240,14 @@ func extractL1GasParams(config *chain.Config, time uint64, data []byte) (l1BaseF
 	fscalar := new(big.Float).SetInt(scalar.ToBig())         // legacy: format fee scalar as big Float
 	fdivisor := new(big.Float).SetUint64(1_000_000)          // 10**6, i.e. 6 decimals
 	feeScalar = new(big.Float).Quo(fscalar, fdivisor)
-	costFunc = newL1CostFuncBedrockHelper(l1BaseFee, overhead, scalar, config.IsRegolith(time))
-	return
+	costFunc = newL1CostFuncBedrockHelper(l1BaseFee, overhead, scalar, isRegolith)
+	return l1BaseFee, costFunc, feeScalar, nil
 }
 
 // extractEcotoneL1GasParams extracts the gas parameters necessary to compute gas from L1 attribute
 // info calldata after the Ecotone upgrade, but not for the very first Ecotone block.
 func extractL1GasParamsEcotone(data []byte) (l1BaseFee *uint256.Int, costFunc l1CostFunc, err error) {
-	if len(data) != 164 {
+	if len(data) != EcotoneL1InfoBytes {
 		return nil, nil, fmt.Errorf("expected 164 L1 info bytes, got %d", len(data))
 	}
 	// data layout assumed for Ecotone:
@@ -280,4 +282,26 @@ func l1CostHelper(gasWithOverhead, l1BaseFee, scalar *uint256.Int) *uint256.Int 
 	fee := new(uint256.Int).Set(gasWithOverhead)
 	fee.Mul(fee, l1BaseFee).Mul(fee, scalar).Div(fee, oneMillion)
 	return fee
+}
+
+func L1CostFnForTxPool(data []byte) (types.L1CostFn, error) {
+	var costFunc l1CostFunc
+	var err error
+	if len(data) == EcotoneL1InfoBytes {
+		_, costFunc, err = extractL1GasParamsEcotone(data)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		// This method is used for txpool that is needed for OP sequencer.
+		// Assume that isRegolith will be always true for new block.
+		_, costFunc, _, err = extractL1GasParamsLegacy(true, data)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return func(tx *types.TxSlot) *uint256.Int {
+		fee, _ := costFunc(tx.RollupCostData)
+		return fee
+	}, nil
 }

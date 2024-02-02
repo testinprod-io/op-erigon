@@ -469,6 +469,6 @@ func NewEIP1559Transaction(chainID uint256.Int, nonce uint64, to libcommon.Addre
 
 func (tx *DynamicFeeTransaction) IsDepositTx() bool { return false }
 
-func (tx *DynamicFeeTransaction) RollupCostData() RollupCostData {
+func (tx *DynamicFeeTransaction) RollupCostData() types2.RollupCostData {
 	return tx.computeRollupGas(tx)
 }

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ledgerwatch/erigon-lib/common/hexutil"
+	"github.com/ledgerwatch/erigon-lib/opstack"
 	"math/big"
 	"time"
 
@@ -352,7 +353,7 @@ func (api *PrivateDebugAPIImpl) TraceCall(ctx context.Context, args ethapi.CallA
 
 	blockCtx := transactions.NewEVMBlockContext(engine, header, blockNrOrHash.RequireCanonical, dbtx, api._blockReader)
 	txCtx := core.NewEVMTxContext(msg)
-	blockCtx.L1CostFunc = types.NewL1CostFunc(chainConfig, ibs)
+	blockCtx.L1CostFunc = opstack.NewL1CostFunc(chainConfig, ibs)
 	// Trace the transaction and return
 	return transactions.TraceTx(ctx, msg, blockCtx, txCtx, ibs, config, chainConfig, stream, api.evmCallTimeout)
 }
@@ -474,7 +475,7 @@ func (api *PrivateDebugAPIImpl) TraceCallMany(ctx context.Context, bundles []Bun
 		GasLimit:    parent.GasLimit,
 		BaseFee:     &baseFee,
 	}
-	blockCtx.L1CostFunc = types.NewL1CostFunc(chainConfig, st)
+	blockCtx.L1CostFunc = opstack.NewL1CostFunc(chainConfig, st)
 
 	// Get a new instance of the EVM
 	evm = vm.NewEVM(blockCtx, txCtx, st, chainConfig, vm.Config{Debug: false})

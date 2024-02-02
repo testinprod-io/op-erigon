@@ -20,14 +20,15 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
 	"io"
 	"math/big"
 
 	"github.com/ledgerwatch/erigon-lib/chain"
 
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
+	"github.com/ledgerwatch/erigon-lib/common/hexutil"
 	"github.com/ledgerwatch/erigon-lib/common/hexutility"
+	"github.com/ledgerwatch/erigon-lib/opstack"
 
 	"github.com/ledgerwatch/erigon/crypto"
 	"github.com/ledgerwatch/erigon/rlp"
@@ -617,7 +618,7 @@ func (r Receipts) DeriveFields(config *chain.Config, hash libcommon.Hash, number
 		}
 	}
 	if config.IsOptimismBedrock(number) && len(txs) >= 2 { // need at least an info tx and a non-info tx
-		l1Basefee, costFunc, feeScalar, err := extractL1GasParams(config, time, txs[0].GetData())
+		l1Basefee, costFunc, feeScalar, err := opstack.ExtractL1GasParams(config, time, txs[0].GetData())
 		if err != nil {
 			return err
 		}

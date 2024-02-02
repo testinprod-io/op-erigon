@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/ledgerwatch/erigon-lib/common/hexutil"
+	"github.com/ledgerwatch/erigon-lib/opstack"
 	"math/big"
 	"time"
 
@@ -170,7 +171,7 @@ func (api *APIImpl) CallMany(ctx context.Context, bundles []Bundle, simulateCont
 		GasLimit:    parent.GasLimit,
 		BaseFee:     &baseFee,
 	}
-	blockCtx.L1CostFunc = types.NewL1CostFunc(chainConfig, st)
+	blockCtx.L1CostFunc = opstack.NewL1CostFunc(chainConfig, st)
 
 	// Get a new instance of the EVM
 	evm = vm.NewEVM(blockCtx, txCtx, st, chainConfig, vm.Config{Debug: false})

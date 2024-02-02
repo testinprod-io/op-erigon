@@ -95,7 +95,7 @@ type Transaction interface {
 	GetSender() (libcommon.Address, bool)
 	SetSender(libcommon.Address)
 	IsContractDeploy() bool
-	RollupCostData() RollupCostData
+	RollupCostData() types2.RollupCostData
 	Unwrap() Transaction // If this is a network wrapper, returns the unwrapped tx. Otherwiwes returns itself.
 }
 
@@ -132,22 +132,19 @@ func (r *rollupGasCounter) Write(p []byte) (int, error) {
 func (tm *TransactionMisc) computeRollupGas(tx interface {
 	MarshalBinary(w io.Writer) error
 	Type() byte
-}) RollupCostData {
+}) types2.RollupCostData {
 	if tx.Type() == DepositTxType {
-		return RollupCostData{}
+		return types2.RollupCostData{}
 	}
 	if v := tm.rollupGas.Load(); v != nil {
-		return v.(RollupCostData)
+		return v.(types2.RollupCostData)
 	}
 	var c rollupGasCounter
 	err := tx.MarshalBinary(&c)
 	if err != nil { // Silent error, invalid txs will not be marshalled/unmarshalled for batch submission anyway.
 		log.Error("failed to encode tx for L1 cost computation", "err", err)
 	}
-	total := RollupCostData{
-		zeroes: c.zeroes,
-		ones:   c.ones,
-	}
+	total := types2.RollupCostData{Zeroes: c.zeroes, Ones: c.ones}
 	tm.rollupGas.Store(total)
 	return total
 }
@@ -584,7 +581,7 @@ type Message struct {
 	isSystemTx  bool
 	isDepositTx bool
 	mint        *uint256.Int
-	l1CostGas   RollupCostData
+	l1CostGas   types2.RollupCostData
 }
 
 func NewMessage(from libcommon.Address, to *libcommon.Address, nonce uint64, amount *uint256.Int, gasLimit uint64,
@@ -654,10 +651,10 @@ func (m *Message) ChangeGas(globalGasCap, desiredGas uint64) {
 	m.gasLimit = gas
 }
 
-func (m Message) IsSystemTx() bool               { return m.isSystemTx }
-func (m Message) IsDepositTx() bool              { return m.isDepositTx }
-func (m Message) Mint() *uint256.Int             { return m.mint }
-func (m Message) RollupCostData() RollupCostData { return m.l1CostGas }
+func (m Message) IsSystemTx() bool                      { return m.isSystemTx }
+func (m Message) IsDepositTx() bool                     { return m.isDepositTx }
+func (m Message) Mint() *uint256.Int                    { return m.mint }
+func (m Message) RollupCostData() types2.RollupCostData { return m.l1CostGas }
 
 func (m Message) BlobGas() uint64 { return fixedgas.BlobGasPerBlob * uint64(len(m.blobHashes)) }
 
