@@ -220,7 +220,7 @@ func TestNewL1CostFunc(t *testing.T) {
 	require.NotNil(t, costFunc)
 
 	// empty cost data should result in nil fee
-	fee := costFunc(RollupCostData{}, time)
+	fee := costFunc(types.RollupCostData{}, time)
 	require.Nil(t, fee)
 
 	// emptyTx fee w/ bedrock config should be the bedrock fee
