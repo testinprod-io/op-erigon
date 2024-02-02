@@ -8,6 +8,7 @@ import (
 	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/erigon-lib/chain"
 	"github.com/ledgerwatch/erigon-lib/common"
+	"github.com/ledgerwatch/erigon-lib/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -34,14 +35,17 @@ var (
 	ecotoneGas  = uint256.NewInt(480)
 
 	OptimismTestConfig = &chain.OptimismConfig{EIP1559Elasticity: 50, EIP1559Denominator: 10}
+
+	// RollupCostData of emptyTx
+	emptyTxRollupCostData = types.RollupCostData{Zeroes: 0, Ones: 30}
 )
 
 func TestBedrockL1CostFunc(t *testing.T) {
 	costFunc0 := newL1CostFuncBedrockHelper(basefee, overhead, scalar, false /*isRegolith*/)
 	costFunc1 := newL1CostFuncBedrockHelper(basefee, overhead, scalar, true)
 
-	c0, g0 := costFunc0(types.emptyTx.RollupCostData()) // pre-Regolith
-	c1, g1 := costFunc1(types.emptyTx.RollupCostData())
+	c0, g0 := costFunc0(emptyTxRollupCostData) // pre-Regolith
+	c1, g1 := costFunc1(emptyTxRollupCostData)
 
 	require.Equal(t, bedrockFee, c0)
 	require.Equal(t, bedrockGas, g0) // gas-used
@@ -52,7 +56,7 @@ func TestBedrockL1CostFunc(t *testing.T) {
 
 func TestEcotoneL1CostFunc(t *testing.T) {
 	costFunc := newL1CostFuncEcotone(basefee, blobBasefee, basefeeScalar, blobBasefeeScalar)
-	c, g := costFunc(types.emptyTx.RollupCostData())
+	c, g := costFunc(emptyTxRollupCostData)
 	require.Equal(t, ecotoneGas, g)
 	require.Equal(t, ecotoneFee, c)
 }
@@ -77,10 +81,10 @@ func TestExtractBedrockGasParams(t *testing.T) {
 	_, costFuncRegolith, _, err := ExtractL1GasParams(config, regolithTime, data)
 	require.NoError(t, err)
 
-	c, _ := costFuncPreRegolith(types.emptyTx.RollupCostData())
+	c, _ := costFuncPreRegolith(emptyTxRollupCostData)
 	require.Equal(t, bedrockFee, c)
 
-	c, _ = costFuncRegolith(types.emptyTx.RollupCostData())
+	c, _ = costFuncRegolith(emptyTxRollupCostData)
 	require.Equal(t, regolithFee, c)
 
 	// try to extract from data which has not enough params, should get error.
@@ -104,7 +108,7 @@ func TestExtractEcotoneGasParams(t *testing.T) {
 	_, costFunc, _, err := ExtractL1GasParams(config, 0, data)
 	require.NoError(t, err)
 
-	c, g := costFunc(types.emptyTx.RollupCostData())
+	c, g := costFunc(emptyTxRollupCostData)
 
 	require.Equal(t, ecotoneGas, g)
 	require.Equal(t, ecotoneFee, c)
@@ -131,7 +135,7 @@ func TestFirstBlockEcotoneGasParams(t *testing.T) {
 
 	_, oldCostFunc, _, err := ExtractL1GasParams(config, 0, data)
 	require.NoError(t, err)
-	c, _ := oldCostFunc(types.emptyTx.RollupCostData())
+	c, _ := oldCostFunc(emptyTxRollupCostData)
 	require.Equal(t, regolithFee, c)
 }
 
@@ -220,7 +224,7 @@ func TestNewL1CostFunc(t *testing.T) {
 	require.Nil(t, fee)
 
 	// emptyTx fee w/ bedrock config should be the bedrock fee
-	fee = costFunc(types.emptyTx.RollupCostData(), time)
+	fee = costFunc(emptyTxRollupCostData, time)
 	require.NotNil(t, fee)
 	require.Equal(t, bedrockFee, fee)
 
@@ -228,14 +232,14 @@ func TestNewL1CostFunc(t *testing.T) {
 	config.RegolithTime = new(big.Int).SetUint64(time)
 	costFunc = NewL1CostFunc(config, statedb)
 	require.NotNil(t, costFunc)
-	fee = costFunc(types.emptyTx.RollupCostData(), time)
+	fee = costFunc(emptyTxRollupCostData, time)
 	require.NotNil(t, fee)
 	require.Equal(t, regolithFee, fee)
 
 	// emptyTx fee w/ ecotone config should be the ecotone fee
 	config.EcotoneTime = new(big.Int).SetUint64(time)
 	costFunc = NewL1CostFunc(config, statedb)
-	fee = costFunc(types.emptyTx.RollupCostData(), time)
+	fee = costFunc(emptyTxRollupCostData, time)
 	require.NotNil(t, fee)
 	require.Equal(t, ecotoneFee, fee)
 
@@ -245,7 +249,7 @@ func TestNewL1CostFunc(t *testing.T) {
 	statedb.blobBasefeeScalar = 0
 	statedb.blobBasefee = new(uint256.Int)
 	costFunc = NewL1CostFunc(config, statedb)
-	fee = costFunc(types.emptyTx.RollupCostData(), time)
+	fee = costFunc(emptyTxRollupCostData, time)
 	require.NotNil(t, fee)
 	require.Equal(t, regolithFee, fee)
 }
