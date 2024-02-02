@@ -113,6 +113,7 @@ func LoadSuperChainConfig(opStackChainCfg *superchain.ChainConfig) *chain.Config
 		BedrockBlock:                  common.Big0,
 		RegolithTime:                  big.NewInt(0),
 		CanyonTime:                    new(big.Int).SetUint64(*superchainConfig.Config.CanyonTime),
+		EcotoneTime:                   new(big.Int).SetUint64(*superchainConfig.Config.EcotoneTime),
 		TerminalTotalDifficulty:       common.Big0,
 		TerminalTotalDifficultyPassed: true,
 		Ethash:                        nil,
