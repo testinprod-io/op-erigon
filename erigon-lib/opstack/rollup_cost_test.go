@@ -140,37 +140,37 @@ func TestFirstBlockEcotoneGasParams(t *testing.T) {
 }
 
 func getBedrockL1Attributes(basefee, overhead, scalar *uint256.Int) []byte {
-	uint256 := make([]byte, 32)
+	uint256Bytes := make([]byte, 32)
 	ignored := big.NewInt(1234)
 	data := []byte{}
 	data = append(data, BedrockL1AttributesSelector...)
-	data = append(data, ignored.FillBytes(uint256)...)          // arg 0
-	data = append(data, ignored.FillBytes(uint256)...)          // arg 1
-	data = append(data, basefee.ToBig().FillBytes(uint256)...)  // arg 2
-	data = append(data, ignored.FillBytes(uint256)...)          // arg 3
-	data = append(data, ignored.FillBytes(uint256)...)          // arg 4
-	data = append(data, ignored.FillBytes(uint256)...)          // arg 5
-	data = append(data, overhead.ToBig().FillBytes(uint256)...) // arg 6
-	data = append(data, scalar.ToBig().FillBytes(uint256)...)   // arg 7
+	data = append(data, ignored.FillBytes(uint256Bytes)...)          // arg 0
+	data = append(data, ignored.FillBytes(uint256Bytes)...)          // arg 1
+	data = append(data, basefee.ToBig().FillBytes(uint256Bytes)...)  // arg 2
+	data = append(data, ignored.FillBytes(uint256Bytes)...)          // arg 3
+	data = append(data, ignored.FillBytes(uint256Bytes)...)          // arg 4
+	data = append(data, ignored.FillBytes(uint256Bytes)...)          // arg 5
+	data = append(data, overhead.ToBig().FillBytes(uint256Bytes)...) // arg 6
+	data = append(data, scalar.ToBig().FillBytes(uint256Bytes)...)   // arg 7
 	return data
 }
 
 func getEcotoneL1Attributes(basefee, blobBasefee, basefeeScalar, blobBasefeeScalar *uint256.Int) []byte {
 	ignored := big.NewInt(1234)
 	data := []byte{}
-	uint256 := make([]byte, 32)
-	uint64 := make([]byte, 8)
-	uint32 := make([]byte, 4)
+	uint256Bytes := make([]byte, 32)
+	uint64Bytes := make([]byte, 8)
+	uint32Bytes := make([]byte, 4)
 	data = append(data, EcotoneL1AttributesSelector...)
-	data = append(data, basefeeScalar.ToBig().FillBytes(uint32)...)
-	data = append(data, blobBasefeeScalar.ToBig().FillBytes(uint32)...)
-	data = append(data, ignored.FillBytes(uint64)...)
-	data = append(data, ignored.FillBytes(uint64)...)
-	data = append(data, ignored.FillBytes(uint64)...)
-	data = append(data, basefee.ToBig().FillBytes(uint256)...)
-	data = append(data, blobBasefee.ToBig().FillBytes(uint256)...)
-	data = append(data, ignored.FillBytes(uint256)...)
-	data = append(data, ignored.FillBytes(uint256)...)
+	data = append(data, basefeeScalar.ToBig().FillBytes(uint32Bytes)...)
+	data = append(data, blobBasefeeScalar.ToBig().FillBytes(uint32Bytes)...)
+	data = append(data, ignored.FillBytes(uint64Bytes)...)
+	data = append(data, ignored.FillBytes(uint64Bytes)...)
+	data = append(data, ignored.FillBytes(uint64Bytes)...)
+	data = append(data, basefee.ToBig().FillBytes(uint256Bytes)...)
+	data = append(data, blobBasefee.ToBig().FillBytes(uint256Bytes)...)
+	data = append(data, ignored.FillBytes(uint256Bytes)...)
+	data = append(data, ignored.FillBytes(uint256Bytes)...)
 	return data
 }
 
