@@ -475,8 +475,8 @@ func (tx *DepositTx) Sender(signer Signer) (libcommon.Address, error) {
 	return tx.From, nil
 }
 
-func (tx DepositTx) RollupDataGas() RollupGasData {
-	return RollupGasData{}
+func (tx DepositTx) RollupCostData() types2.RollupCostData {
+	return types2.RollupCostData{}
 }
 
 func (tx *DepositTx) GetDataHashes() []libcommon.Hash {

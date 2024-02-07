@@ -112,7 +112,8 @@ func LoadSuperChainConfig(opStackChainCfg *superchain.ChainConfig) *chain.Config
 		PragueTime:                    nil,
 		BedrockBlock:                  common.Big0,
 		RegolithTime:                  big.NewInt(0),
-		CanyonTime:                    new(big.Int).SetUint64(*superchainConfig.Config.CanyonTime),
+		CanyonTime:                    nil,
+		EcotoneTime:                   nil,
 		TerminalTotalDifficulty:       common.Big0,
 		TerminalTotalDifficultyPassed: true,
 		Ethash:                        nil,
@@ -126,9 +127,11 @@ func LoadSuperChainConfig(opStackChainCfg *superchain.ChainConfig) *chain.Config
 
 	if superchainConfig.Config.CanyonTime != nil {
 		out.ShanghaiTime = new(big.Int).SetUint64(*superchainConfig.Config.CanyonTime) // Shanghai activates with Canyon
+		out.CanyonTime = new(big.Int).SetUint64(*superchainConfig.Config.CanyonTime)
 	}
 	if superchainConfig.Config.EcotoneTime != nil {
 		out.CancunTime = new(big.Int).SetUint64(*superchainConfig.Config.EcotoneTime) // CancunTime activates with Ecotone
+		out.EcotoneTime = new(big.Int).SetUint64(*superchainConfig.Config.EcotoneTime)
 	}
 
 	// note: no actual parameters are being loaded, yet.

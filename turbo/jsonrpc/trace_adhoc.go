@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ledgerwatch/erigon-lib/common/hexutil"
+	"github.com/ledgerwatch/erigon-lib/opstack"
 	"math"
 	"strings"
 
@@ -967,7 +968,7 @@ func (api *TraceAPIImpl) Call(ctx context.Context, args TraceCallParam, traceTyp
 
 	blockCtx.GasLimit = math.MaxUint64
 	blockCtx.MaxGasLimit = true
-	blockCtx.L1CostFunc = types.NewL1CostFunc(chainConfig, ibs)
+	blockCtx.L1CostFunc = opstack.NewL1CostFunc(chainConfig, ibs)
 
 	evm := vm.NewEVM(blockCtx, txCtx, ibs, chainConfig, vm.Config{Debug: traceTypeTrace, Tracer: &ot})
 
@@ -1148,7 +1149,7 @@ func (api *TraceAPIImpl) doCallMany(ctx context.Context, dbtx kv.Tx, msgs []type
 		useParent = true
 	}
 
-	l1CostFunc := types.NewL1CostFunc(chainConfig, ibs)
+	l1CostFunc := opstack.NewL1CostFunc(chainConfig, ibs)
 	for txIndex, msg := range msgs {
 		if err := libcommon.Stopped(ctx.Done()); err != nil {
 			return nil, nil, err

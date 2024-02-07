@@ -27,7 +27,6 @@ import (
 	cmath "github.com/ledgerwatch/erigon/common/math"
 	"github.com/ledgerwatch/erigon/common/u256"
 	"github.com/ledgerwatch/erigon/consensus/misc"
-	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/core/vm"
 	"github.com/ledgerwatch/erigon/core/vm/evmtypes"
 	"github.com/ledgerwatch/erigon/crypto"
@@ -92,7 +91,7 @@ type Message interface {
 	Mint() *uint256.Int
 	IsSystemTx() bool
 	IsDepositTx() bool
-	RollupDataGas() types.RollupGasData
+	RollupCostData() types2.RollupCostData
 
 	Nonce() uint64
 	CheckNonce() bool
@@ -209,7 +208,7 @@ func (st *StateTransition) buyGas(gasBailout bool) error {
 	}
 	var l1Cost *uint256.Int
 	if fn := st.evm.Context.L1CostFunc; fn != nil && !st.msg.IsFake() {
-		l1Cost = fn(st.evm.Context.BlockNumber, st.evm.Context.Time, st.msg)
+		l1Cost = fn(st.msg.RollupCostData(), st.evm.Context.Time)
 	}
 	if l1Cost != nil {
 		gasVal = gasVal.Add(gasVal, l1Cost)
@@ -572,7 +571,7 @@ func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*Ex
 		if st.evm.Context.L1CostFunc == nil { // Erigon EVM context is used in many unexpected/hacky ways, let's panic if it's misconfigured
 			panic("missing L1 cost func in block context, please configure l1 cost when using optimism config to run EVM")
 		}
-		if cost := st.evm.Context.L1CostFunc(st.evm.Context.BlockNumber, st.evm.Context.Time, st.msg); cost != nil {
+		if cost := st.evm.Context.L1CostFunc(st.msg.RollupCostData(), st.evm.Context.Time); cost != nil {
 			st.state.AddBalance(params.OptimismL1FeeRecipient, cost)
 		}
 	}

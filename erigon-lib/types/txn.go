@@ -109,7 +109,7 @@ type TxSlot struct {
 	Commitments []gokzg4844.KZGCommitment
 	Proofs      []gokzg4844.KZGProof
 
-	RollupDataGas uint64 // Translates into a L1 cost based on fee parameters
+	RollupCostData RollupCostData
 }
 
 const (
@@ -387,9 +387,7 @@ func (ctx *TxParseContext) parseTransactionBody(payload []byte, pos, p0 int, slo
 					ones++
 				}
 			}
-			zeroesGas := zeroes * 4
-			onesGas := (ones + 68) * 16
-			slot.RollupDataGas = zeroesGas + onesGas
+			slot.RollupCostData = RollupCostData{Zeroes: zeroes, Ones: ones}
 		}
 		p = dataPos + dataLen
 
@@ -486,9 +484,7 @@ func (ctx *TxParseContext) parseTransactionBody(payload []byte, pos, p0 int, slo
 				ones++
 			}
 		}
-		zeroesGas := zeroes * 4
-		onesGas := (ones + 68) * 16
-		slot.RollupDataGas = zeroesGas + onesGas
+		slot.RollupCostData = RollupCostData{Zeroes: zeroes, Ones: ones}
 	}
 
 	p = dataPos + dataLen
@@ -1078,3 +1074,11 @@ func (al AccessList) StorageKeys() int {
 	}
 	return sum
 }
+
+// RollupCostData is a transaction structure that caches data for quickly computing the data
+// availablility costs for the transaction.
+type RollupCostData struct {
+	Zeroes, Ones uint64
+}
+
+type L1CostFn func(tx *TxSlot) *uint256.Int

@@ -59,6 +59,7 @@ import (
 	"github.com/ledgerwatch/erigon-lib/kv/kvcache"
 	"github.com/ledgerwatch/erigon-lib/kv/mdbx"
 	"github.com/ledgerwatch/erigon-lib/metrics"
+	"github.com/ledgerwatch/erigon-lib/opstack"
 	"github.com/ledgerwatch/erigon-lib/txpool/txpoolcfg"
 	"github.com/ledgerwatch/erigon-lib/types"
 )
@@ -177,8 +178,6 @@ func SortByNonceLess(a, b *metaTx) bool {
 	return a.Tx.Nonce < b.Tx.Nonce
 }
 
-type L1CostFn func(tx *types.TxSlot) *uint256.Int
-
 // TxPool - holds all pool-related data structures and lock-based tiny methods
 // most of logic implemented by pure tests-friendly functions
 //
@@ -229,7 +228,7 @@ type TxPool struct {
 	maxBlobsPerBlock        uint64
 	logger                  log.Logger
 
-	l1Cost L1CostFn
+	l1Cost types.L1CostFn
 }
 
 func New(newTxs chan types.Announcements, coreDB kv.RoDB, cfg txpoolcfg.Config, cache kvcache.Cache,
@@ -304,7 +303,7 @@ func New(newTxs chan types.Announcements, coreDB kv.RoDB, cfg txpoolcfg.Config, 
 	return res, nil
 }
 
-func RawRLPTxToOptimismL1CostFn(payload []byte) (L1CostFn, error) {
+func RawRLPTxToOptimismL1CostFn(payload []byte) (types.L1CostFn, error) {
 	// skip prefix byte
 	if len(payload) == 0 {
 		return nil, fmt.Errorf("empty tx payload")
@@ -351,24 +350,7 @@ func RawRLPTxToOptimismL1CostFn(payload []byte) (L1CostFn, error) {
 		return nil, fmt.Errorf("failed to read tx data entry rlp prefix: %w", err)
 	}
 	txCalldata := payload[dataPos : dataPos+dataLen]
-
-	if len(txCalldata) < 4+32*8 { // function selector + 8 arguments to setL1BlockValues
-		return nil, fmt.Errorf("expected more calldata to read L1 info from, but only got %d", len(txCalldata))
-	}
-	l1Basefee := new(uint256.Int).SetBytes(txCalldata[4+32*2 : 4+32*3]) // arg index 2
-	overhead := new(uint256.Int).SetBytes(txCalldata[4+32*6 : 4+32*7])  // arg index 6
-	scalar := new(uint256.Int).SetBytes(txCalldata[4+32*7 : 4+32*8])    // arg index 7
-	return func(tx *types.TxSlot) *uint256.Int {
-		return L1Cost(tx.RollupDataGas, l1Basefee, overhead, scalar)
-	}, nil
-}
-
-func L1Cost(rollupDataGas uint64, l1BaseFee, overhead, scalar *uint256.Int) *uint256.Int {
-	l1GasUsed := new(uint256.Int).SetUint64(rollupDataGas)
-	l1GasUsed = l1GasUsed.Add(l1GasUsed, overhead)
-	l1Cost := l1GasUsed.Mul(l1GasUsed, l1BaseFee)
-	l1Cost = l1Cost.Mul(l1Cost, scalar)
-	return l1Cost.Div(l1Cost, uint256.NewInt(1_000_000))
+	return opstack.L1CostFnForTxPool(txCalldata)
 }
 
 func (p *TxPool) OnNewBlock(ctx context.Context, stateChanges *remote.StateChangeBatch, unwindTxs, minedTxs types.TxSlots, tx kv.Tx) error {
@@ -1229,7 +1211,7 @@ func addTxs(blockNum uint64, cacheView kvcache.CacheView, senders *sendersBatch,
 	newTxs types.TxSlots, pendingBaseFee, pendingBlobFee, blockGasLimit uint64,
 	pending *PendingPool, baseFee, queued *SubPool,
 	byNonce *BySenderAndNonce, byHash map[string]*metaTx, add func(*metaTx, *types.Announcements) txpoolcfg.DiscardReason, discard func(*metaTx, txpoolcfg.DiscardReason), collect bool,
-	l1CostFn L1CostFn,
+	l1CostFn types.L1CostFn,
 	logger log.Logger) (types.Announcements, []txpoolcfg.DiscardReason, error) {
 	if assert.Enable {
 		for _, txn := range newTxs.Txs {
@@ -1291,7 +1273,7 @@ func addTxsOnNewBlock(blockNum uint64, cacheView kvcache.CacheView, stateChanges
 	senders *sendersBatch, newTxs types.TxSlots, pendingBaseFee uint64, blockGasLimit uint64,
 	pending *PendingPool, baseFee, queued *SubPool,
 	byNonce *BySenderAndNonce, byHash map[string]*metaTx, add func(*metaTx, *types.Announcements) txpoolcfg.DiscardReason, discard func(*metaTx, txpoolcfg.DiscardReason),
-	l1CostFn L1CostFn,
+	l1CostFn types.L1CostFn,
 	logger log.Logger) (types.Announcements, error) {
 	if assert.Enable {
 		for _, txn := range newTxs.Txs {
@@ -1570,7 +1552,7 @@ func removeMined(byNonce *BySenderAndNonce, minedTxs []*types.TxSlot, pending *P
 // nonces, and also affect other transactions from the same sender with higher nonce, it loops through all transactions
 // for a given senderID
 func onSenderStateChange(senderID uint64, senderNonce uint64, senderBalance uint256.Int, byNonce *BySenderAndNonce,
-	blockGasLimit uint64, pending *PendingPool, baseFee, queued *SubPool, discard func(*metaTx, txpoolcfg.DiscardReason), l1CostFn L1CostFn, logger log.Logger) {
+	blockGasLimit uint64, pending *PendingPool, baseFee, queued *SubPool, discard func(*metaTx, txpoolcfg.DiscardReason), l1CostFn types.L1CostFn, logger log.Logger) {
 	noGapsNonce := senderNonce
 	cumulativeRequiredBalance := uint256.NewInt(0)
 	minFeeCap := uint256.NewInt(0).SetAllOne()
