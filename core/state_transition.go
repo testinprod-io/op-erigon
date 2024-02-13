@@ -207,8 +207,8 @@ func (st *StateTransition) buyGas(gasBailout bool) error {
 		return fmt.Errorf("%w: address %v", ErrInsufficientFunds, st.msg.From().Hex())
 	}
 	var l1Cost *uint256.Int
-	if fn := st.evm.Context().L1CostFunc; fn != nil && !st.msg.IsFake() {
-		l1Cost = fn(st.msg.RollupCostData(), st.evm.Context().Time)
+	if fn := st.evm.Context.L1CostFunc; fn != nil && !st.msg.IsFake() {
+		l1Cost = fn(st.msg.RollupCostData(), st.evm.Context.Time)
 	}
 	if l1Cost != nil {
 		gasVal = gasVal.Add(gasVal, l1Cost)
@@ -217,10 +217,10 @@ func (st *StateTransition) buyGas(gasBailout bool) error {
 	// compute blob fee for eip-4844 data blobs if any
 	blobGasVal := new(uint256.Int)
 	if st.evm.ChainRules().IsCancun {
-		if st.evm.Context().ExcessBlobGas == nil {
+		if st.evm.Context.ExcessBlobGas == nil {
 			return fmt.Errorf("%w: Cancun is active but ExcessBlobGas is nil", ErrInternalFailure)
 		}
-		blobGasPrice, err := misc.GetBlobGasPrice(st.evm.ChainConfig(), *st.evm.Context().ExcessBlobGas)
+		blobGasPrice, err := misc.GetBlobGasPrice(st.evm.ChainConfig(), *st.evm.Context.ExcessBlobGas)
 		if err != nil {
 			return err
 		}
@@ -305,7 +305,7 @@ func (st *StateTransition) preCheck(gasBailout bool) error {
 		st.gas += st.msg.Gas() // Add gas here in order to be able to execute calls.
 		// Don't touch the gas pool for system transactions
 		if st.msg.IsSystemTx() {
-			if st.evm.ChainConfig().IsOptimismRegolith(st.evm.Context().Time) {
+			if st.evm.ChainConfig().IsOptimismRegolith(st.evm.Context.Time) {
 				return fmt.Errorf("%w: address %v", ErrSystemTxNotSupported,
 					st.msg.From().Hex())
 			}
@@ -347,16 +347,16 @@ func (st *StateTransition) preCheck(gasBailout bool) error {
 	if st.evm.ChainRules().IsLondon {
 		// Skip the checks if gas fields are zero and baseFee was explicitly disabled (eth_call)
 		if !st.evm.Config().NoBaseFee || !st.gasFeeCap.IsZero() || !st.tip.IsZero() {
-			if err := CheckEip1559TxGasFeeCap(st.msg.From(), st.gasFeeCap, st.tip, st.evm.Context().BaseFee, st.msg.IsFree()); err != nil {
+			if err := CheckEip1559TxGasFeeCap(st.msg.From(), st.gasFeeCap, st.tip, st.evm.Context.BaseFee, st.msg.IsFree()); err != nil {
 				return err
 			}
 		}
 	}
 	if st.msg.BlobGas() > 0 && st.evm.ChainRules().IsCancun {
-		if st.evm.Context().ExcessBlobGas == nil {
+		if st.evm.Context.ExcessBlobGas == nil {
 			return fmt.Errorf("%w: Cancun is active but ExcessBlobGas is nil", ErrInternalFailure)
 		}
-		blobGasPrice, err := misc.GetBlobGasPrice(st.evm.ChainConfig(), *st.evm.Context().ExcessBlobGas)
+		blobGasPrice, err := misc.GetBlobGasPrice(st.evm.ChainConfig(), *st.evm.Context.ExcessBlobGas)
 		if err != nil {
 			return err
 		}
@@ -364,7 +364,7 @@ func (st *StateTransition) preCheck(gasBailout bool) error {
 		if blobGasPrice.Cmp(maxFeePerBlobGas) > 0 {
 			return fmt.Errorf("%w: address %v, maxFeePerBlobGas: %v blobGasPrice: %v, excessBlobGas: %v",
 				ErrMaxFeePerBlobGas,
-				st.msg.From().Hex(), st.msg.MaxFeePerBlobGas(), blobGasPrice, st.evm.Context().ExcessBlobGas)
+				st.msg.From().Hex(), st.msg.MaxFeePerBlobGas(), blobGasPrice, st.evm.Context.ExcessBlobGas)
 		}
 	}
 
@@ -402,7 +402,7 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*Executi
 		gasUsed := st.msg.Gas()
 		// Regolith changes this behaviour so the actual gas used is reported.
 		// In this case the tx is invalid so is recorded as using all gas.
-		if st.msg.IsSystemTx() && !st.evm.ChainConfig().IsRegolith(st.evm.Context().Time) {
+		if st.msg.IsSystemTx() && !st.evm.ChainConfig().IsRegolith(st.evm.Context.Time) {
 			gasUsed = 0
 		}
 		result = &ExecutionResult{
@@ -417,7 +417,7 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*Executi
 }
 
 func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*ExecutionResult, error) {
-	coinbase := st.evm.Context().Coinbase
+	coinbase := st.evm.Context.Coinbase
 	var input1 *uint256.Int
 	var input2 *uint256.Int
 	if st.isBor {
@@ -465,7 +465,7 @@ func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*Ex
 	var bailout bool
 	// Gas bailout (for trace_call) should only be applied if there is not sufficient balance to perform value transfer
 	if gasBailout {
-		if !msg.Value().IsZero() && !st.evm.Context().CanTransfer(st.state, msg.From(), msg.Value()) {
+		if !msg.Value().IsZero() && !st.evm.Context.CanTransfer(st.state, msg.From(), msg.Value()) {
 			bailout = true
 		}
 	}
@@ -532,8 +532,8 @@ func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*Ex
 	}
 	effectiveTip := st.gasPrice
 	if rules.IsLondon {
-		if st.gasFeeCap.Gt(st.evm.Context().BaseFee) {
-			effectiveTip = cmath.Min256(st.tip, new(uint256.Int).Sub(st.gasFeeCap, st.evm.Context().BaseFee))
+		if st.gasFeeCap.Gt(st.evm.Context.BaseFee) {
+			effectiveTip = cmath.Min256(st.tip, new(uint256.Int).Sub(st.gasFeeCap, st.evm.Context.BaseFee))
 		} else {
 			effectiveTip = u256.Num0
 		}
@@ -542,9 +542,9 @@ func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*Ex
 	amount.Mul(amount, effectiveTip) // gasUsed * effectiveTip = how much goes to the block producer (miner, validator)
 	st.state.AddBalance(coinbase, amount)
 	if !msg.IsFree() && rules.IsLondon {
-		burntContractAddress := st.evm.ChainConfig().GetBurntContract(st.evm.Context().BlockNumber)
+		burntContractAddress := st.evm.ChainConfig().GetBurntContract(st.evm.Context.BlockNumber)
 		if burntContractAddress != nil {
-			burnAmount := new(uint256.Int).Mul(new(uint256.Int).SetUint64(st.gasUsed()), st.evm.Context().BaseFee)
+			burnAmount := new(uint256.Int).Mul(new(uint256.Int).SetUint64(st.gasUsed()), st.evm.Context.BaseFee)
 			st.state.AddBalance(*burntContractAddress, burnAmount)
 		}
 	}
@@ -567,11 +567,11 @@ func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*Ex
 		)
 	}
 	if optimismConfig := st.evm.ChainConfig().Optimism; optimismConfig != nil {
-		st.state.AddBalance(params.OptimismBaseFeeRecipient, new(uint256.Int).Mul(uint256.NewInt(st.gasUsed()), st.evm.Context().BaseFee))
-		if st.evm.Context().L1CostFunc == nil { // Erigon EVM context is used in many unexpected/hacky ways, let's panic if it's misconfigured
+		st.state.AddBalance(params.OptimismBaseFeeRecipient, new(uint256.Int).Mul(uint256.NewInt(st.gasUsed()), st.evm.Context.BaseFee))
+		if st.evm.Context.L1CostFunc == nil { // Erigon EVM context is used in many unexpected/hacky ways, let's panic if it's misconfigured
 			panic("missing L1 cost func in block context, please configure l1 cost when using optimism config to run EVM")
 		}
-		if cost := st.evm.Context().L1CostFunc(st.msg.RollupCostData(), st.evm.Context().Time); cost != nil {
+		if cost := st.evm.Context.L1CostFunc(st.msg.RollupCostData(), st.evm.Context.Time); cost != nil {
 			st.state.AddBalance(params.OptimismL1FeeRecipient, cost)
 		}
 	}

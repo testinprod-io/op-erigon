@@ -60,7 +60,7 @@ func applyTransaction(config *chain.Config, engine consensus.EngineReader, gp *G
 	evm.Reset(txContext, ibs)
 
 	nonce := tx.GetNonce()
-	if msg.IsDepositTx() && config.IsOptimismRegolith(evm.Context().Time) {
+	if msg.IsDepositTx() && config.IsOptimismRegolith(evm.Context.Time) {
 		nonce = ibs.GetNonce(msg.From())
 	}
 
@@ -91,12 +91,12 @@ func applyTransaction(config *chain.Config, engine consensus.EngineReader, gp *G
 		receipt.TxHash = tx.Hash()
 		receipt.GasUsed = result.UsedGas
 
-		if msg.IsDepositTx() && config.IsOptimismRegolith(evm.Context().Time) {
+		if msg.IsDepositTx() && config.IsOptimismRegolith(evm.Context.Time) {
 			// The actual nonce for deposit transactions is only recorded from Regolith onwards and
 			// otherwise must be nil.
 			receipt.DepositNonce = &nonce
 
-			if config.IsOptimismCanyon(evm.Context().Time) {
+			if config.IsOptimismCanyon(evm.Context.Time) {
 				receipt.DepositReceiptVersion = new(uint64)
 				*receipt.DepositReceiptVersion = types.CanyonDepositReceiptVersion
 			}
@@ -104,7 +104,7 @@ func applyTransaction(config *chain.Config, engine consensus.EngineReader, gp *G
 
 		// if the transaction created a contract, store the creation address in the receipt.
 		if msg.To() == nil {
-			receipt.ContractAddress = crypto.CreateAddress(evm.TxContext().Origin, nonce)
+			receipt.ContractAddress = crypto.CreateAddress(evm.Origin, nonce)
 		}
 		// Set the receipt logs and create a bloom for filtering
 		receipt.Logs = ibs.GetLogs(tx.Hash())

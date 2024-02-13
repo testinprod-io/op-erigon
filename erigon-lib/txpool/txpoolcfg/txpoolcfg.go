@@ -54,10 +54,11 @@ type Config struct {
 
 	OverrideShanghaiTime *big.Int
 
-	Optimism   bool
-	NoTxGossip bool
+	Optimism bool
 
 	OverrideOptimismCanyonTime *big.Int
+
+	NoGossip bool // this mode doesn't broadcast any txs, and if receive remote-txn - skip it
 }
 
 var DefaultConfig = Config{
@@ -76,8 +77,9 @@ var DefaultConfig = Config{
 	PriceBump:     10, // Price bump percentage to replace an already existing transaction
 	BlobPriceBump: 100,
 
-	Optimism:   false,
-	NoTxGossip: false,
+	Optimism: false,
+
+	NoGossip: false,
 }
 
 type DiscardReason uint8

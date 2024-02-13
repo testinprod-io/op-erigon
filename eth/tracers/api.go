@@ -3,6 +3,7 @@ package tracers
 import (
 	"encoding/json"
 
+	"github.com/ledgerwatch/erigon-lib/common/hexutil"
 	"github.com/ledgerwatch/erigon/eth/tracers/logger"
 	"github.com/ledgerwatch/erigon/turbo/adapter/ethapi"
 )
@@ -17,6 +18,7 @@ type TraceConfig struct {
 	NoRefunds      *bool                  `json:"-"` // Turns off gas refunds when tracing
 	StateOverrides *ethapi.StateOverrides `json:"-"`
 
-	BorTraceEnabled *bool `json:"-"`
-	BorTx           *bool `json:"-"`
+	BorTraceEnabled *bool
+	BorTx           *bool
+	TxIndex         *hexutil.Uint
 }

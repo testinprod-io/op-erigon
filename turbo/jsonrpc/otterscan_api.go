@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	hexutil2 "github.com/ledgerwatch/erigon-lib/common/hexutil"
 	"math/big"
-	"sync"
+
+	hexutil2 "github.com/ledgerwatch/erigon-lib/common/hexutil"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/log/v3"
@@ -534,7 +535,7 @@ func (api *OtterscanAPIImpl) searchTransactionsBeforeV3(tx kv.TemporalTx, ctx co
 			}
 			receipt = receipts[txIndex]
 		}
-		rpcTx = newRPCTransaction(txn, blockHash, blockNum, uint64(txIndex), header.BaseFee, receipt)
+		rpcTx = NewRPCTransaction(txn, blockHash, blockNum, uint64(txIndex), header.BaseFee, receipt)
 		txs = append(txs, rpcTx)
 		receipt = &types.Receipt{
 			Type: txn.Type(), CumulativeGasUsed: res.UsedGas,
@@ -644,11 +645,6 @@ func (api *OtterscanAPIImpl) SearchTransactionsAfter(ctx context.Context, addr c
 }
 
 func (api *OtterscanAPIImpl) traceBlocks(ctx context.Context, addr common.Address, chainConfig *chain.Config, pageSize, resultCount uint16, callFromToProvider BlockProvider) ([]*TransactionsWithReceipts, bool, error) {
-	var wg sync.WaitGroup
-	errCh := make(chan error, 1)
-	traceCtx, traceCtxCancel := context.WithCancel(context.Background())
-	defer traceCtxCancel()
-
 	// Estimate the common case of user address having at most 1 interaction/block and
 	// trace N := remaining page matches as number of blocks to trace concurrently.
 	// TODO: this is not optimimal for big contract addresses; implement some better heuristics.
@@ -657,7 +653,11 @@ func (api *OtterscanAPIImpl) traceBlocks(ctx context.Context, addr common.Addres
 	totalBlocksTraced := 0
 	hasMore := true
 
+	eg, ctx := errgroup.WithContext(ctx)
+	eg.SetLimit(1024) // we don't want limit much here, but protecting from infinity attack
 	for i := 0; i < int(estBlocksToTrace); i++ {
+		i := i // we will pass it to goroutine
+
 		var nextBlock uint64
 		var err error
 		nextBlock, hasMore, err = callFromToProvider()
@@ -669,14 +669,26 @@ func (api *OtterscanAPIImpl) traceBlocks(ctx context.Context, addr common.Addres
 			break
 		}
 
-		wg.Add(1)
 		totalBlocksTraced++
-		go api.searchTraceBlock(ctx, traceCtx, traceCtxCancel, &wg, errCh, addr, chainConfig, i, nextBlock, results)
+
+		eg.Go(func() error {
+			// don't return error from searchTraceBlock if canceled - to avoid 1 block fail impact to other blocks
+			// if return error - `errgroup` will interrupt all other goroutines
+			// but passing `ctx` - then user still can cancel request
+			select {
+			case <-ctx.Done():
+				// do not return error because error already returned at problematic goroutine
+				return nil
+			default:
+				// return err if not canceled. it means db inconsistency detected
+				return api.searchTraceBlock(ctx, addr, chainConfig, i, nextBlock, results)
+			}
+		})
 	}
-	wg.Wait()
-	if traceCtx.Err() != nil && len(errCh) == 1 {
-		return nil, false, <-errCh
+	if err := eg.Wait(); err != nil {
+		return nil, false, err
 	}
+
 	return results[:totalBlocksTraced], hasMore, nil
 }
 

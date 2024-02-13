@@ -3,7 +3,6 @@ package jsonrpc
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/ledgerwatch/erigon-lib/chain"
 	"github.com/ledgerwatch/erigon-lib/common"
@@ -19,15 +18,13 @@ import (
 	"github.com/ledgerwatch/log/v3"
 )
 
-func (api *OtterscanAPIImpl) searchTraceBlock(ctx, traceCtx context.Context, traceCtxCancel context.CancelFunc, wg *sync.WaitGroup, errCh chan<- error, addr common.Address, chainConfig *chain.Config, idx int, bNum uint64, results []*TransactionsWithReceipts) {
-	defer wg.Done()
-
+func (api *OtterscanAPIImpl) searchTraceBlock(ctx context.Context, addr common.Address, chainConfig *chain.Config, idx int, bNum uint64, results []*TransactionsWithReceipts) error {
 	// Trace block for Txs
 	newdbtx, err := api.db.BeginRo(ctx)
 	if err != nil {
 		log.Error("Search trace error", "err", err)
 		results[idx] = nil
-		return
+		return nil
 	}
 	defer newdbtx.Rollback()
 
@@ -35,24 +32,17 @@ func (api *OtterscanAPIImpl) searchTraceBlock(ctx, traceCtx context.Context, tra
 	// searchTraceBlock goroutine will sequentially search every block written in CallTraceSet
 	// when mismatch, causing cpu hike. To avoid this, when inconsistency found, early terminate.
 	found, result, err := api.traceBlock(newdbtx, ctx, bNum, addr, chainConfig)
-	if !found {
+	if !found && result != nil {
 		// tx execution result and callFromToProvider() result mismatch
-		err = fmt.Errorf("search trace failure: inconsistency at block %d", bNum)
-		select {
-		case <-traceCtx.Done():
-			return
-		case errCh <- err:
-		default:
-		}
-		traceCtxCancel()
-		return
+		return fmt.Errorf("search trace failure: inconsistency at block %d", bNum)
 	}
 	if err != nil {
 		log.Error("Search trace error", "err", err)
 		results[idx] = nil
-		return
+		return nil
 	}
 	results[idx] = result
+	return nil
 }
 
 func (api *OtterscanAPIImpl) traceBlock(dbtx kv.Tx, ctx context.Context, blockNum uint64, searchAddr common.Address, chainConfig *chain.Config) (bool, *TransactionsWithReceipts, error) {
@@ -96,6 +86,11 @@ func (api *OtterscanAPIImpl) traceBlock(dbtx kv.Tx, ctx context.Context, blockNu
 	rules := chainConfig.Rules(block.NumberU64(), header.Time)
 	found := false
 	for idx, tx := range block.Transactions() {
+		select {
+		case <-ctx.Done():
+			return false, nil, ctx.Err()
+		default:
+		}
 		ibs.SetTxContext(tx.Hash(), block.Hash(), idx)
 
 		msg, _ := tx.AsMessage(*signer, header.BaseFee, rules)
@@ -116,7 +111,15 @@ func (api *OtterscanAPIImpl) traceBlock(dbtx kv.Tx, ctx context.Context, blockNu
 			if chainConfig.IsOptimism() && idx < len(block.Transactions()) {
 				receipt = blockReceipts[idx]
 			}
-			rpcTx := newRPCTransaction(tx, block.Hash(), blockNum, uint64(idx), block.BaseFee(), receipt)
+			if idx > len(blockReceipts) {
+				select { // it may happen because request canceled, then return canelation error
+				case <-ctx.Done():
+					return false, nil, ctx.Err()
+				default:
+				}
+				return false, nil, fmt.Errorf("requested receipt idx %d, but have only %d", idx, len(blockReceipts)) // otherwise return some error for debugging
+			}
+			rpcTx := NewRPCTransaction(tx, block.Hash(), blockNum, uint64(idx), block.BaseFee(), receipt)
 			mReceipt := marshalReceipt(blockReceipts[idx], tx, chainConfig, block.HeaderNoCopy(), tx.Hash(), true)
 			mReceipt["timestamp"] = block.Time()
 			rpcTxs = append(rpcTxs, rpcTx)

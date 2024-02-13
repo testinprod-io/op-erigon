@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
 	"math/big"
+
+	"github.com/ledgerwatch/erigon-lib/common/hexutil"
 
 	"github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/hexutility"
@@ -82,9 +83,9 @@ func (api *APIImpl) GetTransactionByHash(ctx context.Context, txnHash common.Has
 			if len(receipts) <= int(txnIndex) {
 				return nil, fmt.Errorf("block has less receipts than expected: %d <= %d, block: %d", len(receipts), int(txnIndex), blockNum)
 			}
-			return newRPCTransaction(txn, blockHash, blockNum, txnIndex, baseFee, receipts[txnIndex]), nil
+			return NewRPCTransaction(txn, blockHash, blockNum, txnIndex, baseFee, receipts[txnIndex]), nil
 		}
-		return newRPCTransaction(txn, blockHash, blockNum, txnIndex, baseFee, nil), nil
+		return NewRPCTransaction(txn, blockHash, blockNum, txnIndex, baseFee, nil), nil
 	}
 
 	curHeader := rawdb.ReadCurrentHeader(tx)
@@ -204,9 +205,9 @@ func (api *APIImpl) GetTransactionByBlockHashAndIndex(ctx context.Context, block
 		if len(receipts) <= int(txIndex) {
 			return nil, fmt.Errorf("block has less receipts than expected: %d <= %d, block: %d", len(receipts), int(txIndex), block.NumberU64())
 		}
-		return newRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), receipts[txIndex]), nil
+		return NewRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), receipts[txIndex]), nil
 	}
-	return newRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), nil), nil
+	return NewRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), nil), nil
 }
 
 // GetRawTransactionByBlockHashAndIndex returns the bytes of the transaction for the given block hash and index.
@@ -274,10 +275,10 @@ func (api *APIImpl) GetTransactionByBlockNumberAndIndex(ctx context.Context, blo
 		if len(receipts) <= int(txIndex) {
 			return nil, fmt.Errorf("block has less receipts than expected: %d <= %d, block: %d", len(receipts), int(txIndex), block.NumberU64())
 		}
-		return newRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), receipts[txIndex]), nil
+		return NewRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), receipts[txIndex]), nil
 	}
 
-	return newRPCTransaction(txs[txIndex], hash, blockNum, uint64(txIndex), block.BaseFee(), nil), nil
+	return NewRPCTransaction(txs[txIndex], hash, blockNum, uint64(txIndex), block.BaseFee(), nil), nil
 }
 
 // GetRawTransactionByBlockNumberAndIndex returns the bytes of the transaction for the given block number and index.

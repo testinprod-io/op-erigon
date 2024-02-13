@@ -107,6 +107,7 @@ func AllComponents(ctx context.Context, cfg txpoolcfg.Config, cache kvcache.Cach
 		WriteMergeThreshold(3 * 8192).
 		PageSize(uint64(16 * datasize.KB)).
 		GrowthStep(16 * datasize.MB).
+		DirtySpace(uint64(128 * datasize.MB)).
 		MapSize(1 * datasize.TB)
 
 	if cfg.MdbxPageSize.Bytes() > 0 {
@@ -149,9 +150,6 @@ func AllComponents(ctx context.Context, cfg txpoolcfg.Config, cache kvcache.Cach
 		return nil, nil, nil, nil, nil, err
 	}
 	pool = txpool.Pool(txPool)
-	if cfg.NoTxGossip {
-		pool = txpool.Pool(txpool.NewTxPoolDropRemote(txPool))
-	}
 
 	fetch := txpool.NewFetch(ctx, sentryClients, pool, stateChangesClient, chainDB, txPoolDB, *chainID, logger)
 	//fetch.ConnectCore()

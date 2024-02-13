@@ -7,6 +7,7 @@ const (
 	GoerliChainName         = "goerli"
 	DevChainName            = "dev"
 	MumbaiChainName         = "mumbai"
+	AmoyChainName           = "amoy"
 	BorMainnetChainName     = "bor-mainnet"
 	BorDevnetChainName      = "bor-devnet"
 	GnosisChainName         = "gnosis"
@@ -28,6 +29,7 @@ var All = []string{
 	SepoliaChainName,
 	GoerliChainName,
 	MumbaiChainName,
+	AmoyChainName,
 	BorMainnetChainName,
 	BorDevnetChainName,
 	GnosisChainName,
