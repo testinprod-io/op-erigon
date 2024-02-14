@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"reflect"
 	"sync"
 
 	"github.com/c2h5oh/datasize"
@@ -198,7 +199,9 @@ func WriteGenesisBlock(tx kv.RwTx, genesis *types.Genesis, overrideCancunTime, o
 	}
 
 	if newCfg.IsOptimism() {
-		log.Info("Update latest chain config from superchain registry")
+		if !reflect.DeepEqual(newCfg, storedCfg) {
+			log.Info("Update latest chain config from superchain registry")
+		}
 		if err := rawdb.WriteChainConfig(tx, storedHash, newCfg); err != nil {
 			return newCfg, nil, err
 		}
