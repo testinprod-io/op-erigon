@@ -202,6 +202,7 @@ func WriteGenesisBlock(tx kv.RwTx, genesis *types.Genesis, overrideCancunTime, o
 		if !reflect.DeepEqual(newCfg, storedCfg) {
 			log.Info("Update latest chain config from superchain registry")
 		}
+		// rewrite using superchain config just in case
 		if err := rawdb.WriteChainConfig(tx, storedHash, newCfg); err != nil {
 			return newCfg, nil, err
 		}
