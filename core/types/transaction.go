@@ -109,7 +109,7 @@ type TransactionMisc struct {
 	from atomic.Value
 
 	// cache how much gas the tx takes on L1 for its share of rollup data
-	rollupGas atomic.Value
+	rollupGas atomic.Pointer[types2.RollupCostData]
 }
 
 type rollupGasCounter struct {
@@ -137,7 +137,7 @@ func (tm *TransactionMisc) computeRollupGas(tx interface {
 		return types2.RollupCostData{}
 	}
 	if v := tm.rollupGas.Load(); v != nil {
-		return v.(types2.RollupCostData)
+		return *v
 	}
 	var c rollupGasCounter
 	err := tx.MarshalBinary(&c)
@@ -145,7 +145,7 @@ func (tm *TransactionMisc) computeRollupGas(tx interface {
 		log.Error("failed to encode tx for L1 cost computation", "err", err)
 	}
 	total := types2.RollupCostData{Zeroes: c.zeroes, Ones: c.ones}
-	tm.rollupGas.Store(total)
+	tm.rollupGas.Store(&total)
 	return total
 }
 
