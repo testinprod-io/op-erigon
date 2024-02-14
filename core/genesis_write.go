@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"reflect"
 	"sync"
 
 	"github.com/c2h5oh/datasize"
@@ -197,15 +198,11 @@ func WriteGenesisBlock(tx kv.RwTx, genesis *types.Genesis, overrideCancunTime, o
 		applyOverrides(newCfg)
 	}
 
-	// Special case: temporal fix for optimism mainnet database which contains incorrect chainspec.
-	// If london block number is set to previous wrong chainspec, overwrite with correct chainspec.
-	// Following code will be removed after we are confident that previous dbs are all corrected.
-	// https://github.com/testinprod-io/op-erigon/issues/71
-	if storedCfg.ChainName == networkname.OPMainnetChainName &&
-		newCfg.ChainName == networkname.OPMainnetChainName &&
-		storedCfg.LondonBlock.Uint64() == 3950000 &&
-		newCfg.LondonBlock.Uint64() == 105235063 {
-		log.Warn("Override chainconfig for Optimism Mainnet chainspec correction")
+	if newCfg.IsOptimism() {
+		if !reflect.DeepEqual(newCfg, storedCfg) {
+			log.Info("Update latest chain config from superchain registry")
+		}
+		// rewrite using superchain config just in case
 		if err := rawdb.WriteChainConfig(tx, storedHash, newCfg); err != nil {
 			return newCfg, nil, err
 		}
