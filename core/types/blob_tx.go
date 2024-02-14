@@ -58,7 +58,7 @@ func (stx BlobTx) AsMessage(s Signer, baseFee *big.Int, rules *chain.Rules) (Mes
 
 func (stx BlobTx) Hash() libcommon.Hash {
 	if hash := stx.hash.Load(); hash != nil {
-		return *hash
+		return *hash.(*libcommon.Hash)
 	}
 	hash := prefixedRlpHash(BlobTxType, []interface{}{
 		stx.ChainID,

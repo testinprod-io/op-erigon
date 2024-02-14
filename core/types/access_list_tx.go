@@ -461,14 +461,14 @@ func (tx *AccessListTx) FakeSign(address libcommon.Address) (Transaction, error)
 	cpy.R.Set(u256.Num1)
 	cpy.S.Set(u256.Num1)
 	cpy.V.Set(u256.Num4)
-	cpy.from.Store(&address)
+	cpy.from.Store(address)
 	return cpy, nil
 }
 
 // Hash computes the hash (but not for signatures!)
 func (tx *AccessListTx) Hash() libcommon.Hash {
 	if hash := tx.hash.Load(); hash != nil {
-		return *hash
+		return *hash.(*libcommon.Hash)
 	}
 	hash := prefixedRlpHash(AccessListTxType, []interface{}{
 		tx.ChainID,
@@ -512,13 +512,13 @@ func (tx AccessListTx) GetChainID() *uint256.Int {
 
 func (tx *AccessListTx) Sender(signer Signer) (libcommon.Address, error) {
 	if sc := tx.from.Load(); sc != nil {
-		return *sc, nil
+		return sc.(libcommon.Address), nil
 	}
 	addr, err := signer.Sender(tx)
 	if err != nil {
 		return libcommon.Address{}, err
 	}
-	tx.from.Store(&addr)
+	tx.from.Store(addr)
 	return addr, nil
 }
 

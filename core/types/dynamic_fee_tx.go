@@ -181,7 +181,7 @@ func (tx *DynamicFeeTransaction) FakeSign(address libcommon.Address) (Transactio
 	cpy.R.Set(u256.Num1)
 	cpy.S.Set(u256.Num1)
 	cpy.V.Set(u256.Num4)
-	cpy.from.Store(&address)
+	cpy.from.Store(address)
 	return cpy, nil
 }
 
@@ -394,7 +394,7 @@ func (tx DynamicFeeTransaction) AsMessage(s Signer, baseFee *big.Int, rules *cha
 // Hash computes the hash (but not for signatures!)
 func (tx *DynamicFeeTransaction) Hash() libcommon.Hash {
 	if hash := tx.hash.Load(); hash != nil {
-		return *hash
+		return *hash.(*libcommon.Hash)
 	}
 	hash := prefixedRlpHash(DynamicFeeTxType, []interface{}{
 		tx.ChainID,
@@ -441,13 +441,13 @@ func (tx DynamicFeeTransaction) GetChainID() *uint256.Int {
 
 func (tx *DynamicFeeTransaction) Sender(signer Signer) (libcommon.Address, error) {
 	if sc := tx.from.Load(); sc != nil {
-		return *sc, nil
+		return sc.(libcommon.Address), nil
 	}
 	addr, err := signer.Sender(tx)
 	if err != nil {
 		return libcommon.Address{}, err
 	}
-	tx.from.Store(&addr)
+	tx.from.Store(addr)
 	return addr, nil
 }
 

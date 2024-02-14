@@ -69,13 +69,13 @@ func (ct CommonTx) GetData() []byte {
 
 func (ct CommonTx) GetSender() (libcommon.Address, bool) {
 	if sc := ct.from.Load(); sc != nil {
-		return *sc, true
+		return sc.(libcommon.Address), true
 	}
 	return libcommon.Address{}, false
 }
 
 func (ct *CommonTx) SetSender(addr libcommon.Address) {
-	ct.from.Store(&addr)
+	ct.from.Store(addr)
 }
 
 func (ct CommonTx) Protected() bool {
@@ -389,14 +389,14 @@ func (tx *LegacyTx) FakeSign(address libcommon.Address) (Transaction, error) {
 	cpy.R.Set(u256.Num1)
 	cpy.S.Set(u256.Num1)
 	cpy.V.Set(u256.Num4)
-	cpy.from.Store(&address)
+	cpy.from.Store(address)
 	return cpy, nil
 }
 
 // Hash computes the hash (but not for signatures!)
 func (tx *LegacyTx) Hash() libcommon.Hash {
 	if hash := tx.hash.Load(); hash != nil {
-		return *hash
+		return *hash.(*libcommon.Hash)
 	}
 	hash := rlpHash([]interface{}{
 		tx.Nonce,
@@ -445,13 +445,13 @@ func (tx LegacyTx) GetChainID() *uint256.Int {
 
 func (tx *LegacyTx) Sender(signer Signer) (libcommon.Address, error) {
 	if sc := tx.from.Load(); sc != nil {
-		return *sc, nil
+		return sc.(libcommon.Address), nil
 	}
 	addr, err := signer.Sender(tx)
 	if err != nil {
 		return libcommon.Address{}, err
 	}
-	tx.from.Store(&addr)
+	tx.from.Store(addr)
 	return addr, nil
 }
 

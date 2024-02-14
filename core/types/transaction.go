@@ -105,11 +105,11 @@ type TransactionMisc struct {
 	time time.Time // Time first seen locally (spam avoidance)
 
 	// caches
-	hash atomic.Pointer[libcommon.Hash] //nolint:structcheck
-	from atomic.Pointer[libcommon.Address]
+	hash atomic.Value //nolint:structcheck
+	from atomic.Value
 
 	// cache how much gas the tx takes on L1 for its share of rollup data
-	rollupGas atomic.Pointer[types2.RollupCostData]
+	rollupGas atomic.Value
 }
 
 type rollupGasCounter struct {
@@ -137,7 +137,7 @@ func (tm *TransactionMisc) computeRollupGas(tx interface {
 		return types2.RollupCostData{}
 	}
 	if v := tm.rollupGas.Load(); v != nil {
-		return *v
+		return v.(types2.RollupCostData)
 	}
 	var c rollupGasCounter
 	err := tx.MarshalBinary(&c)
@@ -145,7 +145,7 @@ func (tm *TransactionMisc) computeRollupGas(tx interface {
 		log.Error("failed to encode tx for L1 cost computation", "err", err)
 	}
 	total := types2.RollupCostData{Zeroes: c.zeroes, Ones: c.ones}
-	tm.rollupGas.Store(&total)
+	tm.rollupGas.Store(total)
 	return total
 }
 
@@ -164,8 +164,8 @@ func (tm TransactionMisc) Time() time.Time {
 	return tm.time
 }
 
-func (tm TransactionMisc) From() *libcommon.Address {
-	return tm.from.Load()
+func (tm TransactionMisc) From() *atomic.Value {
+	return &tm.from
 }
 
 func DecodeRLPTransaction(s *rlp.Stream) (Transaction, error) {
