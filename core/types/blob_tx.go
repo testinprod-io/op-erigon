@@ -23,7 +23,7 @@ type BlobTx struct {
 }
 
 // copy creates a deep copy of the transaction data and initializes all fields.
-func (stx BlobTx) copy() *BlobTx {
+func (stx *BlobTx) copy() *BlobTx {
 	cpy := &BlobTx{
 		DynamicFeeTransaction: *stx.DynamicFeeTransaction.copy(),
 		MaxFeePerBlobGas:      new(uint256.Int),
@@ -36,17 +36,17 @@ func (stx BlobTx) copy() *BlobTx {
 	return cpy
 }
 
-func (stx BlobTx) Type() byte { return BlobTxType }
+func (stx *BlobTx) Type() byte { return BlobTxType }
 
-func (stx BlobTx) GetBlobHashes() []libcommon.Hash {
+func (stx *BlobTx) GetBlobHashes() []libcommon.Hash {
 	return stx.BlobVersionedHashes
 }
 
-func (stx BlobTx) GetBlobGas() uint64 {
+func (stx *BlobTx) GetBlobGas() uint64 {
 	return fixedgas.BlobGasPerBlob * uint64(len(stx.BlobVersionedHashes))
 }
 
-func (stx BlobTx) AsMessage(s Signer, baseFee *big.Int, rules *chain.Rules) (Message, error) {
+func (stx *BlobTx) AsMessage(s Signer, baseFee *big.Int, rules *chain.Rules) (Message, error) {
 	msg, err := stx.DynamicFeeTransaction.AsMessage(s, baseFee, rules)
 	if err != nil {
 		return Message{}, err
@@ -56,7 +56,7 @@ func (stx BlobTx) AsMessage(s Signer, baseFee *big.Int, rules *chain.Rules) (Mes
 	return msg, err
 }
 
-func (stx BlobTx) Hash() libcommon.Hash {
+func (stx *BlobTx) Hash() libcommon.Hash {
 	if hash := stx.hash.Load(); hash != nil {
 		return *hash.(*libcommon.Hash)
 	}
@@ -78,7 +78,7 @@ func (stx BlobTx) Hash() libcommon.Hash {
 	return hash
 }
 
-func (stx BlobTx) SigningHash(chainID *big.Int) libcommon.Hash {
+func (stx *BlobTx) SigningHash(chainID *big.Int) libcommon.Hash {
 	return prefixedRlpHash(
 		BlobTxType,
 		[]interface{}{
@@ -96,7 +96,7 @@ func (stx BlobTx) SigningHash(chainID *big.Int) libcommon.Hash {
 		})
 }
 
-func (stx BlobTx) payloadSize() (payloadSize, nonceLen, gasLen, accessListLen, blobHashesLen int) {
+func (stx *BlobTx) payloadSize() (payloadSize, nonceLen, gasLen, accessListLen, blobHashesLen int) {
 	payloadSize, nonceLen, gasLen, accessListLen = stx.DynamicFeeTransaction.payloadSize()
 	// size of MaxFeePerBlobGas
 	payloadSize++
@@ -120,7 +120,7 @@ func encodeBlobVersionedHashes(hashes []libcommon.Hash, w io.Writer, b []byte) e
 	return nil
 }
 
-func (stx BlobTx) encodePayload(w io.Writer, b []byte, payloadSize, nonceLen, gasLen, accessListLen, blobHashesLen int) error {
+func (stx *BlobTx) encodePayload(w io.Writer, b []byte, payloadSize, nonceLen, gasLen, accessListLen, blobHashesLen int) error {
 	// prefix
 	if err := EncodeStructSizePrefix(payloadSize, w, b); err != nil {
 		return err
@@ -196,7 +196,7 @@ func (stx BlobTx) encodePayload(w io.Writer, b []byte, payloadSize, nonceLen, ga
 	return nil
 }
 
-func (stx BlobTx) EncodeRLP(w io.Writer) error {
+func (stx *BlobTx) EncodeRLP(w io.Writer) error {
 	payloadSize, nonceLen, gasLen, accessListLen, blobHashesLen := stx.payloadSize()
 	// size of struct prefix and TxType
 	envelopeSize := 1 + rlp2.ListPrefixLen(payloadSize) + payloadSize
@@ -216,7 +216,7 @@ func (stx BlobTx) EncodeRLP(w io.Writer) error {
 	return nil
 }
 
-func (stx BlobTx) MarshalBinary(w io.Writer) error {
+func (stx *BlobTx) MarshalBinary(w io.Writer) error {
 	payloadSize, nonceLen, gasLen, accessListLen, blobHashesLen := stx.payloadSize()
 	var b [33]byte
 	// encode TxType

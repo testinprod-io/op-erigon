@@ -160,11 +160,11 @@ func (t BinaryTransactions) EncodeIndex(i int, w *bytes.Buffer) {
 	w.Write(t[i])
 }
 
-func (tm TransactionMisc) Time() time.Time {
+func (tm *TransactionMisc) Time() time.Time {
 	return tm.time
 }
 
-func (tm TransactionMisc) From() *atomic.Value {
+func (tm *TransactionMisc) From() *atomic.Value {
 	return &tm.from
 }
 
