@@ -5,6 +5,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/ledgerwatch/erigon/eth/ethconfig"
+	"github.com/ledgerwatch/erigon/params"
 	"math/big"
 	"reflect"
 	"sync"
@@ -47,6 +49,7 @@ type EngineServer struct {
 	hd              *headerdownload.HeaderDownload
 	blockDownloader *engine_block_downloader.EngineBlockDownloader
 	config          *chain.Config
+	ethConfig       *ethconfig.Config
 	// Block proposing for proof-of-stake
 	proposing        bool
 	test             bool
@@ -56,23 +59,27 @@ type EngineServer struct {
 	ctx     context.Context
 	lock    sync.Mutex
 	logger  log.Logger
+
+	nodeCloser func() error
 }
 
 const fcuTimeout = 1000 // according to mathematics: 1000 millisecods = 1 second
 
 func NewEngineServer(ctx context.Context, logger log.Logger, config *chain.Config, executionService execution.ExecutionClient,
 	hd *headerdownload.HeaderDownload,
-	blockDownloader *engine_block_downloader.EngineBlockDownloader, test bool, proposing bool) *EngineServer {
+	blockDownloader *engine_block_downloader.EngineBlockDownloader, test bool, proposing bool, ethConfig *ethconfig.Config, nodeCloser func() error) *EngineServer {
 	chainRW := eth1_chain_reader.NewChainReaderEth1(ctx, config, executionService, fcuTimeout)
 	return &EngineServer{
 		ctx:              ctx,
 		logger:           logger,
 		config:           config,
+		ethConfig:        ethConfig,
 		executionService: executionService,
 		blockDownloader:  blockDownloader,
 		chainRW:          chainRW,
 		proposing:        proposing,
 		hd:               hd,
+		nodeCloser:       nodeCloser,
 	}
 }
 
@@ -682,6 +689,80 @@ func (e *EngineServer) ExchangeTransitionConfigurationV1(ctx context.Context, be
 		TerminalBlockHash:       libcommon.Hash{},
 		TerminalBlockNumber:     (*hexutil.Big)(libcommon.Big0),
 	}, nil
+}
+
+func (e *EngineServer) SignalSuperchainV1(ctx context.Context, signal *engine_types.SuperchainSignal) (params.ProtocolVersion, error) {
+	if signal == nil {
+		log.Info("Received empty superchain version signal", "local", params.OPStackSupport)
+		return params.OPStackSupport, nil
+	}
+
+	// log any warnings/info
+	logger := log.New("local", params.OPStackSupport, "required", signal.Required, "recommended", signal.Recommended)
+	LogProtocolVersionSupport(logger, params.OPStackSupport, signal.Recommended, "recommended")
+	LogProtocolVersionSupport(logger, params.OPStackSupport, signal.Required, "required")
+
+	if err := e.HandleRequiredProtocolVersion(signal.Required); err != nil {
+		log.Error("Failed to handle required protocol version", "err", err, "required", signal.Required)
+		return params.OPStackSupport, err
+	}
+
+	return params.OPStackSupport, nil
+}
+
+// HandleRequiredProtocolVersion handles the protocol version signal. This implements opt-in halting,
+// the protocol version data is already logged and metered when signaled through the Engine API.
+func (e *EngineServer) HandleRequiredProtocolVersion(required params.ProtocolVersion) error {
+	var needLevel int
+	switch e.ethConfig.RollupHaltOnIncompatibleProtocolVersion {
+	case "major":
+		needLevel = 3
+	case "minor":
+		needLevel = 2
+	case "patch":
+		needLevel = 1
+	default:
+		return nil // do not consider halting if not configured to
+	}
+	haveLevel := 0
+	switch params.OPStackSupport.Compare(required) {
+	case params.OutdatedMajor:
+		haveLevel = 3
+	case params.OutdatedMinor:
+		haveLevel = 2
+	case params.OutdatedPatch:
+		haveLevel = 1
+	}
+	if haveLevel >= needLevel { // halt if we opted in to do so at this granularity
+		log.Error("Opted to halt, unprepared for protocol change", "required", required, "local", params.OPStackSupport)
+		return e.nodeCloser()
+	}
+	return nil
+}
+
+func LogProtocolVersionSupport(logger log.Logger, local, other params.ProtocolVersion, name string) {
+	switch local.Compare(other) {
+	case params.AheadMajor:
+		logger.Info(fmt.Sprintf("Ahead with major %s protocol version change", name))
+	case params.AheadMinor, params.AheadPatch, params.AheadPrerelease:
+		logger.Debug(fmt.Sprintf("Ahead with compatible %s protocol version change", name))
+	case params.Matching:
+		logger.Debug(fmt.Sprintf("Latest %s protocol version is supported", name))
+	case params.OutdatedMajor:
+		logger.Error(fmt.Sprintf("Outdated with major %s protocol change", name))
+	case params.OutdatedMinor:
+		logger.Warn(fmt.Sprintf("Outdated with minor backward-compatible %s protocol change", name))
+	case params.OutdatedPatch:
+		logger.Info(fmt.Sprintf("Outdated with support backward-compatible %s protocol change", name))
+	case params.OutdatedPrerelease:
+		logger.Debug(fmt.Sprintf("New %s protocol pre-release is available", name))
+	case params.DiffBuild:
+		logger.Debug(fmt.Sprintf("Ignoring %s protocolversion signal, local build is different", name))
+	case params.DiffVersionType:
+		logger.Warn(fmt.Sprintf("Failed to recognize %s protocol version signal version-type", name))
+	case params.EmptyVersion:
+		logger.Debug(fmt.Sprintf("No %s protocol version available to check", name))
+	}
 }
 
 // Returns an array of execution payload bodies referenced by their block hashes

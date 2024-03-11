@@ -660,6 +660,10 @@ var (
 		Name:  "rollup.disabletxpoolgossip",
 		Usage: "Disables transaction pool gossip.",
 	}
+	RollupHaltOnIncompatibleProtocolVersionFlag = cli.StringFlag{
+		Name:  "rollup.halt",
+		Usage: "Opt-in option to halt on incompatible protocol version requirements of the given level (major/minor/patch/none), as signaled through the Engine API by the rollup node",
+	}
 
 	// Metrics flags
 	MetricsEnabledFlag = cli.BoolFlag{
@@ -1886,6 +1890,10 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 		if !ctx.IsSet(TxPoolGossipDisableFlag.Name) {
 			cfg.DisableTxPoolGossip = ctx.Bool(RollupDisableTxPoolGossipFlag.Name)
 		}
+	}
+
+	if ctx.IsSet(RollupHaltOnIncompatibleProtocolVersionFlag.Name) {
+		cfg.RollupHaltOnIncompatibleProtocolVersion = ctx.String(RollupHaltOnIncompatibleProtocolVersionFlag.Name)
 	}
 }
 

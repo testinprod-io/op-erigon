@@ -845,7 +845,9 @@ func New(ctx context.Context, stack *node.Node, config *ethconfig.Config, logger
 			backend.sentriesClient.Bd, backend.sentriesClient.BroadcastNewBlock, backend.sentriesClient.SendBodyRequest, blockReader,
 			chainKv, chainConfig, tmpdir, config.Sync.BodyDownloadTimeoutSeconds),
 		false,
-		config.Miner.EnabledPOS)
+		config.Miner.EnabledPOS,
+		config,
+		stack.Close)
 	backend.engineBackendRPC = engineBackendRPC
 	engine, err = execution_client.NewExecutionClientDirect(ctx, eth1_chain_reader.NewChainReaderEth1(ctx, chainConfig, executionRpc, 1000))
 	if err != nil {
