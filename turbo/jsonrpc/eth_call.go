@@ -6,18 +6,17 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
-
 	"github.com/holiman/uint256"
-	"github.com/ledgerwatch/erigon-lib/kv/membatchwithdb"
 	"github.com/ledgerwatch/log/v3"
 	"google.golang.org/grpc"
 
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
+	"github.com/ledgerwatch/erigon-lib/common/hexutil"
 	"github.com/ledgerwatch/erigon-lib/common/hexutility"
 	"github.com/ledgerwatch/erigon-lib/gointerfaces"
 	txpool_proto "github.com/ledgerwatch/erigon-lib/gointerfaces/txpool"
 	"github.com/ledgerwatch/erigon-lib/kv"
+	"github.com/ledgerwatch/erigon-lib/kv/membatchwithdb"
 	"github.com/ledgerwatch/erigon-lib/opstack"
 	types2 "github.com/ledgerwatch/erigon-lib/types"
 
@@ -360,6 +359,26 @@ func (api *APIImpl) GetProof(ctx context.Context, address libcommon.Address, sto
 	defer tx.Rollback()
 	if api.historyV3(tx) {
 		return nil, fmt.Errorf("not supported by Erigon3")
+	}
+
+	// Handle pre-bedrock blocks
+	blockNum, err := api.blockNumberFromBlockNumberOrHash(tx, &blockNrOrHash)
+	if err != nil {
+		return nil, err
+	}
+	chainConfig, err := api.chainConfig(tx)
+	if err != nil {
+		return nil, fmt.Errorf("read chain config: %v", err)
+	}
+	if chainConfig.IsOptimismPreBedrock(blockNum) {
+		if api.historicalRPCService == nil {
+			return nil, rpc.ErrNoHistoricalFallback
+		}
+		var result accounts.AccProofResult
+		if err := api.relayToHistoricalBackend(ctx, &result, "eth_getProof", address, storageKeys, hexutil.EncodeUint64(blockNum)); err != nil {
+			return nil, fmt.Errorf("historical backend error: %w", err)
+		}
+		return &result, nil
 	}
 
 	blockNr, _, _, err := rpchelper.GetBlockNumber(blockNrOrHash, tx, api.filters)
