@@ -641,6 +641,16 @@ var (
 		Usage: "Maximum gas price will be recommended by gpo",
 		Value: ethconfig.Defaults.GPO.MaxPrice.Int64(),
 	}
+	GpoIgnoreGasPriceFlag = cli.Int64Flag{
+		Name:  "gpo.ignoreprice",
+		Usage: "Gas price below which gpo will ignore transactions",
+		Value: ethconfig.Defaults.GPO.IgnorePrice.Int64(),
+	}
+	GpoMinSuggestedPriorityFeeFlag = cli.Int64Flag{
+		Name:  "gpo.minsuggestedpriorityfee",
+		Usage: "Minimum transaction priority fee to suggest. Used on OP chains when blocks are not full.",
+		Value: ethconfig.Defaults.GPO.MinSuggestedPriorityFee.Int64(),
+	}
 
 	// Rollup Flags
 	RollupSequencerHTTPFlag = cli.StringFlag{
@@ -1368,6 +1378,12 @@ func setGPO(ctx *cli.Context, cfg *gaspricecfg.Config) {
 	}
 	if ctx.IsSet(GpoMaxGasPriceFlag.Name) {
 		cfg.MaxPrice = big.NewInt(ctx.Int64(GpoMaxGasPriceFlag.Name))
+	}
+	if ctx.IsSet(GpoIgnoreGasPriceFlag.Name) {
+		cfg.IgnorePrice = big.NewInt(ctx.Int64(GpoIgnoreGasPriceFlag.Name))
+	}
+	if ctx.IsSet(GpoMinSuggestedPriorityFeeFlag.Name) {
+		cfg.MinSuggestedPriorityFee = big.NewInt(ctx.Int64(GpoMinSuggestedPriorityFeeFlag.Name))
 	}
 }
 

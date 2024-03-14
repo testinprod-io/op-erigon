@@ -50,13 +50,14 @@ const HistoryV3AggregationStep = 3_125_000 // 100M / 32
 
 // FullNodeGPO contains default gasprice oracle settings for full node.
 var FullNodeGPO = gaspricecfg.Config{
-	Blocks:           20,
-	Default:          big.NewInt(0),
-	Percentile:       60,
-	MaxHeaderHistory: 0,
-	MaxBlockHistory:  0,
-	MaxPrice:         gaspricecfg.DefaultMaxPrice,
-	IgnorePrice:      gaspricecfg.DefaultIgnorePrice,
+	Blocks:                  20,
+	Default:                 big.NewInt(0),
+	Percentile:              60,
+	MaxHeaderHistory:        0,
+	MaxBlockHistory:         0,
+	MaxPrice:                gaspricecfg.DefaultMaxPrice,
+	IgnorePrice:             gaspricecfg.DefaultIgnorePrice,
+	MinSuggestedPriorityFee: gaspricecfg.DefaultMinSuggestedPriorityFee,
 }
 
 // LightClientGPO contains default gasprice oracle settings for light client.
