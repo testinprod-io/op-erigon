@@ -272,7 +272,7 @@ type Config struct {
 	SilkwormSentry      bool
 
 	DisableTxPoolGossip bool
-	
+
 	RollupHaltOnIncompatibleProtocolVersion string
 }
 
