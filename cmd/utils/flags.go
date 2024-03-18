@@ -1893,7 +1893,13 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 	}
 
 	if ctx.IsSet(RollupHaltOnIncompatibleProtocolVersionFlag.Name) {
-		cfg.RollupHaltOnIncompatibleProtocolVersion = ctx.String(RollupHaltOnIncompatibleProtocolVersionFlag.Name)
+		flag := ctx.String(RollupHaltOnIncompatibleProtocolVersionFlag.Name)
+		switch flag {
+		case "major", "minor", "patch", "none":
+			cfg.RollupHaltOnIncompatibleProtocolVersion = flag
+		default:
+			logger.Warn("Ignoring incorrect value for --rollup.halt. Please specify a level from major/minor/patch/none.")
+		}
 	}
 }
 
