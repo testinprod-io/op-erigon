@@ -163,6 +163,7 @@ var DefaultFlags = []cli.Flag{
 	&utils.RollupHistoricalRPCFlag,
 	&utils.RollupHistoricalRPCTimeoutFlag,
 	&utils.RollupDisableTxPoolGossipFlag,
+	&utils.RollupHaltOnIncompatibleProtocolVersionFlag,
 
 	&utils.LightClientDiscoveryAddrFlag,
 	&utils.LightClientDiscoveryPortFlag,
