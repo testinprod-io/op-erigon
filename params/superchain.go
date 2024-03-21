@@ -39,7 +39,7 @@ var (
 	chaosnetRegolithTime = big.NewInt(1692156862)
 )
 
-var OPStackSupport = ProtocolVersionV0{Build: [8]byte{}, Major: 3, Minor: 1, Patch: 0, PreRelease: 1}.Encode()
+var OPStackSupport = ProtocolVersionV0{Build: [8]byte{}, Major: 6, Minor: 0, Patch: 0, PreRelease: 0}.Encode()
 
 // OPStackChainConfigByName loads chain config corresponding to the chain name from superchain registry.
 // This implementation is based on optimism monorepo(https://github.com/ethereum-optimism/optimism/blob/op-node/v1.4.1/op-node/chaincfg/chains.go#L59)
