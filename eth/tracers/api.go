@@ -15,8 +15,8 @@ type TraceConfig struct {
 	TracerConfig   *json.RawMessage       `json:"tracerConfig,omitempty"`
 	Timeout        *string                `json:"timeout,omitempty"`
 	Reexec         *uint64                `json:"reexec,omitempty"`
-	NoRefunds      *bool                  `json:"-"` // Turns off gas refunds when tracing
-	StateOverrides *ethapi.StateOverrides `json:"-"`
+	NoRefunds      *bool                  `json:"noRefunds,omitempty"` // Turns off gas refunds when tracing
+	StateOverrides *ethapi.StateOverrides `json:"stateOverrides,omitempty"`
 
 	BorTraceEnabled *bool
 	BorTx           *bool
