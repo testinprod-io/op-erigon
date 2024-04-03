@@ -20,5 +20,5 @@ type TraceConfig struct {
 
 	BorTraceEnabled *bool
 	BorTx           *bool
-	TxIndex         *hexutil.Uint
+	TxIndex         *hexutil.Uint `json:"txIndex,omitempty"`
 }
