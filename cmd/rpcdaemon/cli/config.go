@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/ledgerwatch/erigon-lib/chain"
+	"github.com/ledgerwatch/erigon-lib/chain/snapcfg"
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/datadir"
 	"github.com/ledgerwatch/erigon-lib/common/dir"
@@ -377,15 +378,17 @@ func RemoteServices(ctx context.Context, cfg *httpcfg.HttpCfg, logger log.Logger
 			logger.Info("Use --snapshots=false")
 		}
 
+		snapshotVersion := snapcfg.KnownCfg(cc.ChainName, 0).Version
+
 		// Configure sapshots
-		allSnapshots = freezeblocks.NewRoSnapshots(cfg.Snap, cfg.Dirs.Snap, logger)
-		allBorSnapshots = freezeblocks.NewBorRoSnapshots(cfg.Snap, cfg.Dirs.Snap, logger)
+		allSnapshots = freezeblocks.NewRoSnapshots(cfg.Snap, cfg.Dirs.Snap, snapshotVersion, logger)
+		allBorSnapshots = freezeblocks.NewBorRoSnapshots(cfg.Snap, cfg.Dirs.Snap, snapshotVersion, logger)
 		// To povide good UX - immediatly can read snapshots after RPCDaemon start, even if Erigon is down
 		// Erigon does store list of snapshots in db: means RPCDaemon can read this list now, but read by `remoteKvClient.Snapshots` after establish grpc connection
 		allSnapshots.OptimisticReopenWithDB(db)
 		allBorSnapshots.OptimisticalyReopenWithDB(db)
-		allSnapshots.LogStat()
-		allBorSnapshots.LogStat()
+		allSnapshots.LogStat("remote")
+		allBorSnapshots.LogStat("remote")
 
 		if agg, err = libstate.NewAggregatorV3(ctx, cfg.Dirs.SnapHistory, cfg.Dirs.Tmp, ethconfig.HistoryV3AggregationStep, db, logger); err != nil {
 			return nil, nil, nil, nil, nil, nil, nil, ff, nil, fmt.Errorf("create aggregator: %w", err)
@@ -409,12 +412,12 @@ func RemoteServices(ctx context.Context, cfg *httpcfg.HttpCfg, logger log.Logger
 				if err := allSnapshots.ReopenList(reply.BlocksFiles, true); err != nil {
 					logger.Error("[snapshots] reopen", "err", err)
 				} else {
-					allSnapshots.LogStat()
+					allSnapshots.LogStat("reopen")
 				}
 				if err := allBorSnapshots.ReopenList(reply.BlocksFiles, true); err != nil {
 					logger.Error("[bor snapshots] reopen", "err", err)
 				} else {
-					allSnapshots.LogStat()
+					allBorSnapshots.LogStat("reopen")
 				}
 
 				_ = reply.HistoryFiles
@@ -635,6 +638,27 @@ func startRegularRpcServer(ctx context.Context, cfg *httpcfg.HttpCfg, rpcAPI []r
 		return err
 	}
 
+	// Separate Websocket handler if websocket port flag specified
+	if cfg.WebsocketEnabled && cfg.WebsocketPort != cfg.HttpPort {
+		wsEndpoint := fmt.Sprintf("tcp://%s:%d", cfg.HttpListenAddress, cfg.WebsocketPort)
+		wsApiHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if isWebsocket(r) {
+				wsHandler.ServeHTTP(w, r)
+			}
+		})
+		wsListener, wsAddr, err := node.StartHTTPEndpoint(wsEndpoint, &node.HttpEndpointConfig{Timeouts: cfg.HTTPTimeouts}, wsApiHandler)
+		if err != nil {
+			return fmt.Errorf("could not start separate Websocket RPC api at port %d: %w", cfg.WebsocketPort, err)
+		}
+		info = append(info, "websocket.url", wsAddr)
+		defer func() {
+			shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			_ = wsListener.Shutdown(shutdownCtx)
+			logger.Info("HTTP endpoint closed", "url", wsAddr)
+		}()
+	}
+
 	if cfg.HttpServerEnabled {
 		httpEndpoint := fmt.Sprintf("tcp://%s:%d", cfg.HttpListenAddress, cfg.HttpPort)
 		if cfg.HttpURL != "" {
@@ -764,7 +788,7 @@ func isWebsocket(r *http.Request) bool {
 // obtainJWTSecret loads the jwt-secret, either from the provided config,
 // or from the default location. If neither of those are present, it generates
 // a new secret and stores to the default location.
-func obtainJWTSecret(cfg *httpcfg.HttpCfg, logger log.Logger) ([]byte, error) {
+func ObtainJWTSecret(cfg *httpcfg.HttpCfg, logger log.Logger) ([]byte, error) {
 	// try reading from file
 	logger.Info("Reading JWT secret", "path", cfg.JWTSecretPath)
 	// If we run the rpcdaemon and datadir is not specified we just use jwt.hex in current directory.
@@ -824,7 +848,7 @@ func createEngineListener(cfg *httpcfg.HttpCfg, engineApi []rpc.API, logger log.
 		return nil, nil, "", fmt.Errorf("could not start register RPC engine api: %w", err)
 	}
 
-	jwtSecret, err := obtainJWTSecret(cfg, logger)
+	jwtSecret, err := ObtainJWTSecret(cfg, logger)
 	if err != nil {
 		return nil, nil, "", err
 	}
