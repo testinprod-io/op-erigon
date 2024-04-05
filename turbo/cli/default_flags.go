@@ -65,7 +65,6 @@ var DefaultFlags = []cli.Flag{
 	&utils.WSPortFlag,
 	&utils.WSEnabledFlag,
 	&utils.WsCompressionFlag,
-	&utils.WSPortFlag,
 	&utils.HTTPTraceFlag,
 	&utils.StateCacheFlag,
 	&utils.RpcBatchConcurrencyFlag,
