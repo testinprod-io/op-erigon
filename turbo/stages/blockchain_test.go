@@ -532,7 +532,7 @@ func TestChainTxReorgs(t *testing.T) {
 	}
 }
 
-func readReceipt(chainConfig *chain.Config, db kv.Tx, txHash libcommon.Hash, br services.FullBlockReader) (*types.Receipt, libcommon.Hash, uint64, uint64, error) {
+func readReceipt(chainConfig *libchain.Config, db kv.Tx, txHash libcommon.Hash, br services.FullBlockReader) (*types.Receipt, libcommon.Hash, uint64, uint64, error) {
 	// Retrieve the context of the receipt based on the transaction hash
 	blockNumber, err := rawdb.ReadTxLookupEntry(db, txHash)
 	if err != nil {
