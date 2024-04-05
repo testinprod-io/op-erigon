@@ -821,7 +821,7 @@ func loadOPStackGenesisByChainName(name string) (*types.Genesis, error) {
 		genesis.StateHash = (*libcommon.Hash)(gen.StateHash)
 	}
 
-	genesisBlock, _, err := GenesisToBlock(genesis, "")
+	genesisBlock, _, err := GenesisToBlock(genesis, "", log.Root())
 	if err != nil {
 		return nil, fmt.Errorf("failed to build genesis block: %w", err)
 	}
