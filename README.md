@@ -35,10 +35,10 @@ Optimistic Erigon is still under development. Please note that some features are
 - [![Hive](https://github.com/testinprod-io/op-erigon/actions/workflows/hive.yml/badge.svg)](https://github.com/testinprod-io/op-erigon/actions/workflows/hive.yml)
 - We've been running an op-erigon public RPC here:
   - [https://op-erigon.mainnet.testinprod.io](https://op-erigon.mainnet.testinprod.io)
-  - [https://op-erigon.goerli.testinprod.io](https://op-erigon.goerli.testinprod.io)
+  - [https://op-erigon.sepolia.testinprod.io](https://op-erigon.sepolia.testinprod.io)
 - Our Otterscan (block explorer) uses our public RPC
   - [https://otterscan.mainnet.testinprod.io](https://otterscan.mainnet.testinprod.io)
-  - [https://otterscan.goerli.testinprod.io](https://otterscan.goerli.testinprod.io) 
+  - [https://otterscan.sepolia.testinprod.io](https://otterscan.sepolia.testinprod.io)
  
 ## Getting started with Optimism
 To build from the code, you can use the same command described below(`make erigon`)
@@ -82,7 +82,7 @@ For more information about legacy geth, refer the [Optimism's node operator guid
 ### `--db.size.limit=8TB`
 **[Required]**
 Existing nodes whose MDBX page size equals 4kb must add --db.size.limit=8TB flag. Otherwise you will get MDBX_TOO_LARGE error. To check the current page size you can use `make db-tools && ./build/bin/mdbx_stat datadir/chaindata`.
-If your chain is the one of `op-mainnet` & `op-goerli`, or your chain is synced before version `v2.55`, this flag is **REQUIRED**
+If your chain is the one of `op-mainnet` & `op-sepolia`, or your chain is synced before version `v2.55`, this flag is **REQUIRED**
 
 
 ### `--txpool.gossip.disable`
