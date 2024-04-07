@@ -106,10 +106,8 @@ You can download the pre-bedrock chain data from [https://op-erigon-backup.mainn
 wget -c -O "backup.tar.gz" https://op-erigon-backup.mainnet.testinprod.io
 tar -zxvf backup.tar.gz
 ```
-After untaring, you will get a folder named `chaindata` which contains two files: `mdbx.dat` and `mdbx.lck`. Create a directory, move `chaindata` to the directory, and use the directory as a datadir(`$DATADIR`) for erigon. For example,
+After untaring, you will get a folder named `database` which contains a folder `chaindata` with two files inside: `mdbx.dat` and `mdbx.lck`. Use this directory as a datadir(`$DATADIR`) for erigon. For example,
 ```bash
-mkdir database
-mv chaindata database/
 export DATA_DIR=`pwd`/database
 ```
 
