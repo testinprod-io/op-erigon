@@ -313,7 +313,9 @@ func (h *Hook) afterRun(tx kv.Tx, finishProgressBefore uint64) error {
 	}
 	if notifications != nil && notifications.Accumulator != nil && currentHeader != nil {
 
-		pendingBaseFee := misc.CalcBaseFee(h.chainConfig, currentHeader, currentHeader.Time+1)
+		// Block time of every OP superchains is 2sec for now.
+		// Add 2 for next block. TODO: support custom block time for OP chain
+		pendingBaseFee := misc.CalcBaseFee(h.chainConfig, currentHeader, currentHeader.Time+2)
 		if currentHeader.Number.Uint64() == 0 {
 			notifications.Accumulator.StartChange(0, currentHeader.Hash(), nil, false)
 		}
