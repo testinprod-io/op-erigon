@@ -29,24 +29,47 @@ var (
 	GitTag    string
 )
 
+// Version is the version of upstream erigon
 // see https://calver.org
 const (
-	VersionMajor       = 2        // Major version component of the current release
-	VersionMinor       = 38       // Minor version component of the current release
-	VersionMicro       = 0        // Patch version component of the current release
-	VersionModifier    = "stable" // Modifier component of the current release
+	VersionMajor       = 2  // Major version component of the current release
+	VersionMinor       = 56 // Minor version component of the current release
+	VersionMicro       = 2  // Patch version component of the current release
+	VersionModifier    = "" // Modifier component of the current release
 	VersionKeyCreated  = "ErigonVersionCreated"
 	VersionKeyFinished = "ErigonVersionFinished"
 )
 
+// OPVersion is the version of op-erigon
+const (
+	OPVersionMajor    = 0          // Major version component of the current release
+	OPVersionMinor    = 5          // Minor version component of the current release
+	OPVersionMicro    = 0          // Patch version component of the current release
+	OPVersionModifier = "unstable" // Version metadata to append to the version string
+)
+
 // Version holds the textual version string.
 var Version = func() string {
-	return fmt.Sprintf("%d.%02d.%d", VersionMajor, VersionMinor, VersionMicro)
+	return fmt.Sprintf("%d.%02d.%d", OPVersionMajor, OPVersionMinor, OPVersionMicro)
 }()
 
 // VersionWithMeta holds the textual version string including the metadata.
 var VersionWithMeta = func() string {
 	v := Version
+	if OPVersionModifier != "" {
+		v += "-" + OPVersionModifier
+	}
+	return v
+}()
+
+// ErigonVersion holds the textual erigon version string.
+var ErigonVersion = func() string {
+	return fmt.Sprintf("%d.%d.%d", VersionMajor, VersionMinor, VersionMicro)
+}()
+
+// ErigonVersionWithMeta holds the textual erigon version string including the metadata.
+var ErigonVersionWithMeta = func() string {
+	v := ErigonVersion
 	if VersionModifier != "" {
 		v += "-" + VersionModifier
 	}
