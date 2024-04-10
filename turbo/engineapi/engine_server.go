@@ -445,9 +445,15 @@ func (s *EngineServer) getPayload(ctx context.Context, payloadId uint64, version
 // engineForkChoiceUpdated either states new block head or request the assembling of a new block
 func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *engine_types.ForkChoiceState, payloadAttributes *engine_types.PayloadAttributes, version clparams.StateVersion,
 ) (*engine_types.ForkChoiceUpdatedResponse, error) {
-	status, err := s.getQuickPayloadStatusIfPossible(forkchoiceState.HeadHash, 0, libcommon.Hash{}, forkchoiceState, false)
-	if err != nil {
-		return nil, err
+	var status *engine_types.PayloadStatus
+	var err error
+	// In the Optimism case, we allow arbitrary rewinding of the safe block
+	// hash, so we skip the path which might short-circuit that
+	if s.config.Optimism == nil {
+		status, err = s.getQuickPayloadStatusIfPossible(forkchoiceState.HeadHash, 0, libcommon.Hash{}, forkchoiceState, false)
+		if err != nil {
+			return nil, err
+		}
 	}
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -521,6 +527,10 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 
 	if payloadAttributes.ParentBeaconBlockRoot != nil && version >= clparams.DenebVersion {
 		req.ParentBeaconBlockRoot = gointerfaces.ConvertHashToH256(*payloadAttributes.ParentBeaconBlockRoot)
+	}
+
+	if s.config.Optimism != nil && payloadAttributes.GasLimit == nil {
+		return nil, &engine_helpers.InvalidPayloadAttributesErr
 	}
 
 	if payloadAttributes.GasLimit != nil {
