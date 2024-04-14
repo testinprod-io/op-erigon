@@ -380,23 +380,8 @@ func (tx DepositTx) IsStarkNet() bool {
 func (tx DepositTx) GetPrice() *uint256.Int  { return uint256.NewInt(0) }
 func (tx DepositTx) GetTip() *uint256.Int    { return uint256.NewInt(0) }
 func (tx DepositTx) GetFeeCap() *uint256.Int { return uint256.NewInt(0) }
-
-// Is this needed at all?
 func (tx DepositTx) GetEffectiveGasTip(baseFee *uint256.Int) *uint256.Int {
-	if baseFee == nil {
-		return tx.GetTip()
-	}
-	gasFeeCap := tx.GetFeeCap()
-	// return 0 because effectiveFee cant be < 0
-	if gasFeeCap.Lt(baseFee) {
-		return uint256.NewInt(0)
-	}
-	effectiveFee := new(uint256.Int).Sub(gasFeeCap, baseFee)
-	if tx.GetTip().Lt(effectiveFee) {
-		return tx.GetTip()
-	} else {
-		return effectiveFee
-	}
+	return uint256.NewInt(0)
 }
 
 func (tx DepositTx) Cost() *uint256.Int {
