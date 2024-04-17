@@ -80,7 +80,9 @@ func (f eip1559Calculator) CurrentFees(chainConfig *chain.Config, db kv.Getter) 
 
 	if chainConfig != nil {
 		if currentHeader.BaseFee != nil {
-			baseFee = CalcBaseFee(chainConfig, currentHeader).Uint64()
+			// Block time of every OP superchains is 2sec for now.
+			// Add 2 for next block. TODO: support custom block time for OP chain
+			baseFee = CalcBaseFee(chainConfig, currentHeader, currentHeader.Time+2).Uint64()
 		}
 
 		if currentHeader.ExcessBlobGas != nil {

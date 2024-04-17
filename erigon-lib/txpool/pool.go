@@ -1668,8 +1668,8 @@ func (p *TxPool) onSenderStateChange(senderID uint64, senderNonce uint64, sender
 
 		needBalance := requiredBalance(mt.Tx)
 
-		if l1CostFn != nil {
-			if l1Cost := l1CostFn(mt.Tx); l1Cost != nil {
+		if p.l1Cost != nil {
+			if l1Cost := p.l1Cost(mt.Tx); l1Cost != nil {
 				needBalance.Add(needBalance, l1Cost)
 			}
 		}

@@ -32,11 +32,13 @@ func MiningStages(
 		{
 			ID:          stages.MiningCreateBlock,
 			Description: "Mining: add force-txs",
-			Forward: func(firstCycle bool, badBlockUnwind bool, s *StageState, u Unwinder, tx kv.RwTx, logger log.Logger) error {
-				return SpawnMiningForceTxsStage(s, tx, createBlockCfg, ctx.Done())
+			Forward: func(firstCycle bool, badBlockUnwind bool, s *StageState, u Unwinder, txc wrap.TxContainer, logger log.Logger) error {
+				return SpawnMiningForceTxsStage(s, txc.Tx, createBlockCfg, ctx.Done())
 			},
-			Unwind: func(firstCycle bool, u *UnwindState, s *StageState, tx kv.RwTx, logger log.Logger) error { return nil },
-			Prune:  func(firstCycle bool, u *PruneState, tx kv.RwTx, logger log.Logger) error { return nil },
+			Unwind: func(firstCycle bool, u *UnwindState, s *StageState, txc wrap.TxContainer, logger log.Logger) error {
+				return nil
+			},
+			Prune: func(firstCycle bool, u *PruneState, tx kv.RwTx, logger log.Logger) error { return nil },
 		},
 		{
 			ID:          stages.MiningCreateBlock,
@@ -72,7 +74,7 @@ func MiningStages(
 				return SpawnMiningExecStage(s, txc.Tx, execCfg, ctx.Done(), logger)
 			},
 			Unwind: func(firstCycle bool, u *UnwindState, s *StageState, txc wrap.TxContainer, logger log.Logger) error {
-				return UnwindMiningExecutionStage(u, s, txc, ctx, execCfg, logger)
+				return UnwindMiningExecutionStage(u, s, txc.Tx, ctx, execCfg, logger)
 			},
 			Prune: func(firstCycle bool, u *PruneState, tx kv.RwTx, logger log.Logger) error { return nil },
 		},
@@ -83,7 +85,7 @@ func MiningStages(
 				return SpawnHashStateStage(s, txc.Tx, hashStateCfg, ctx, logger)
 			},
 			Unwind: func(firstCycle bool, u *UnwindState, s *StageState, txc wrap.TxContainer, logger log.Logger) error {
-				return UnwindHashStateStage(u, s, txc, hashStateCfg, ctx, logger)
+				return UnwindHashStateStage(u, s, txc.Tx, hashStateCfg, ctx, logger)
 			},
 			Prune: func(firstCycle bool, u *PruneState, tx kv.RwTx, logger log.Logger) error { return nil },
 		},
@@ -99,7 +101,7 @@ func MiningStages(
 				return nil
 			},
 			Unwind: func(firstCycle bool, u *UnwindState, s *StageState, txc wrap.TxContainer, logger log.Logger) error {
-				return UnwindIntermediateHashesStage(u, s, txc, trieCfg, ctx, logger)
+				return UnwindIntermediateHashesStage(u, s, txc.Tx, trieCfg, ctx, logger)
 			},
 			Prune: func(firstCycle bool, u *PruneState, tx kv.RwTx, logger log.Logger) error { return nil },
 		},
