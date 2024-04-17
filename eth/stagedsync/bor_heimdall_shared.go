@@ -116,7 +116,7 @@ func fetchRequiredHeimdallSpansIfNeeded(
 	ctx context.Context,
 	toBlockNum uint64,
 	tx kv.RwTx,
-	cfg BorHeimdallCfg,
+	cfg BorHeimdallCfg, //nolint:gocritic
 	logPrefix string,
 	logger log.Logger,
 ) (uint64, error) {
@@ -181,7 +181,7 @@ func fetchRequiredHeimdallStateSyncEventsIfNeeded(
 	ctx context.Context,
 	header *types.Header,
 	tx kv.RwTx,
-	cfg BorHeimdallCfg,
+	cfg BorHeimdallCfg, //nolint:gocritic
 	logPrefix string,
 	logger log.Logger,
 	lastStateSyncEventIDGetter func() (uint64, error),
@@ -205,7 +205,7 @@ func fetchAndWriteHeimdallStateSyncEvents(
 	header *types.Header,
 	lastStateSyncEventID uint64,
 	tx kv.RwTx,
-	cfg BorHeimdallCfg,
+	cfg BorHeimdallCfg, //nolint:gocritic
 	logPrefix string,
 	logger log.Logger,
 ) (uint64, int, time.Duration, error) {

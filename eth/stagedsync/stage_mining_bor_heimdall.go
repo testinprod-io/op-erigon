@@ -15,7 +15,7 @@ import (
 
 func MiningBorHeimdallForward(
 	ctx context.Context,
-	cfg BorHeimdallCfg,
+	cfg BorHeimdallCfg, //nolint:gocritic
 	stageStage *StageState,
 	unwinder Unwinder,
 	tx kv.RwTx,

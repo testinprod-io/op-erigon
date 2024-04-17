@@ -97,7 +97,7 @@ func BorHeimdallForward(
 	u Unwinder,
 	ctx context.Context,
 	tx kv.RwTx,
-	cfg BorHeimdallCfg,
+	cfg BorHeimdallCfg, //nolint:gocritic
 	logger log.Logger,
 ) (err error) {
 	processStart := time.Now()
@@ -574,7 +574,7 @@ func checkBorHeaderExtraData(chr consensus.ChainHeaderReader, header *types.Head
 	return nil
 }
 
-func BorHeimdallUnwind(u *UnwindState, ctx context.Context, s *StageState, tx kv.RwTx, cfg BorHeimdallCfg) (err error) {
+func BorHeimdallUnwind(u *UnwindState, ctx context.Context, s *StageState, tx kv.RwTx, cfg BorHeimdallCfg) (err error) { //nolint:gocritic
 	if cfg.borConfig == nil {
 		return
 	}
@@ -647,7 +647,7 @@ func BorHeimdallUnwind(u *UnwindState, ctx context.Context, s *StageState, tx kv
 	return
 }
 
-func BorHeimdallPrune(s *PruneState, ctx context.Context, tx kv.RwTx, cfg BorHeimdallCfg) (err error) {
+func BorHeimdallPrune(s *PruneState, ctx context.Context, tx kv.RwTx, cfg BorHeimdallCfg) (err error) { //nolint:gocritic
 	if cfg.borConfig == nil {
 		return
 	}

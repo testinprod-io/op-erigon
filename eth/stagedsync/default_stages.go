@@ -15,7 +15,7 @@ import (
 func DefaultStages(ctx context.Context,
 	snapshots SnapshotsCfg,
 	headers HeadersCfg,
-	borHeimdallCfg BorHeimdallCfg,
+	borHeimdallCfg BorHeimdallCfg, //nolint:gocritic
 	blockHashCfg BlockHashesCfg,
 	bodies BodiesCfg,
 	senders SendersCfg,

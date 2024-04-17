@@ -22,7 +22,7 @@ type ChainEventNotifier interface {
 func MiningStages(
 	ctx context.Context,
 	createBlockCfg MiningCreateBlockCfg,
-	borHeimdallCfg BorHeimdallCfg,
+	borHeimdallCfg BorHeimdallCfg, //nolint:gocritic
 	execCfg MiningExecCfg,
 	hashStateCfg HashStateCfg,
 	trieCfg TrieCfg,
