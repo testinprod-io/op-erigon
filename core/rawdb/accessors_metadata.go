@@ -19,6 +19,7 @@ package rawdb
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ledgerwatch/erigon/polygon/bor/borcfg"
 
 	"github.com/ledgerwatch/erigon-lib/chain"
 	"github.com/ledgerwatch/erigon-lib/chain/networkname"
@@ -35,11 +36,21 @@ func ReadChainConfig(db kv.Getter, hash libcommon.Hash) (*chain.Config, error) {
 	if len(data) == 0 {
 		return nil, nil
 	}
+
 	var config chain.Config
 	if err := json.Unmarshal(data, &config); err != nil {
 		return nil, fmt.Errorf("invalid chain config JSON: %x, %w", hash, err)
 	}
 	config.ChainName = networkname.HandleLegacyName(config.ChainName)
+
+	if config.BorJSON != nil {
+		borConfig := &borcfg.BorConfig{}
+		if err := json.Unmarshal(config.BorJSON, borConfig); err != nil {
+			return nil, fmt.Errorf("invalid chain config 'bor' JSON: %x, %w", hash, err)
+		}
+		config.Bor = borConfig
+	}
+
 	return &config, nil
 }
 
@@ -49,10 +60,20 @@ func WriteChainConfig(db kv.Putter, hash libcommon.Hash, cfg *chain.Config) erro
 		return nil
 	}
 	cfg.ChainName = networkname.HandleLegacyName(cfg.ChainName)
+
+	if cfg.Bor != nil {
+		borJSON, err := json.Marshal(cfg.Bor)
+		if err != nil {
+			return fmt.Errorf("failed to JSON encode chain config 'bor': %w", err)
+		}
+		cfg.BorJSON = borJSON
+	}
+
 	data, err := json.Marshal(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to JSON encode chain config: %w", err)
 	}
+
 	if err := db.Put(kv.ConfigTable, hash[:], data); err != nil {
 		return fmt.Errorf("failed to store chain config: %w", err)
 	}

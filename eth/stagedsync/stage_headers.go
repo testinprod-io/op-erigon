@@ -9,19 +9,19 @@ import (
 	"time"
 
 	"github.com/c2h5oh/datasize"
+	"github.com/ledgerwatch/log/v3"
+
 	"github.com/ledgerwatch/erigon-lib/chain"
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/dbg"
 	"github.com/ledgerwatch/erigon-lib/common/hexutility"
 	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon/core/rawdb/blockio"
-	"github.com/ledgerwatch/erigon/eth/ethconfig"
-	"github.com/ledgerwatch/erigon/eth/stagedsync/stages"
-	"github.com/ledgerwatch/log/v3"
-
 	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/core/rawdb"
+	"github.com/ledgerwatch/erigon/core/rawdb/blockio"
 	"github.com/ledgerwatch/erigon/core/types"
+	"github.com/ledgerwatch/erigon/eth/ethconfig"
+	"github.com/ledgerwatch/erigon/eth/stagedsync/stages"
 	"github.com/ledgerwatch/erigon/rlp"
 	"github.com/ledgerwatch/erigon/turbo/engineapi/engine_helpers"
 	"github.com/ledgerwatch/erigon/turbo/services"
@@ -183,7 +183,12 @@ func HeadersPOW(
 	}
 	TEMP TESTING */
 	headerInserter := headerdownload.NewHeaderInserter(logPrefix, localTd, startProgress, cfg.blockReader)
-	cfg.hd.SetHeaderReader(&ChainReaderImpl{config: &cfg.chainConfig, tx: tx, blockReader: cfg.blockReader})
+	cfg.hd.SetHeaderReader(&ChainReaderImpl{
+		config:      &cfg.chainConfig,
+		tx:          tx,
+		blockReader: cfg.blockReader,
+		logger:      logger,
+	})
 
 	stopped := false
 	var noProgressCounter uint = 0
@@ -600,7 +605,7 @@ func (cr ChainReaderImpl) BorEventsByBlock(hash libcommon.Hash, number uint64) [
 func (cr ChainReaderImpl) BorSpan(spanId uint64) []byte {
 	span, err := cr.blockReader.Span(context.Background(), cr.tx, spanId)
 	if err != nil {
-		cr.logger.Error("BorSpan failed", "err", err)
+		cr.logger.Error("[staged sync] BorSpan failed", "err", err)
 		return nil
 	}
 	return span

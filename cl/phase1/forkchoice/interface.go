@@ -40,14 +40,18 @@ type ForkChoiceStorageReader interface {
 
 	GetStateAtSlot(slot uint64, alwaysCopy bool) (*state.CachingBeaconState, error)
 	GetStateAtStateRoot(root libcommon.Hash, alwaysCopy bool) (*state.CachingBeaconState, error)
+	ForkNodes() []ForkNode
+	Synced() bool
 }
 
 type ForkChoiceStorageWriter interface {
-	OnAttestation(attestation *solid.Attestation, fromBlock bool) error
+	OnAggregateAndProof(aggregateAndProof *cltypes.SignedAggregateAndProof, test bool) error
+	OnAttestation(attestation *solid.Attestation, fromBlock, insert bool) error
 	OnAttesterSlashing(attesterSlashing *cltypes.AttesterSlashing, test bool) error
 	OnVoluntaryExit(signedVoluntaryExit *cltypes.SignedVoluntaryExit, test bool) error
 	OnProposerSlashing(proposerSlashing *cltypes.ProposerSlashing, test bool) error
 	OnBlsToExecutionChange(signedChange *cltypes.SignedBLSToExecutionChange, test bool) error
 	OnBlock(block *cltypes.SignedBeaconBlock, newPayload bool, fullValidation bool) error
 	OnTick(time uint64)
+	SetSynced(synced bool)
 }

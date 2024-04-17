@@ -19,9 +19,9 @@ import (
 	"github.com/ledgerwatch/erigon/cmd/devnet/contracts"
 	"github.com/ledgerwatch/erigon/cmd/devnet/devnet"
 	"github.com/ledgerwatch/erigon/cmd/devnet/requests"
-	"github.com/ledgerwatch/erigon/consensus/bor/heimdall/checkpoint"
 	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/crypto"
+	"github.com/ledgerwatch/erigon/polygon/heimdall"
 )
 
 type CheckpointBlock struct {
@@ -176,7 +176,7 @@ func (h *Heimdall) handleChildHeader(ctx context.Context, header *types.Header) 
 			return err
 		}
 
-		h.pendingCheckpoint = &checkpoint.Checkpoint{
+		h.pendingCheckpoint = &heimdall.Checkpoint{
 			Timestamp:  timeStamp,
 			StartBlock: big.NewInt(int64(expectedCheckpointState.newStart)),
 			EndBlock:   big.NewInt(int64(expectedCheckpointState.newEnd)),
