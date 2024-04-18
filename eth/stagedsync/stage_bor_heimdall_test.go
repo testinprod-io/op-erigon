@@ -11,14 +11,14 @@ import (
 	"github.com/ledgerwatch/log/v3"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ledgerwatch/erigon/consensus/bor"
-	"github.com/ledgerwatch/erigon/consensus/bor/valset"
 	"github.com/ledgerwatch/erigon/core"
 	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/crypto"
 	"github.com/ledgerwatch/erigon/eth/stagedsync"
 	"github.com/ledgerwatch/erigon/eth/stagedsync/stagedsynctest"
 	"github.com/ledgerwatch/erigon/eth/stagedsync/stages"
+	"github.com/ledgerwatch/erigon/polygon/bor"
+	"github.com/ledgerwatch/erigon/polygon/bor/valset"
 )
 
 func TestBorHeimdallForwardPersistsSpans(t *testing.T) {
@@ -188,7 +188,7 @@ func TestBorHeimdallForwardDetectsUnauthorizedSignerError(t *testing.T) {
 	invalidHeader.Extra = bytes.Repeat([]byte{0x00}, types.ExtraVanityLength+types.ExtraSealLength)
 	validatorKey1, err := crypto.GenerateKey()
 	require.NoError(t, err)
-	sighash, err := crypto.Sign(crypto.Keccak256(bor.BorRLP(invalidHeader, chainConfig.Bor)), validatorKey1)
+	sighash, err := crypto.Sign(crypto.Keccak256(bor.BorRLP(invalidHeader, testHarness.BorConfig())), validatorKey1)
 	require.NoError(t, err)
 	copy(invalidHeader.Extra[len(invalidHeader.Extra)-types.ExtraSealLength:], sighash)
 	testHarness.SaveHeader(ctx, t, invalidHeader)
@@ -205,7 +205,7 @@ func TestBorHeimdallForwardDetectsUnauthorizedSignerError(t *testing.T) {
 	require.Equal(t, invalidHeader.Number.Uint64()-1, testHarness.StateSyncUnwindPoint())
 	unwindReason := testHarness.StateSyncUnwindReason()
 	require.Equal(t, invalidHeader.Hash(), *unwindReason.Block)
-	var unauthorizedSignerErr *bor.UnauthorizedSignerError
+	var unauthorizedSignerErr *valset.UnauthorizedSignerError
 	ok := errors.As(unwindReason.Err, &unauthorizedSignerErr)
 	require.True(t, ok)
 	require.Equal(t, invalidHeader.Number.Uint64(), unauthorizedSignerErr.Number)

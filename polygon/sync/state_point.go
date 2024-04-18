@@ -4,11 +4,10 @@ import (
 	"math/big"
 
 	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon/consensus/bor/heimdall/checkpoint"
-	"github.com/ledgerwatch/erigon/consensus/bor/heimdall/milestone"
+	"github.com/ledgerwatch/erigon/polygon/heimdall"
 )
 
-func statePointFromCheckpoint(checkpoint *checkpoint.Checkpoint) *statePoint {
+func statePointFromCheckpoint(checkpoint *heimdall.Checkpoint) *statePoint {
 	return &statePoint{
 		proposer:   checkpoint.Proposer,
 		startBlock: new(big.Int).Set(checkpoint.StartBlock),
@@ -20,7 +19,7 @@ func statePointFromCheckpoint(checkpoint *checkpoint.Checkpoint) *statePoint {
 	}
 }
 
-func statePointFromMilestone(milestone *milestone.Milestone) *statePoint {
+func statePointFromMilestone(milestone *heimdall.Milestone) *statePoint {
 	return &statePoint{
 		proposer:   milestone.Proposer,
 		startBlock: new(big.Int).Set(milestone.StartBlock),
