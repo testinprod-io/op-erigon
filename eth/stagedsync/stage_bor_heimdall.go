@@ -629,7 +629,7 @@ func checkBorHeaderExtraData(chr consensus.ChainHeaderReader, header *types.Head
 	return nil
 }
 
-func BorHeimdallUnwind(u *UnwindState, ctx context.Context, _ *StageState, tx kv.RwTx, cfg BorHeimdallCfg) (err error) {
+func BorHeimdallUnwind(u *UnwindState, ctx context.Context, _ *StageState, tx kv.RwTx, cfg BorHeimdallCfg) (err error) { //nolint:gocritic
 	if cfg.borConfig == nil {
 		return
 	}
@@ -711,7 +711,7 @@ func BorHeimdallUnwind(u *UnwindState, ctx context.Context, _ *StageState, tx kv
 	return
 }
 
-func BorHeimdallPrune(_ *PruneState, _ context.Context, _ kv.RwTx, cfg BorHeimdallCfg) (err error) {
+func BorHeimdallPrune(_ *PruneState, _ context.Context, _ kv.RwTx, cfg BorHeimdallCfg) (err error) { //nolint:gocritic
 	if cfg.borConfig == nil {
 		return
 	}
