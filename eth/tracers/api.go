@@ -19,6 +19,5 @@ type TraceConfig struct {
 	StateOverrides *ethapi.StateOverrides `json:"stateOverrides,omitempty"`
 
 	BorTraceEnabled *bool
-	BorTx           *bool
 	TxIndex         *hexutil.Uint `json:"txIndex,omitempty"`
 }
