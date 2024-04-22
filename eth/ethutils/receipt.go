@@ -27,6 +27,8 @@ func MarshalReceipt(
 		if t.Protected() {
 			chainId = types.DeriveChainId(&t.V).ToBig()
 		}
+	case *types.DepositTx:
+		// Deposit TX does not have chain ID
 	default:
 		chainId = txn.GetChainID().ToBig()
 	}
@@ -69,6 +71,24 @@ func MarshalReceipt(
 	// If the ContractAddress is 20 0x0 bytes, assume it is not a contract creation
 	if receipt.ContractAddress != (common.Address{}) {
 		fields["contractAddress"] = receipt.ContractAddress
+	}
+
+	if chainConfig.IsOptimism() {
+		if txn.Type() != types.DepositTxType {
+			fields["l1GasPrice"] = hexutil.Big(*receipt.L1GasPrice)
+			fields["l1GasUsed"] = hexutil.Big(*receipt.L1GasUsed)
+			fields["l1Fee"] = hexutil.Big(*receipt.L1Fee)
+			if receipt.FeeScalar != nil { // removed in Ecotone
+				fields["l1FeeScalar"] = receipt.FeeScalar
+			}
+		} else {
+			if receipt.DepositNonce != nil {
+				fields["depositNonce"] = hexutil.Uint64(*receipt.DepositNonce)
+			}
+			if receipt.DepositReceiptVersion != nil {
+				fields["depositReceiptVersion"] = hexutil.Uint64(*receipt.DepositReceiptVersion)
+			}
+		}
 	}
 
 	// Set derived blob related fields
