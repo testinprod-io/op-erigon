@@ -122,7 +122,8 @@ func traceBorStateSyncTxn(
 			nil,   // accessList
 			false, // checkNonce
 			true,  // isFree
-			nil,   // maxFeePerBlobGas
+			true,
+			nil, // maxFeePerBlobGas
 		)
 
 		gp := new(core.GasPool).AddGas(msg.Gas()).AddBlobGas(msg.BlobGas())
