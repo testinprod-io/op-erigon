@@ -297,6 +297,11 @@ func (s *Merge) Close() error {
 // It depends on the parentHash already being stored in the database.
 // If the total difficulty is not stored in the database a ErrUnknownAncestorTD error is returned.
 func IsTTDReached(chain consensus.ChainHeaderReader, parentHash libcommon.Hash, number uint64) (bool, error) {
+	if cfg := chain.Config(); cfg.Optimism != nil {
+		// If OP-Stack then bedrock activation number determines when TTD (eth Merge) has been reached.
+		// Note: some tests/utils will set parentNumber == max_uint64 as "parent" of the genesis block, this is fine.
+		return cfg.IsBedrock(number + 1), nil
+	}
 	if chain.Config().TerminalTotalDifficulty == nil {
 		return false, nil
 	}
