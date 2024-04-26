@@ -14,7 +14,7 @@ func SpawnMiningForceTxsStage(s *StageState, tx kv.RwTx, cfg MiningCreateBlockCf
 			"txs", len(cfg.blockBuilderParameters.Transactions),
 			"notxpool", cfg.blockBuilderParameters.NoTxPool)
 		for i, otx := range cfg.blockBuilderParameters.Transactions {
-			tx, err := types.UnmarshalTransactionFromBinary(otx)
+			tx, err := types.UnmarshalTransactionFromBinary(otx, false)
 			if err != nil {
 				return fmt.Errorf("tx %d is invalid: %v", i, err)
 			}

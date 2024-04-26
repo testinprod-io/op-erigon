@@ -95,7 +95,7 @@ type Config struct {
 	// For deposit contract logs are needed by CL to validate/produce blocks.
 	// All logs should be available to a validating node through eth_getLogs
 	NoPruneContracts map[common.Address]bool `json:"noPruneContracts,omitempty"`
-	
+
 	// Optimism config
 	Optimism *OptimismConfig `json:"optimism,omitempty"`
 }
