@@ -1,6 +1,8 @@
 package forkchoice
 
 import (
+	"context"
+
 	"github.com/ledgerwatch/erigon-lib/common"
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon/cl/cltypes"
@@ -38,13 +40,19 @@ type ForkChoiceStorageReader interface {
 	BlockRewards(root libcommon.Hash) (*eth2.BlockRewardsCollector, bool)
 	TotalActiveBalance(root libcommon.Hash) (uint64, bool)
 
-	GetStateAtSlot(slot uint64, alwaysCopy bool) (*state.CachingBeaconState, error)
-	GetStateAtStateRoot(root libcommon.Hash, alwaysCopy bool) (*state.CachingBeaconState, error)
 	ForkNodes() []ForkNode
 	Synced() bool
 	GetLightClientBootstrap(blockRoot libcommon.Hash) (*cltypes.LightClientBootstrap, bool)
 	NewestLightClientUpdate() *cltypes.LightClientUpdate
 	GetLightClientUpdate(period uint64) (*cltypes.LightClientUpdate, bool)
+	GetHeader(blockRoot libcommon.Hash) (*cltypes.BeaconBlockHeader, bool)
+
+	GetBalances(blockRoot libcommon.Hash) (solid.Uint64ListSSZ, error)
+	GetInactivitiesScores(blockRoot libcommon.Hash) (solid.Uint64ListSSZ, error)
+	GetPreviousPartecipationIndicies(blockRoot libcommon.Hash) (*solid.BitList, error)
+	GetValidatorSet(blockRoot libcommon.Hash) (*solid.ValidatorSet, error)
+	GetCurrentPartecipationIndicies(blockRoot libcommon.Hash) (*solid.BitList, error)
+	GetPublicKeyForValidator(blockRoot libcommon.Hash, idx uint64) (libcommon.Bytes48, error)
 }
 
 type ForkChoiceStorageWriter interface {
@@ -54,7 +62,7 @@ type ForkChoiceStorageWriter interface {
 	OnVoluntaryExit(signedVoluntaryExit *cltypes.SignedVoluntaryExit, test bool) error
 	OnProposerSlashing(proposerSlashing *cltypes.ProposerSlashing, test bool) error
 	OnBlsToExecutionChange(signedChange *cltypes.SignedBLSToExecutionChange, test bool) error
-	OnBlock(block *cltypes.SignedBeaconBlock, newPayload bool, fullValidation bool) error
+	OnBlock(ctx context.Context, block *cltypes.SignedBeaconBlock, newPayload bool, fullValidation bool, checkDataAvaibility bool) error
 	OnTick(time uint64)
 	SetSynced(synced bool)
 }

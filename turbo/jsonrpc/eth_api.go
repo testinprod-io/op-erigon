@@ -402,6 +402,7 @@ type RPCTransaction struct {
 	MaxFeePerBlobGas    *hexutil.Big       `json:"maxFeePerBlobGas,omitempty"`
 	BlobVersionedHashes []common.Hash      `json:"blobVersionedHashes,omitempty"`
 	V                   *hexutil.Big       `json:"v,omitempty"`
+	YParity             *hexutil.Big       `json:"yParity,omitempty"`
 	R                   *hexutil.Big       `json:"r,omitempty"`
 	S                   *hexutil.Big       `json:"s,omitempty"`
 
@@ -431,6 +432,9 @@ func NewRPCTransaction(tx types.Transaction, blockHash common.Hash, blockNumber 
 		To:    tx.GetTo(),
 		Value: (*hexutil.Big)(tx.GetValue().ToBig()),
 	}
+	if t, ok := tx.(*types.BlobTxWrapper); ok {
+		tx = &t.Tx
+	}
 	switch t := tx.(type) {
 	case *types.LegacyTx:
 		// avoid overflow by not calling DeriveChainId. chain id not included when v = 0
@@ -449,6 +453,7 @@ func NewRPCTransaction(tx types.Transaction, blockHash common.Hash, blockNumber 
 		chainId.Set(t.ChainID)
 		result.ChainID = (*hexutil.Big)(chainId.ToBig())
 		result.GasPrice = (*hexutil.Big)(t.GasPrice.ToBig())
+		result.YParity = (*hexutil.Big)(t.V.ToBig())
 		result.V = (*hexutil.Big)(t.V.ToBig())
 		result.R = (*hexutil.Big)(t.R.ToBig())
 		result.S = (*hexutil.Big)(t.S.ToBig())
@@ -458,6 +463,7 @@ func NewRPCTransaction(tx types.Transaction, blockHash common.Hash, blockNumber 
 		result.ChainID = (*hexutil.Big)(chainId.ToBig())
 		result.Tip = (*hexutil.Big)(t.Tip.ToBig())
 		result.FeeCap = (*hexutil.Big)(t.FeeCap.ToBig())
+		result.YParity = (*hexutil.Big)(t.V.ToBig())
 		result.V = (*hexutil.Big)(t.V.ToBig())
 		result.R = (*hexutil.Big)(t.R.ToBig())
 		result.S = (*hexutil.Big)(t.S.ToBig())
@@ -489,6 +495,7 @@ func NewRPCTransaction(tx types.Transaction, blockHash common.Hash, blockNumber 
 		result.ChainID = (*hexutil.Big)(chainId.ToBig())
 		result.Tip = (*hexutil.Big)(t.Tip.ToBig())
 		result.FeeCap = (*hexutil.Big)(t.FeeCap.ToBig())
+		result.YParity = (*hexutil.Big)(t.V.ToBig())
 		result.V = (*hexutil.Big)(t.V.ToBig())
 		result.R = (*hexutil.Big)(t.R.ToBig())
 		result.S = (*hexutil.Big)(t.S.ToBig())

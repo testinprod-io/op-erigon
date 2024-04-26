@@ -22,16 +22,17 @@ import (
 	"time"
 
 	"github.com/ledgerwatch/erigon-lib/kv"
+	"github.com/ledgerwatch/erigon/cl/persistence/blob_storage"
 	"github.com/ledgerwatch/erigon/cl/phase1/forkchoice"
 	"github.com/ledgerwatch/erigon/cl/sentinel/communication"
 	"github.com/ledgerwatch/erigon/cl/sentinel/handshake"
 	"github.com/ledgerwatch/erigon/cl/sentinel/peers"
 	"github.com/ledgerwatch/erigon/cl/utils"
 	"github.com/ledgerwatch/erigon/p2p/enode"
+	"github.com/ledgerwatch/erigon/turbo/snapshotsync/freezeblocks"
 	"golang.org/x/time/rate"
 
 	"github.com/ledgerwatch/erigon/cl/clparams"
-	"github.com/ledgerwatch/erigon/cl/persistence"
 	"github.com/ledgerwatch/log/v3"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
@@ -47,31 +48,37 @@ type RateLimits struct {
 	beaconBlocksByRangeLimit int
 	beaconBlocksByRootLimit  int
 	lightClientLimit         int
+	blobSidecarsLimit        int
 }
 
-const punishmentPeriod = time.Minute
-const defaultRateLimit = math.MaxInt
-const defaultBlockHandlerRateLimit = 200
-const defaultLightClientRateLimit = 500
+const (
+	punishmentPeriod      = time.Minute
+	heartBeatRateLimit    = math.MaxInt
+	blockHandlerRateLimit = 200
+	lightClientRateLimit  = 500
+	blobHandlerRateLimit  = 50 // very generous here.
+)
 
 var rateLimits = RateLimits{
-	pingLimit:                defaultRateLimit,
-	goodbyeLimit:             defaultRateLimit,
-	metadataV1Limit:          defaultRateLimit,
-	metadataV2Limit:          defaultRateLimit,
-	statusLimit:              defaultRateLimit,
-	beaconBlocksByRangeLimit: defaultBlockHandlerRateLimit,
-	beaconBlocksByRootLimit:  defaultBlockHandlerRateLimit,
-	lightClientLimit:         defaultLightClientRateLimit,
+	pingLimit:                heartBeatRateLimit,
+	goodbyeLimit:             heartBeatRateLimit,
+	metadataV1Limit:          heartBeatRateLimit,
+	metadataV2Limit:          heartBeatRateLimit,
+	statusLimit:              heartBeatRateLimit,
+	beaconBlocksByRangeLimit: blockHandlerRateLimit,
+	beaconBlocksByRootLimit:  blockHandlerRateLimit,
+	lightClientLimit:         lightClientRateLimit,
+	blobSidecarsLimit:        blobHandlerRateLimit,
 }
 
 type ConsensusHandlers struct {
-	handlers           map[protocol.ID]network.StreamHandler
-	hs                 *handshake.HandShaker
-	beaconConfig       *clparams.BeaconChainConfig
-	genesisConfig      *clparams.GenesisConfig
-	ctx                context.Context
-	beaconDB           persistence.RawBeaconBlockChain
+	handlers      map[protocol.ID]network.StreamHandler
+	hs            *handshake.HandShaker
+	beaconConfig  *clparams.BeaconChainConfig
+	genesisConfig *clparams.GenesisConfig
+	ctx           context.Context
+	beaconDB      freezeblocks.BeaconSnapshotReader
+
 	indiciesDB         kv.RoDB
 	peerRateLimits     sync.Map
 	punishmentEndTimes sync.Map
@@ -79,6 +86,7 @@ type ConsensusHandlers struct {
 	host               host.Host
 	me                 *enode.LocalNode
 	netCfg             *clparams.NetworkConfig
+	blobsStorage       blob_storage.BlobStorage
 
 	enableBlocks bool
 }
@@ -89,8 +97,8 @@ const (
 	ResourceUnavaiablePrefix = 0x02
 )
 
-func NewConsensusHandlers(ctx context.Context, db persistence.RawBeaconBlockChain, indiciesDB kv.RoDB, host host.Host,
-	peers *peers.Pool, netCfg *clparams.NetworkConfig, me *enode.LocalNode, beaconConfig *clparams.BeaconChainConfig, genesisConfig *clparams.GenesisConfig, hs *handshake.HandShaker, forkChoiceReader forkchoice.ForkChoiceStorageReader, enabledBlocks bool) *ConsensusHandlers {
+func NewConsensusHandlers(ctx context.Context, db freezeblocks.BeaconSnapshotReader, indiciesDB kv.RoDB, host host.Host,
+	peers *peers.Pool, netCfg *clparams.NetworkConfig, me *enode.LocalNode, beaconConfig *clparams.BeaconChainConfig, genesisConfig *clparams.GenesisConfig, hs *handshake.HandShaker, forkChoiceReader forkchoice.ForkChoiceStorageReader, blobsStorage blob_storage.BlobStorage, enabledBlocks bool) *ConsensusHandlers {
 	c := &ConsensusHandlers{
 		host:               host,
 		hs:                 hs,
@@ -105,6 +113,7 @@ func NewConsensusHandlers(ctx context.Context, db persistence.RawBeaconBlockChai
 		forkChoiceReader:   forkChoiceReader,
 		me:                 me,
 		netCfg:             netCfg,
+		blobsStorage:       blobsStorage,
 	}
 
 	hm := map[string]func(s network.Stream) error{
@@ -122,6 +131,8 @@ func NewConsensusHandlers(ctx context.Context, db persistence.RawBeaconBlockChai
 	if c.enableBlocks {
 		hm[communication.BeaconBlocksByRangeProtocolV2] = c.beaconBlocksByRangeHandler
 		hm[communication.BeaconBlocksByRootProtocolV2] = c.beaconBlocksByRootHandler
+		hm[communication.BlobSidecarByRangeProtocolV1] = c.blobsSidecarsByRangeHandler
+		hm[communication.BlobSidecarByRootProtocolV1] = c.blobsSidecarsByIdsHandler
 	}
 
 	c.handlers = map[protocol.ID]network.StreamHandler{}

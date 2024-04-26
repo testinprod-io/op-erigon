@@ -914,7 +914,7 @@ var (
 		Usage: "Enable Silkworm block execution",
 	}
 	SilkwormRpcDaemonFlag = cli.BoolFlag{
-		Name:  "silkworm.rpcd",
+		Name:  "silkworm.rpc",
 		Usage: "Enable embedded Silkworm RPC daemon",
 	}
 	SilkwormSentryFlag = cli.BoolFlag{
@@ -922,10 +922,9 @@ var (
 		Usage: "Enable embedded Silkworm Sentry service",
 	}
 
-	BeaconAPIFlag = cli.BoolFlag{
+	BeaconAPIFlag = cli.StringSliceFlag{
 		Name:  "beacon.api",
-		Usage: "Enable beacon API",
-		Value: false,
+		Usage: "Enable beacon API (avaiable endpoints: beacon, builder, config, debug, events, node, validator, rewards, lighthouse)",
 	}
 	BeaconApiProtocolFlag = cli.StringFlag{
 		Name:  "beacon.api.protocol",
@@ -967,9 +966,19 @@ var (
 		Usage: "sets whether backfilling is enabled for caplin",
 		Value: false,
 	}
+	CaplinBlobBackfillingFlag = cli.BoolFlag{
+		Name:  "caplin.backfilling.blob",
+		Usage: "sets whether backfilling is enabled for caplin",
+		Value: false,
+	}
+	CaplinDisableBlobPruningFlag = cli.BoolFlag{
+		Name:  "caplin.backfilling.blob.no-pruning",
+		Usage: "disable blob pruning in caplin",
+		Value: false,
+	}
 	CaplinArchiveFlag = cli.BoolFlag{
 		Name:  "caplin.archive",
-		Usage: "enables archival node in caplin (Experimental, does not work)",
+		Usage: "enables archival node in caplin",
 		Value: false,
 	}
 	BeaconApiAllowCredentialsFlag = cli.BoolFlag{
@@ -1620,8 +1629,12 @@ func setWhitelist(ctx *cli.Context, cfg *ethconfig.Config) {
 	}
 }
 
-func setBeaconAPI(ctx *cli.Context, cfg *ethconfig.Config) {
-	cfg.BeaconRouter.Active = ctx.Bool(BeaconAPIFlag.Name)
+func setBeaconAPI(ctx *cli.Context, cfg *ethconfig.Config) error {
+	allowed := ctx.StringSlice(BeaconAPIFlag.Name)
+	if err := cfg.BeaconRouter.UnwrapEndpointsList(allowed); err != nil {
+		return err
+	}
+
 	cfg.BeaconRouter.Protocol = ctx.String(BeaconApiProtocolFlag.Name)
 	cfg.BeaconRouter.Address = fmt.Sprintf("%s:%d", ctx.String(BeaconApiAddrFlag.Name), ctx.Int(BeaconApiPortFlag.Name))
 	cfg.BeaconRouter.ReadTimeTimeout = time.Duration(ctx.Uint64(BeaconApiReadTimeoutFlag.Name)) * time.Second
@@ -1630,10 +1643,15 @@ func setBeaconAPI(ctx *cli.Context, cfg *ethconfig.Config) {
 	cfg.BeaconRouter.AllowedMethods = ctx.StringSlice(BeaconApiAllowMethodsFlag.Name)
 	cfg.BeaconRouter.AllowedOrigins = ctx.StringSlice(BeaconApiAllowOriginsFlag.Name)
 	cfg.BeaconRouter.AllowCredentials = ctx.Bool(BeaconApiAllowCredentialsFlag.Name)
+	return nil
 }
 
 func setCaplin(ctx *cli.Context, cfg *ethconfig.Config) {
-	cfg.CaplinConfig.Backfilling = ctx.Bool(CaplinBackfillingFlag.Name) || ctx.Bool(CaplinArchiveFlag.Name)
+	// Caplin's block's backfilling is enabled if any of the following flags are set
+	cfg.CaplinConfig.Backfilling = ctx.Bool(CaplinBackfillingFlag.Name) || ctx.Bool(CaplinArchiveFlag.Name) || ctx.Bool(CaplinBlobBackfillingFlag.Name)
+	// More granularity here.
+	cfg.CaplinConfig.BlobBackfilling = ctx.Bool(CaplinBlobBackfillingFlag.Name)
+	cfg.CaplinConfig.BlobPruningDisabled = ctx.Bool(CaplinDisableBlobPruningFlag.Name)
 	cfg.CaplinConfig.Archive = ctx.Bool(CaplinArchiveFlag.Name)
 }
 
@@ -1785,7 +1803,9 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 	setWhitelist(ctx, cfg)
 	setBorConfig(ctx, cfg)
 	setSilkworm(ctx, cfg)
-	setBeaconAPI(ctx, cfg)
+	if err := setBeaconAPI(ctx, cfg); err != nil {
+		log.Error("Failed to set beacon API", "err", err)
+	}
 	setCaplin(ctx, cfg)
 
 	cfg.Ethstats = ctx.String(EthStatsURLFlag.Name)

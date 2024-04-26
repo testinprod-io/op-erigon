@@ -12,33 +12,48 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/ledgerwatch/log/v3"
-
 	"github.com/ledgerwatch/erigon-lib/chain"
 	common2 "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/background"
 	"github.com/ledgerwatch/erigon-lib/common/dbg"
 	"github.com/ledgerwatch/erigon-lib/common/hexutility"
 	"github.com/ledgerwatch/erigon-lib/common/length"
-	"github.com/ledgerwatch/erigon-lib/compress"
 	"github.com/ledgerwatch/erigon-lib/downloader/snaptype"
 	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon-lib/recsplit"
+	"github.com/ledgerwatch/erigon-lib/seg"
 	"github.com/ledgerwatch/erigon/cmd/hack/tool/fromdb"
 	"github.com/ledgerwatch/erigon/core/rawdb"
 	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/eth/ethconfig"
 	"github.com/ledgerwatch/erigon/polygon/heimdall"
 	"github.com/ledgerwatch/erigon/turbo/services"
+	"github.com/ledgerwatch/log/v3"
 )
 
+func (br *BlockRetire) dbHasEnoughDataForBorRetire(ctx context.Context) (bool, error) {
+	return true, nil
+}
+
 func (br *BlockRetire) retireBorBlocks(ctx context.Context, minBlockNum uint64, maxBlockNum uint64, lvl log.Lvl, seedNewSnapshots func(downloadRequest []services.DownloadRequest) error, onDelete func(l []string) error) (bool, error) {
+	select {
+	case <-ctx.Done():
+		return false, ctx.Err()
+	default:
+	}
+	snapshots := br.borSnapshots()
+
 	chainConfig := fromdb.ChainConfig(br.db)
 	notifier, logger, blockReader, tmpDir, db, workers := br.notifier, br.logger, br.blockReader, br.tmpDir, br.db, br.workers
-	snapshots := br.borSnapshots()
 
 	blockFrom, blockTo, ok := CanRetire(maxBlockNum, minBlockNum, br.chainConfig)
 	if ok {
+		if has, err := br.dbHasEnoughDataForBorRetire(ctx); err != nil {
+			return false, err
+		} else if !has {
+			return false, nil
+		}
+
 		logger.Log(lvl, "[bor snapshots] Retire Bor Blocks", "range", fmt.Sprintf("%dk-%dk", blockFrom/1000, blockTo/1000))
 		if err := DumpBorBlocks(ctx, blockFrom, blockTo, chainConfig, tmpDir, snapshots.Dir(), db, workers, lvl, logger, blockReader); err != nil {
 			return ok, fmt.Errorf("DumpBorBlocks: %w", err)
@@ -46,7 +61,7 @@ func (br *BlockRetire) retireBorBlocks(ctx context.Context, minBlockNum uint64, 
 		if err := snapshots.ReopenFolder(); err != nil {
 			return ok, fmt.Errorf("reopen: %w", err)
 		}
-		snapshots.LogStat("retire")
+		snapshots.LogStat("bor:retire")
 		if notifier != nil && !reflect.ValueOf(notifier).IsNil() { // notify about new snapshots of any size
 			notifier.OnNewSnapshot()
 		}
@@ -54,7 +69,9 @@ func (br *BlockRetire) retireBorBlocks(ctx context.Context, minBlockNum uint64, 
 
 	merger := NewMerger(tmpDir, workers, lvl, db, chainConfig, logger)
 	rangesToMerge := merger.FindMergeRanges(snapshots.Ranges(), snapshots.BlocksAvailable())
-	logger.Log(lvl, "[bor snapshots] Retire Bor Blocks", "rangesToMerge", Ranges(rangesToMerge))
+	if len(rangesToMerge) > 0 {
+		logger.Log(lvl, "[bor snapshots] Retire Bor Blocks", "rangesToMerge", Ranges(rangesToMerge))
+	}
 	if len(rangesToMerge) == 0 {
 		return ok, nil
 	}
@@ -238,7 +255,7 @@ func BorEventsIdx(ctx context.Context, sn snaptype.FileInfo, tmpDir string, p *b
 		}
 	}()
 	// Calculate how many records there will be in the index
-	d, err := compress.NewDecompressor(sn.Path)
+	d, err := seg.NewDecompressor(sn.Path)
 	if err != nil {
 		return err
 	}
@@ -323,7 +340,7 @@ func BorSpansIdx(ctx context.Context, sn snaptype.FileInfo, tmpDir string, p *ba
 		}
 	}()
 	// Calculate how many records there will be in the index
-	d, err := compress.NewDecompressor(sn.Path)
+	d, err := seg.NewDecompressor(sn.Path)
 	if err != nil {
 		return err
 	}
@@ -480,7 +497,10 @@ func (s *BorRoSnapshots) ReopenFolder() error {
 		_, fName := filepath.Split(f.Path)
 		list = append(list, fName)
 	}
-	return s.ReopenList(list, false)
+	if err := s.ReopenList(list, false); err != nil {
+		return err
+	}
+	return nil
 }
 
 type BorView struct {

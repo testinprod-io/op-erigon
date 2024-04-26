@@ -1,17 +1,22 @@
 package forkchoice
 
 import (
+	"context"
 	"fmt"
+	"sort"
 	"time"
+
+	gokzg4844 "github.com/crate-crypto/go-kzg-4844"
+	"github.com/ledgerwatch/log/v3"
 
 	"github.com/ledgerwatch/erigon-lib/common"
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/log/v3"
+	"github.com/ledgerwatch/erigon-lib/common/length"
+	"github.com/ledgerwatch/erigon-lib/crypto/kzg"
 
 	"github.com/ledgerwatch/erigon/cl/clparams"
 	"github.com/ledgerwatch/erigon/cl/cltypes"
 	"github.com/ledgerwatch/erigon/cl/cltypes/solid"
-	"github.com/ledgerwatch/erigon/cl/freezer"
 	"github.com/ledgerwatch/erigon/cl/phase1/core/state"
 	"github.com/ledgerwatch/erigon/cl/phase1/forkchoice/fork_graph"
 	"github.com/ledgerwatch/erigon/cl/transition/impl/eth2/statechange"
@@ -19,6 +24,23 @@ import (
 	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/eth/ethutils"
 )
+
+const foreseenProposers = 16
+
+var errEIP4844DataNotAvailable = fmt.Errorf("EIP-4844 blob data is not available")
+
+func (f *ForkChoiceStore) deriveNonAnchorPublicKeys(s *state.CachingBeaconState) ([]byte, error) {
+	l := len(f.anchorPublicKeys) / length.Bytes48
+	buf := make([]byte, (s.ValidatorLength()-l)*length.Bytes48)
+	for i := l; i < s.ValidatorLength(); i++ {
+		pk, err := s.ValidatorPublicKey(i)
+		if err != nil {
+			return nil, err
+		}
+		copy(buf[(i-l)*length.Bytes48:], pk[:])
+	}
+	return buf, nil
+}
 
 func verifyKzgCommitmentsAgainstTransactions(cfg *clparams.BeaconChainConfig, block *cltypes.Eth1Block, kzgCommitments *solid.ListSSZ[*cltypes.KZGCommitment]) error {
 	expectedBlobHashes := []common.Hash{}
@@ -42,7 +64,7 @@ func verifyKzgCommitmentsAgainstTransactions(cfg *clparams.BeaconChainConfig, bl
 	return ethutils.ValidateBlobs(block.BlobGasUsed, cfg.MaxBlobGasPerBlock, cfg.MaxBlobsPerBlock, expectedBlobHashes, &transactions)
 }
 
-func (f *ForkChoiceStore) OnBlock(block *cltypes.SignedBeaconBlock, newPayload, fullValidation bool) error {
+func (f *ForkChoiceStore) OnBlock(ctx context.Context, block *cltypes.SignedBeaconBlock, newPayload, fullValidation, checkDataAvaiability bool) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.headHash = libcommon.Hash{}
@@ -55,7 +77,7 @@ func (f *ForkChoiceStore) OnBlock(block *cltypes.SignedBeaconBlock, newPayload, 
 		return fmt.Errorf("block is too early compared to current_slot")
 	}
 	// Check that block is later than the finalized epoch slot (optimization to reduce calls to get_ancestor)
-	finalizedSlot := f.computeStartSlotAtEpoch(f.finalizedCheckpoint.Epoch())
+	finalizedSlot := f.computeStartSlotAtEpoch(f.finalizedCheckpoint.Load().(solid.Checkpoint).Epoch())
 	if block.Block.Slot <= finalizedSlot {
 		return nil
 	}
@@ -73,6 +95,18 @@ func (f *ForkChoiceStore) OnBlock(block *cltypes.SignedBeaconBlock, newPayload, 
 		})
 	}
 
+	// Check if blob data is available
+	if block.Version() >= clparams.DenebVersion && checkDataAvaiability {
+		if err := f.isDataAvailable(ctx, block.Block.Slot, blockRoot, block.Block.Body.BlobKzgCommitments); err != nil {
+			if err == errEIP4844DataNotAvailable {
+				log.Debug("Blob data is not available, the block will be scheduled for later processing", "slot", block.Block.Slot, "blockRoot", libcommon.Hash(blockRoot))
+				f.scheduleBlockForLaterProcessing(block)
+				return err
+			}
+			return fmt.Errorf("OnBlock: data is not available for block %x: %v", blockRoot, err)
+		}
+	}
+
 	var invalidBlock bool
 	if newPayload && f.engine != nil {
 		if block.Version() >= clparams.DenebVersion {
@@ -81,7 +115,7 @@ func (f *ForkChoiceStore) OnBlock(block *cltypes.SignedBeaconBlock, newPayload, 
 			}
 		}
 
-		if invalidBlock, err = f.engine.NewPayload(block.Block.Body.ExecutionPayload, &block.Block.ParentRoot, versionedHashes); err != nil {
+		if invalidBlock, err = f.engine.NewPayload(ctx, block.Block.Body.ExecutionPayload, &block.Block.ParentRoot, versionedHashes); err != nil {
 			if invalidBlock {
 				f.forkGraph.MarkHeaderAsInvalid(blockRoot)
 			}
@@ -113,22 +147,19 @@ func (f *ForkChoiceStore) OnBlock(block *cltypes.SignedBeaconBlock, newPayload, 
 		f.eth2Roots.Add(blockRoot, block.Block.Body.ExecutionPayload.BlockHash)
 	}
 
-	if block.Block.Slot > f.highestSeen {
-		f.highestSeen = block.Block.Slot
+	if block.Block.Slot > f.highestSeen.Load() {
+		f.highestSeen.Store(block.Block.Slot)
 	}
 	// Remove the parent from the head set
 	delete(f.headSet, block.Block.ParentRoot)
 	f.headSet[blockRoot] = struct{}{}
 	// Add proposer score boost if the block is timely
-	timeIntoSlot := (f.time - f.genesisTime) % lastProcessedState.BeaconConfig().SecondsPerSlot
+	timeIntoSlot := (f.time.Load() - f.genesisTime) % lastProcessedState.BeaconConfig().SecondsPerSlot
 	isBeforeAttestingInterval := timeIntoSlot < f.beaconCfg.SecondsPerSlot/f.beaconCfg.IntervalsPerSlot
-	if f.Slot() == block.Block.Slot && isBeforeAttestingInterval && f.proposerBoostRoot == (libcommon.Hash{}) {
-		f.proposerBoostRoot = blockRoot
+	if f.Slot() == block.Block.Slot && isBeforeAttestingInterval && f.proposerBoostRoot.Load().(libcommon.Hash) == (libcommon.Hash{}) {
+		f.proposerBoostRoot.Store(libcommon.Hash(blockRoot))
 	}
 	if lastProcessedState.Slot()%f.beaconCfg.SlotsPerEpoch == 0 {
-		if err := freezer.PutObjectSSZIntoFreezer("beaconState", "caplin_core", lastProcessedState.Slot(), lastProcessedState, f.recorder); err != nil {
-			return err
-		}
 		// Update randao mixes
 		r := solid.NewHashVector(int(f.beaconCfg.EpochsPerHistoricalVector))
 		lastProcessedState.RandaoMixes().CopyTo(r)
@@ -150,6 +181,11 @@ func (f *ForkChoiceStore) OnBlock(block *cltypes.SignedBeaconBlock, newPayload, 
 		currentJustifiedCheckpoint:  lastProcessedState.CurrentJustifiedCheckpoint().Copy(),
 		previousJustifiedCheckpoint: lastProcessedState.PreviousJustifiedCheckpoint().Copy(),
 	})
+	pks, err := f.deriveNonAnchorPublicKeys(lastProcessedState)
+	if err != nil {
+		return err
+	}
+	f.publicKeysPerState.Store(libcommon.Hash(blockRoot), pks)
 	f.totalActiveBalances.Add(blockRoot, lastProcessedState.GetTotalActiveBalance())
 	// Update checkpoints
 	f.updateCheckpoints(lastProcessedState.CurrentJustifiedCheckpoint().Copy(), lastProcessedState.FinalizedCheckpoint().Copy())
@@ -171,6 +207,16 @@ func (f *ForkChoiceStore) OnBlock(block *cltypes.SignedBeaconBlock, newPayload, 
 	lastProcessedState.SetCurrentJustifiedCheckpoint(currentJustifiedCheckpoint)
 	lastProcessedState.SetFinalizedCheckpoint(finalizedCheckpoint)
 	lastProcessedState.SetJustificationBits(justificationBits)
+	// Load next proposer indicies for the parent root
+	idxs := make([]uint64, 0, foreseenProposers)
+	for i := lastProcessedState.Slot() + 1; i < f.beaconCfg.SlotsPerEpoch; i++ {
+		idx, err := lastProcessedState.GetBeaconProposerIndexForSlot(i)
+		if err != nil {
+			return err
+		}
+		idxs = append(idxs, idx)
+	}
+	f.nextBlockProposers.Add(blockRoot, idxs)
 	// If the block is from a prior epoch, apply the realized values
 	blockEpoch := f.computeEpochAtSlot(block.Block.Slot)
 	currentEpoch := f.computeEpochAtSlot(f.Slot())
@@ -178,5 +224,114 @@ func (f *ForkChoiceStore) OnBlock(block *cltypes.SignedBeaconBlock, newPayload, 
 		f.updateCheckpoints(lastProcessedState.CurrentJustifiedCheckpoint().Copy(), lastProcessedState.FinalizedCheckpoint().Copy())
 	}
 	log.Debug("OnBlock", "elapsed", time.Since(start))
+	return nil
+}
+
+func (f *ForkChoiceStore) isDataAvailable(ctx context.Context, slot uint64, blockRoot libcommon.Hash, blobKzgCommitments *solid.ListSSZ[*cltypes.KZGCommitment]) error {
+	if f.blobStorage == nil {
+		return nil
+	}
+
+	commitmentsLeftToCheck := map[libcommon.Bytes48]struct{}{}
+	blobKzgCommitments.Range(func(index int, value *cltypes.KZGCommitment, length int) bool {
+		commitmentsLeftToCheck[libcommon.Bytes48(*value)] = struct{}{}
+		return true
+	})
+	// Blobs are preverified so we skip verification, we just need to check if commitments checks out.
+	sidecars, foundOnDisk, err := f.blobStorage.ReadBlobSidecars(ctx, slot, blockRoot)
+	if err != nil {
+		return fmt.Errorf("cannot check data avaiability. failed to read blob sidecars: %v", err)
+	}
+	if !foundOnDisk {
+		sidecars = f.hotSidecars[blockRoot] // take it from memory
+	}
+
+	if blobKzgCommitments.Len() != len(sidecars) {
+		return errEIP4844DataNotAvailable // This should then schedule the block for reprocessing
+	}
+	for _, sidecar := range sidecars {
+		delete(commitmentsLeftToCheck, sidecar.KzgCommitment)
+	}
+	if len(commitmentsLeftToCheck) > 0 {
+		return errEIP4844DataNotAvailable // This should then schedule the block for reprocessing
+	}
+	if !foundOnDisk {
+		// If we didn't find the sidecars on disk, we should write them to disk now
+		sort.Slice(sidecars, func(i, j int) bool {
+			return sidecars[i].Index < sidecars[j].Index
+		})
+		if err := f.blobStorage.WriteBlobSidecars(ctx, blockRoot, sidecars); err != nil {
+			return fmt.Errorf("failed to write blob sidecars: %v", err)
+		}
+	}
+	return nil
+}
+
+func (f *ForkChoiceStore) OnBlobSidecar(blobSidecar *cltypes.BlobSidecar, test bool) error {
+	kzgCtx := kzg.Ctx()
+
+	parentHeader, has := f.GetHeader(blobSidecar.SignedBlockHeader.Header.ParentRoot)
+	if !has {
+		return fmt.Errorf("parent header not found")
+	}
+	if blobSidecar.SignedBlockHeader.Header.Slot <= parentHeader.Slot {
+		return fmt.Errorf("blob sidecar has invalid slot")
+	}
+	expectedProposers, has := f.nextBlockProposers.Get(blobSidecar.SignedBlockHeader.Header.ParentRoot)
+	proposerSubIdx := blobSidecar.SignedBlockHeader.Header.Slot - parentHeader.Slot
+	if !test && has && proposerSubIdx < foreseenProposers && len(expectedProposers) > int(proposerSubIdx) {
+		// Do extra checks on the proposer.
+		expectedProposer := expectedProposers[proposerSubIdx]
+		if blobSidecar.SignedBlockHeader.Header.ProposerIndex != expectedProposer {
+			return fmt.Errorf("incorrect proposer index")
+		}
+		// verify the signature finally
+		verifyFn := VerifyHeaderSignatureAgainstForkChoiceStoreFunction(f, f.beaconCfg, f.genesisValidatorsRoot)
+		if err := verifyFn(blobSidecar.SignedBlockHeader); err != nil {
+			return err
+		}
+	}
+
+	if !test && !cltypes.VerifyCommitmentInclusionProof(blobSidecar.KzgCommitment, blobSidecar.CommitmentInclusionProof, blobSidecar.Index,
+		clparams.DenebVersion, blobSidecar.SignedBlockHeader.Header.BodyRoot) {
+		return fmt.Errorf("commitment inclusion proof failed")
+	}
+
+	if err := kzgCtx.VerifyBlobKZGProof(gokzg4844.Blob(blobSidecar.Blob), gokzg4844.KZGCommitment(blobSidecar.KzgCommitment), gokzg4844.KZGProof(blobSidecar.KzgProof)); err != nil {
+		return fmt.Errorf("blob KZG proof verification failed: %v", err)
+	}
+
+	blockRoot, err := blobSidecar.SignedBlockHeader.Header.HashSSZ()
+	if err != nil {
+		return err
+	}
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	// operation is not thread safe here.
+	f.hotSidecars[blockRoot] = append(f.hotSidecars[blockRoot], blobSidecar)
+	for _, sidecar := range f.hotSidecars[blockRoot] {
+		if sidecar.SignedBlockHeader.Header.Slot == blobSidecar.SignedBlockHeader.Header.Slot &&
+			sidecar.SignedBlockHeader.Header.ProposerIndex == blobSidecar.SignedBlockHeader.Header.ProposerIndex &&
+			sidecar.Index == blobSidecar.Index {
+			return nil // ignore if we already have it
+		}
+	}
+
+	blobsMaxAge := 4 // a slot can live for up to 4 slots in the pool of hot sidecars.
+	currentSlot := utils.GetCurrentSlot(f.genesisTime, f.beaconCfg.SecondsPerSlot)
+	var pruneSlot uint64
+	if currentSlot > uint64(blobsMaxAge) {
+		pruneSlot = currentSlot - uint64(blobsMaxAge)
+	}
+	// also clean up all old blobs that may have been accumulating
+	for blockRoot := range f.hotSidecars {
+		h, has := f.GetHeader(blockRoot)
+		if !has || h == nil || h.Slot < pruneSlot {
+			delete(f.hotSidecars, blockRoot)
+		}
+	}
+
 	return nil
 }

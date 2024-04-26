@@ -15,6 +15,7 @@ import (
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/dbg"
 	"github.com/ledgerwatch/erigon-lib/common/hexutility"
+	"github.com/ledgerwatch/erigon-lib/diagnostics"
 	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/core/rawdb"
@@ -535,6 +536,16 @@ func logProgressHeaders(
 		"rejectedBadHeaders", stats.RejectedBadHeaders,
 	)
 
+	diagnostics.Send(diagnostics.BlockHeadersUpdate{
+		CurrentBlockNumber:  now,
+		PreviousBlockNumber: prev,
+		Speed:               speed,
+		Alloc:               m.Alloc,
+		Sys:                 m.Sys,
+		InvalidHeaders:      stats.InvalidHeaders,
+		RejectedBadHeaders:  stats.RejectedBadHeaders,
+	})
+
 	return now
 }
 
@@ -589,10 +600,12 @@ func (cr ChainReaderImpl) FrozenBlocks() uint64 {
 	return cr.blockReader.FrozenBlocks()
 }
 func (cr ChainReaderImpl) GetBlock(hash libcommon.Hash, number uint64) *types.Block {
-	panic("")
+	b, _, _ := cr.blockReader.BlockWithSenders(context.Background(), cr.tx, hash, number)
+	return b
 }
 func (cr ChainReaderImpl) HasBlock(hash libcommon.Hash, number uint64) bool {
-	panic("")
+	b, _ := cr.blockReader.BodyRlp(context.Background(), cr.tx, hash, number)
+	return b != nil
 }
 func (cr ChainReaderImpl) BorEventsByBlock(hash libcommon.Hash, number uint64) []rlp.RawValue {
 	events, err := cr.blockReader.EventsByBlock(context.Background(), cr.tx, hash, number)
@@ -601,6 +614,14 @@ func (cr ChainReaderImpl) BorEventsByBlock(hash libcommon.Hash, number uint64) [
 		return nil
 	}
 	return events
+}
+func (cr ChainReaderImpl) BorStartEventID(hash libcommon.Hash, blockNum uint64) uint64 {
+	id, err := cr.blockReader.BorStartEventID(context.Background(), cr.tx, hash, blockNum)
+	if err != nil {
+		cr.logger.Error("BorEventsByBlock failed", "err", err)
+		return 0
+	}
+	return id
 }
 func (cr ChainReaderImpl) BorSpan(spanId uint64) []byte {
 	span, err := cr.blockReader.Span(context.Background(), cr.tx, spanId)

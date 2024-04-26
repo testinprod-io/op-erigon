@@ -49,6 +49,8 @@ func init() {
 		With("", spectest.UnimplementedHandler)
 	TestFormats.Add("light_client").
 		WithFn("single_merkle_proof", LightClientBeaconBlockBodyExecutionMerkleProof)
+	TestFormats.Add("merkle_proof").
+		With("single_merkle_proof", Eip4844MerkleProof)
 	TestFormats.Add("operations").
 		WithFn("attestation", operationAttestationHandler).
 		WithFn("attester_slashing", operationAttesterSlashingHandler).
@@ -90,8 +92,8 @@ func addSszTests() {
 		With("BeaconBlockBody", getSSZStaticConsensusTest(cltypes.NewBeaconBody(&clparams.MainnetBeaconConfig))).
 		With("BeaconBlockHeader", getSSZStaticConsensusTest(&cltypes.BeaconBlockHeader{})).
 		With("BeaconState", getSSZStaticConsensusTest(state.New(&clparams.MainnetBeaconConfig))).
-		//With("BlobIdentifier", getSSZStaticConsensusTest(&cltypes.BlobIdentifier{})).
-		//With("BlobSidecar", getSSZStaticConsensusTest(&cltypes.BlobSideCar{})).
+		With("BlobIdentifier", getSSZStaticConsensusTest(&cltypes.BlobIdentifier{})).
+		With("BlobSidecar", getSSZStaticConsensusTest(&cltypes.BlobSidecar{})).
 		With("BLSToExecutionChange", getSSZStaticConsensusTest(&cltypes.BLSToExecutionChange{})).
 		With("Checkpoint", getSSZStaticConsensusTest(solid.Checkpoint{})).
 		//	With("ContributionAndProof", getSSZStaticConsensusTest(&cltypes.ContributionAndProof{})).
@@ -100,8 +102,8 @@ func addSszTests() {
 		//	With("DepositMessage", getSSZStaticConsensusTest(&cltypes.DepositMessage{})).
 		// With("Eth1Block", getSSZStaticConsensusTest(&cltypes.Eth1Block{})).
 		With("Eth1Data", getSSZStaticConsensusTest(&cltypes.Eth1Data{})).
-		//With("ExecutionPayload", getSSZStaticConsensusTest(&cltypes.NewEth1Block(mainn))).
-		With("ExecutionPayloadHeader", getSSZStaticConsensusTest(&cltypes.Eth1Header{})).
+		With("ExecutionPayload", getSSZStaticConsensusTest(cltypes.NewEth1Block(clparams.Phase0Version, &clparams.MainnetBeaconConfig))).
+		//With("ExecutionPayloadHeader", getSSZStaticConsensusTest(&cltypes.Eth1Header{})).
 		With("Fork", getSSZStaticConsensusTest(&cltypes.Fork{})).
 		//With("ForkData", getSSZStaticConsensusTest(&cltypes.ForkData{})).
 		//With("HistoricalBatch", getSSZStaticConsensusTest(&cltypes.HistoricalBatch{})).
