@@ -70,6 +70,12 @@ func (s *Antiquary) loopStates(ctx context.Context) {
 		return
 	}
 
+	_, beforeFinalized, err := s.readHistoricalProcessingProgress(ctx)
+	if err != nil {
+		s.logger.Error("Failed to read historical processing progress", "err", err)
+		return
+	}
+
 	for {
 		select {
 		// Check if we are behind finalized
@@ -78,15 +84,16 @@ func (s *Antiquary) loopStates(ctx context.Context) {
 				continue
 			}
 			// Check if we are behind finalized
-			progress, finalized, err := s.readHistoricalProcessingProgress(ctx)
+			_, finalized, err := s.readHistoricalProcessingProgress(ctx)
 			if err != nil {
 				s.logger.Error("Failed to read historical processing progress", "err", err)
 				continue
 			}
-			// Stay behind a little bit we rely on forkchoice up until (finalized - 2*slotsPerEpoch)
-			if progress+s.cfg.SlotsPerEpoch/2 >= finalized {
+			// We wait for updated finality.
+			if finalized == beforeFinalized {
 				continue
 			}
+			beforeFinalized = finalized
 			if err := s.IncrementBeaconState(ctx, finalized); err != nil {
 				slot := uint64(0)
 				if s.currentState != nil {
@@ -427,6 +434,9 @@ func (s *Antiquary) IncrementBeaconState(ctx context.Context, to uint64) error {
 		if err := transition.TransitionState(s.currentState, block, blockRewardsCollector, fullValidation); err != nil {
 			return err
 		}
+		// if s.currentState.Slot() == 4293952 {
+		// 	s.dumpFullBeaconState()
+		// }
 		blocksProcessed++
 
 		first = false

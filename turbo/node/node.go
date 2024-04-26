@@ -124,7 +124,7 @@ func New(
 	if err != nil {
 		return nil, err
 	}
-	err = ethereum.Init(node, ethConfig)
+	err = ethereum.Init(node, ethConfig, ethereum.ChainConfig())
 	if err != nil {
 		return nil, err
 	}

@@ -6,7 +6,9 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/ledgerwatch/erigon/cl/beacon/beaconevents"
 	"github.com/ledgerwatch/erigon/cl/clparams"
+	"github.com/ledgerwatch/erigon/cl/cltypes"
 	"github.com/ledgerwatch/erigon/cl/cltypes/solid"
 	"github.com/ledgerwatch/erigon/cl/freezer"
 	"github.com/ledgerwatch/erigon/cl/phase1/core/state"
@@ -119,7 +121,8 @@ type ForkChoiceStore struct {
 	operationsPool pool.OperationsPool
 	beaconCfg      *clparams.BeaconChainConfig
 
-	synced atomic.Bool
+	emitters *beaconevents.Emitters
+	synced   atomic.Bool
 }
 
 type LatestMessage struct {
@@ -133,7 +136,7 @@ type childrens struct {
 }
 
 // NewForkChoiceStore initialize a new store from the given anchor state, either genesis or checkpoint sync state.
-func NewForkChoiceStore(ctx context.Context, anchorState *state2.CachingBeaconState, engine execution_client.ExecutionEngine, recorder freezer.Freezer, operationsPool pool.OperationsPool, forkGraph fork_graph.ForkGraph) (*ForkChoiceStore, error) {
+func NewForkChoiceStore(ctx context.Context, anchorState *state2.CachingBeaconState, engine execution_client.ExecutionEngine, recorder freezer.Freezer, operationsPool pool.OperationsPool, forkGraph fork_graph.ForkGraph, emitters *beaconevents.Emitters) (*ForkChoiceStore, error) {
 	anchorRoot, err := anchorState.BlockRoot()
 	if err != nil {
 		return nil, err
@@ -228,6 +231,7 @@ func NewForkChoiceStore(ctx context.Context, anchorState *state2.CachingBeaconSt
 		headSet:                       headSet,
 		weights:                       make(map[libcommon.Hash]uint64),
 		participation:                 participation,
+		emitters:                      emitters,
 	}, nil
 }
 
@@ -485,4 +489,16 @@ func (f *ForkChoiceStore) SetSynced(s bool) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.synced.Store(s)
+}
+
+func (f *ForkChoiceStore) GetLightClientBootstrap(blockRoot libcommon.Hash) (*cltypes.LightClientBootstrap, bool) {
+	return f.forkGraph.GetLightClientBootstrap(blockRoot)
+}
+
+func (f *ForkChoiceStore) NewestLightClientUpdate() *cltypes.LightClientUpdate {
+	return f.forkGraph.NewestLightClientUpdate()
+}
+
+func (f *ForkChoiceStore) GetLightClientUpdate(period uint64) (*cltypes.LightClientUpdate, bool) {
+	return f.forkGraph.GetLightClientUpdate(period)
 }
