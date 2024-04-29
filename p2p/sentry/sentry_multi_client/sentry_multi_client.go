@@ -44,8 +44,13 @@ import (
 	"github.com/ledgerwatch/erigon/turbo/stages/headerdownload"
 )
 
-type sentryMessageStream grpc.ClientStream
-type sentryMessageStreamFactory func(context.Context, direct.SentryClient) (sentryMessageStream, error)
+type (
+	SentryMessageStream        grpc.ClientStream
+	SentryMessageStreamFactory func(context.Context, direct.SentryClient) (SentryMessageStream, error)
+	StatusDataFactory          func() *proto_sentry.StatusData
+	MessageFactory[T any]      func() T
+	MessageHandler[T any]      func(context.Context, T, direct.SentryClient) error
+)
 
 // StartStreamLoops starts message processing loops for all sentries.
 // The processing happens in several streams:
@@ -73,11 +78,11 @@ func (cs *MultiClient) RecvUploadMessageLoop(
 		eth.ToProto[direct.ETH66][eth.GetBlockBodiesMsg],
 		eth.ToProto[direct.ETH66][eth.GetReceiptsMsg],
 	}
-	streamFactory := func(streamCtx context.Context, sentry direct.SentryClient) (sentryMessageStream, error) {
+	streamFactory := func(streamCtx context.Context, sentry direct.SentryClient) (SentryMessageStream, error) {
 		return sentry.Messages(streamCtx, &proto_sentry.MessagesRequest{Ids: ids}, grpc.WaitForReady(true))
 	}
 
-	sentryReconnectAndPumpStreamLoop(ctx, sentry, cs.makeStatusData, "RecvUploadMessage", streamFactory, makeInboundMessage, cs.HandleInboundMessage, wg, cs.logger)
+	SentryReconnectAndPumpStreamLoop(ctx, sentry, cs.makeStatusData, "RecvUploadMessage", streamFactory, MakeInboundMessage, cs.HandleInboundMessage, wg, cs.logger)
 }
 
 func (cs *MultiClient) RecvUploadHeadersMessageLoop(
@@ -88,11 +93,11 @@ func (cs *MultiClient) RecvUploadHeadersMessageLoop(
 	ids := []proto_sentry.MessageId{
 		eth.ToProto[direct.ETH66][eth.GetBlockHeadersMsg],
 	}
-	streamFactory := func(streamCtx context.Context, sentry direct.SentryClient) (sentryMessageStream, error) {
+	streamFactory := func(streamCtx context.Context, sentry direct.SentryClient) (SentryMessageStream, error) {
 		return sentry.Messages(streamCtx, &proto_sentry.MessagesRequest{Ids: ids}, grpc.WaitForReady(true))
 	}
 
-	sentryReconnectAndPumpStreamLoop(ctx, sentry, cs.makeStatusData, "RecvUploadHeadersMessage", streamFactory, makeInboundMessage, cs.HandleInboundMessage, wg, cs.logger)
+	SentryReconnectAndPumpStreamLoop(ctx, sentry, cs.makeStatusData, "RecvUploadHeadersMessage", streamFactory, MakeInboundMessage, cs.HandleInboundMessage, wg, cs.logger)
 }
 
 func (cs *MultiClient) RecvMessageLoop(
@@ -106,11 +111,11 @@ func (cs *MultiClient) RecvMessageLoop(
 		eth.ToProto[direct.ETH66][eth.NewBlockHashesMsg],
 		eth.ToProto[direct.ETH66][eth.NewBlockMsg],
 	}
-	streamFactory := func(streamCtx context.Context, sentry direct.SentryClient) (sentryMessageStream, error) {
+	streamFactory := func(streamCtx context.Context, sentry direct.SentryClient) (SentryMessageStream, error) {
 		return sentry.Messages(streamCtx, &proto_sentry.MessagesRequest{Ids: ids}, grpc.WaitForReady(true))
 	}
 
-	sentryReconnectAndPumpStreamLoop(ctx, sentry, cs.makeStatusData, "RecvMessage", streamFactory, makeInboundMessage, cs.HandleInboundMessage, wg, cs.logger)
+	SentryReconnectAndPumpStreamLoop(ctx, sentry, cs.makeStatusData, "RecvMessage", streamFactory, MakeInboundMessage, cs.HandleInboundMessage, wg, cs.logger)
 }
 
 func (cs *MultiClient) PeerEventsLoop(
@@ -118,24 +123,24 @@ func (cs *MultiClient) PeerEventsLoop(
 	sentry direct.SentryClient,
 	wg *sync.WaitGroup,
 ) {
-	streamFactory := func(streamCtx context.Context, sentry direct.SentryClient) (sentryMessageStream, error) {
+	streamFactory := func(streamCtx context.Context, sentry direct.SentryClient) (SentryMessageStream, error) {
 		return sentry.PeerEvents(streamCtx, &proto_sentry.PeerEventsRequest{}, grpc.WaitForReady(true))
 	}
 	messageFactory := func() *proto_sentry.PeerEvent {
 		return new(proto_sentry.PeerEvent)
 	}
 
-	sentryReconnectAndPumpStreamLoop(ctx, sentry, cs.makeStatusData, "PeerEvents", streamFactory, messageFactory, cs.HandlePeerEvent, wg, cs.logger)
+	SentryReconnectAndPumpStreamLoop(ctx, sentry, cs.makeStatusData, "PeerEvents", streamFactory, messageFactory, cs.HandlePeerEvent, wg, cs.logger)
 }
 
-func sentryReconnectAndPumpStreamLoop[TMessage interface{}](
+func SentryReconnectAndPumpStreamLoop[TMessage interface{}](
 	ctx context.Context,
 	sentry direct.SentryClient,
-	statusDataFactory func() *proto_sentry.StatusData,
+	statusDataFactory StatusDataFactory,
 	streamName string,
-	streamFactory sentryMessageStreamFactory,
-	messageFactory func() TMessage,
-	handleInboundMessage func(context.Context, TMessage, direct.SentryClient) error,
+	streamFactory SentryMessageStreamFactory,
+	messageFactory MessageFactory[TMessage],
+	handleInboundMessage MessageHandler[TMessage],
 	wg *sync.WaitGroup,
 	logger log.Logger,
 ) {
@@ -191,9 +196,9 @@ func pumpStreamLoop[TMessage interface{}](
 	ctx context.Context,
 	sentry direct.SentryClient,
 	streamName string,
-	streamFactory sentryMessageStreamFactory,
-	messageFactory func() TMessage,
-	handleInboundMessage func(context.Context, TMessage, direct.SentryClient) error,
+	streamFactory SentryMessageStreamFactory,
+	messageFactory MessageFactory[TMessage],
+	handleInboundMessage MessageHandler[TMessage],
 	wg *sync.WaitGroup,
 	logger log.Logger,
 ) (err error) {
@@ -203,7 +208,7 @@ func pumpStreamLoop[TMessage interface{}](
 		}
 	}() // avoid crash because Erigon's core does many things
 
-	streamCtx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	defer sentry.MarkDisconnected()
 
@@ -211,20 +216,23 @@ func pumpStreamLoop[TMessage interface{}](
 	// - can group them or process in batch
 	// - can have slow processing
 	reqs := make(chan TMessage, 256)
-	defer close(reqs)
-
 	go func() {
-		for req := range reqs {
-			if err := handleInboundMessage(ctx, req, sentry); err != nil {
-				logger.Debug("Handling incoming message", "stream", streamName, "err", err)
-			}
-			if wg != nil {
-				wg.Done()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case req := <-reqs:
+				if err := handleInboundMessage(ctx, req, sentry); err != nil {
+					logger.Debug("Handling incoming message", "stream", streamName, "err", err)
+				}
+				if wg != nil {
+					wg.Done()
+				}
 			}
 		}
 	}()
 
-	stream, err := streamFactory(streamCtx, sentry)
+	stream, err := streamFactory(ctx, sentry)
 	if err != nil {
 		return err
 	}
@@ -698,7 +706,7 @@ func (cs *MultiClient) getReceipts66(ctx context.Context, inreq *proto_sentry.In
 	return nil
 }
 
-func makeInboundMessage() *proto_sentry.InboundMessage {
+func MakeInboundMessage() *proto_sentry.InboundMessage {
 	return new(proto_sentry.InboundMessage)
 }
 

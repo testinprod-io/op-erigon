@@ -45,7 +45,8 @@ var Indexes = struct {
 	TxnHash2BlockNum,
 	BorTxnHash,
 	BorSpanId,
-	BeaconBlockSlot Index
+	BeaconBlockSlot,
+	BlobSidecarSlot Index
 }{
 	Unknown:          -1,
 	HeaderHash:       0,
@@ -55,6 +56,7 @@ var Indexes = struct {
 	BorTxnHash:       4,
 	BorSpanId:        5,
 	BeaconBlockSlot:  6,
+	BlobSidecarSlot:  7,
 }
 
 func (i Index) Offset() int {
@@ -82,6 +84,8 @@ func (i Index) String() string {
 		return Enums.BorSpans.String()
 	case Indexes.BeaconBlockSlot:
 		return Enums.BeaconBlocks.String()
+	case Indexes.BlobSidecarSlot:
+		return Enums.BlobSidecars.String()
 	default:
 		panic(fmt.Sprintf("unknown index: %d", i))
 	}
@@ -125,7 +129,7 @@ func (s snapType) FileName(version Version, from uint64, to uint64) string {
 }
 
 func (s snapType) FileInfo(dir string, from uint64, to uint64) FileInfo {
-	f, _ := ParseFileName(dir, s.FileName(s.versions.Current, from, to))
+	f, _, _ := ParseFileName(dir, s.FileName(s.versions.Current, from, to))
 	return f
 }
 
@@ -189,6 +193,7 @@ var Enums = struct {
 	BorEvents,
 	BorSpans,
 	BeaconBlocks Enum
+	BlobSidecars Enum
 }{
 	Unknown:      -1,
 	Headers:      0,
@@ -197,6 +202,7 @@ var Enums = struct {
 	BorEvents:    3,
 	BorSpans:     4,
 	BeaconBlocks: 5,
+	BlobSidecars: 6,
 }
 
 func (ft Enum) String() string {
@@ -213,6 +219,8 @@ func (ft Enum) String() string {
 		return "borspans"
 	case Enums.BeaconBlocks:
 		return "beaconblocks"
+	case Enums.BlobSidecars:
+		return "blobsidecars"
 	default:
 		panic(fmt.Sprintf("unknown file type: %d", ft))
 	}
@@ -232,6 +240,8 @@ func (ft Enum) Type() Type {
 		return BorSpans
 	case Enums.BeaconBlocks:
 		return BeaconBlocks
+	case Enums.BlobSidecars:
+		return BlobSidecars
 	default:
 		return nil
 	}
@@ -242,7 +252,7 @@ func (e Enum) FileName(from uint64, to uint64) string {
 }
 
 func (e Enum) FileInfo(dir string, from uint64, to uint64) FileInfo {
-	f, _ := ParseFileName(dir, e.FileName(from, to))
+	f, _, _ := ParseFileName(dir, e.FileName(from, to))
 	return f
 }
 
@@ -260,6 +270,8 @@ func ParseEnum(s string) (Enum, bool) {
 		return Enums.BorSpans, true
 	case "beaconblocks":
 		return Enums.BeaconBlocks, true
+	case "blobsidecars":
+		return Enums.BlobSidecars, true
 	default:
 		return Enums.Unknown, false
 	}
@@ -318,6 +330,14 @@ var (
 			MinSupported: 1,
 		},
 		indexes: []Index{Indexes.BeaconBlockSlot},
+	}
+	BlobSidecars = snapType{
+		enum: Enums.BlobSidecars,
+		versions: Versions{
+			Current:      1,
+			MinSupported: 1,
+		},
+		indexes: []Index{Indexes.BlobSidecarSlot},
 	}
 
 	BlockSnapshotTypes = []Type{Headers, Bodies, Transactions}

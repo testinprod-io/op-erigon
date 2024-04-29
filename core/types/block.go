@@ -27,13 +27,12 @@ import (
 	"reflect"
 	"sync/atomic"
 
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
-
 	"github.com/gballet/go-verkle"
+
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
+	"github.com/ledgerwatch/erigon-lib/common/hexutil"
 	"github.com/ledgerwatch/erigon-lib/common/hexutility"
 	rlp2 "github.com/ledgerwatch/erigon-lib/rlp"
-
 	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/rlp"
 )
@@ -1024,7 +1023,8 @@ func (bb *Body) DecodeRLP(s *rlp.Stream) error {
 		return err
 	}
 	var tx Transaction
-	for tx, err = DecodeRLPTransaction(s); err == nil; tx, err = DecodeRLPTransaction(s) {
+	blobTxnsAreWrappedWithBlobs := false
+	for tx, err = DecodeRLPTransaction(s, blobTxnsAreWrappedWithBlobs); err == nil; tx, err = DecodeRLPTransaction(s, blobTxnsAreWrappedWithBlobs) {
 		bb.Transactions = append(bb.Transactions, tx)
 	}
 	if !errors.Is(err, rlp.EOL) {
@@ -1152,6 +1152,17 @@ func NewBlockWithHeader(header *Header) *Block {
 	return &Block{header: CopyHeader(header)}
 }
 
+// NewBlockFromNetwork like NewBlock but used to create Block object when assembled from devp2p network messages
+// when there is no reason to copy parts, or re-calculate headers fields.
+func NewBlockFromNetwork(header *Header, body *Body) *Block {
+	return &Block{
+		header:       header,
+		transactions: body.Transactions,
+		uncles:       body.Uncles,
+		withdrawals:  body.Withdrawals,
+	}
+}
+
 // CopyHeader creates a deep copy of a block header to prevent side effects from
 // modifying a header variable.
 func CopyHeader(h *Header) *Header {
@@ -1213,7 +1224,8 @@ func (bb *Block) DecodeRLP(s *rlp.Stream) error {
 		return err
 	}
 	var tx Transaction
-	for tx, err = DecodeRLPTransaction(s); err == nil; tx, err = DecodeRLPTransaction(s) {
+	blobTxnsAreWrappedWithBlobs := false
+	for tx, err = DecodeRLPTransaction(s, blobTxnsAreWrappedWithBlobs); err == nil; tx, err = DecodeRLPTransaction(s, blobTxnsAreWrappedWithBlobs) {
 		bb.transactions = append(bb.transactions, tx)
 	}
 	if !errors.Is(err, rlp.EOL) {

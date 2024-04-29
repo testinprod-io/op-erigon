@@ -47,10 +47,10 @@ func (tf *TorrentFiles) delete(name string) error {
 	return os.Remove(filepath.Join(tf.dir, name))
 }
 
-func (tf *TorrentFiles) Create(torrentFilePath string, res []byte) error {
+func (tf *TorrentFiles) Create(name string, res []byte) error {
 	tf.lock.Lock()
 	defer tf.lock.Unlock()
-	return tf.create(torrentFilePath, res)
+	return tf.create(filepath.Join(tf.dir, name), res)
 }
 func (tf *TorrentFiles) create(torrentFilePath string, res []byte) error {
 	if len(res) == 0 {
@@ -133,8 +133,10 @@ func (tf *TorrentFiles) prohibitNewDownloads() error {
 func (tf *TorrentFiles) newDownloadsAreProhibited() bool {
 	tf.lock.Lock()
 	defer tf.lock.Unlock()
-	return dir.FileExist(filepath.Join(tf.dir, ProhibitNewDownloadsFileName)) ||
-		dir.FileExist(filepath.Join(tf.dir, SnapshotsLockFileName))
+	return dir.FileExist(filepath.Join(tf.dir, ProhibitNewDownloadsFileName))
+
+	//return dir.FileExist(filepath.Join(tf.dir, ProhibitNewDownloadsFileName)) ||
+	//	dir.FileExist(filepath.Join(tf.dir, SnapshotsLockFileName))
 }
 
 func CreateProhibitNewDownloadsFile(dir string) error {
