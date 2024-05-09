@@ -19,6 +19,7 @@ package txpoolcfg
 import (
 	"fmt"
 	"math"
+	"math/big"
 	"time"
 
 	"github.com/c2h5oh/datasize"

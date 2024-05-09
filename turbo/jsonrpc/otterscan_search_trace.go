@@ -82,7 +82,7 @@ func (api *OtterscanAPIImpl) traceBlock(dbtx kv.Tx, ctx context.Context, blockNu
 	}
 	engine := api.engine()
 
-	blockReceipts, err := api.getReceipts(ctx, dbtx, chainConfig, block, block.Body().SendersFromTxs())
+	blockReceipts, err := api.getReceipts(ctx, dbtx, block, block.Body().SendersFromTxs())
 	if err != nil {
 		return false, nil, err
 	}

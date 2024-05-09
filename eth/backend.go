@@ -265,11 +265,6 @@ func New(ctx context.Context, stack *node.Node, config *ethconfig.Config, logger
 	}); err != nil {
 		return nil, err
 	}
-	if !config.Sync.UseSnapshots {
-		if err := downloader.CreateProhibitNewDownloadsFile(dirs.Snap); err != nil {
-			return nil, err
-		}
-	}
 
 	if config.HistoryV3 {
 		return nil, errors.New("seems you using erigon2 git branch on erigon3 DB")
