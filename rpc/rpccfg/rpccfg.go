@@ -37,6 +37,8 @@ var DefaultHTTPTimeouts = HTTPTimeouts{
 }
 
 const DefaultEvmCallTimeout = 5 * time.Minute
+const DefaultOverlayGetLogsTimeout = 5 * time.Minute
+const DefaultOverlayReplayBlockTimeout = 10 * time.Second
 
 const DefaultHistoricalRPCTimeout = 5 * time.Second
 

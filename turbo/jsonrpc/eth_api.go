@@ -108,8 +108,11 @@ type EthAPI interface {
 }
 
 type BaseAPI struct {
-	stateCache   kvcache.Cache                         // thread-safe
-	blocksLRU    *lru.Cache[common.Hash, *types.Block] // thread-safe
+	// all caches are thread-safe
+	stateCache    kvcache.Cache
+	blocksLRU     *lru.Cache[common.Hash, *types.Block]
+	receiptsCache *lru.Cache[common.Hash, []*types.Receipt]
+
 	filters      *rpchelper.Filters
 	_chainConfig atomic.Pointer[chain.Config]
 	_genesis     atomic.Pointer[types.Block]
@@ -118,7 +121,7 @@ type BaseAPI struct {
 
 	_blockReader services.FullBlockReader
 	_txnReader   services.TxnReader
-	_agg         *libstate.AggregatorV3
+	_agg         *libstate.Aggregator
 	_engine      consensus.EngineReader
 
 	evmCallTimeout time.Duration
@@ -129,29 +132,43 @@ type BaseAPI struct {
 	historicalRPCService *rpc.Client
 }
 
-func NewBaseApi(
-	f *rpchelper.Filters, stateCache kvcache.Cache, blockReader services.FullBlockReader, agg *libstate.AggregatorV3,
-	singleNodeMode bool, evmCallTimeout time.Duration, engine consensus.EngineReader, dirs datadir.Dirs,
-	seqRPCService *rpc.Client, historicalRPCService *rpc.Client,
-) *BaseAPI {
-	blocksLRUSize := 128 // ~32Mb
+func NewBaseApi(f *rpchelper.Filters, stateCache kvcache.Cache, blockReader services.FullBlockReader, agg *libstate.Aggregator, singleNodeMode bool, evmCallTimeout time.Duration, engine consensus.EngineReader, dirs datadir.Dirs, seqRPCService *rpc.Client, historicalRPCService *rpc.Client) *BaseAPI {
+	var (
+		blocksLRUSize      = 128 // ~32Mb
+		receiptsCacheLimit = 32
+	)
+	// if RPCDaemon deployed as independent process: increase cache sizes
 	if !singleNodeMode {
-		blocksLRUSize = 512
+		blocksLRUSize *= 5
+		receiptsCacheLimit *= 5
 	}
 	blocksLRU, err := lru.New[common.Hash, *types.Block](blocksLRUSize)
 	if err != nil {
 		panic(err)
 	}
+	receiptsCache, err := lru.New[common.Hash, []*types.Receipt](receiptsCacheLimit)
+	if err != nil {
+		panic(err)
+	}
 
 	return &BaseAPI{
-		filters: f, stateCache: stateCache, blocksLRU: blocksLRU, _blockReader: blockReader, _txnReader: blockReader,
-		_agg: agg, evmCallTimeout: evmCallTimeout, _engine: engine, dirs: dirs,
-		seqRPCService: seqRPCService, historicalRPCService: historicalRPCService,
+		filters:              f,
+		stateCache:           stateCache,
+		blocksLRU:            blocksLRU,
+		receiptsCache:        receiptsCache,
+		_blockReader:         blockReader,
+		_txnReader:           blockReader,
+		_agg:                 agg,
+		evmCallTimeout:       evmCallTimeout,
+		_engine:              engine,
+		dirs:                 dirs,
+		seqRPCService:        seqRPCService,
+		historicalRPCService: historicalRPCService,
 	}
 }
 
-func (api *BaseAPI) chainConfig(tx kv.Tx) (*chain.Config, error) {
-	cfg, _, err := api.chainConfigWithGenesis(tx)
+func (api *BaseAPI) chainConfig(ctx context.Context, tx kv.Tx) (*chain.Config, error) {
+	cfg, _, err := api.chainConfigWithGenesis(ctx, tx)
 	return cfg, err
 }
 
@@ -160,24 +177,24 @@ func (api *BaseAPI) engine() consensus.EngineReader {
 }
 
 // nolint:unused
-func (api *BaseAPI) genesis(tx kv.Tx) (*types.Block, error) {
-	_, genesis, err := api.chainConfigWithGenesis(tx)
+func (api *BaseAPI) genesis(ctx context.Context, tx kv.Tx) (*types.Block, error) {
+	_, genesis, err := api.chainConfigWithGenesis(ctx, tx)
 	return genesis, err
 }
 
-func (api *BaseAPI) txnLookup(tx kv.Tx, txnHash common.Hash) (uint64, bool, error) {
-	return api._txnReader.TxnLookup(context.Background(), tx, txnHash)
+func (api *BaseAPI) txnLookup(ctx context.Context, tx kv.Tx, txnHash common.Hash) (uint64, bool, error) {
+	return api._txnReader.TxnLookup(ctx, tx, txnHash)
 }
 
-func (api *BaseAPI) blockByNumberWithSenders(tx kv.Tx, number uint64) (*types.Block, error) {
-	hash, hashErr := api._blockReader.CanonicalHash(context.Background(), tx, number)
+func (api *BaseAPI) blockByNumberWithSenders(ctx context.Context, tx kv.Tx, number uint64) (*types.Block, error) {
+	hash, hashErr := api._blockReader.CanonicalHash(ctx, tx, number)
 	if hashErr != nil {
 		return nil, hashErr
 	}
-	return api.blockWithSenders(tx, hash, number)
+	return api.blockWithSenders(ctx, tx, hash, number)
 }
 
-func (api *BaseAPI) blockByHashWithSenders(tx kv.Tx, hash common.Hash) (*types.Block, error) {
+func (api *BaseAPI) blockByHashWithSenders(ctx context.Context, tx kv.Tx, hash common.Hash) (*types.Block, error) {
 	if api.blocksLRU != nil {
 		if it, ok := api.blocksLRU.Get(hash); ok && it != nil {
 			return it, nil
@@ -188,7 +205,7 @@ func (api *BaseAPI) blockByHashWithSenders(tx kv.Tx, hash common.Hash) (*types.B
 		return nil, nil
 	}
 
-	return api.blockWithSenders(tx, hash, *number)
+	return api.blockWithSenders(ctx, tx, hash, *number)
 }
 
 func (api *BaseAPI) blockNumberFromBlockNumberOrHash(tx kv.Tx, bnh *rpc.BlockNumberOrHash) (uint64, error) {
@@ -205,13 +222,13 @@ func (api *BaseAPI) blockNumberFromBlockNumberOrHash(tx kv.Tx, bnh *rpc.BlockNum
 	return 0, fmt.Errorf("invalid block number of hash")
 }
 
-func (api *BaseAPI) blockWithSenders(tx kv.Tx, hash common.Hash, number uint64) (*types.Block, error) {
+func (api *BaseAPI) blockWithSenders(ctx context.Context, tx kv.Tx, hash common.Hash, number uint64) (*types.Block, error) {
 	if api.blocksLRU != nil {
 		if it, ok := api.blocksLRU.Get(hash); ok && it != nil {
 			return it, nil
 		}
 	}
-	block, _, err := api._blockReader.BlockWithSenders(context.Background(), tx, hash, number)
+	block, _, err := api._blockReader.BlockWithSenders(ctx, tx, hash, number)
 	if err != nil {
 		return nil, err
 	}
@@ -248,13 +265,13 @@ func (api *BaseAPI) historyV3(tx kv.Tx) bool {
 	return enabled
 }
 
-func (api *BaseAPI) chainConfigWithGenesis(tx kv.Tx) (*chain.Config, *types.Block, error) {
+func (api *BaseAPI) chainConfigWithGenesis(ctx context.Context, tx kv.Tx) (*chain.Config, *types.Block, error) {
 	cc, genesisBlock := api._chainConfig.Load(), api._genesis.Load()
 	if cc != nil && genesisBlock != nil {
 		return cc, genesisBlock, nil
 	}
 
-	genesisBlock, err := api.blockByRPCNumber(0, tx)
+	genesisBlock, err := api.blockByRPCNumber(ctx, 0, tx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -276,23 +293,23 @@ func (api *BaseAPI) pendingBlock() *types.Block {
 	return api.filters.LastPendingBlock()
 }
 
-func (api *BaseAPI) blockByRPCNumber(number rpc.BlockNumber, tx kv.Tx) (*types.Block, error) {
+func (api *BaseAPI) blockByRPCNumber(ctx context.Context, number rpc.BlockNumber, tx kv.Tx) (*types.Block, error) {
 	n, h, _, err := rpchelper.GetBlockNumber(rpc.BlockNumberOrHashWithNumber(number), tx, api.filters)
 	if err != nil {
 		return nil, err
 	}
 
 	// it's ok to use context.Background(), because in "Remote RPCDaemon" `tx` already contains internal ctx
-	block, err := api.blockWithSenders(tx, h, n)
+	block, err := api.blockWithSenders(ctx, tx, h, n)
 	return block, err
 }
 
-func (api *BaseAPI) headerByRPCNumber(number rpc.BlockNumber, tx kv.Tx) (*types.Header, error) {
+func (api *BaseAPI) headerByRPCNumber(ctx context.Context, number rpc.BlockNumber, tx kv.Tx) (*types.Header, error) {
 	n, h, _, err := rpchelper.GetBlockNumber(rpc.BlockNumberOrHashWithNumber(number), tx, api.filters)
 	if err != nil {
 		return nil, err
 	}
-	return api._blockReader.Header(context.Background(), tx, h, n)
+	return api._blockReader.Header(ctx, tx, h, n)
 }
 
 // checks the pruning state to see if we would hold information about this
@@ -353,11 +370,12 @@ type APIImpl struct {
 	ReturnDataLimit             int
 	AllowUnprotectedTxs         bool
 	MaxGetProofRewindBlockCount int
+	SubscribeLogsChannelSize    int
 	logger                      log.Logger
 }
 
 // NewEthAPI returns APIImpl instance
-func NewEthAPI(base *BaseAPI, db kv.RoDB, eth rpchelper.ApiBackend, txPool txpool.TxpoolClient, mining txpool.MiningClient, gascap uint64, returnDataLimit int, allowUnprotectedTxs bool, maxGetProofRewindBlockCount int, logger log.Logger) *APIImpl {
+func NewEthAPI(base *BaseAPI, db kv.RoDB, eth rpchelper.ApiBackend, txPool txpool.TxpoolClient, mining txpool.MiningClient, gascap uint64, returnDataLimit int, allowUnprotectedTxs bool, maxGetProofRewindBlockCount int, subscribeLogsChannelSize int, logger log.Logger) *APIImpl {
 	if gascap == 0 {
 		gascap = uint64(math.MaxUint64 / 2)
 	}
@@ -373,6 +391,7 @@ func NewEthAPI(base *BaseAPI, db kv.RoDB, eth rpchelper.ApiBackend, txPool txpoo
 		AllowUnprotectedTxs:         allowUnprotectedTxs,
 		ReturnDataLimit:             returnDataLimit,
 		MaxGetProofRewindBlockCount: maxGetProofRewindBlockCount,
+		SubscribeLogsChannelSize:    subscribeLogsChannelSize,
 		logger:                      logger,
 	}
 }
@@ -420,7 +439,7 @@ func NewRPCTransaction(tx types.Transaction, blockHash common.Hash, blockNumber 
 	receipt *types.Receipt) *RPCTransaction {
 	// Determine the signer. For replay-protected transactions, use the most permissive
 	// signer, because we assume that signers are backwards-compatible with old
-	// transactions. For non-protected transactions, the homestead signer signer is used
+	// transactions. For non-protected transactions, the homestead signer is used
 	// because the return value of ChainId is zero for those transactions.
 	chainId := uint256.NewInt(0)
 	result := &RPCTransaction{

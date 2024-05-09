@@ -11,7 +11,6 @@ import (
 	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon-lib/opstack"
 	"github.com/ledgerwatch/erigon/core"
-	"github.com/ledgerwatch/erigon/core/rawdb"
 	"github.com/ledgerwatch/erigon/core/state"
 	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/core/vm"
@@ -57,7 +56,7 @@ func (api *OtterscanAPIImpl) traceBlock(dbtx kv.Tx, ctx context.Context, blockNu
 		return false, nil, err
 	}
 
-	block, senders, err := api._blockReader.BlockWithSenders(ctx, dbtx, blockHash, blockNum)
+	block, err := api.blockWithSenders(ctx, dbtx, blockHash, blockNum)
 	if err != nil {
 		return false, nil, err
 	}
@@ -83,7 +82,10 @@ func (api *OtterscanAPIImpl) traceBlock(dbtx kv.Tx, ctx context.Context, blockNu
 	}
 	engine := api.engine()
 
-	blockReceipts := rawdb.ReadReceipts(chainConfig, dbtx, block, senders)
+	blockReceipts, err := api.getReceipts(ctx, dbtx, chainConfig, block, block.Body().SendersFromTxs())
+	if err != nil {
+		return false, nil, err
+	}
 	header := block.Header()
 	rules := chainConfig.Rules(block.NumberU64(), header.Time)
 	found := false

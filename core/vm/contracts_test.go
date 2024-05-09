@@ -65,8 +65,8 @@ var allPrecompiles = map[libcommon.Address]PrecompiledContract{
 	libcommon.BytesToAddress([]byte{14}):         &bls12381G2Mul{},
 	libcommon.BytesToAddress([]byte{15}):         &bls12381G2MultiExp{},
 	libcommon.BytesToAddress([]byte{16}):         &bls12381Pairing{},
-	libcommon.BytesToAddress([]byte{17}):         &bls12381MapG1{},
-	libcommon.BytesToAddress([]byte{18}):         &bls12381MapG2{},
+	libcommon.BytesToAddress([]byte{17}):         &bls12381MapFpToG1{},
+	libcommon.BytesToAddress([]byte{18}):         &bls12381MapFp2ToG2{},
 	libcommon.BytesToAddress([]byte{20}):         &pointEvaluation{},
 	libcommon.BytesToAddress([]byte{0x01, 0x00}): &p256Verify{},
 }
@@ -378,7 +378,7 @@ func BenchmarkPrecompiledBLS12381G1MultiExpWorstCase(b *testing.B) {
 		Name:        "WorstCaseG1",
 		NoBenchmark: false,
 	}
-	benchmarkPrecompiled(b, "0c", testcase)
+	benchmarkPrecompiled(b, "f0c", testcase)
 }
 
 // BenchmarkPrecompiledBLS12381G2MultiExpWorstCase benchmarks the worst case we could find that still fits a gaslimit of 10MGas.
@@ -399,7 +399,7 @@ func BenchmarkPrecompiledBLS12381G2MultiExpWorstCase(b *testing.B) {
 		Name:        "WorstCaseG2",
 		NoBenchmark: false,
 	}
-	benchmarkPrecompiled(b, "0f", testcase)
+	benchmarkPrecompiled(b, "f0f", testcase)
 }
 
 // Benchmarks the sample inputs from the P256VERIFY precompile.
