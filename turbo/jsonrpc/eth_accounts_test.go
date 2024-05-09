@@ -50,7 +50,7 @@ func (m *MockServer) GetRPC() (*rpc.Client, error) {
 
 func TestGetBalanceHistoricalRPC(t *testing.T) {
 	m, _, _ := rpcdaemontest.CreateOptimismTestSentry(t)
-	api := NewEthAPI(newBaseApiForTest(m), m.DB, nil, nil, nil, 5000000, 100_000, false, 100_000, log.New())
+	api := NewEthAPI(newBaseApiForTest(m), m.DB, nil, nil, nil, 5000000, 100_000, false, 100_000, 128, log.New())
 	addr := libcommon.HexToAddress("0x71562b71999873db5b286df957af199ec94617f7")
 
 	table := []struct {
@@ -111,7 +111,7 @@ func TestGetBalanceHistoricalRPC(t *testing.T) {
 
 func TestGetTransactionCountHistoricalRPC(t *testing.T) {
 	m, _, _ := rpcdaemontest.CreateOptimismTestSentry(t)
-	api := NewEthAPI(newBaseApiForTest(m), m.DB, nil, nil, nil, 5000000, 100_000, false, 100_000, log.New())
+	api := NewEthAPI(newBaseApiForTest(m), m.DB, nil, nil, nil, 5000000, 100_000, false, 100_000, 128, log.New())
 	addr := libcommon.HexToAddress("0x71562b71999873db5b286df957af199ec94617f7")
 
 	table := []struct {
@@ -172,7 +172,7 @@ func TestGetTransactionCountHistoricalRPC(t *testing.T) {
 
 func TestGetCodeHistoricalRPC(t *testing.T) {
 	m, _, _ := rpcdaemontest.CreateOptimismTestSentry(t)
-	api := NewEthAPI(newBaseApiForTest(m), m.DB, nil, nil, nil, 5000000, 100_000, false, 100_000, log.New())
+	api := NewEthAPI(newBaseApiForTest(m), m.DB, nil, nil, nil, 5000000, 100_000, false, 100_000, 128, log.New())
 	addr := libcommon.HexToAddress("0x71562b71999873db5b286df957af199ec94617f7")
 
 	table := []struct {
@@ -233,7 +233,7 @@ func TestGetCodeHistoricalRPC(t *testing.T) {
 
 func TestGetStorageAtHistoricalRPC(t *testing.T) {
 	m, _, _ := rpcdaemontest.CreateOptimismTestSentry(t)
-	api := NewEthAPI(newBaseApiForTest(m), m.DB, nil, nil, nil, 5000000, 100_000, false, 100_000, log.New())
+	api := NewEthAPI(newBaseApiForTest(m), m.DB, nil, nil, nil, 5000000, 100_000, false, 100_000, 128, log.New())
 	addr := libcommon.HexToAddress("0x71562b71999873db5b286df957af199ec94617f7")
 
 	table := []struct {
