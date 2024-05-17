@@ -9,7 +9,6 @@ import (
 	"github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/gointerfaces/txpool"
 	"github.com/ledgerwatch/erigon-lib/kv/kvcache"
-	"github.com/ledgerwatch/erigon-lib/kv/memdb"
 	"github.com/ledgerwatch/erigon-lib/opstack"
 	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/rpcdaemontest"
 	"github.com/ledgerwatch/erigon/common/u256"
@@ -29,9 +28,9 @@ func TestGetReceipts(t *testing.T) {
 	ctx, conn := rpcdaemontest.CreateTestGrpcConn(t, mock.Mock(t))
 	mining := txpool.NewMiningClient(conn)
 	ff := rpchelper.New(ctx, nil, nil, mining, func() {}, m.Log)
-	api := NewEthAPI(NewBaseApi(ff, stateCache, m.BlockReader, agg, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs, nil, nil), m.DB, nil, nil, nil, 5000000, 100_000, false, 100_000, log.New())
+	api := NewEthAPI(NewBaseApi(ff, stateCache, m.BlockReader, agg, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs, nil, nil), m.DB, nil, nil, nil, 5000000, 100_000, false, 100_000, 128, log.New())
 
-	db := memdb.New("")
+	db := m.DB
 	defer db.Close()
 
 	tx, err := db.BeginRw(context.Background())
@@ -49,7 +48,7 @@ func TestGetReceipts(t *testing.T) {
 	require.NoError(t, err)
 	defer rTx.Rollback()
 
-	receipt, err := api.getReceipts(m.Ctx, rTx, m.ChainConfig, block, []common.Address{})
+	receipt, err := api.getReceipts(m.Ctx, rTx, block, []common.Address{})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(receipt))
 
@@ -120,7 +119,7 @@ func TestGetReceipts(t *testing.T) {
 	require.NoError(t, err)
 	defer rTx.Rollback()
 
-	receipts, err = api.getReceipts(m.Ctx, rTx, m.ChainConfig, b, senders)
+	receipts, err = api.getReceipts(m.Ctx, rTx, b, senders)
 	require.NoError(t, err)
 	require.Equal(t, 2, len(receipts))
 

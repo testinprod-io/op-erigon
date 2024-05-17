@@ -93,6 +93,9 @@ func NewOracle(backend OracleBackend, params gaspricecfg.Config, cache Cache) *O
 		ignorePrice = gaspricecfg.DefaultIgnorePrice
 		log.Warn("Sanitizing invalid gasprice oracle ignore price", "provided", params.IgnorePrice, "updated", ignorePrice)
 	}
+
+	setBorDefaultGpoIgnorePrice(backend.ChainConfig(), params)
+
 	r := &Oracle{
 		backend:          backend,
 		lastPrice:        params.Default,
@@ -302,3 +305,11 @@ type bigIntArray []*big.Int
 func (s bigIntArray) Len() int           { return len(s) }
 func (s bigIntArray) Less(i, j int) bool { return s[i].Cmp(s[j]) < 0 }
 func (s bigIntArray) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+
+// setBorDefaultGpoIgnorePrice enforces gpo IgnorePrice to be equal to BorDefaultGpoIgnorePrice  (30gwei by default)
+func setBorDefaultGpoIgnorePrice(chainConfig *chain.Config, gasPriceConfig gaspricecfg.Config) {
+	if chainConfig.Bor != nil && gasPriceConfig.IgnorePrice != gaspricecfg.BorDefaultGpoIgnorePrice {
+		log.Warn("Sanitizing invalid bor gasprice oracle ignore price", "provided", gasPriceConfig.IgnorePrice, "updated", gaspricecfg.BorDefaultGpoIgnorePrice)
+		gasPriceConfig.IgnorePrice = gaspricecfg.BorDefaultGpoIgnorePrice
+	}
+}

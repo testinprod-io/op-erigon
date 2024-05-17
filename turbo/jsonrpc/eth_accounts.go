@@ -3,8 +3,9 @@ package jsonrpc
 import (
 	"context"
 	"fmt"
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
 	"math/big"
+
+	"github.com/ledgerwatch/erigon-lib/common/hexutil"
 
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/hexutility"
@@ -32,7 +33,7 @@ func (api *APIImpl) GetBalance(ctx context.Context, address libcommon.Address, b
 	if err != nil {
 		return nil, err
 	}
-	chainConfig, err := api.chainConfig(tx)
+	chainConfig, err := api.chainConfig(ctx, tx)
 	if err != nil {
 		return nil, fmt.Errorf("read chain config: %v", err)
 	}
@@ -89,7 +90,7 @@ func (api *APIImpl) GetTransactionCount(ctx context.Context, address libcommon.A
 	if err != nil {
 		return nil, err
 	}
-	chainConfig, err := api.chainConfig(tx)
+	chainConfig, err := api.chainConfig(ctx, tx)
 	if err != nil {
 		return nil, fmt.Errorf("read chain config: %v", err)
 	}
@@ -129,7 +130,7 @@ func (api *APIImpl) GetCode(ctx context.Context, address libcommon.Address, bloc
 	if err != nil {
 		return nil, err
 	}
-	chainConfig, err := api.chainConfig(tx)
+	chainConfig, err := api.chainConfig(ctx, tx)
 	if err != nil {
 		return nil, fmt.Errorf("read chain config: %v", err)
 	}
@@ -175,7 +176,7 @@ func (api *APIImpl) GetStorageAt(ctx context.Context, address libcommon.Address,
 	if err != nil {
 		return hexutility.Encode(common.LeftPadBytes(empty, 32)), err
 	}
-	chainConfig, err := api.chainConfig(tx)
+	chainConfig, err := api.chainConfig(ctx, tx)
 	if err != nil {
 		return hexutility.Encode(common.LeftPadBytes(empty, 32)), fmt.Errorf("read chain config: %v", err)
 	}
