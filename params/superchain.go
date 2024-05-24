@@ -118,6 +118,7 @@ func LoadSuperChainConfig(opStackChainCfg *superchain.ChainConfig) *chain.Config
 		RegolithTime:                  big.NewInt(0),
 		CanyonTime:                    nil,
 		EcotoneTime:                   nil,
+		FjordTime:                     nil,
 		TerminalTotalDifficulty:       common.Big0,
 		TerminalTotalDifficultyPassed: true,
 		Ethash:                        nil,
@@ -137,7 +138,7 @@ func LoadSuperChainConfig(opStackChainCfg *superchain.ChainConfig) *chain.Config
 		out.CancunTime = new(big.Int).SetUint64(*chConfig.EcotoneTime) // CancunTime activates with Ecotone
 		out.EcotoneTime = new(big.Int).SetUint64(*chConfig.EcotoneTime)
 	}
-
+	if chConfig.FjordTime != nil {
 		out.FjordTime = new(big.Int).SetUint64(*chConfig.FjordTime)
 	}
 
