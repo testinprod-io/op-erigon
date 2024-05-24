@@ -17,8 +17,9 @@
 package params
 
 import (
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"math/big"
+
+	libcommon "github.com/ledgerwatch/erigon-lib/common"
 
 	"github.com/ledgerwatch/erigon-lib/common"
 )
@@ -178,6 +179,7 @@ const (
 	PointEvaluationGas uint64 = 50000
 
 	// PIP-27: secp256r1 elliptic curve signature verifier gas price
+	// RIP-7212: Optimism Fjord: Precompile for secp256r1 Curve Support
 	P256VerifyGas uint64 = 3450
 )
 
