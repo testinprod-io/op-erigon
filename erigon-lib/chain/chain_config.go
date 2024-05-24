@@ -74,6 +74,7 @@ type Config struct {
 	CanyonTime   *big.Int `json:"canyonTime,omitempty"`   // Canyon switch time (nil = no fork, 0 = already on optimism canyon)
 	// Delta: the Delta upgrade does not affect the execution-layer, and is thus not configurable in the chain config.
 	EcotoneTime *big.Int `json:"ecotoneTime,omitempty"` // Ecotone switch time (nil = no fork, 0 = already on optimism ecotone)
+	FjordTime   *big.Int `json:"fjordTime,omitempty"`   // Fjord switch time (nil = no fork, 0 = already on optimism fjord)
 
 	// Optional EIP-4844 parameters
 	MinBlobGasPrice            *uint64 `json:"minBlobGasPrice,omitempty"`
