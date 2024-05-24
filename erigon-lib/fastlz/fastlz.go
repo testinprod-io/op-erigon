@@ -46,8 +46,8 @@ func FlzCompressLen(ib []byte) uint32 {
 		ipLimit = 0
 	}
 	for ip := a + 2; ip < ipLimit; {
-		r := uint32(0)
-		d := uint32(0)
+		r := uint32(0) //nolint:all
+		d := uint32(0) //nolint:all
 		for {
 			s := u24(ip)
 			h := hash(s)
