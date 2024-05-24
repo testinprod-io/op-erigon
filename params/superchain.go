@@ -14,15 +14,12 @@ import (
 )
 
 const (
-	OPMainnetChainID        = 10
-	OPGoerliChainID         = 420
-	BaseMainnetChainID      = 8453
-	BaseGoerliChainID       = 84531
-	baseSepoliaChainID      = 84532
-	baseGoerliDevnetChainID = 11763071
-	pgnSepoliaChainID       = 58008
-	devnetChainID           = 997
-	chaosnetChainID         = 888
+	OPMainnetChainID   = 10
+	BaseMainnetChainID = 8453
+	baseSepoliaChainID = 84532
+	pgnSepoliaChainID  = 58008
+	devnetChainID      = 997
+	chaosnetChainID    = 888
 )
 
 // OP Stack chain config
@@ -58,8 +55,6 @@ func OPStackChainConfigByName(name string) *superchain.ChainConfig {
 func OPStackChainConfigByGenesisHash(genesisHash common.Hash) *superchain.ChainConfig {
 	if bytes.Equal(genesisHash.Bytes(), OPMainnetGenesisHash.Bytes()) {
 		return superchain.OPChains[OPMainnetChainID]
-	} else if bytes.Equal(genesisHash.Bytes(), OPGoerliGenesisHash.Bytes()) {
-		return superchain.OPChains[OPGoerliChainID]
 	}
 	for _, chainCfg := range superchain.OPChains {
 		if bytes.Equal(chainCfg.Genesis.L2.Hash[:], genesisHash.Bytes()) {
@@ -144,14 +139,6 @@ func LoadSuperChainConfig(opStackChainCfg *superchain.ChainConfig) *chain.Config
 
 	// special overrides for OP-Stack chains with pre-Regolith upgrade history
 	switch opStackChainCfg.ChainID {
-	case OPGoerliChainID:
-		out.LondonBlock = big.NewInt(4061224)
-		out.ArrowGlacierBlock = big.NewInt(4061224)
-		out.GrayGlacierBlock = big.NewInt(4061224)
-		out.MergeNetsplitBlock = big.NewInt(4061224)
-		out.BedrockBlock = big.NewInt(4061224)
-		out.RegolithTime = OptimismGoerliRegolithTime
-		out.Optimism.EIP1559Elasticity = 10
 	case OPMainnetChainID:
 		out.BerlinBlock = big.NewInt(3950000)
 		out.LondonBlock = big.NewInt(105235063)
@@ -159,13 +146,8 @@ func LoadSuperChainConfig(opStackChainCfg *superchain.ChainConfig) *chain.Config
 		out.GrayGlacierBlock = big.NewInt(105235063)
 		out.MergeNetsplitBlock = big.NewInt(105235063)
 		out.BedrockBlock = big.NewInt(105235063)
-	case BaseGoerliChainID:
-		out.RegolithTime = BaseGoerliRegolithTime
-		out.Optimism.EIP1559Elasticity = 10
 	case baseSepoliaChainID:
 		out.Optimism.EIP1559Elasticity = 10
-	case baseGoerliDevnetChainID:
-		out.RegolithTime = baseGoerliDevnetRegolithTime
 	case pgnSepoliaChainID:
 		out.Optimism.EIP1559Elasticity = 2
 		out.Optimism.EIP1559Denominator = 8

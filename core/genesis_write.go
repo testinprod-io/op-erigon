@@ -839,8 +839,6 @@ func loadOPStackGenesisByChainName(name string) (*types.Genesis, error) {
 		switch opStackChainCfg.ChainID {
 		case params.OPMainnetChainID:
 			expectedHash = params.OPMainnetGenesisHash
-		case params.OPGoerliChainID:
-			expectedHash = params.OPGoerliGenesisHash
 		default:
 			return nil, fmt.Errorf("unknown stateless genesis definition for chain %d", opStackChainCfg.ChainID)
 		}

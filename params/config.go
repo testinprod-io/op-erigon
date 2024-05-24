@@ -74,7 +74,6 @@ var (
 	ChiadoGenesisHash     = libcommon.HexToHash("0xada44fd8d2ecab8b08f256af07ad3e777f17fb434f8f8e678b312f576212ba9a")
 
 	OPMainnetGenesisHash = libcommon.HexToHash("0x7ca38a1916c42007829c55e69d3e9a73265554b586a499015373241b8a3fa48b")
-	OPGoerliGenesisHash  = libcommon.HexToHash("0xc1fc15cd51159b1f1e5cbc4b82e85c1447ddfa33c52cf1d98d14fba0d6354be1")
 	OPDevnetGenesisHash  = libcommon.HexToHash("0x1c16b5a055ff0197544b96f1375bf6be35ec478e23a95093cfe01902d821c22a")
 )
 
@@ -82,7 +81,6 @@ var (
 	GnosisGenesisStateRoot   = libcommon.HexToHash("0x40cf4430ecaa733787d1a65154a3b9efb560c95d9e324a23b97f0609b539133b")
 	ChiadoGenesisStateRoot   = libcommon.HexToHash("0x9ec3eaf4e6188dfbdd6ade76eaa88289b57c63c9a2cde8d35291d5a29e143d31")
 	OptimismMainnetStateRoot = libcommon.HexToHash("0xeddb4c1786789419153a27c4c80ff44a2226b6eda04f7e22ce5bae892ea568eb")
-	OptimismGoerliStateRoot  = libcommon.HexToHash("0x9e6b478a1cd331a979c39e4bddf42c676bcf5a63382f898dc441fe3fe5eb0837")
 )
 
 var (
@@ -285,9 +283,6 @@ func GenesisHashByChainName(chain string) *libcommon.Hash {
 	case networkname.OPMainnetChainName:
 		// cannot use genesis has from superchain registry because of pre-bedrock blocks
 		return &OPMainnetGenesisHash
-	case networkname.OPGoerliChainName:
-		// cannot use genesis has from superchain registry because of pre-bedrock blocks
-		return &OPGoerliGenesisHash
 	default:
 		if opStackChainCfg := OPStackChainConfigByName(chain); opStackChainCfg != nil {
 			genesisHash := libcommon.Hash(opStackChainCfg.Genesis.L2.Hash)
