@@ -31,6 +31,7 @@ import (
 	"github.com/ledgerwatch/erigon-lib/chain"
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/fixedgas"
+	fastlz "github.com/ledgerwatch/erigon-lib/fastlz"
 	types2 "github.com/ledgerwatch/erigon-lib/types"
 
 	"github.com/ledgerwatch/erigon/common/math"
@@ -107,8 +108,9 @@ type TransactionMisc struct {
 }
 
 type rollupGasCounter struct {
-	zeroes uint64
-	ones   uint64
+	zeroes     uint64
+	ones       uint64
+	fastLzSize uint64
 }
 
 func (r *rollupGasCounter) Write(p []byte) (int, error) {
@@ -119,6 +121,7 @@ func (r *rollupGasCounter) Write(p []byte) (int, error) {
 			r.ones++
 		}
 	}
+	r.fastLzSize = uint64(fastlz.FlzCompressLen(p))
 	return len(p), nil
 }
 
