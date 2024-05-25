@@ -623,7 +623,7 @@ var (
 	}
 	NoDiscoverFlag = cli.BoolFlag{
 		Name:  "nodiscover",
-		Usage: "Disables the peer discovery mechanism (manual peer addition)",
+		Usage: "Disables the v4 peer discovery mechanism (manual peer addition). Refer to --v5disc to configure v5 discovery protocol",
 	}
 	DiscoveryV5Flag = cli.BoolFlag{
 		Name:  "v5disc",

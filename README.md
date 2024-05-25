@@ -89,9 +89,9 @@ If your chain is the one of `op-mainnet` & `op-sepolia`, or your chain is synced
 **[Optional]** 
 Disables transaction pool gossiping. Though this is not required, it's useful to set this to true since transaction pool gossip is currently unsupported in the Optimism protocol. If not provided, default value is set to `false`.
 
-### `--maxpeers=0`, `--nodiscover`
+### `--maxpeers=0`, `--nodiscover`, `--v5disc=false`
 **[Optional]** 
-Disable P2P. Execution-layer peering is currently not supported in the Optimism protocol. Though this is not required, it saves resources since TX pool gossip is currently not available.
+Disable P2P. This can save resources if you are only using op-node to sync the chain instead of using execution-layer syncing.  
 
 ## Support Chains
 op-erigon supports every OP Stack chains listed in [superchain-registry](https://github.com/ethereum-optimism/superchain-registry).
@@ -134,8 +134,7 @@ $ ./build/bin/erigon \
     --rollup.historicalrpc="https://mainnet.optimism.io" \
     --txpool.gossip.disable=true \
     --chain=op-mainnet \
-    --db.size.limit=8TB \
-    --nodiscover
+    --db.size.limit=8TB
 ```
 2. Use the Docker image: You can get the official Docker image from [testinprod/op-erigon](https://hub.docker.com/r/testinprod/op-erigon).
 3. Use the Helm chart: If you want to deploy op-erigon to the K8S cluster, you can use [Helm chart](https://artifacthub.io/packages/helm/op-charts/erigon).
