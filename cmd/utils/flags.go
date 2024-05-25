@@ -627,7 +627,8 @@ var (
 	}
 	DiscoveryV5Flag = cli.BoolFlag{
 		Name:  "v5disc",
-		Usage: "Enables the experimental RLPx V5 (Topic Discovery) mechanism",
+		Usage: "Enables the experimental RLPx V5 (Topic Discovery) mechanism (enabled by default). Use --v5disc=false to disable it",
+		Value: true,
 	}
 	NetrestrictFlag = cli.StringFlag{
 		Name:  "netrestrict",
