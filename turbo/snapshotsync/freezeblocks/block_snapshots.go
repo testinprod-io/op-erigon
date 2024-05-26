@@ -305,12 +305,13 @@ func (s *RoSnapshots) BlocksAvailable() uint64 {
 	if s == nil {
 		return 0
 	}
-
+	s.logger.Info("Blocks available", "seg", s.segmentsMax.Load(), "idx", s.idxMax.Load())
 	return cmp.Min(s.segmentsMax.Load(), s.idxMax.Load())
 }
 func (s *RoSnapshots) LogStat(label string) {
 	var m runtime.MemStats
 	dbg.ReadMemStats(&m)
+
 	s.logger.Info(fmt.Sprintf("[snapshots:%s] Stat", label),
 		"blocks", fmt.Sprintf("%dk", (s.SegmentsMax()+1)/1000),
 		"indices", fmt.Sprintf("%dk", (s.IndicesMax()+1)/1000),
@@ -591,7 +592,9 @@ func (s *RoSnapshots) rebuildSegments(fileNames []string, open bool, optimistic 
 		s.segmentsMax.Store(segmentsMax)
 	}
 	s.segmentsReady.Store(true)
-	s.idxMax.Store(s.idxAvailability())
+	avail := s.idxAvailability()
+	s.logger.Info("Setting up availability", "idx", avail)
+	s.idxMax.Store(avail)
 	s.indicesReady.Store(true)
 
 	return nil
