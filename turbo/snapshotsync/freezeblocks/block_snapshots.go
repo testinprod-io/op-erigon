@@ -623,7 +623,7 @@ func (s *RoSnapshots) ReopenSegments(types []snaptype.Type, allowGaps bool) erro
 		_, fName := filepath.Split(f.Path)
 		list = append(list, fName)
 	}
-	return s.ReopenList(list, false)
+	return s.ReopenList(list, true)
 }
 
 func (s *RoSnapshots) ReopenWithDB(db kv.RoDB) error {
