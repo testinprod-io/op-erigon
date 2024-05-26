@@ -16,7 +16,6 @@ import (
 
 	"github.com/c2h5oh/datasize"
 	"github.com/ledgerwatch/erigon-lib/config3"
-	"github.com/ledgerwatch/erigon/cl/clparams"
 	"github.com/ledgerwatch/log/v3"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sync/semaphore"
@@ -398,16 +397,16 @@ func openSnaps(ctx context.Context, cfg ethconfig.BlocksFreezing, dirs datadir.D
 
 	chainConfig := fromdb.ChainConfig(chainDB)
 
-	var beaconConfig *clparams.BeaconChainConfig
-	_, beaconConfig, _, err = clparams.GetConfigsByNetworkName(chainConfig.ChainName)
-	if err != nil {
-		return
-	}
+	//var beaconConfig *clparams.BeaconChainConfig
+	//_, beaconConfig, _, err = clparams.GetConfigsByNetworkName(chainConfig.ChainName)
+	//if err != nil {
+	//	return
+	//}
 
-	csn = freezeblocks.NewCaplinSnapshots(cfg, beaconConfig, dirs, logger)
-	if err = csn.ReopenFolder(); err != nil {
-		return
-	}
+	csn = nil //freezeblocks.NewCaplinSnapshots(cfg, beaconConfig, dirs, logger)
+	//if err = csn.ReopenFolder(); err != nil {
+	//	return
+	//}
 
 	borSnaps.LogStat("bor:open")
 	agg = openAgg(ctx, dirs, chainDB, logger)
@@ -584,7 +583,7 @@ func doRetireCommand(cliCtx *cli.Context) error {
 	}
 
 	logger.Info("Params", "from", from, "to", to, "every", every)
-	if err := br.RetireBlocks(ctx, 0, forwardProgress, log.LvlInfo, nil, nil); err != nil {
+	if err := br.RetireBlocks(ctx, from, to, log.LvlInfo, nil, nil); err != nil {
 		return err
 	}
 
