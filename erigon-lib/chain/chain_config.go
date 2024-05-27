@@ -124,7 +124,7 @@ func (o *OptimismConfig) String() string {
 func (c *Config) String() string {
 	engine := c.getEngine()
 
-	return fmt.Sprintf("{ChainID: %v, Homestead: %v, DAO: %v, Tangerine Whistle: %v, Spurious Dragon: %v, Byzantium: %v, Constantinople: %v, Petersburg: %v, Istanbul: %v, Muir Glacier: %v, Berlin: %v, London: %v, Arrow Glacier: %v, Gray Glacier: %v, Terminal Total Difficulty: %v, Merge Netsplit: %v, Shanghai: %v, Cancun: %v, Prague: %v, Osaka: %v, Engine: %v, NoPruneContracts: %v}",
+	configString := fmt.Sprintf("{ChainID: %v, Homestead: %v, DAO: %v, Tangerine Whistle: %v, Spurious Dragon: %v, Byzantium: %v, Constantinople: %v, Petersburg: %v, Istanbul: %v, Muir Glacier: %v, Berlin: %v, London: %v, Arrow Glacier: %v, Gray Glacier: %v, Terminal Total Difficulty: %v, Merge Netsplit: %v, Shanghai: %v, Cancun: %v, Prague: %v, Osaka: %v, Engine: %v, NoPruneContracts: %v}",
 		c.ChainID,
 		c.HomesteadBlock,
 		c.DAOForkBlock,
@@ -148,6 +148,16 @@ func (c *Config) String() string {
 		engine,
 		c.NoPruneContracts,
 	)
+	if c.IsOptimism() {
+		configString += fmt.Sprintf("{Bedrock: %v, Regolith: %v, Canyon: %v, Ecotone: %v, Fjord: %v}",
+			c.BedrockBlock,
+			c.RegolithTime,
+			c.CanyonTime,
+			c.EcotoneTime,
+			c.FjordTime,
+		)
+	}
+	return configString
 }
 
 func (c *Config) getEngine() string {
@@ -322,6 +332,10 @@ func (c *Config) IsEcotone(time uint64) bool {
 	return isForked(c.EcotoneTime, time)
 }
 
+func (c *Config) IsFjord(time uint64) bool {
+	return isForked(c.FjordTime, time)
+}
+
 // IsOptimism returns whether the node is an optimism node or not.
 func (c *Config) IsOptimism() bool {
 	return c.Optimism != nil
@@ -342,6 +356,10 @@ func (c *Config) IsOptimismCanyon(time uint64) bool {
 
 func (c *Config) IsOptimismEcotone(time uint64) bool {
 	return c.IsOptimism() && c.IsEcotone(time)
+}
+
+func (c *Config) IsOptimismFjord(time uint64) bool {
+	return c.IsOptimism() && c.IsFjord(time)
 }
 
 // IsOptimismPreBedrock returns true iff this is an optimism node & bedrock is not yet active
@@ -588,14 +606,15 @@ func borKeyValueConfigHelper[T uint64 | common.Address](field map[string]T, numb
 // Rules is a one time interface meaning that it shouldn't be used in between transition
 // phases.
 type Rules struct {
-	ChainID                                           *big.Int
-	IsHomestead, IsTangerineWhistle, IsSpuriousDragon bool
-	IsByzantium, IsConstantinople, IsPetersburg       bool
-	IsIstanbul, IsBerlin, IsLondon, IsShanghai        bool
-	IsCancun, IsNapoli                                bool
-	IsPrague, IsOsaka                                 bool
-	IsAura                                            bool
-	IsOptimismBedrock, IsOptimismRegolith             bool
+	ChainID                                              *big.Int
+	IsHomestead, IsTangerineWhistle, IsSpuriousDragon    bool
+	IsByzantium, IsConstantinople, IsPetersburg          bool
+	IsIstanbul, IsBerlin, IsLondon, IsShanghai           bool
+	IsCancun, IsNapoli                                   bool
+	IsPrague, IsOsaka                                    bool
+	IsAura                                               bool
+	IsOptimismBedrock, IsOptimismRegolith                bool
+	IsOptimismCanyon, IsOptimismEcotone, IsOptimismFjord bool
 }
 
 // Rules ensures c's ChainID is not nil and returns a new Rules instance
@@ -624,6 +643,9 @@ func (c *Config) Rules(num uint64, time uint64) *Rules {
 		IsAura:             c.Aura != nil,
 		IsOptimismBedrock:  c.IsOptimismBedrock(num),
 		IsOptimismRegolith: c.IsOptimismRegolith(time),
+		IsOptimismCanyon:   c.IsOptimismCanyon(time),
+		IsOptimismEcotone:  c.IsOptimismEcotone(time),
+		IsOptimismFjord:    c.IsOptimismFjord(time),
 	}
 }
 
