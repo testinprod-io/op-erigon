@@ -48,8 +48,8 @@ var (
 )
 
 func TestBedrockL1CostFunc(t *testing.T) {
-	costFunc0 := newL1CostFuncBedrockHelper(basefee, overhead, scalar, false /*isRegolith*/)
-	costFunc1 := newL1CostFuncBedrockHelper(basefee, overhead, scalar, true)
+	costFunc0 := newL1CostFuncPreEcotoneHelper(basefee, overhead, scalar, false /*isRegolith*/)
+	costFunc1 := newL1CostFuncPreEcotoneHelper(basefee, overhead, scalar, true)
 
 	c0, g0 := costFunc0(emptyTxRollupCostData) // pre-Regolith
 	c1, g1 := costFunc1(emptyTxRollupCostData)

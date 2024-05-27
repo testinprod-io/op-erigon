@@ -236,7 +236,15 @@ type TxPool struct {
 	feeCalculator           FeeCalculator
 	logger                  log.Logger
 
-	l1Cost types.L1CostFn
+	l1Cost         types.L1CostFn
+	regolithTime   *uint64
+	isPostRegolith atomic.Bool
+	canyonTime     *uint64
+	isPostCanyon   atomic.Bool
+	ecotoneTime    *uint64
+	isPostEcotone  atomic.Bool
+	fjordTime      *uint64
+	isPostFjord    atomic.Bool
 }
 
 type FeeCalculator interface {
@@ -244,8 +252,9 @@ type FeeCalculator interface {
 }
 
 func New(newTxs chan types.Announcements, coreDB kv.RoDB, cfg txpoolcfg.Config, cache kvcache.Cache,
-	chainID uint256.Int, shanghaiTime, agraBlock, cancunTime *big.Int, maxBlobsPerBlock uint64,
-	feeCalculator FeeCalculator, logger log.Logger,
+	chainID uint256.Int, shanghaiTime, agraBlock, cancunTime *big.Int,
+	regolithTime, canyonTime, ecotoneTime, fjordTime *big.Int,
+	maxBlobsPerBlock uint64, feeCalculator FeeCalculator, logger log.Logger,
 ) (*TxPool, error) {
 	localsHistory, err := simplelru.NewLRU[string, struct{}](10_000, nil)
 	if err != nil {
@@ -317,10 +326,32 @@ func New(newTxs chan types.Announcements, coreDB kv.RoDB, cfg txpoolcfg.Config, 
 		res.cancunTime = &cancunTimeU64
 	}
 
+	if regolithTime != nil {
+		if !regolithTime.IsUint64() {
+			return nil, errors.New("regolithTime overflow")
+		}
+		regolithTimeU64 := regolithTime.Uint64()
+		res.regolithTime = &regolithTimeU64
+	}
+	if ecotoneTime != nil {
+		if !ecotoneTime.IsUint64() {
+			return nil, errors.New("ecotoneTime overflow")
+		}
+		ecotoneTimeU64 := ecotoneTime.Uint64()
+		res.ecotoneTime = &ecotoneTimeU64
+	}
+	if fjordTime != nil {
+		if !fjordTime.IsUint64() {
+			return nil, errors.New("fjordTime overflow")
+		}
+		fjordTimeU64 := fjordTime.Uint64()
+		res.fjordTime = &fjordTimeU64
+	}
+
 	return res, nil
 }
 
-func RawRLPTxToOptimismL1CostFn(payload []byte) (types.L1CostFn, error) {
+func RawRLPTxToOptimismL1CostFn(payload []byte, isRegolith, isEcotone, isFjord bool) (types.L1CostFn, error) {
 	// skip prefix byte
 	if len(payload) == 0 {
 		return nil, fmt.Errorf("empty tx payload")
@@ -367,7 +398,7 @@ func RawRLPTxToOptimismL1CostFn(payload []byte) (types.L1CostFn, error) {
 		return nil, fmt.Errorf("failed to read tx data entry rlp prefix: %w", err)
 	}
 	txCalldata := payload[dataPos : dataPos+dataLen]
-	return opstack.L1CostFnForTxPool(txCalldata)
+	return opstack.L1CostFnForTxPool(txCalldata, isRegolith, isEcotone, isFjord)
 }
 
 func (p *TxPool) Start(ctx context.Context, db kv.RwDB) error {
@@ -448,7 +479,7 @@ func (p *TxPool) OnNewBlock(ctx context.Context, stateChanges *remote.StateChang
 	if p.cfg.Optimism {
 		lastChangeBatch := stateChanges.ChangeBatch[len(stateChanges.ChangeBatch)-1]
 		if len(lastChangeBatch.Txs) > 0 {
-			l1CostFn, err := RawRLPTxToOptimismL1CostFn(lastChangeBatch.Txs[0])
+			l1CostFn, err := RawRLPTxToOptimismL1CostFn(lastChangeBatch.Txs[0], p.isRegolith(), p.isEcotone(), p.isFjord())
 			if err == nil {
 				p.l1Cost = l1CostFn
 			} else {
@@ -783,7 +814,7 @@ func (p *TxPool) best(n uint16, txs *types.TxsRlp, tx kv.Tx, onTopOf, availableG
 
 	best := p.pending.best
 
-	isShanghai := p.isShanghai() || p.isAgra()
+	isShanghai := p.isShanghai() || p.isAgra() || p.isCanyon()
 
 	txs.Resize(uint(cmp.Min(int(n), len(best.ms))))
 	var toRemove []*metaTx
@@ -1130,6 +1161,106 @@ func (p *TxPool) isCancun() bool {
 	activated := uint64(now) >= cancunTime
 	if activated {
 		p.isPostCancun.Swap(true)
+	}
+	return activated
+}
+
+func (p *TxPool) isRegolith() bool {
+	// once this flag has been set for the first time we no longer need to check the timestamp
+	set := p.isPostRegolith.Load()
+	if set {
+		return true
+	}
+	if p.regolithTime == nil {
+		return false
+	}
+	regolithTime := *p.regolithTime
+
+	// a zero here means Regolith is always active
+	if regolithTime == 0 {
+		p.isPostRegolith.Swap(true)
+		return true
+	}
+
+	now := time.Now().Unix()
+	activated := uint64(now) >= regolithTime
+	if activated {
+		p.isPostRegolith.Swap(true)
+	}
+	return activated
+}
+
+func (p *TxPool) isCanyon() bool {
+	// once this flag has been set for the first time we no longer need to check the timestamp
+	set := p.isPostCanyon.Load()
+	if set {
+		return true
+	}
+	if p.canyonTime == nil {
+		return false
+	}
+	canyonTime := *p.canyonTime
+
+	// a zero here means Canyon is always active
+	if canyonTime == 0 {
+		p.isPostCanyon.Swap(true)
+		return true
+	}
+
+	now := time.Now().Unix()
+	activated := uint64(now) >= canyonTime
+	if activated {
+		p.isPostCanyon.Swap(true)
+	}
+	return activated
+}
+
+func (p *TxPool) isEcotone() bool {
+	// once this flag has been set for the first time we no longer need to check the timestamp
+	set := p.isPostEcotone.Load()
+	if set {
+		return true
+	}
+	if p.ecotoneTime == nil {
+		return false
+	}
+	ecotoneTime := *p.ecotoneTime
+
+	// a zero here means Ecotone is always active
+	if ecotoneTime == 0 {
+		p.isPostEcotone.Swap(true)
+		return true
+	}
+
+	now := time.Now().Unix()
+	activated := uint64(now) >= ecotoneTime
+	if activated {
+		p.isPostEcotone.Swap(true)
+	}
+	return activated
+}
+
+func (p *TxPool) isFjord() bool {
+	// once this flag has been set for the first time we no longer need to check the timestamp
+	set := p.isPostFjord.Load()
+	if set {
+		return true
+	}
+	if p.fjordTime == nil {
+		return false
+	}
+	fjordTime := *p.fjordTime
+
+	// a zero here means Fjord is always active
+	if fjordTime == 0 {
+		p.isPostFjord.Swap(true)
+		return true
+	}
+
+	now := time.Now().Unix()
+	activated := uint64(now) >= fjordTime
+	if activated {
+		p.isPostFjord.Swap(true)
 	}
 	return activated
 }
