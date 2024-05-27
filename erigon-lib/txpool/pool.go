@@ -1176,7 +1176,7 @@ func (p *TxPool) isRegolith() bool {
 	}
 	regolithTime := *p.regolithTime
 
-	// a zero here means Cancun is always active
+	// a zero here means Regolith is always active
 	if regolithTime == 0 {
 		p.isPostRegolith.Swap(true)
 		return true
@@ -1201,7 +1201,7 @@ func (p *TxPool) isCanyon() bool {
 	}
 	canyonTime := *p.canyonTime
 
-	// a zero here means Cancun is always active
+	// a zero here means Canyon is always active
 	if canyonTime == 0 {
 		p.isPostCanyon.Swap(true)
 		return true
@@ -1226,7 +1226,7 @@ func (p *TxPool) isEcotone() bool {
 	}
 	ecotoneTime := *p.ecotoneTime
 
-	// a zero here means Cancun is always active
+	// a zero here means Ecotone is always active
 	if ecotoneTime == 0 {
 		p.isPostEcotone.Swap(true)
 		return true
@@ -1251,7 +1251,7 @@ func (p *TxPool) isFjord() bool {
 	}
 	fjordTime := *p.fjordTime
 
-	// a zero here means Cancun is always active
+	// a zero here means Fjord is always active
 	if fjordTime == 0 {
 		p.isPostFjord.Swap(true)
 		return true
