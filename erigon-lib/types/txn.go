@@ -36,6 +36,7 @@ import (
 	"github.com/ledgerwatch/erigon-lib/common/length"
 	"github.com/ledgerwatch/erigon-lib/common/u256"
 	"github.com/ledgerwatch/erigon-lib/crypto"
+	"github.com/ledgerwatch/erigon-lib/fastlz"
 	"github.com/ledgerwatch/erigon-lib/gointerfaces/types"
 	"github.com/ledgerwatch/erigon-lib/rlp"
 )
@@ -379,7 +380,7 @@ func (ctx *TxParseContext) parseTransactionBody(payload []byte, pos, p0 int, slo
 		}
 		{
 			// full tx contents count towards rollup data gas, not just tx data
-			var zeroes, ones uint64
+			var zeroes, ones, fastLzSize uint64
 			for _, byt := range payload {
 				if byt == 0 {
 					zeroes++
@@ -387,7 +388,8 @@ func (ctx *TxParseContext) parseTransactionBody(payload []byte, pos, p0 int, slo
 					ones++
 				}
 			}
-			slot.RollupCostData = RollupCostData{Zeroes: zeroes, Ones: ones}
+			fastLzSize = uint64(fastlz.FlzCompressLen(payload))
+			slot.RollupCostData = RollupCostData{Zeroes: zeroes, Ones: ones, FastLzSize: fastLzSize}
 		}
 		p = dataPos + dataLen
 
@@ -476,7 +478,7 @@ func (ctx *TxParseContext) parseTransactionBody(payload []byte, pos, p0 int, slo
 	}
 	{
 		// full tx contents count towards rollup data gas, not just tx data
-		var zeroes, ones uint64
+		var zeroes, ones, fastLzSize uint64
 		for _, byt := range payload {
 			if byt == 0 {
 				zeroes++
@@ -484,7 +486,8 @@ func (ctx *TxParseContext) parseTransactionBody(payload []byte, pos, p0 int, slo
 				ones++
 			}
 		}
-		slot.RollupCostData = RollupCostData{Zeroes: zeroes, Ones: ones}
+		fastLzSize = uint64(fastlz.FlzCompressLen(payload))
+		slot.RollupCostData = RollupCostData{Zeroes: zeroes, Ones: ones, FastLzSize: fastLzSize}
 	}
 
 	p = dataPos + dataLen
@@ -1076,9 +1079,10 @@ func (al AccessList) StorageKeys() int {
 }
 
 // RollupCostData is a transaction structure that caches data for quickly computing the data
-// availablility costs for the transaction.
+// availability costs for the transaction.
 type RollupCostData struct {
 	Zeroes, Ones uint64
+	FastLzSize   uint64
 }
 
 type L1CostFn func(tx *TxSlot) *uint256.Int
