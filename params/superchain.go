@@ -14,15 +14,12 @@ import (
 )
 
 const (
-	OPMainnetChainID        = 10
-	OPGoerliChainID         = 420
-	BaseMainnetChainID      = 8453
-	BaseGoerliChainID       = 84531
-	baseSepoliaChainID      = 84532
-	baseGoerliDevnetChainID = 11763071
-	pgnSepoliaChainID       = 58008
-	devnetChainID           = 997
-	chaosnetChainID         = 888
+	OPMainnetChainID   = 10
+	BaseMainnetChainID = 8453
+	baseSepoliaChainID = 84532
+	pgnSepoliaChainID  = 58008
+	devnetChainID      = 997
+	chaosnetChainID    = 888
 )
 
 // OP Stack chain config
@@ -58,8 +55,6 @@ func OPStackChainConfigByName(name string) *superchain.ChainConfig {
 func OPStackChainConfigByGenesisHash(genesisHash common.Hash) *superchain.ChainConfig {
 	if bytes.Equal(genesisHash.Bytes(), OPMainnetGenesisHash.Bytes()) {
 		return superchain.OPChains[OPMainnetChainID]
-	} else if bytes.Equal(genesisHash.Bytes(), OPGoerliGenesisHash.Bytes()) {
-		return superchain.OPChains[OPGoerliChainID]
 	}
 	for _, chainCfg := range superchain.OPChains {
 		if bytes.Equal(chainCfg.Genesis.L2.Hash[:], genesisHash.Bytes()) {
@@ -90,9 +85,9 @@ func ChainConfigByOpStackGenesisHash(genesisHash common.Hash) *chain.Config {
 // LoadSuperChainConfig loads superchain config from superchain registry for given chain, and builds erigon chain config.
 // This implementation is based on op-geth(https://github.com/ethereum-optimism/op-geth/blob/c7871bc4454ffc924eb128fa492975b30c9c46ad/params/superchain.go#L39)
 func LoadSuperChainConfig(opStackChainCfg *superchain.ChainConfig) *chain.Config {
-	superchainConfig, ok := superchain.Superchains[opStackChainCfg.Superchain]
+	chConfig, ok := superchain.OPChains[opStackChainCfg.ChainID]
 	if !ok {
-		panic("unknown superchain: " + opStackChainCfg.Superchain)
+		panic(fmt.Sprintf("LoadSuperChainConfig: unknown chain ID: %d", opStackChainCfg.ChainID))
 	}
 	out := &chain.Config{
 		ChainName:                     opStackChainCfg.Name,
@@ -118,6 +113,7 @@ func LoadSuperChainConfig(opStackChainCfg *superchain.ChainConfig) *chain.Config
 		RegolithTime:                  big.NewInt(0),
 		CanyonTime:                    nil,
 		EcotoneTime:                   nil,
+		FjordTime:                     nil,
 		TerminalTotalDifficulty:       common.Big0,
 		TerminalTotalDifficultyPassed: true,
 		Ethash:                        nil,
@@ -129,29 +125,20 @@ func LoadSuperChainConfig(opStackChainCfg *superchain.ChainConfig) *chain.Config
 		},
 	}
 
-	if superchainConfig.Config.CanyonTime != nil {
-		out.ShanghaiTime = new(big.Int).SetUint64(*superchainConfig.Config.CanyonTime) // Shanghai activates with Canyon
-		out.CanyonTime = new(big.Int).SetUint64(*superchainConfig.Config.CanyonTime)
+	if chConfig.CanyonTime != nil {
+		out.ShanghaiTime = new(big.Int).SetUint64(*chConfig.CanyonTime) // Shanghai activates with Canyon
+		out.CanyonTime = new(big.Int).SetUint64(*chConfig.CanyonTime)
 	}
-	if superchainConfig.Config.EcotoneTime != nil {
-		out.CancunTime = new(big.Int).SetUint64(*superchainConfig.Config.EcotoneTime) // CancunTime activates with Ecotone
-		out.EcotoneTime = new(big.Int).SetUint64(*superchainConfig.Config.EcotoneTime)
+	if chConfig.EcotoneTime != nil {
+		out.CancunTime = new(big.Int).SetUint64(*chConfig.EcotoneTime) // CancunTime activates with Ecotone
+		out.EcotoneTime = new(big.Int).SetUint64(*chConfig.EcotoneTime)
 	}
-
-	// note: no actual parameters are being loaded, yet.
-	// Future superchain upgrades are loaded from the superchain chConfig and applied to the geth ChainConfig here.
-	_ = superchainConfig.Config
+	if chConfig.FjordTime != nil {
+		out.FjordTime = new(big.Int).SetUint64(*chConfig.FjordTime)
+	}
 
 	// special overrides for OP-Stack chains with pre-Regolith upgrade history
 	switch opStackChainCfg.ChainID {
-	case OPGoerliChainID:
-		out.LondonBlock = big.NewInt(4061224)
-		out.ArrowGlacierBlock = big.NewInt(4061224)
-		out.GrayGlacierBlock = big.NewInt(4061224)
-		out.MergeNetsplitBlock = big.NewInt(4061224)
-		out.BedrockBlock = big.NewInt(4061224)
-		out.RegolithTime = OptimismGoerliRegolithTime
-		out.Optimism.EIP1559Elasticity = 10
 	case OPMainnetChainID:
 		out.BerlinBlock = big.NewInt(3950000)
 		out.LondonBlock = big.NewInt(105235063)
@@ -159,13 +146,8 @@ func LoadSuperChainConfig(opStackChainCfg *superchain.ChainConfig) *chain.Config
 		out.GrayGlacierBlock = big.NewInt(105235063)
 		out.MergeNetsplitBlock = big.NewInt(105235063)
 		out.BedrockBlock = big.NewInt(105235063)
-	case BaseGoerliChainID:
-		out.RegolithTime = BaseGoerliRegolithTime
-		out.Optimism.EIP1559Elasticity = 10
 	case baseSepoliaChainID:
 		out.Optimism.EIP1559Elasticity = 10
-	case baseGoerliDevnetChainID:
-		out.RegolithTime = baseGoerliDevnetRegolithTime
 	case pgnSepoliaChainID:
 		out.Optimism.EIP1559Elasticity = 2
 		out.Optimism.EIP1559Denominator = 8
