@@ -358,7 +358,7 @@ func l1CostPreEcotoneHelper(gasWithOverhead, l1BaseFee, scalar *uint256.Int) *ui
 func L1CostFnForTxPool(data []byte, isRegolith, isEcotone, isFjord bool) (types.L1CostFn, error) {
 	var costFunc l1CostFunc = nil
 
-	fmt.Println("WOW %t %t %t\n", isRegolith, isEcotone, isFjord)
+	// fmt.Println("WOW %t %t %t\n", isRegolith, isEcotone, isFjord)
 	if isEcotone && len(data) >= 4 && !bytes.Equal(data[0:4], BedrockL1AttributesSelector) {
 		l1BaseFee, l1BlobBaseFee, l1BaseFeeScalar, l1BlobBaseFeeScalar, err := extractL1InfoPostEcotone(data)
 		if err != nil {
@@ -380,7 +380,7 @@ func L1CostFnForTxPool(data []byte, isRegolith, isEcotone, isFjord bool) (types.
 			)
 		}
 	}
-	if costFunc != nil {
+	if costFunc == nil {
 		l1BaseFee, overhead, scalar, _, err := extractL1InfoPreEcotone(data)
 		if err != nil {
 			return nil, fmt.Errorf("L1CostFnForTxPool error: %w", err)
