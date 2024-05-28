@@ -378,7 +378,7 @@ func L1CostFnForTxPool(data []byte, isRegolith, isEcotone, isFjord bool) (types.
 			)
 		}
 	}
-	if costFunc != nil {
+	if costFunc == nil {
 		l1BaseFee, overhead, scalar, _, err := extractL1InfoPreEcotone(data)
 		if err != nil {
 			return nil, fmt.Errorf("L1CostFnForTxPool error: %w", err)
