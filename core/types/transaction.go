@@ -137,11 +137,16 @@ func (tm *TransactionMisc) computeRollupGas(tx interface {
 		return v.(types2.RollupCostData)
 	}
 	var c rollupGasCounter
-	err := tx.MarshalBinary(&c)
+	var buf bytes.Buffer
+	err := tx.MarshalBinary(&buf)
 	if err != nil { // Silent error, invalid txs will not be marshalled/unmarshalled for batch submission anyway.
 		log.Error("failed to encode tx for L1 cost computation", "err", err)
 	}
-	total := types2.RollupCostData{Zeroes: c.zeroes, Ones: c.ones}
+	_, err = c.Write(buf.Bytes())
+	if err != nil {
+		log.Error("failed to compute rollup cost data", "err", err)
+	}
+	total := types2.RollupCostData{Zeroes: c.zeroes, Ones: c.ones, FastLzSize: c.fastLzSize}
 	tm.rollupGas.Store(total)
 	return total
 }
