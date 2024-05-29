@@ -102,6 +102,10 @@ type Receipt struct {
 	// should be computed when set. The state transition process ensures this is only set for
 	// post-Canyon deposit transactions.
 	DepositReceiptVersion *uint64 `json:"depositReceiptVersion,omitempty"`
+
+	L1BlobBaseFee       *big.Int   `json:"l1BlobBaseFee,omitempty"`       // Always nil prior to the Ecotone hardfork
+	L1BaseFeeScalar     *uint64    `json:"l1BaseFeeScalar,omitempty"`     // Always nil prior to the Ecotone hardfork
+	L1BlobBaseFeeScalar *uint64    `json:"l1BlobBaseFeeScalar,omitempty"` // Always nil prior to the Ecotone hardfork
 }
 
 type receiptMarshaling struct {
@@ -115,9 +119,12 @@ type receiptMarshaling struct {
 
 	// Optimism
 	L1GasPrice            *hexutil.Big
+	L1BlobBaseFee         *hexutil.Big
 	L1GasUsed             *hexutil.Big
 	L1Fee                 *hexutil.Big
 	FeeScalar             *big.Float
+	L1BaseFeeScalar       *hexutil.Uint64
+	L1BlobBaseFeeScalar   *hexutil.Uint64
 	DepositNonce          *hexutil.Uint64
 	DepositReceiptVersion *hexutil.Uint64
 }
@@ -642,7 +649,18 @@ func (r Receipts) DeriveFields(config *chain.Config, hash libcommon.Hash, number
 			if gasParams.FeeScalar != nil {
 				r[i].FeeScalar = gasParams.FeeScalar
 			}
+			r[i].L1BlobBaseFee = gasParams.L1BlobBaseFee.ToBig()
+			r[i].L1BaseFeeScalar = u32ptrTou64ptr(gasParams.L1BaseFeeScalar)
+			r[i].L1BlobBaseFeeScalar = u32ptrTou64ptr(gasParams.L1BlobBaseFeeScalar)
 		}
 	}
 	return nil
+}
+
+func u32ptrTou64ptr(a *uint32) *uint64 {
+	if a == nil {
+		return nil
+	}
+	b := uint64(*a)
+	return &b
 }
