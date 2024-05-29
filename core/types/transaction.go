@@ -141,7 +141,7 @@ func (tm *TransactionMisc) computeRollupGas(tx interface {
 	if err != nil { // Silent error, invalid txs will not be marshalled/unmarshalled for batch submission anyway.
 		log.Error("failed to encode tx for L1 cost computation", "err", err)
 	}
-	total := types2.RollupCostData{Zeroes: c.zeroes, Ones: c.ones}
+	total := types2.RollupCostData{Zeroes: c.zeroes, Ones: c.ones, FastLzSize: c.fastLzSize}
 	tm.rollupGas.Store(total)
 	return total
 }
