@@ -129,6 +129,7 @@ var DefaultFlags = []cli.Flag{
 	&utils.GpoIgnoreGasPriceFlag,
 	&utils.GpoMinSuggestedPriorityFeeFlag,
 	&utils.InsecureUnlockAllowedFlag,
+	&utils.HistoryV3Flag,
 	&utils.IdentityFlag,
 	&utils.CliqueSnapshotCheckpointIntervalFlag,
 	&utils.CliqueSnapshotInmemorySnapshotsFlag,
