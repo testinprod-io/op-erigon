@@ -51,7 +51,7 @@ func TestEstimateGas(t *testing.T) {
 	if _, err := api.EstimateGas(context.Background(), &ethapi.CallArgs{
 		From: &from,
 		To:   &to,
-	}, nil); err != nil {
+	}); err != nil {
 		t.Errorf("calling EstimateGas: %v", err)
 	}
 }
