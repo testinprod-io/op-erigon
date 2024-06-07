@@ -51,7 +51,7 @@ func TestEstimateGas(t *testing.T) {
 	if _, err := api.EstimateGas(context.Background(), &ethapi.CallArgs{
 		From: &from,
 		To:   &to,
-	}, nil); err != nil {
+	}); err != nil {
 		t.Errorf("calling EstimateGas: %v", err)
 	}
 }
@@ -103,8 +103,7 @@ func TestEstimateGasHistoricalRPC(t *testing.T) {
 				api.historicalRPCService = historicalRPCService
 				s.UpdatePayload(tt.payload)
 			}
-			bn := rpc.BlockNumberOrHashWithNumber(0)
-			val, err := api.EstimateGas(m.Ctx, &ethapi2.CallArgs{}, &bn)
+			val, err := api.EstimateGas(m.Ctx, &ethapi2.CallArgs{})
 			if tt.isError {
 				require.Error(t, err, tt.caseName)
 				require.Equal(t, tt.expected, fmt.Sprintf("%v", err), tt.caseName)
