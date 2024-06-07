@@ -675,6 +675,7 @@ func (srv *Server) setupDiscovery(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+		srv.discmix.AddSource(srv.DiscV5.RandomNodes())
 	}
 	return nil
 }
