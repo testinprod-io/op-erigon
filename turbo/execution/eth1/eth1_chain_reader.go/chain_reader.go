@@ -31,6 +31,10 @@ type ChainReaderWriterEth1 struct {
 }
 
 func NewChainReaderEth1(cfg *chain.Config, executionModule execution.ExecutionClient, fcuTimeoutMillis uint64) ChainReaderWriterEth1 {
+	if cfg.IsOptimism() {
+		// op-node cannot handle async fcu. So increase timeout to 5s(op-node FCU timeout)
+		fcuTimeoutMillis = 5000
+	}
 	return ChainReaderWriterEth1{
 		cfg:              cfg,
 		executionModule:  executionModule,
