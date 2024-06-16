@@ -166,7 +166,6 @@ func (r *ReusableCaller) DoCallWithNewGas(
 
 	gp := new(core.GasPool).AddGas(r.message.Gas()).AddBlobGas(r.message.BlobGas())
 
-	log.Warn("2EVM: ", "no base fee", r.evm.Config().NoBaseFee)
 	result, err := core.ApplyMessage(r.evm, r.message, gp, true /* refunds */, false /* gasBailout */)
 	if err != nil {
 		return nil, err
@@ -220,7 +219,6 @@ func NewReusableCaller(
 	txCtx := core.NewEVMTxContext(msg)
 
 	evm := vm.NewEVM(blockCtx, txCtx, ibs, chainConfig, vm.Config{NoBaseFee: true})
-	log.Warn("EVM: ", "no base fee", evm.Config().NoBaseFee)
 	return &ReusableCaller{
 		evm:             evm,
 		intraBlockState: ibs,
