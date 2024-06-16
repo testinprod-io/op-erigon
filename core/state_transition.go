@@ -188,6 +188,7 @@ func NewStateTransition(evm *vm.EVM, msg Message, gp *GasPool) *StateTransition 
 // `gasBailout` is true when it is not required to fail transaction if the balance is not enough to pay gas.
 // for trace_call to replicate OE/Parity behaviour
 func ApplyMessage(evm *vm.EVM, msg Message, gp *GasPool, refunds bool, gasBailout bool) (*ExecutionResult, error) {
+	log.Warn("7EVM: ", "no base fee", evm.Config().NoBaseFee)
 	return NewStateTransition(evm, msg, gp).TransitionDb(refunds, gasBailout)
 }
 
@@ -200,6 +201,7 @@ func (st *StateTransition) to() libcommon.Address {
 }
 
 func (st *StateTransition) buyGas(gasBailout bool) error {
+	log.Warn("3EVM: ", "no base fee", st.evm.Config().NoBaseFee)
 	gasVal := st.sharedBuyGas
 	gasVal.SetUint64(st.msg.Gas())
 	gasVal, overflow := gasVal.MulOverflow(gasVal, st.gasPrice)
@@ -295,6 +297,7 @@ func CheckEip1559TxGasFeeCap(from libcommon.Address, gasFeeCap, tip, baseFee *ui
 
 // DESCRIBED: docs/programmers_guide/guide.md#nonce
 func (st *StateTransition) preCheck(gasBailout bool) error {
+	log.Warn("4EVM: ", "no base fee", st.evm.Config().NoBaseFee)
 	if st.msg.IsDepositTx() {
 		// Check clause 6: caller has enough balance to cover asset transfer for **topmost** call
 		// buyGas method originally handled balance check, but deposit tx does not use it
@@ -393,6 +396,7 @@ func (st *StateTransition) preCheck(gasBailout bool) error {
 // However if any consensus issue encountered, return the error directly with
 // nil evm execution result.
 func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*ExecutionResult, error) {
+	log.Warn("6EVM: ", "no base fee", st.evm.Config().NoBaseFee)
 	if mint := st.msg.Mint(); mint != nil {
 		st.state.AddBalance(st.msg.From(), mint)
 	}
@@ -425,6 +429,7 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*Executi
 }
 
 func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*ExecutionResult, error) {
+	log.Warn("5EVM: ", "no base fee", st.evm.Config().NoBaseFee)
 	coinbase := st.evm.Context.Coinbase
 	var input1 *uint256.Int
 	var input2 *uint256.Int

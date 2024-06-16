@@ -260,6 +260,7 @@ func (api *APIImpl) EstimateGas(ctx context.Context, argsOrNil *ethapi2.CallArgs
 		return 0, err
 	}
 
+	log.Warn("HIHIHIHI")
 	// Create a helper to check if a gas allowance results in an executable transaction
 	executable := func(gas uint64) (bool, *core.ExecutionResult, error) {
 		result, err := caller.DoCallWithNewGas(ctx, gas)
