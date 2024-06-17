@@ -97,6 +97,7 @@ linters-settings:
       - fieldalignment
       - shadow
       - unsafeptr
+      - copylocks #TODO: [https://github.com/testinprod-io/op-erigon/issues/117] enable me after https://github.com/ledgerwatch/erigon/pull/9977 is merged
   goconst:
     min-len: 2
     min-occurrences: 2
