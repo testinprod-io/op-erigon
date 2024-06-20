@@ -39,7 +39,11 @@ Optimistic Erigon is still under development. Please note that some features are
 - Our Otterscan (block explorer) uses our public RPC
   - [https://otterscan.mainnet.testinprod.io](https://otterscan.mainnet.testinprod.io)
   - [https://otterscan.sepolia.testinprod.io](https://otterscan.sepolia.testinprod.io)
- 
+
+### Node Snapshots
+
+We provide node snapshots at https://snapshot.testinprod.io. You can download the node snapshots(chaindata) by using the endpoints provided. Note that the keyword **snapshot** is different with the erigon's snapshot feature. Node snapshot is distributed in the compressed form using zstd compression.
+
 ## Getting started with Optimism
 To build from the code, you can use the same command described below(`make erigon`)
 
