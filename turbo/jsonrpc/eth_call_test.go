@@ -19,6 +19,8 @@ import (
 	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon-lib/kv/kvcache"
 
+	"github.com/ledgerwatch/log/v3"
+
 	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/rpcdaemontest"
 	"github.com/ledgerwatch/erigon/common/math"
 	"github.com/ledgerwatch/erigon/core"
@@ -35,7 +37,6 @@ import (
 	"github.com/ledgerwatch/erigon/turbo/rpchelper"
 	"github.com/ledgerwatch/erigon/turbo/stages/mock"
 	"github.com/ledgerwatch/erigon/turbo/trie"
-	"github.com/ledgerwatch/log/v3"
 )
 
 func TestEstimateGas(t *testing.T) {
@@ -45,20 +46,20 @@ func TestEstimateGas(t *testing.T) {
 	ctx, conn := rpcdaemontest.CreateTestGrpcConn(t, mock.Mock(t))
 	mining := txpool.NewMiningClient(conn)
 	ff := rpchelper.New(ctx, nil, nil, mining, func() {}, m.Log)
-	api := NewEthAPI(NewBaseApi(ff, stateCache, m.BlockReader, agg, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs, nil, nil), m.DB, nil, nil, nil, 5000000, 100_000, false, 100_000, 128, log.New())
+	api := NewEthAPI(NewBaseApi(ff, stateCache, m.BlockReader, agg, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs, nil, nil), m.DB, nil, nil, nil, 5000000, 1e18, 100_000, false, 100_000, 128, log.New())
 	var from = libcommon.HexToAddress("0x71562b71999873db5b286df957af199ec94617f7")
 	var to = libcommon.HexToAddress("0x0d3ab14bbad3d99f4203bd7a11acb94882050e7e")
 	if _, err := api.EstimateGas(context.Background(), &ethapi.CallArgs{
 		From: &from,
 		To:   &to,
-	}); err != nil {
+	}, nil); err != nil {
 		t.Errorf("calling EstimateGas: %v", err)
 	}
 }
 
 func TestEstimateGasHistoricalRPC(t *testing.T) {
 	m, _, _ := rpcdaemontest.CreateOptimismTestSentry(t)
-	api := NewEthAPI(newBaseApiForTest(m), m.DB, nil, nil, nil, 5000000, 100_000, false, 100_000, 128, log.New())
+	api := NewEthAPI(newBaseApiForTest(m), m.DB, nil, nil, nil, 5000000, 1e18, 100_000, false, 100_000, 128, log.New())
 
 	table := []struct {
 		caseName  string
@@ -103,7 +104,7 @@ func TestEstimateGasHistoricalRPC(t *testing.T) {
 				api.historicalRPCService = historicalRPCService
 				s.UpdatePayload(tt.payload)
 			}
-			val, err := api.EstimateGas(m.Ctx, &ethapi2.CallArgs{})
+			val, err := api.EstimateGas(m.Ctx, &ethapi2.CallArgs{}, nil)
 			if tt.isError {
 				require.Error(t, err, tt.caseName)
 				require.Equal(t, tt.expected, fmt.Sprintf("%v", err), tt.caseName)
@@ -119,7 +120,7 @@ func TestEthCallNonCanonical(t *testing.T) {
 	m, _, _ := rpcdaemontest.CreateTestSentry(t)
 	agg := m.HistoryV3Components()
 	stateCache := kvcache.New(kvcache.DefaultCoherentConfig)
-	api := NewEthAPI(NewBaseApi(nil, stateCache, m.BlockReader, agg, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs, nil, nil), m.DB, nil, nil, nil, 5000000, 100_000, false, 100_000, 128, log.New())
+	api := NewEthAPI(NewBaseApi(nil, stateCache, m.BlockReader, agg, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs, nil, nil), m.DB, nil, nil, nil, 5000000, 1e18, 100_000, false, 100_000, 128, log.New())
 	var from = libcommon.HexToAddress("0x71562b71999873db5b286df957af199ec94617f7")
 	var to = libcommon.HexToAddress("0x0d3ab14bbad3d99f4203bd7a11acb94882050e7e")
 	if _, err := api.Call(context.Background(), ethapi.CallArgs{
@@ -138,7 +139,7 @@ func TestEthCallToPrunedBlock(t *testing.T) {
 
 	m, bankAddress, contractAddress := chainWithDeployedContract(t)
 	doPrune(t, m.DB, pruneTo)
-	api := NewEthAPI(newBaseApiForTest(m), m.DB, nil, nil, nil, 5000000, 100_000, false, 100_000, 128, log.New())
+	api := NewEthAPI(newBaseApiForTest(m), m.DB, nil, nil, nil, 5000000, 1e18, 100_000, false, 100_000, 128, log.New())
 
 	callData := hexutil.MustDecode("0x2e64cec1")
 	callDataBytes := hexutility.Bytes(callData)
@@ -159,7 +160,7 @@ func TestGetProof(t *testing.T) {
 	if m.HistoryV3 {
 		t.Skip("not supported by Erigon3")
 	}
-	api := NewEthAPI(newBaseApiForTest(m), m.DB, nil, nil, nil, 5000000, 100_000, false, maxGetProofRewindBlockCount, 128, log.New())
+	api := NewEthAPI(newBaseApiForTest(m), m.DB, nil, nil, nil, 5000000, 1e18, 100_000, false, maxGetProofRewindBlockCount, 128, log.New())
 
 	key := func(b byte) libcommon.Hash {
 		result := libcommon.Hash{}
@@ -282,7 +283,7 @@ func TestGetProofHistoricalRPC(t *testing.T) {
 	if m.HistoryV3 {
 		t.Skip("not supported by Erigon3")
 	}
-	api := NewEthAPI(newBaseApiForTest(m), m.DB, nil, nil, nil, 5000000, 100_000, false, 100_000, 128, log.New())
+	api := NewEthAPI(newBaseApiForTest(m), m.DB, nil, nil, nil, 5000000, 1e18, 100_000, false, 100_000, 128, log.New())
 
 	table := []struct {
 		caseName  string

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ledgerwatch/erigon/eth/ethconfig"
 	"math/big"
 
 	"github.com/ledgerwatch/erigon-lib/common"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/ledgerwatch/erigon-lib/common/hexutil"
 	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/eth/ethconfig"
 	"github.com/ledgerwatch/erigon/params"
 )
 
@@ -21,6 +21,15 @@ func (api *APIImpl) SendRawTransaction(ctx context.Context, encodedTx hexutility
 	txn, err := types.DecodeWrappedTransaction(encodedTx)
 	if err != nil {
 		return common.Hash{}, err
+	}
+
+	// If the transaction fee cap is already specified, ensure the
+	// fee of the given transaction is _reasonable_.
+	if err := checkTxFee(txn.GetPrice().ToBig(), txn.GetGas(), api.FeeCap); err != nil {
+		return common.Hash{}, err
+	}
+	if !txn.Protected() && !api.AllowUnprotectedTxs {
+		return common.Hash{}, errors.New("only replay-protected (EIP-155) transactions allowed over RPC")
 	}
 
 	// this has been moved to prior to adding of transactions to capture the
