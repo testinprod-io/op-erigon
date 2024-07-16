@@ -18,10 +18,6 @@ import (
 func convertDataToStringP(abstractMap map[string]interface{}, field string) *string {
 	var result string
 
-	if reflect.ValueOf(abstractMap[field]).IsZero() {
-		return nil
-	}
-
 	switch v := abstractMap[field].(type) {
 	case int64:
 		result = strconv.FormatInt(v, 10)
