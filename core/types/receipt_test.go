@@ -273,7 +273,7 @@ func diffDerivedFields(t *testing.T, receipts, derivedReceipts Receipts) {
 		require.EqualValuesf(t, receipts[i].BlockHash, derivedReceipts[i].BlockHash, "receipts[%d].BlockHash", i)
 		require.EqualValuesf(t, receipts[i].BlockNumber, derivedReceipts[i].BlockNumber, "receipts[%d].BlockNumber", i)
 		require.EqualValuesf(t, receipts[i].TransactionIndex, derivedReceipts[i].TransactionIndex, "receipts[%d].TransactionIndex", i)
-		// require.EqualValuesf(t, receipts[i].ContractAddress, derivedReceipts[i].ContractAddress, "receipts[%d].ContractAddress", i)
+		require.EqualValuesf(t, receipts[i].ContractAddress, derivedReceipts[i].ContractAddress, "receipts[%d].ContractAddress", i)
 		require.EqualValuesf(t, receipts[i].GasUsed, derivedReceipts[i].GasUsed, "receipts[%d].GasUsed", i)
 
 		require.EqualValuesf(t, len(receipts[i].Logs), len(derivedReceipts[i].Logs), "receipts[%d].Logs", i)
@@ -375,7 +375,7 @@ func TestDeriveFields(t *testing.T) {
 				{Address: libcommon.BytesToAddress([]byte{0x02, 0x22}), BlockNumber: blockNumber.Uint64(), BlockHash: blockHash, TxHash: txs[1].Hash(), TxIndex: 1, Index: 3},
 			},
 			TxHash:           txs[1].Hash(),
-			ContractAddress:  libcommon.BytesToAddress([]byte{0x02, 0x22, 0x22}),
+			ContractAddress:  libcommon.BytesToAddress(nil),
 			GasUsed:          2,
 			BlockHash:        blockHash,
 			BlockNumber:      blockNumber,
@@ -390,7 +390,7 @@ func TestDeriveFields(t *testing.T) {
 				{Address: libcommon.BytesToAddress([]byte{0x03, 0x33}), BlockNumber: blockNumber.Uint64(), BlockHash: blockHash, TxHash: txs[2].Hash(), TxIndex: 2, Index: 5},
 			},
 			TxHash:           txs[2].Hash(),
-			ContractAddress:  libcommon.BytesToAddress([]byte{0x03, 0x33, 0x33}),
+			ContractAddress:  libcommon.BytesToAddress(nil),
 			GasUsed:          3,
 			BlockHash:        blockHash,
 			BlockNumber:      blockNumber,
