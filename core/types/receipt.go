@@ -646,9 +646,7 @@ func (r Receipts) DeriveFields(config *chain.Config, hash libcommon.Hash, number
 			l1Fee, l1GasUsed := gasParams.CostFunc(txs[i].RollupCostData())
 			r[i].L1Fee = l1Fee.ToBig()
 			r[i].L1GasUsed = l1GasUsed.ToBig()
-			if gasParams.FeeScalar != nil {
-				r[i].FeeScalar = gasParams.FeeScalar
-			}
+			r[i].FeeScalar = gasParams.FeeScalar
 			r[i].L1BlobBaseFee = gasParams.L1BlobBaseFee.ToBig()
 			r[i].L1BaseFeeScalar = u32ptrTou64ptr(gasParams.L1BaseFeeScalar)
 			r[i].L1BlobBaseFeeScalar = u32ptrTou64ptr(gasParams.L1BlobBaseFeeScalar)
