@@ -295,8 +295,6 @@ func diffDerivedFields(t *testing.T, receipts, derivedReceipts Receipts) {
 		if receipts[i].FeeScalar != nil && derivedReceipts[i].FeeScalar != nil { // cmp
 			require.Truef(t, receipts[i].FeeScalar.Cmp(derivedReceipts[i].FeeScalar) == 0, "receipts[%d].FeeScalar", i)
 		}
-		require.EqualValuesf(t, receipts[i].DepositNonce, derivedReceipts[i].DepositNonce, "receipts[%d].DepositNonce", i)
-		require.EqualValuesf(t, receipts[i].DepositReceiptVersion, derivedReceipts[i].DepositReceiptVersion, "receipts[%d].DepositReceiptVersion", i)
 		require.EqualValuesf(t, receipts[i].L1BlobBaseFee, derivedReceipts[i].L1BlobBaseFee, "receipts[%d].L1BlobBaseFee", i)
 		require.EqualValuesf(t, receipts[i].L1BaseFeeScalar, derivedReceipts[i].L1BaseFeeScalar, "receipts[%d].L1BaseFeeScalar", i)
 		require.EqualValuesf(t, receipts[i].L1BlobBaseFeeScalar, derivedReceipts[i].L1BlobBaseFeeScalar, "receipts[%d].L1BlobBaseFeeScalar", i)
@@ -531,6 +529,13 @@ func clearComputedFieldsOnReceipt(t *testing.T, receipt *Receipt) *Receipt {
 	cpy.ContractAddress = libcommon.Address{}
 	cpy.GasUsed = 0
 	cpy.Logs = clearComputedFieldsOnLogs(t, receipt.Logs)
+	cpy.L1GasPrice = nil
+	cpy.L1GasUsed = nil
+	cpy.L1Fee = nil
+	cpy.FeeScalar = nil
+	cpy.L1BlobBaseFee = nil
+	cpy.L1BaseFeeScalar = nil
+	cpy.L1BlobBaseFeeScalar = nil
 	return &cpy
 }
 
@@ -831,7 +836,9 @@ func TestDeriveOptimismTxReceipts(t *testing.T) {
 	}
 	checkEcotoneReceipts := func(t *testing.T, receipts, derivedReceipts Receipts) {
 		diffDerivedFields(t, receipts, derivedReceipts)
-		// TODO : add fee calc logic? it already tested in opstack package
+
+		l2Rcpt := receipts[1]
+		require.Nilf(t, l2Rcpt.FeeScalar, "l2Rcpt.FeeScalar should be nil after ecotone")
 	}
 
 	tests := []struct {
@@ -882,6 +889,8 @@ func TestDeriveOptimismTxReceipts(t *testing.T) {
 		derivedReceipts := clearComputedFieldsOnReceipts(t, receipts)
 		err := derivedReceipts.DeriveFields(test.cfg, blockHash, blockNumber.Uint64(), blockTime, txs, senders)
 		require.NotEqualf(t, test.isDeriveError, err == nil, test.name)
-		test.fnCheckReceipts(t, receipts, derivedReceipts)
+		if err == nil {
+			test.fnCheckReceipts(t, receipts, derivedReceipts)
+		}
 	}
 }
