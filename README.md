@@ -163,6 +163,8 @@ By default, op-node and op-erigon work together to derive every L2 block from th
 Instead, you can use `execution-layer` syncmode on op-node to download L2 blocks from the peers in the network. 
 This will allow op-erigon to download and execute large number of blocks at once, resulting in a shorter sync time. 
 
+Refer to [Optimism's guide for execution layer syncing here](https://docs.optimism.io/builders/node-operators/management/snap-sync#enabling-execution-layer-sync-for-alternative-clients).
+
 To enable execution layer syncing, set the following flags on op-node
 ```bash
     --syncmode=execution-layer \ 
