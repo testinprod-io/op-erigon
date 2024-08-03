@@ -1,18 +1,18 @@
-/*
-   Copyright 2022 The Erigon contributors
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
+// Copyright 2022 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
 
 package state
 
@@ -20,64 +20,30 @@ import (
 	"math/bits"
 
 	"github.com/holiman/uint256"
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/length"
-	"github.com/ledgerwatch/erigon-lib/metrics"
+
+	"github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/length"
+	"github.com/erigontech/erigon-lib/kv"
 )
 
-// StepsInBiggestFile - files of this size are completely frozen/immutable.
-// files of smaller size are also immutable, but can be removed after merge to bigger files.
-const StepsInBiggestFile = 32
-
-var (
-	mxCurrentTx                = metrics.GetOrCreateGauge("domain_tx_processed")                 //nolint
-	mxCurrentBlock             = metrics.GetOrCreateGauge("domain_block_current")                //nolint
-	mxRunningMerges            = metrics.GetOrCreateGauge("domain_running_merges")               //nolint
-	mxRunningCollations        = metrics.GetOrCreateGauge("domain_running_collations")           //nolint
-	mxCollateTook              = metrics.GetOrCreateHistogram("domain_collate_took")             //nolint
-	mxPruneTook                = metrics.GetOrCreateHistogram("domain_prune_took")               //nolint
-	mxPruneHistTook            = metrics.GetOrCreateHistogram("domain_prune_hist_took")          //nolint
-	mxPruningProgress          = metrics.GetOrCreateGauge("domain_pruning_progress")             //nolint
-	mxCollationSize            = metrics.GetOrCreateGauge("domain_collation_size")               //nolint
-	mxCollationSizeHist        = metrics.GetOrCreateGauge("domain_collation_hist_size")          //nolint
-	mxPruneSize                = metrics.GetOrCreateCounter("domain_prune_size")                 //nolint
-	mxBuildTook                = metrics.GetOrCreateSummary("domain_build_files_took")           //nolint
-	mxStepCurrent              = metrics.GetOrCreateGauge("domain_step_current")                 //nolint
-	mxStepTook                 = metrics.GetOrCreateHistogram("domain_step_took")                //nolint
-	mxCommitmentKeys           = metrics.GetOrCreateCounter("domain_commitment_keys")            //nolint
-	mxCommitmentRunning        = metrics.GetOrCreateGauge("domain_running_commitment")           //nolint
-	mxCommitmentTook           = metrics.GetOrCreateSummary("domain_commitment_took")            //nolint
-	mxCommitmentWriteTook      = metrics.GetOrCreateHistogram("domain_commitment_write_took")    //nolint
-	mxCommitmentUpdates        = metrics.GetOrCreateCounter("domain_commitment_updates")         //nolint
-	mxCommitmentUpdatesApplied = metrics.GetOrCreateCounter("domain_commitment_updates_applied") //nolint
-)
-
-type SelectedStaticFiles struct {
-	accounts       []*filesItem
-	accountsIdx    []*filesItem
-	accountsHist   []*filesItem
-	storage        []*filesItem
-	storageIdx     []*filesItem
-	storageHist    []*filesItem
-	code           []*filesItem
-	codeIdx        []*filesItem
-	codeHist       []*filesItem
-	commitment     []*filesItem
-	commitmentIdx  []*filesItem
-	commitmentHist []*filesItem
-	codeI          int //nolint
-	storageI       int //nolint
-	accountsI      int //nolint
-	commitmentI    int //nolint
+type SelectedStaticFilesV3 struct {
+	d          [kv.DomainLen][]*filesItem
+	dHist      [kv.DomainLen][]*filesItem
+	dIdx       [kv.DomainLen][]*filesItem
+	ii         [kv.StandaloneIdxLen][]*filesItem
+	appendable [kv.AppendableLen][]*filesItem
 }
 
-func (sf SelectedStaticFiles) Close() {
-	for _, group := range [][]*filesItem{
-		sf.accounts, sf.accountsIdx, sf.accountsHist,
-		sf.storage, sf.storageIdx, sf.storageHist,
-		sf.code, sf.codeIdx, sf.codeHist,
-		sf.commitment, sf.commitmentIdx, sf.commitmentHist,
-	} {
+func (sf SelectedStaticFilesV3) Close() {
+	clist := make([][]*filesItem, 0, int(kv.DomainLen)+int(kv.StandaloneIdxLen))
+	for id := range sf.d {
+		clist = append(clist, sf.d[id], sf.dIdx[id], sf.dHist[id])
+	}
+
+	for _, i := range sf.ii {
+		clist = append(clist, i)
+	}
+	for _, group := range clist {
 		for _, item := range group {
 			if item != nil {
 				if item.decompressor != nil {
@@ -86,42 +52,108 @@ func (sf SelectedStaticFiles) Close() {
 				if item.index != nil {
 					item.index.Close()
 				}
-				if item.bindex != nil {
-					item.bindex.Close()
-				}
+			}
+		}
+	}
+}
+
+func (ac *AggregatorRoTx) staticFilesInRange(r RangesV3) (sf SelectedStaticFilesV3, err error) {
+	for id := range ac.d {
+		if !r.domain[id].any() {
+			continue
+		}
+		sf.d[id], sf.dIdx[id], sf.dHist[id] = ac.d[id].staticFilesInRange(r.domain[id])
+	}
+	for id, rng := range r.invertedIndex {
+		if rng == nil || !rng.needMerge {
+			continue
+		}
+		sf.ii[id] = ac.iis[id].staticFilesInRange(rng.from, rng.to)
+	}
+	for id, rng := range r.appendable {
+		if rng == nil || !rng.needMerge {
+			continue
+		}
+		sf.appendable[id] = ac.appendable[id].staticFilesInRange(rng.from, rng.to)
+	}
+	return sf, err
+}
+
+type MergedFilesV3 struct {
+	d          [kv.DomainLen]*filesItem
+	dHist      [kv.DomainLen]*filesItem
+	dIdx       [kv.DomainLen]*filesItem
+	iis        [kv.StandaloneIdxLen]*filesItem
+	appendable [kv.AppendableLen]*filesItem
+}
+
+func (mf MergedFilesV3) FrozenList() (frozen []string) {
+	for id, d := range mf.d {
+		if d == nil {
+			continue
+		}
+		frozen = append(frozen, d.decompressor.FileName())
+
+		if mf.dHist[id] != nil && mf.dHist[id].frozen {
+			frozen = append(frozen, mf.dHist[id].decompressor.FileName())
+		}
+		if mf.dIdx[id] != nil && mf.dIdx[id].frozen {
+			frozen = append(frozen, mf.dIdx[id].decompressor.FileName())
+		}
+	}
+
+	for _, ii := range mf.iis {
+		if ii != nil && ii.frozen {
+			frozen = append(frozen, ii.decompressor.FileName())
+		}
+	}
+	return frozen
+}
+func (mf MergedFilesV3) Close() {
+	clist := make([]*filesItem, 0, kv.DomainLen+4)
+	for id := range mf.d {
+		clist = append(clist, mf.d[id], mf.dHist[id], mf.dIdx[id])
+	}
+	clist = append(clist, mf.iis[:]...)
+
+	for _, item := range clist {
+		if item != nil {
+			if item.decompressor != nil {
+				item.decompressor.Close()
+			}
+			if item.index != nil {
+				item.index.Close()
 			}
 		}
 	}
 }
 
 type MergedFiles struct {
-	accounts                      *filesItem
-	accountsIdx, accountsHist     *filesItem
-	storage                       *filesItem
-	storageIdx, storageHist       *filesItem
-	code                          *filesItem
-	codeIdx, codeHist             *filesItem
-	commitment                    *filesItem
-	commitmentIdx, commitmentHist *filesItem
+	d     [kv.DomainLen]*filesItem
+	dHist [kv.DomainLen]*filesItem
+	dIdx  [kv.DomainLen]*filesItem
+}
+
+func (mf MergedFiles) FillV3(m *MergedFilesV3) MergedFiles {
+	for id := range m.d {
+		mf.d[id], mf.dHist[id], mf.dIdx[id] = m.d[id], m.dHist[id], m.dIdx[id]
+	}
+	return mf
 }
 
 func (mf MergedFiles) Close() {
-	for _, item := range []*filesItem{
-		mf.accounts, mf.accountsIdx, mf.accountsHist,
-		mf.storage, mf.storageIdx, mf.storageHist,
-		mf.code, mf.codeIdx, mf.codeHist,
-		mf.commitment, mf.commitmentIdx, mf.commitmentHist,
-		//mf.logAddrs, mf.logTopics, mf.tracesFrom, mf.tracesTo,
-	} {
-		if item != nil {
-			if item.decompressor != nil {
-				item.decompressor.Close()
-			}
-			if item.decompressor != nil {
-				item.index.Close()
-			}
-			if item.bindex != nil {
-				item.bindex.Close()
+	for id := range mf.d {
+		for _, item := range []*filesItem{mf.d[id], mf.dHist[id], mf.dIdx[id]} {
+			if item != nil {
+				if item.decompressor != nil {
+					item.decompressor.Close()
+				}
+				if item.decompressor != nil {
+					item.index.Close()
+				}
+				if item.bindex != nil {
+					item.bindex.Close()
+				}
 			}
 		}
 	}

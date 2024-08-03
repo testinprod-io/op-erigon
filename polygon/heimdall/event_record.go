@@ -1,3 +1,19 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package heimdall
 
 import (
@@ -7,10 +23,10 @@ import (
 	"math/big"
 	"time"
 
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/hexutility"
-	"github.com/ledgerwatch/erigon/accounts/abi"
-	"github.com/ledgerwatch/erigon/rlp"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/hexutility"
+	"github.com/erigontech/erigon/accounts/abi"
+	"github.com/erigontech/erigon/rlp"
 )
 
 // EventRecord represents state record
@@ -30,7 +46,7 @@ type EventRecordWithTime struct {
 
 var ErrEventRecordNotFound = fmt.Errorf("event record not found")
 
-// String returns the string representatin of a state record
+// String returns the string representation of a state record
 func (e *EventRecordWithTime) String() string {
 	return fmt.Sprintf(
 		"id %v, contract %v, data: %v, txHash: %v, logIndex: %v, chainId: %v, time %s",
@@ -53,6 +69,21 @@ func (e *EventRecordWithTime) BuildEventRecord() *EventRecord {
 		LogIndex: e.LogIndex,
 		ChainID:  e.ChainID,
 	}
+}
+
+func (e *EventRecordWithTime) Pack(stateContract abi.ABI) (rlp.RawValue, error) {
+	eventRecordWithoutTime := e.BuildEventRecord()
+	recordBytes, err := rlp.EncodeToBytes(eventRecordWithoutTime)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := stateContract.Pack("commitState", big.NewInt(e.Time.Unix()), recordBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }
 
 func UnpackEventRecordWithTime(stateContract abi.ABI, encodedEvent rlp.RawValue) (*EventRecordWithTime, error) {

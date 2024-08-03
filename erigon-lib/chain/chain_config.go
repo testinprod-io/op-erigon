@@ -1,18 +1,18 @@
-/*
-   Copyright 2021 Erigon contributors
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
+// Copyright 2021 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
 
 package chain
 
@@ -22,8 +22,8 @@ import (
 	"math/big"
 	"strconv"
 
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/fixedgas"
+	"github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/fixedgas"
 )
 
 // Config is the core config which determines the blockchain settings.
@@ -85,12 +85,17 @@ type Config struct {
 	// (Optional) governance contract where EIP-1559 fees will be sent to that otherwise would be burnt since the London fork
 	BurntContract map[string]common.Address `json:"burntContract,omitempty"`
 
+	// (Optional) deposit contract of PoS chains
+	// See also EIP-6110: Supply validator deposits on chain
+	DepositContract common.Address `json:"depositContract,omitempty"`
+
 	// Various consensus engines
 	Ethash  *EthashConfig   `json:"ethash,omitempty"`
 	Clique  *CliqueConfig   `json:"clique,omitempty"`
 	Aura    *AuRaConfig     `json:"aura,omitempty"`
 	Bor     BorConfig       `json:"-"`
 	BorJSON json.RawMessage `json:"bor,omitempty"`
+<<<<<<< HEAD
 
 	// For not pruning the logs of these contracts
 	// For deposit contract logs are needed by CL to validate/produce blocks.
@@ -99,6 +104,8 @@ type Config struct {
 
 	// Optimism config
 	Optimism *OptimismConfig `json:"optimism,omitempty"`
+=======
+>>>>>>> v3.0.0-alpha1
 }
 
 type BorConfig interface {
@@ -124,7 +131,11 @@ func (o *OptimismConfig) String() string {
 func (c *Config) String() string {
 	engine := c.getEngine()
 
+<<<<<<< HEAD
 	configString := fmt.Sprintf("{ChainID: %v, Homestead: %v, DAO: %v, Tangerine Whistle: %v, Spurious Dragon: %v, Byzantium: %v, Constantinople: %v, Petersburg: %v, Istanbul: %v, Muir Glacier: %v, Berlin: %v, London: %v, Arrow Glacier: %v, Gray Glacier: %v, Terminal Total Difficulty: %v, Merge Netsplit: %v, Shanghai: %v, Cancun: %v, Prague: %v, Osaka: %v, Engine: %v, NoPruneContracts: %v}",
+=======
+	return fmt.Sprintf("{ChainID: %v, Homestead: %v, DAO: %v, Tangerine Whistle: %v, Spurious Dragon: %v, Byzantium: %v, Constantinople: %v, Petersburg: %v, Istanbul: %v, Muir Glacier: %v, Berlin: %v, London: %v, Arrow Glacier: %v, Gray Glacier: %v, Terminal Total Difficulty: %v, Merge Netsplit: %v, Shanghai: %v, Cancun: %v, Prague: %v, Osaka: %v, Engine: %v}",
+>>>>>>> v3.0.0-alpha1
 		c.ChainID,
 		c.HomesteadBlock,
 		c.DAOForkBlock,
@@ -146,7 +157,6 @@ func (c *Config) String() string {
 		c.PragueTime,
 		c.OsakaTime,
 		engine,
-		c.NoPruneContracts,
 	)
 	if c.IsOptimism() {
 		configString += fmt.Sprintf("{Bedrock: %v, Regolith: %v, Canyon: %v, Ecotone: %v, Fjord: %v}",

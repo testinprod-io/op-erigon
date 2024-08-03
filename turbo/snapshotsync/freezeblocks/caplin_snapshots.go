@@ -1,3 +1,19 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package freezeblocks
 
 import (
@@ -12,25 +28,26 @@ import (
 	"sync/atomic"
 
 	"github.com/klauspost/compress/zstd"
-	"github.com/ledgerwatch/erigon-lib/common/datadir"
-	"github.com/ledgerwatch/log/v3"
 
-	"github.com/ledgerwatch/erigon-lib/chain/snapcfg"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/background"
-	"github.com/ledgerwatch/erigon-lib/common/cmp"
-	"github.com/ledgerwatch/erigon-lib/downloader/snaptype"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon-lib/kv/dbutils"
-	"github.com/ledgerwatch/erigon-lib/recsplit"
-	"github.com/ledgerwatch/erigon-lib/seg"
-	"github.com/ledgerwatch/erigon/cl/clparams"
-	"github.com/ledgerwatch/erigon/cl/cltypes"
-	"github.com/ledgerwatch/erigon/cl/persistence/beacon_indicies"
-	"github.com/ledgerwatch/erigon/cl/persistence/blob_storage"
-	"github.com/ledgerwatch/erigon/cl/persistence/format/snapshot_format"
-	"github.com/ledgerwatch/erigon/cl/utils"
-	"github.com/ledgerwatch/erigon/eth/ethconfig"
+	"github.com/erigontech/erigon-lib/log/v3"
+
+	"github.com/erigontech/erigon-lib/chain/snapcfg"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/background"
+	"github.com/erigontech/erigon-lib/common/datadir"
+	"github.com/erigontech/erigon-lib/common/dbg"
+	"github.com/erigontech/erigon-lib/downloader/snaptype"
+	"github.com/erigontech/erigon-lib/kv"
+	"github.com/erigontech/erigon-lib/kv/dbutils"
+	"github.com/erigontech/erigon-lib/recsplit"
+	"github.com/erigontech/erigon-lib/seg"
+
+	"github.com/erigontech/erigon/cl/clparams"
+	"github.com/erigontech/erigon/cl/cltypes"
+	"github.com/erigontech/erigon/cl/persistence/beacon_indicies"
+	"github.com/erigontech/erigon/cl/persistence/blob_storage"
+	"github.com/erigontech/erigon/cl/persistence/format/snapshot_format"
+	"github.com/erigontech/erigon/eth/ethconfig"
 )
 
 var sidecarSSZSize = (&cltypes.BlobSidecar{}).EncodingSizeSSZ()
@@ -90,6 +107,34 @@ func NewCaplinSnapshots(cfg ethconfig.BlocksFreezing, beaconCfg *clparams.Beacon
 func (s *CaplinSnapshots) IndicesMax() uint64  { return s.idxMax.Load() }
 func (s *CaplinSnapshots) SegmentsMax() uint64 { return s.segmentsMax.Load() }
 
+func (s *CaplinSnapshots) LogStat(str string) {
+	s.logger.Info(fmt.Sprintf("[snapshots:%s] Stat", str),
+		"blocks", fmt.Sprintf("%dk", (s.SegmentsMax()+1)/1000),
+		"indices", fmt.Sprintf("%dk", (s.IndicesMax()+1)/1000))
+}
+
+func (s *CaplinSnapshots) LS() {
+	if s == nil {
+		return
+	}
+	if s.BeaconBlocks != nil {
+		for _, seg := range s.BeaconBlocks.segments {
+			if seg.Decompressor == nil {
+				continue
+			}
+			log.Info("[agg] ", "f", seg.Decompressor.FileName(), "words", seg.Decompressor.Count())
+		}
+	}
+	if s.BlobSidecars != nil {
+		for _, seg := range s.BlobSidecars.segments {
+			if seg.Decompressor == nil {
+				continue
+			}
+			log.Info("[agg] ", "f", seg.Decompressor.FileName(), "words", seg.Decompressor.Count())
+		}
+	}
+}
+
 func (s *CaplinSnapshots) SegFilePaths(from, to uint64) []string {
 	var res []string
 	for _, seg := range s.BeaconBlocks.segments {
@@ -106,7 +151,7 @@ func (s *CaplinSnapshots) SegFilePaths(from, to uint64) []string {
 }
 
 func (s *CaplinSnapshots) BlocksAvailable() uint64 {
-	return cmp.Min(s.segmentsMax.Load(), s.idxMax.Load())
+	return min(s.segmentsMax.Load(), s.idxMax.Load())
 }
 
 func (s *CaplinSnapshots) Close() {
@@ -544,6 +589,12 @@ func (s *CaplinSnapshots) BuildMissingIndices(ctx context.Context, logger log.Lo
 }
 
 func (s *CaplinSnapshots) ReadHeader(slot uint64) (*cltypes.SignedBeaconBlockHeader, uint64, libcommon.Hash, error) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			panic(fmt.Sprintf("ReadHeader(%d), %s, %s\n", slot, rec, dbg.Stack()))
+		}
+	}()
+
 	view := s.View()
 	defer view.Close()
 
@@ -637,7 +688,7 @@ func (s *CaplinSnapshots) FrozenBlobs() uint64 {
 		if seg.from == minSegFrom {
 			foundMinSeg = true
 		}
-		ret = utils.Max64(ret, seg.to)
+		ret = max(ret, seg.to)
 	}
 	if !foundMinSeg {
 		return 0

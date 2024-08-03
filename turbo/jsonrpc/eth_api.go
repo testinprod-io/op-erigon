@@ -1,3 +1,19 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package jsonrpc
 
 import (
@@ -9,10 +25,14 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
+	"github.com/erigontech/erigon-lib/common/datadir"
+	"github.com/erigontech/erigon/turbo/jsonrpc/receipts"
+
+	"github.com/erigontech/erigon-lib/common/hexutil"
 
 	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/holiman/uint256"
+<<<<<<< HEAD
 	"github.com/ledgerwatch/erigon-lib/chain"
 	"github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/datadir"
@@ -24,19 +44,31 @@ import (
 	libstate "github.com/ledgerwatch/erigon-lib/state"
 	types2 "github.com/ledgerwatch/erigon-lib/types"
 	"github.com/ledgerwatch/log/v3"
+=======
 
-	"github.com/ledgerwatch/erigon/common/math"
-	"github.com/ledgerwatch/erigon/consensus"
-	"github.com/ledgerwatch/erigon/consensus/misc"
-	"github.com/ledgerwatch/erigon/core/rawdb"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/core/types/accounts"
-	ethFilters "github.com/ledgerwatch/erigon/eth/filters"
-	"github.com/ledgerwatch/erigon/ethdb/prune"
-	"github.com/ledgerwatch/erigon/rpc"
-	ethapi2 "github.com/ledgerwatch/erigon/turbo/adapter/ethapi"
-	"github.com/ledgerwatch/erigon/turbo/rpchelper"
-	"github.com/ledgerwatch/erigon/turbo/services"
+	"github.com/erigontech/erigon-lib/log/v3"
+>>>>>>> v3.0.0-alpha1
+
+	"github.com/erigontech/erigon-lib/chain"
+	"github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/hexutility"
+	txpool "github.com/erigontech/erigon-lib/gointerfaces/txpoolproto"
+	"github.com/erigontech/erigon-lib/kv"
+	"github.com/erigontech/erigon-lib/kv/kvcache"
+	types2 "github.com/erigontech/erigon-lib/types"
+
+	"github.com/erigontech/erigon/common/math"
+	"github.com/erigontech/erigon/consensus"
+	"github.com/erigontech/erigon/consensus/misc"
+	"github.com/erigontech/erigon/core/rawdb"
+	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/core/types/accounts"
+	ethFilters "github.com/erigontech/erigon/eth/filters"
+	"github.com/erigontech/erigon/ethdb/prune"
+	"github.com/erigontech/erigon/rpc"
+	ethapi2 "github.com/erigontech/erigon/turbo/adapter/ethapi"
+	"github.com/erigontech/erigon/turbo/rpchelper"
+	"github.com/erigontech/erigon/turbo/services"
 )
 
 // EthAPI is a collection of functions that are exposed in the
@@ -116,14 +148,13 @@ type BaseAPI struct {
 	filters      *rpchelper.Filters
 	_chainConfig atomic.Pointer[chain.Config]
 	_genesis     atomic.Pointer[types.Block]
-	_historyV3   atomic.Pointer[bool]
 	_pruneMode   atomic.Pointer[prune.Mode]
 
 	_blockReader services.FullBlockReader
 	_txnReader   services.TxnReader
-	_agg         *libstate.Aggregator
 	_engine      consensus.EngineReader
 
+<<<<<<< HEAD
 	evmCallTimeout time.Duration
 	dirs           datadir.Dirs
 
@@ -133,6 +164,14 @@ type BaseAPI struct {
 }
 
 func NewBaseApi(f *rpchelper.Filters, stateCache kvcache.Cache, blockReader services.FullBlockReader, agg *libstate.Aggregator, singleNodeMode bool, evmCallTimeout time.Duration, engine consensus.EngineReader, dirs datadir.Dirs, seqRPCService *rpc.Client, historicalRPCService *rpc.Client) *BaseAPI {
+=======
+	evmCallTimeout    time.Duration
+	dirs              datadir.Dirs
+	receiptsGenerator *receipts.Generator
+}
+
+func NewBaseApi(f *rpchelper.Filters, stateCache kvcache.Cache, blockReader services.FullBlockReader, singleNodeMode bool, evmCallTimeout time.Duration, engine consensus.EngineReader, dirs datadir.Dirs) *BaseAPI {
+>>>>>>> v3.0.0-alpha1
 	var (
 		blocksLRUSize      = 128 // ~32Mb
 		receiptsCacheLimit = 32
@@ -151,7 +190,10 @@ func NewBaseApi(f *rpchelper.Filters, stateCache kvcache.Cache, blockReader serv
 		panic(err)
 	}
 
+	receiptsGenerator := receipts.NewGenerator(receiptsCache, blockReader, engine)
+
 	return &BaseAPI{
+<<<<<<< HEAD
 		filters:              f,
 		stateCache:           stateCache,
 		blocksLRU:            blocksLRU,
@@ -164,6 +206,18 @@ func NewBaseApi(f *rpchelper.Filters, stateCache kvcache.Cache, blockReader serv
 		dirs:                 dirs,
 		seqRPCService:        seqRPCService,
 		historicalRPCService: historicalRPCService,
+=======
+		filters:           f,
+		stateCache:        stateCache,
+		blocksLRU:         blocksLRU,
+		receiptsCache:     receiptsCache,
+		_blockReader:      blockReader,
+		_txnReader:        blockReader,
+		evmCallTimeout:    evmCallTimeout,
+		_engine:           engine,
+		receiptsGenerator: receiptsGenerator,
+		dirs:              dirs,
+>>>>>>> v3.0.0-alpha1
 	}
 }
 
@@ -249,20 +303,6 @@ func (api *BaseAPI) blockWithSenders(ctx context.Context, tx kv.Tx, hash common.
 		api.blocksLRU.Add(hash, block)
 	}
 	return block, nil
-}
-
-func (api *BaseAPI) historyV3(tx kv.Tx) bool {
-	historyV3 := api._historyV3.Load()
-	if historyV3 != nil {
-		return *historyV3
-	}
-	enabled, err := kvcfg.HistoryV3.Enabled(tx)
-	if err != nil {
-		log.Warn("HisoryV3Enabled: read", "err", err)
-		return false
-	}
-	api._historyV3.Store(&enabled)
-	return enabled
 }
 
 func (api *BaseAPI) chainConfigWithGenesis(ctx context.Context, tx kv.Tx) (*chain.Config, *types.Block, error) {
@@ -404,6 +444,7 @@ func (api *APIImpl) relayToHistoricalBackend(ctx context.Context, result interfa
 
 // RPCTransaction represents a transaction that will serialize to the RPC representation of a transaction
 type RPCTransaction struct {
+<<<<<<< HEAD
 	BlockHash           *common.Hash       `json:"blockHash"`
 	BlockNumber         *hexutil.Big       `json:"blockNumber"`
 	From                common.Address     `json:"from"`
@@ -433,29 +474,59 @@ type RPCTransaction struct {
 	IsSystemTx *bool        `json:"isSystemTx,omitempty"`
 	// deposit-tx post-Canyon only
 	DepositReceiptVersion *hexutil.Uint64 `json:"depositReceiptVersion,omitempty"`
+=======
+	BlockHash           *common.Hash               `json:"blockHash"`
+	BlockNumber         *hexutil.Big               `json:"blockNumber"`
+	From                common.Address             `json:"from"`
+	Gas                 hexutil.Uint64             `json:"gas"`
+	GasPrice            *hexutil.Big               `json:"gasPrice,omitempty"`
+	Tip                 *hexutil.Big               `json:"maxPriorityFeePerGas,omitempty"`
+	FeeCap              *hexutil.Big               `json:"maxFeePerGas,omitempty"`
+	Hash                common.Hash                `json:"hash"`
+	Input               hexutility.Bytes           `json:"input"`
+	Nonce               hexutil.Uint64             `json:"nonce"`
+	To                  *common.Address            `json:"to"`
+	TransactionIndex    *hexutil.Uint64            `json:"transactionIndex"`
+	Value               *hexutil.Big               `json:"value"`
+	Type                hexutil.Uint64             `json:"type"`
+	Accesses            *types2.AccessList         `json:"accessList,omitempty"`
+	ChainID             *hexutil.Big               `json:"chainId,omitempty"`
+	MaxFeePerBlobGas    *hexutil.Big               `json:"maxFeePerBlobGas,omitempty"`
+	BlobVersionedHashes []common.Hash              `json:"blobVersionedHashes,omitempty"`
+	Authorizations      *[]types.JsonAuthorization `json:"authorizationList,omitempty"`
+	V                   *hexutil.Big               `json:"v"`
+	YParity             *hexutil.Big               `json:"yParity,omitempty"`
+	R                   *hexutil.Big               `json:"r"`
+	S                   *hexutil.Big               `json:"s"`
+>>>>>>> v3.0.0-alpha1
 }
 
 // NewRPCTransaction returns a transaction that will serialize to the RPC
 // representation, with the given location metadata set (if available).
+<<<<<<< HEAD
 func NewRPCTransaction(tx types.Transaction, blockHash common.Hash, blockNumber uint64, index uint64, baseFee *big.Int,
 	receipt *types.Receipt) *RPCTransaction {
+=======
+func NewRPCTransaction(txn types.Transaction, blockHash common.Hash, blockNumber uint64, index uint64, baseFee *big.Int) *RPCTransaction {
+>>>>>>> v3.0.0-alpha1
 	// Determine the signer. For replay-protected transactions, use the most permissive
 	// signer, because we assume that signers are backwards-compatible with old
 	// transactions. For non-protected transactions, the homestead signer is used
 	// because the return value of ChainId is zero for those transactions.
 	chainId := uint256.NewInt(0)
 	result := &RPCTransaction{
-		Type:  hexutil.Uint64(tx.Type()),
-		Gas:   hexutil.Uint64(tx.GetGas()),
-		Hash:  tx.Hash(),
-		Input: hexutility.Bytes(tx.GetData()),
-		Nonce: hexutil.Uint64(tx.GetNonce()),
-		To:    tx.GetTo(),
-		Value: (*hexutil.Big)(tx.GetValue().ToBig()),
+		Type:  hexutil.Uint64(txn.Type()),
+		Gas:   hexutil.Uint64(txn.GetGas()),
+		Hash:  txn.Hash(),
+		Input: hexutility.Bytes(txn.GetData()),
+		Nonce: hexutil.Uint64(txn.GetNonce()),
+		To:    txn.GetTo(),
+		Value: (*hexutil.Big)(txn.GetValue().ToBig()),
 	}
-	if t, ok := tx.(*types.BlobTxWrapper); ok {
-		tx = &t.Tx
+	if t, ok := txn.(*types.BlobTxWrapper); ok {
+		txn = &t.Tx
 	}
+<<<<<<< HEAD
 	switch t := tx.(type) {
 	case *types.LegacyTx:
 		// avoid overflow by not calling DeriveChainId. chain id not included when v = 0
@@ -465,14 +536,25 @@ func NewRPCTransaction(tx types.Transaction, blockHash common.Hash, blockNumber 
 			if !chainId.IsZero() {
 				result.ChainID = (*hexutil.Big)(chainId.ToBig())
 			}
+=======
+
+	v, r, s := txn.RawSignatureValues()
+	result.V = (*hexutil.Big)(v.ToBig())
+	result.R = (*hexutil.Big)(r.ToBig())
+	result.S = (*hexutil.Big)(s.ToBig())
+
+	if txn.Type() == types.LegacyTxType {
+		chainId = types.DeriveChainId(v)
+		// if a legacy transaction has an EIP-155 chain id, include it explicitly, otherwise chain id is not included
+		if !chainId.IsZero() {
+			result.ChainID = (*hexutil.Big)(chainId.ToBig())
+>>>>>>> v3.0.0-alpha1
 		}
-		result.GasPrice = (*hexutil.Big)(t.GasPrice.ToBig())
-		result.V = (*hexutil.Big)(t.V.ToBig())
-		result.R = (*hexutil.Big)(t.R.ToBig())
-		result.S = (*hexutil.Big)(t.S.ToBig())
-	case *types.AccessListTx:
-		chainId.Set(t.ChainID)
+		result.GasPrice = (*hexutil.Big)(txn.GetPrice().ToBig())
+	} else {
+		chainId.Set(txn.GetChainID())
 		result.ChainID = (*hexutil.Big)(chainId.ToBig())
+<<<<<<< HEAD
 		result.GasPrice = (*hexutil.Big)(t.GasPrice.ToBig())
 		result.YParity = (*hexutil.Big)(t.V.ToBig())
 		result.V = (*hexutil.Big)(t.V.ToBig())
@@ -524,9 +606,41 @@ func NewRPCTransaction(tx types.Transaction, blockHash common.Hash, blockNumber 
 		result.GasPrice = computeGasPrice(tx, blockHash, baseFee)
 		result.MaxFeePerBlobGas = (*hexutil.Big)(t.MaxFeePerBlobGas.ToBig())
 		result.BlobVersionedHashes = t.BlobVersionedHashes
+=======
+		result.YParity = (*hexutil.Big)(v.ToBig())
+		acl := txn.GetAccessList()
+		result.Accesses = &acl
+
+		if txn.Type() == types.AccessListTxType {
+			result.GasPrice = (*hexutil.Big)(txn.GetPrice().ToBig())
+		} else {
+			result.GasPrice = computeGasPrice(txn, blockHash, baseFee)
+			result.Tip = (*hexutil.Big)(txn.GetTip().ToBig())
+			result.FeeCap = (*hexutil.Big)(txn.GetFeeCap().ToBig())
+		}
+
+		if txn.Type() == types.BlobTxType {
+			txn.GetBlobGas()
+			blobTx := txn.(*types.BlobTx)
+			result.MaxFeePerBlobGas = (*hexutil.Big)(blobTx.MaxFeePerBlobGas.ToBig())
+			result.BlobVersionedHashes = blobTx.BlobVersionedHashes
+		} else if txn.Type() == types.SetCodeTxType {
+			setCodeTx := txn.(*types.SetCodeTransaction)
+			ats := make([]types.JsonAuthorization, len(setCodeTx.GetAuthorizations()))
+			for i, a := range setCodeTx.GetAuthorizations() {
+				ats[i] = types.JsonAuthorization{}.FromAuthorization(a)
+			}
+			result.Authorizations = &ats
+		}
+>>>>>>> v3.0.0-alpha1
 	}
+
 	signer := types.LatestSignerForChainID(chainId.ToBig())
-	result.From, _ = tx.Sender(*signer)
+	var err error
+	result.From, err = txn.Sender(*signer)
+	if err != nil {
+		log.Warn("sender recovery", "err", err)
+	}
 	if blockHash != (common.Hash{}) {
 		result.BlockHash = &blockHash
 		result.BlockNumber = (*hexutil.Big)(new(big.Int).SetUint64(blockNumber))
@@ -535,11 +649,11 @@ func NewRPCTransaction(tx types.Transaction, blockHash common.Hash, blockNumber 
 	return result
 }
 
-func computeGasPrice(tx types.Transaction, blockHash common.Hash, baseFee *big.Int) *hexutil.Big {
+func computeGasPrice(txn types.Transaction, blockHash common.Hash, baseFee *big.Int) *hexutil.Big {
 	fee, overflow := uint256.FromBig(baseFee)
 	if fee != nil && !overflow && blockHash != (common.Hash{}) {
 		// price = min(tip + baseFee, gasFeeCap)
-		price := math.Min256(new(uint256.Int).Add(tx.GetTip(), fee), tx.GetFeeCap())
+		price := math.Min256(new(uint256.Int).Add(txn.GetTip(), fee), txn.GetFeeCap())
 		return (*hexutil.Big)(price.ToBig())
 	}
 	return nil
@@ -547,19 +661,19 @@ func computeGasPrice(tx types.Transaction, blockHash common.Hash, baseFee *big.I
 
 // newRPCBorTransaction returns a Bor transaction that will serialize to the RPC
 // representation, with the given location metadata set (if available).
-func newRPCBorTransaction(opaqueTx types.Transaction, txHash common.Hash, blockHash common.Hash, blockNumber uint64, index uint64, baseFee *big.Int, chainId *big.Int) *RPCTransaction {
-	tx := opaqueTx.(*types.LegacyTx)
+func newRPCBorTransaction(opaqueTxn types.Transaction, txHash common.Hash, blockHash common.Hash, blockNumber uint64, index uint64, baseFee *big.Int, chainId *big.Int) *RPCTransaction {
+	txn := opaqueTxn.(*types.LegacyTx)
 	result := &RPCTransaction{
-		Type:     hexutil.Uint64(tx.Type()),
+		Type:     hexutil.Uint64(txn.Type()),
 		ChainID:  (*hexutil.Big)(new(big.Int)),
-		GasPrice: (*hexutil.Big)(tx.GasPrice.ToBig()),
-		Gas:      hexutil.Uint64(tx.GetGas()),
+		GasPrice: (*hexutil.Big)(txn.GasPrice.ToBig()),
+		Gas:      hexutil.Uint64(txn.GetGas()),
 		Hash:     txHash,
-		Input:    hexutility.Bytes(tx.GetData()),
-		Nonce:    hexutil.Uint64(tx.GetNonce()),
+		Input:    hexutility.Bytes(txn.GetData()),
+		Nonce:    hexutil.Uint64(txn.GetNonce()),
 		From:     common.Address{},
-		To:       tx.GetTo(),
-		Value:    (*hexutil.Big)(tx.GetValue().ToBig()),
+		To:       txn.GetTo(),
+		Value:    (*hexutil.Big)(txn.GetValue().ToBig()),
 		V:        (*hexutil.Big)(big.NewInt(0)),
 		R:        (*hexutil.Big)(big.NewInt(0)),
 		S:        (*hexutil.Big)(big.NewInt(0)),
@@ -574,12 +688,16 @@ func newRPCBorTransaction(opaqueTx types.Transaction, txHash common.Hash, blockH
 }
 
 // newRPCPendingTransaction returns a pending transaction that will serialize to the RPC representation
-func newRPCPendingTransaction(tx types.Transaction, current *types.Header, config *chain.Config) *RPCTransaction {
+func newRPCPendingTransaction(txn types.Transaction, current *types.Header, config *chain.Config) *RPCTransaction {
 	var baseFee *big.Int
 	if current != nil {
 		baseFee = misc.CalcBaseFee(config, current, current.Time+1)
 	}
+<<<<<<< HEAD
 	return NewRPCTransaction(tx, common.Hash{}, 0, 0, baseFee, nil)
+=======
+	return NewRPCTransaction(txn, common.Hash{}, 0, 0, baseFee)
+>>>>>>> v3.0.0-alpha1
 }
 
 // newRPCRawTransactionFromBlockIndex returns the bytes of a transaction given a block and a transaction index.

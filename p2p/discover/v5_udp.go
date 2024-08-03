@@ -1,18 +1,21 @@
 // Copyright 2019 The go-ethereum Authors
-// This file is part of the go-ethereum library.
+// (original work)
+// Copyright 2024 The Erigon Authors
+// (modifications)
+// This file is part of Erigon.
 //
-// The go-ethereum library is free software: you can redistribute it and/or modify
+// Erigon is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The go-ethereum library is distributed in the hope that it will be useful,
+// Erigon is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
 
 package discover
 
@@ -29,14 +32,14 @@ import (
 	"sync"
 	"time"
 
-	common2 "github.com/ledgerwatch/erigon-lib/common/cmp"
-	"github.com/ledgerwatch/erigon/common/debug"
-	"github.com/ledgerwatch/erigon/common/mclock"
-	"github.com/ledgerwatch/erigon/p2p/discover/v5wire"
-	"github.com/ledgerwatch/erigon/p2p/enode"
-	"github.com/ledgerwatch/erigon/p2p/enr"
-	"github.com/ledgerwatch/erigon/p2p/netutil"
-	"github.com/ledgerwatch/log/v3"
+	"github.com/erigontech/erigon-lib/log/v3"
+
+	"github.com/erigontech/erigon/common/debug"
+	"github.com/erigontech/erigon/common/mclock"
+	"github.com/erigontech/erigon/p2p/discover/v5wire"
+	"github.com/erigontech/erigon/p2p/enode"
+	"github.com/erigontech/erigon/p2p/enr"
+	"github.com/erigontech/erigon/p2p/netutil"
 )
 
 const (
@@ -407,7 +410,7 @@ func (t *UDPv5) waitForNodes(c *callV5, distances []uint) ([]*enode.Node, error)
 				nodes = append(nodes, node)
 			}
 			if total == -1 {
-				total = common2.Min(int(response.Total), totalNodesResponseLimit)
+				total = min(int(response.Total), totalNodesResponseLimit)
 			}
 			if received++; received == total {
 				return nodes, nil
@@ -859,7 +862,7 @@ func packNodes(reqid []byte, nodes []*enode.Node) []*v5wire.Nodes {
 	var resp []*v5wire.Nodes
 	for len(nodes) > 0 {
 		p := &v5wire.Nodes{ReqID: reqid, Total: total}
-		items := common2.Min(nodesResponseItemLimit, len(nodes))
+		items := min(nodesResponseItemLimit, len(nodes))
 		for i := 0; i < items; i++ {
 			p.Nodes = append(p.Nodes, nodes[i].Record())
 		}

@@ -1,15 +1,18 @@
-/*
-   Copyright 2022 Erigon-Lightclient contributors
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-       http://www.apache.org/licenses/LICENSE-2.0
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
+// Copyright 2022 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
 
 package clparams
 
@@ -19,15 +22,17 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	mathrand "math/rand"
 	"os"
 	"path"
 	"time"
 
-	"github.com/ledgerwatch/erigon-lib/chain/networkname"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"gopkg.in/yaml.v2"
 
-	"github.com/ledgerwatch/erigon/cl/utils"
+	"github.com/erigontech/erigon-lib/chain/networkname"
+	libcommon "github.com/erigontech/erigon-lib/common"
+
+	"github.com/erigontech/erigon/cl/utils"
 )
 
 type CaplinConfig struct {
@@ -35,13 +40,19 @@ type CaplinConfig struct {
 	BlobBackfilling     bool
 	BlobPruningDisabled bool
 	Archive             bool
+	// CaplinMeVRelayUrl is optional and is used to connect to the external builder service.
+	// If it's set, the node will start in builder mode
+	MevRelayUrl string
+}
+
+func (c CaplinConfig) RelayUrlExist() bool {
+	return c.MevRelayUrl != ""
 }
 
 type NetworkType int
 
 const (
 	MainnetNetwork NetworkType = 1
-	GoerliNetwork  NetworkType = 5
 	HoleskyNetwork NetworkType = 17000
 	SepoliaNetwork NetworkType = 11155111
 	GnosisNetwork  NetworkType = 100
@@ -185,26 +196,6 @@ var NetworkConfigs map[NetworkType]NetworkConfig = map[NetworkType]NetworkConfig
 		BootNodes:                       SepoliaBootstrapNodes,
 	},
 
-	GoerliNetwork: {
-		GossipMaxSize:                   1 << 20, // 1 MiB
-		GossipMaxSizeBellatrix:          10485760,
-		MaxChunkSize:                    1 << 20, // 1 MiB
-		AttestationSubnetCount:          64,
-		AttestationPropagationSlotRange: 32,
-		MaxRequestBlocks:                1 << 10, // 1024
-		TtfbTimeout:                     ReqTimeout,
-		RespTimeout:                     RespTimeout,
-		MaximumGossipClockDisparity:     500 * time.Millisecond,
-		MessageDomainInvalidSnappy:      [4]byte{00, 00, 00, 00},
-		MessageDomainValidSnappy:        [4]byte{01, 00, 00, 00},
-		Eth2key:                         "eth2",
-		AttSubnetKey:                    "attnets",
-		SyncCommsSubnetKey:              "syncnets",
-		MinimumPeersInSubnetSearch:      20,
-		ContractDeploymentBlock:         4367322,
-		BootNodes:                       MainnetBootstrapNodes,
-	},
-
 	GnosisNetwork: {
 		GossipMaxSize:                   1 << 20, // 1 MiB
 		GossipMaxSizeBellatrix:          10485760,
@@ -275,12 +266,6 @@ var CheckpointSyncEndpoints = map[NetworkType][]string{
 		"https://mainnet-checkpoint-sync.stakely.io/eth/v2/debug/beacon/states/finalized",
 		"https://checkpointz.pietjepuk.net/eth/v2/debug/beacon/states/finalized",
 	},
-	GoerliNetwork: {
-		"https://goerli.beaconstate.info/eth/v2/debug/beacon/states/finalized",
-		"https://goerli-sync.invis.tools/eth/v2/debug/beacon/states/finalized",
-		"https://goerli.checkpoint-sync.ethpandaops.io/eth/v2/debug/beacon/states/finalized",
-		"https://prater-checkpoint-sync.stakely.io/eth/v2/debug/beacon/states/finalized",
-	},
 	SepoliaNetwork: {
 		//"https://beaconstate-sepolia.chainsafe.io/eth/v2/debug/beacon/states/finalized",
 		//"https://sepolia.beaconstate.info/eth/v2/debug/beacon/states/finalized",
@@ -301,6 +286,9 @@ var CheckpointSyncEndpoints = map[NetworkType][]string{
 	},
 }
 
+// ConfigurableCheckpointsURLs is customized by the user to specify the checkpoint sync endpoints.
+var ConfigurableCheckpointsURLs = []string{}
+
 // MinEpochsForBlockRequests  equal to MIN_VALIDATOR_WITHDRAWABILITY_DELAY + CHURN_LIMIT_QUOTIENT / 2
 func (b *BeaconChainConfig) MinEpochsForBlockRequests() uint64 {
 	return b.MinValidatorWithdrawabilityDelay + (b.ChurnLimitQuotient)/2
@@ -316,9 +304,13 @@ func (b ConfigByte) MarshalJSON() ([]byte, error) {
 type ConfigForkVersion uint32
 
 func (v ConfigForkVersion) MarshalJSON() ([]byte, error) {
+<<<<<<< HEAD
 	tmp := make([]byte, 4)
 	binary.BigEndian.PutUint32(tmp, uint32(v))
 	return []byte(fmt.Sprintf("\"0x%x\"", tmp)), nil
+=======
+	return []byte(fmt.Sprintf("\"0x%08x\"", v)), nil
+>>>>>>> v3.0.0-alpha1
 }
 
 // BeaconChainConfig contains constant configs for node to participate in beacon chain.
@@ -783,29 +775,6 @@ func sepoliaConfig() BeaconChainConfig {
 	return cfg
 }
 
-func goerliConfig() BeaconChainConfig {
-	cfg := MainnetBeaconConfig
-	cfg.MinGenesisTime = 1614588812
-	cfg.GenesisDelay = 1919188
-	cfg.ConfigName = "prater"
-	cfg.GenesisForkVersion = 0x00001020
-	cfg.SecondsPerETH1Block = 14
-	cfg.DepositChainID = uint64(GoerliNetwork)
-	cfg.DepositNetworkID = uint64(GoerliNetwork)
-	cfg.AltairForkEpoch = 36660
-	cfg.AltairForkVersion = 0x1001020
-	cfg.BellatrixForkEpoch = 112260
-	cfg.BellatrixForkVersion = 0x02001020
-	cfg.CapellaForkEpoch = 162304
-	cfg.CapellaForkVersion = 0x03001020
-	cfg.DenebForkEpoch = 231680
-	cfg.DenebForkVersion = 0x04001020
-	cfg.TerminalTotalDifficulty = "10790000"
-	cfg.DepositContractAddress = "0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b"
-	cfg.InitializeForkSchedule()
-	return cfg
-}
-
 func holeskyConfig() BeaconChainConfig {
 	cfg := MainnetBeaconConfig
 	cfg.ConfigName = "holesky"
@@ -949,7 +918,6 @@ func (b *BeaconChainConfig) GetPenaltyQuotient(version StateVersion) uint64 {
 var BeaconConfigs map[NetworkType]BeaconChainConfig = map[NetworkType]BeaconChainConfig{
 	MainnetNetwork: mainnetConfig(),
 	SepoliaNetwork: sepoliaConfig(),
-	GoerliNetwork:  goerliConfig(),
 	HoleskyNetwork: holeskyConfig(),
 	GnosisNetwork:  gnosisConfig(),
 	ChiadoNetwork:  chiadoConfig(),
@@ -1018,9 +986,6 @@ func GetConfigsByNetworkName(net string) (*NetworkConfig, *BeaconChainConfig, Ne
 	case networkname.MainnetChainName:
 		networkCfg, beaconCfg := GetConfigsByNetwork(MainnetNetwork)
 		return networkCfg, beaconCfg, MainnetNetwork, nil
-	case networkname.GoerliChainName:
-		networkCfg, beaconCfg := GetConfigsByNetwork(GoerliNetwork)
-		return networkCfg, beaconCfg, GoerliNetwork, nil
 	case networkname.SepoliaChainName:
 		networkCfg, beaconCfg := GetConfigsByNetwork(SepoliaNetwork)
 		return networkCfg, beaconCfg, SepoliaNetwork, nil
@@ -1038,30 +1003,62 @@ func GetConfigsByNetworkName(net string) (*NetworkConfig, *BeaconChainConfig, Ne
 	}
 }
 
+func GetAllCheckpointSyncEndpoints(net NetworkType) []string {
+	shuffle := func(urls []string) []string {
+		if len(urls) <= 1 {
+			return urls
+		}
+		retUrls := make([]string, len(urls))
+		perm := mathrand.Perm(len(urls))
+		for i, v := range perm {
+			retUrls[v] = urls[i]
+		}
+		return retUrls
+	}
+	// shuffle the list of URLs to avoid always using the same one
+	// order: custom URLs -> default URLs
+	urls := []string{}
+	urls = append(urls, shuffle(ConfigurableCheckpointsURLs)...)
+	if len(ConfigurableCheckpointsURLs) > 0 {
+		return urls
+	}
+	if checkpoints, ok := CheckpointSyncEndpoints[net]; ok {
+		urls = append(urls, shuffle(checkpoints)...)
+	}
+	return urls
+}
+
 func GetCheckpointSyncEndpoint(net NetworkType) string {
+	randomOne := func(checkpoints []string) string {
+		if len(checkpoints) == 1 {
+			return checkpoints[0]
+		}
+		n, err := rand.Int(rand.Reader, big.NewInt(int64(len(checkpoints))))
+		if err != nil {
+			panic(err)
+		}
+		return checkpoints[n.Int64()]
+	}
+	// Check if the user has configured a custom checkpoint sync endpoint
+	if len(ConfigurableCheckpointsURLs) > 0 {
+		return randomOne(ConfigurableCheckpointsURLs)
+	}
+
+	// Otherwise, use the default endpoints
 	checkpoints, ok := CheckpointSyncEndpoints[net]
 	if !ok {
 		return ""
 	}
-	if len(checkpoints) == 1 {
-		return checkpoints[0]
-	}
-	n, err := rand.Int(rand.Reader, big.NewInt(int64(len(checkpoints)-1)))
-	if err != nil {
-		panic(err)
-	}
-	return checkpoints[n.Int64()]
+	return randomOne(checkpoints)
 }
 
 // Check if chain with a specific ID is supported or not
 // 1 is Ethereum Mainnet
-// 5 is Goerli Testnet
 // 11155111 is Sepolia Testnet
 // 100 is Gnosis Mainnet
 // 10200 is Chiado Testnet
 func EmbeddedSupported(id uint64) bool {
 	return id == 1 ||
-		id == 5 ||
 		id == 17000 ||
 		id == 11155111 ||
 		id == 100 // ||
@@ -1075,7 +1072,10 @@ func EmbeddedEnabledByDefault(id uint64) bool {
 }
 
 func SupportBackfilling(networkId uint64) bool {
-	return networkId == uint64(MainnetNetwork) || networkId == uint64(SepoliaNetwork)
+	return networkId == uint64(MainnetNetwork) ||
+		networkId == uint64(SepoliaNetwork) ||
+		networkId == uint64(GnosisNetwork) ||
+		networkId == uint64(HoleskyNetwork)
 }
 
 func EpochToPaths(slot uint64, config *BeaconChainConfig, suffix string) (string, string) {

@@ -1,13 +1,29 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package cbor
 
 import (
-	"fmt"
 	"io"
 	"math/big"
 	"reflect"
 
-	"github.com/ledgerwatch/log/v3"
 	"github.com/ugorji/go/codec"
+
+	"github.com/erigontech/erigon-lib/log/v3"
 )
 
 var logger = log.New("package", "cbor")
@@ -33,6 +49,7 @@ func Decoder(r io.Reader) *codec.Decoder {
 	return d
 }
 
+<<<<<<< HEAD
 func DecoderBytes(r []byte) *codec.Decoder {
 	var d *codec.Decoder
 	select {
@@ -51,6 +68,8 @@ func DecoderBytes(r []byte) *codec.Decoder {
 	return d
 }
 
+=======
+>>>>>>> v3.0.0-alpha1
 func returnDecoderToPool(d *codec.Decoder) {
 	select {
 	case decoderPool <- d:
@@ -83,6 +102,7 @@ func Encoder(w io.Writer) *codec.Encoder {
 	return e
 }
 
+<<<<<<< HEAD
 func EncoderBytes(w *[]byte) *codec.Encoder {
 	var e *codec.Encoder
 	select {
@@ -104,6 +124,8 @@ func EncoderBytes(w *[]byte) *codec.Encoder {
 	return e
 }
 
+=======
+>>>>>>> v3.0.0-alpha1
 func returnEncoderToPool(e *codec.Encoder) {
 	select {
 	case encoderPool <- e:
@@ -111,6 +133,7 @@ func returnEncoderToPool(e *codec.Encoder) {
 		logger.Trace("Allowing encoder to be garbage collected, pool is full")
 	}
 }
+<<<<<<< HEAD
 
 func Return(d interface{}) {
 	switch toReturn := d.(type) {
@@ -147,3 +170,5 @@ func (x BigFloatExt) UpdateExt(dest interface{}, v interface{}) {
 	d := dest.(*big.Float)
 	d.SetString(v.(string))
 }
+=======
+>>>>>>> v3.0.0-alpha1

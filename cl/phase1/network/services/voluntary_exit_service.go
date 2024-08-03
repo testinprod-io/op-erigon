@@ -1,25 +1,40 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package services
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/Giulio2002/bls"
-	"github.com/ledgerwatch/erigon/cl/beacon/beaconevents"
-	"github.com/ledgerwatch/erigon/cl/beacon/synced_data"
-	"github.com/ledgerwatch/erigon/cl/clparams"
-	"github.com/ledgerwatch/erigon/cl/cltypes"
-	"github.com/ledgerwatch/erigon/cl/fork"
-	"github.com/ledgerwatch/erigon/cl/pool"
-	"github.com/ledgerwatch/erigon/cl/utils"
-	"github.com/ledgerwatch/erigon/cl/utils/eth_clock"
+	"github.com/erigontech/erigon/cl/beacon/beaconevents"
+	"github.com/erigontech/erigon/cl/beacon/synced_data"
+	"github.com/erigontech/erigon/cl/clparams"
+	"github.com/erigontech/erigon/cl/cltypes"
+	"github.com/erigontech/erigon/cl/fork"
+	"github.com/erigontech/erigon/cl/pool"
+	"github.com/erigontech/erigon/cl/utils"
+	"github.com/erigontech/erigon/cl/utils/eth_clock"
 	"github.com/pkg/errors"
 )
 
 type voluntaryExitService struct {
 	operationsPool    pool.OperationsPool
 	emitters          *beaconevents.Emitters
-	syncedDataManager *synced_data.SyncedDataManager
+	syncedDataManager synced_data.SyncedData
 	beaconCfg         *clparams.BeaconChainConfig
 	ethClock          eth_clock.EthereumClock
 }
@@ -27,7 +42,7 @@ type voluntaryExitService struct {
 func NewVoluntaryExitService(
 	operationsPool pool.OperationsPool,
 	emitters *beaconevents.Emitters,
-	syncedDataManager *synced_data.SyncedDataManager,
+	syncedDataManager synced_data.SyncedData,
 	beaconCfg *clparams.BeaconChainConfig,
 	ethClock eth_clock.EthereumClock,
 ) VoluntaryExitService {
@@ -52,7 +67,7 @@ func (s *voluntaryExitService) ProcessMessage(ctx context.Context, subnet *uint6
 
 	// ref: https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/beacon-chain.md#voluntary-exits
 	// def process_voluntary_exit(state: BeaconState, signed_voluntary_exit: SignedVoluntaryExit) -> None:
-	state := s.syncedDataManager.HeadState()
+	state := s.syncedDataManager.HeadStateReader()
 	if state == nil {
 		return ErrIgnore
 	}
@@ -96,16 +111,16 @@ func (s *voluntaryExitService) ProcessMessage(ctx context.Context, subnet *uint6
 	if state.Version() < clparams.DenebVersion {
 		domain, err = state.GetDomain(domainType, voluntaryExit.Epoch)
 	} else if state.Version() >= clparams.DenebVersion {
-		domain, err = fork.ComputeDomain(domainType[:], utils.Uint32ToBytes4(uint32(state.BeaconConfig().CapellaForkVersion)), state.GenesisValidatorsRoot())
+		domain, err = fork.ComputeDomain(domainType[:], utils.Uint32ToBytes4(uint32(s.beaconCfg.CapellaForkVersion)), state.GenesisValidatorsRoot())
 	}
 	if err != nil {
 		return err
 	}
-	signingRoot, err := fork.ComputeSigningRoot(voluntaryExit, domain)
+	signingRoot, err := computeSigningRoot(voluntaryExit, domain)
 	if err != nil {
 		return err
 	}
-	if valid, err := bls.Verify(msg.Signature[:], signingRoot[:], pk[:]); err != nil {
+	if valid, err := blsVerify(msg.Signature[:], signingRoot[:], pk[:]); err != nil {
 		return err
 	} else if !valid {
 		return errors.New("ProcessVoluntaryExit: BLS verification failed")

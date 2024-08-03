@@ -1,3 +1,19 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package execution_client
 
 import (
@@ -6,12 +22,12 @@ import (
 	"fmt"
 	"math/big"
 
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/gointerfaces/execution"
-	"github.com/ledgerwatch/erigon/cl/cltypes"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/turbo/engineapi/engine_types"
-	"github.com/ledgerwatch/erigon/turbo/execution/eth1/eth1_chain_reader.go"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	execution "github.com/erigontech/erigon-lib/gointerfaces/executionproto"
+	"github.com/erigontech/erigon/cl/cltypes"
+	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/turbo/engineapi/engine_types"
+	"github.com/erigontech/erigon/turbo/execution/eth1/eth1_chain_reader.go"
 )
 
 type ExecutionClientDirect struct {
@@ -24,38 +40,48 @@ func NewExecutionClientDirect(chainRW eth1_chain_reader.ChainReaderWriterEth1) (
 	}, nil
 }
 
-func (cc *ExecutionClientDirect) NewPayload(ctx context.Context, payload *cltypes.Eth1Block, beaconParentRoot *libcommon.Hash, versionedHashes []libcommon.Hash) (invalid bool, err error) {
+func (cc *ExecutionClientDirect) NewPayload(ctx context.Context, payload *cltypes.Eth1Block, beaconParentRoot *libcommon.Hash, versionedHashes []libcommon.Hash) (PayloadStatus, error) {
 	if payload == nil {
-		return
+		return PayloadStatusValidated, nil
 	}
 
 	header, err := payload.RlpHeader(beaconParentRoot)
 	if err != nil {
-		return true, err
+		// invalid block
+		return PayloadStatusInvalidated, err
 	}
 
 	body := payload.Body()
 	txs, err := types.DecodeTransactions(body.Transactions)
 	if err != nil {
-		return true, err
+		// invalid block
+		return PayloadStatusInvalidated, err
 	}
 
-	if err := cc.chainRW.InsertBlockAndWait(ctx, types.NewBlockFromStorage(payload.BlockHash, header, txs, nil, body.Withdrawals)); err != nil {
-		return false, err
+	if err := cc.chainRW.InsertBlockAndWait(ctx, types.NewBlockFromStorage(payload.BlockHash, header, txs, nil, body.Withdrawals, body.Requests)); err != nil {
+		return PayloadStatusNone, err
 	}
 
 	headHeader := cc.chainRW.CurrentHeader(ctx)
 	if headHeader == nil || header.Number.Uint64() > headHeader.Number.Uint64()+1 {
-		return false, nil // import optimistically.
+		// can't validate yet
+		return PayloadStatusNotValidated, nil
 	}
 
 	status, _, _, err := cc.chainRW.ValidateChain(ctx, payload.BlockHash, payload.BlockNumber)
 	if err != nil {
-		return false, err
+		return PayloadStatusNone, err
 	}
-	invalid = status == execution.ExecutionStatus_BadBlock
-
-	return
+	// check status
+	switch status {
+	case execution.ExecutionStatus_BadBlock, execution.ExecutionStatus_InvalidForkchoice:
+		return PayloadStatusInvalidated, fmt.Errorf("bad block")
+	case execution.ExecutionStatus_Busy, execution.ExecutionStatus_MissingSegment, execution.ExecutionStatus_TooFarAway:
+		return PayloadStatusNotValidated, nil
+	case execution.ExecutionStatus_Success:
+		return PayloadStatusValidated, nil
+	}
+	return PayloadStatusNone, fmt.Errorf("unexpected status")
 }
 
 func (cc *ExecutionClientDirect) ForkChoiceUpdate(ctx context.Context, finalized libcommon.Hash, head libcommon.Hash, attr *engine_types.PayloadAttributes) ([]byte, error) {
@@ -119,7 +145,8 @@ func (cc *ExecutionClientDirect) GetBodiesByHashes(ctx context.Context, hashes [
 }
 
 func (cc *ExecutionClientDirect) FrozenBlocks(ctx context.Context) uint64 {
-	return cc.chainRW.FrozenBlocks(ctx)
+	frozenBlocks, _ := cc.chainRW.FrozenBlocks(ctx)
+	return frozenBlocks
 }
 
 func (cc *ExecutionClientDirect) HasBlock(ctx context.Context, hash libcommon.Hash) (bool, error) {
@@ -128,4 +155,9 @@ func (cc *ExecutionClientDirect) HasBlock(ctx context.Context, hash libcommon.Ha
 
 func (cc *ExecutionClientDirect) GetAssembledBlock(_ context.Context, idBytes []byte) (*cltypes.Eth1Block, *engine_types.BlobsBundleV1, *big.Int, error) {
 	return cc.chainRW.GetAssembledBlock(binary.LittleEndian.Uint64(idBytes))
+}
+
+func (cc *ExecutionClientDirect) HasGapInSnapshots(ctx context.Context) bool {
+	_, hasGap := cc.chainRW.FrozenBlocks(ctx)
+	return hasGap
 }

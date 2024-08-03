@@ -1,3 +1,19 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package state
 
 import (
@@ -5,14 +21,14 @@ import (
 	"fmt"
 
 	"github.com/Giulio2002/bls"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
+	libcommon "github.com/erigontech/erigon-lib/common"
 
-	"github.com/ledgerwatch/erigon/cl/abstract"
-	"github.com/ledgerwatch/erigon/cl/clparams"
-	"github.com/ledgerwatch/erigon/cl/cltypes"
-	"github.com/ledgerwatch/erigon/cl/cltypes/solid"
-	"github.com/ledgerwatch/erigon/cl/fork"
-	"github.com/ledgerwatch/erigon/cl/utils"
+	"github.com/erigontech/erigon/cl/abstract"
+	"github.com/erigontech/erigon/cl/clparams"
+	"github.com/erigontech/erigon/cl/cltypes"
+	"github.com/erigontech/erigon/cl/cltypes/solid"
+	"github.com/erigontech/erigon/cl/fork"
+	"github.com/erigontech/erigon/cl/utils"
 )
 
 const PreAllocatedRewardsAndPenalties = 8192
@@ -30,7 +46,7 @@ func Epoch(b abstract.BeaconStateBasic) uint64 {
 }
 
 func IsAggregator(cfg *clparams.BeaconChainConfig, committeeLength, committeeIndex uint64, slotSignature libcommon.Bytes96) bool {
-	modulo := utils.Max64(1, committeeLength/cfg.TargetAggregatorsPerCommittee)
+	modulo := max(1, committeeLength/cfg.TargetAggregatorsPerCommittee)
 	hashSlotSignatue := utils.Sha256(slotSignature[:])
 	return binary.LittleEndian.Uint64(hashSlotSignatue[:8])%modulo == 0
 }
@@ -208,7 +224,7 @@ func ExpectedWithdrawals(b abstract.BeaconState, currentEpoch uint64) []*cltypes
 	// Determine the upper bound for the loop and initialize the withdrawals slice with a capacity of bound
 	maxValidators := uint64(b.ValidatorLength())
 	maxValidatorsPerWithdrawalsSweep := b.BeaconConfig().MaxValidatorsPerWithdrawalsSweep
-	bound := utils.Min64(maxValidators, maxValidatorsPerWithdrawalsSweep)
+	bound := min(maxValidators, maxValidatorsPerWithdrawalsSweep)
 	withdrawals := make([]*cltypes.Withdrawal, 0, bound)
 
 	// Loop through the validators to calculate expected withdrawals

@@ -1,3 +1,19 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package jsonrpc
 
 import (
@@ -6,27 +22,31 @@ import (
 	"math/big"
 	"time"
 
+<<<<<<< HEAD
 	"github.com/ledgerwatch/erigon-lib/opstack"
 	"github.com/ledgerwatch/log/v3"
+=======
+	"github.com/erigontech/erigon-lib/log/v3"
+>>>>>>> v3.0.0-alpha1
 
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
-	"github.com/ledgerwatch/erigon-lib/common/hexutility"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon/cl/clparams"
-	"github.com/ledgerwatch/erigon/common/math"
-	"github.com/ledgerwatch/erigon/core"
-	"github.com/ledgerwatch/erigon/core/rawdb"
-	"github.com/ledgerwatch/erigon/core/state"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/core/vm"
-	"github.com/ledgerwatch/erigon/crypto/cryptopool"
-	"github.com/ledgerwatch/erigon/polygon/bor/borcfg"
-	bortypes "github.com/ledgerwatch/erigon/polygon/bor/types"
-	"github.com/ledgerwatch/erigon/rpc"
-	"github.com/ledgerwatch/erigon/turbo/adapter/ethapi"
-	"github.com/ledgerwatch/erigon/turbo/rpchelper"
-	"github.com/ledgerwatch/erigon/turbo/transactions"
+	"github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/hexutil"
+	"github.com/erigontech/erigon-lib/common/hexutility"
+	"github.com/erigontech/erigon-lib/kv"
+	"github.com/erigontech/erigon/cl/clparams"
+	"github.com/erigontech/erigon/common/math"
+	"github.com/erigontech/erigon/core"
+	"github.com/erigontech/erigon/core/rawdb"
+	"github.com/erigontech/erigon/core/state"
+	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/core/vm"
+	"github.com/erigontech/erigon/crypto/cryptopool"
+	"github.com/erigontech/erigon/polygon/bor/borcfg"
+	bortypes "github.com/erigontech/erigon/polygon/bor/types"
+	"github.com/erigontech/erigon/rpc"
+	"github.com/erigontech/erigon/turbo/adapter/ethapi"
+	"github.com/erigontech/erigon/turbo/rpchelper"
+	"github.com/erigontech/erigon/turbo/transactions"
 )
 
 func (api *APIImpl) CallBundle(ctx context.Context, txHashes []common.Hash, stateBlockNumberOrHash rpc.BlockNumberOrHash, timeoutMilliSecondsPtr *int64) (map[string]interface{}, error) {
@@ -71,7 +91,7 @@ func (api *APIImpl) CallBundle(ctx context.Context, txHashes []common.Hash, stat
 			}
 		}
 		if txn == nil {
-			return nil, nil // not error, see https://github.com/ledgerwatch/turbo-geth/issues/1645
+			return nil, nil // not error, see https://github.com/erigontech/erigon/issues/1645
 		}
 		txs = append(txs, txn)
 	}
@@ -87,9 +107,9 @@ func (api *APIImpl) CallBundle(ctx context.Context, txHashes []common.Hash, stat
 		if err != nil {
 			return nil, err
 		}
-		stateReader = state.NewCachedReader2(cacheView, tx)
+		stateReader = rpchelper.CreateLatestCachedStateReader(cacheView, tx)
 	} else {
-		stateReader, err = rpchelper.CreateHistoryStateReader(tx, stateBlockNumber+1, 0, api.historyV3(tx), chainConfig.ChainName)
+		stateReader, err = rpchelper.CreateHistoryStateReader(tx, stateBlockNumber+1, 0, chainConfig.ChainName)
 		if err != nil {
 			return nil, err
 		}
@@ -108,7 +128,7 @@ func (api *APIImpl) CallBundle(ctx context.Context, txHashes []common.Hash, stat
 	coinbase := parent.Coinbase
 	header := &types.Header{
 		ParentHash: parent.Hash(),
-		Number:     big.NewInt(int64(blockNumber)),
+		Number:     new(big.Int).SetUint64(blockNumber),
 		GasLimit:   parent.GasLimit,
 		Time:       timestamp,
 		Difficulty: parent.Difficulty,
@@ -122,7 +142,7 @@ func (api *APIImpl) CallBundle(ctx context.Context, txHashes []common.Hash, stat
 		return nil, err
 	}
 
-	blockCtx := transactions.NewEVMBlockContext(engine, header, stateBlockNumberOrHash.RequireCanonical, tx, api._blockReader)
+	blockCtx := transactions.NewEVMBlockContext(engine, header, stateBlockNumberOrHash.RequireCanonical, tx, api._blockReader, chainConfig)
 	txCtx := core.NewEVMTxContext(firstMsg)
 	blockCtx.L1CostFunc = opstack.NewL1CostFunc(chainConfig, ibs)
 	// Get a new instance of the EVM
@@ -256,7 +276,7 @@ func (api *APIImpl) GetBlockByHash(ctx context.Context, numberOrHash rpc.BlockNu
 		// eth_getBlockByHash with a block number as a parameter
 		// so no matter how weird that is, we would love to support that.
 		if numberOrHash.BlockNumber == nil {
-			return nil, nil // not error, see https://github.com/ledgerwatch/erigon/issues/1645
+			return nil, nil // not error, see https://github.com/erigontech/erigon/issues/1645
 		}
 		return api.GetBlockByNumber(ctx, *numberOrHash.BlockNumber, fullTx)
 	}
@@ -275,7 +295,7 @@ func (api *APIImpl) GetBlockByHash(ctx context.Context, numberOrHash rpc.BlockNu
 		return nil, err
 	}
 	if block == nil {
-		return nil, nil // not error, see https://github.com/ledgerwatch/erigon/issues/1645
+		return nil, nil // not error, see https://github.com/erigontech/erigon/issues/1645
 	}
 	number := block.NumberU64()
 
@@ -348,7 +368,7 @@ func (api *APIImpl) GetBlockTransactionCountByNumber(ctx context.Context, blockN
 		return nil, nil
 	}
 
-	_, txAmount, err := api._blockReader.Body(ctx, tx, blockHash, blockNum)
+	_, txCount, err := api._blockReader.Body(ctx, tx, blockHash, blockNum)
 	if err != nil {
 		return nil, err
 	}
@@ -365,11 +385,11 @@ func (api *APIImpl) GetBlockTransactionCountByNumber(ctx context.Context, blockN
 			return nil, err
 		}
 		if ok {
-			txAmount++
+			txCount++
 		}
 	}
 
-	numOfTx := hexutil.Uint(txAmount)
+	numOfTx := hexutil.Uint(txCount)
 
 	return &numOfTx, nil
 }
@@ -389,7 +409,7 @@ func (api *APIImpl) GetBlockTransactionCountByHash(ctx context.Context, blockHas
 		return nil, nil
 	}
 
-	_, txAmount, err := api._blockReader.Body(ctx, tx, blockHash, blockNum)
+	_, txCount, err := api._blockReader.Body(ctx, tx, blockHash, blockNum)
 	if err != nil {
 		return nil, err
 	}
@@ -406,11 +426,11 @@ func (api *APIImpl) GetBlockTransactionCountByHash(ctx context.Context, blockHas
 			return nil, err
 		}
 		if ok {
-			txAmount++
+			txCount++
 		}
 	}
 
-	numOfTx := hexutil.Uint(txAmount)
+	numOfTx := hexutil.Uint(txCount)
 
 	return &numOfTx, nil
 }

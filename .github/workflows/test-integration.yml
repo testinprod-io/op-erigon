@@ -2,10 +2,22 @@ name: Integration tests
 on:
   push:
     branches:
+<<<<<<< HEAD
       - devel
       - alpha
       - op-erigon
+=======
+      - main
+>>>>>>> v3.0.0-alpha1
       - 'release/**'
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
   schedule:
     - cron: '20 16 * * *' # daily at 16:20 UTC
   workflow_dispatch:
@@ -17,11 +29,11 @@ jobs:
         # list of os: https://github.com/actions/virtual-environments
         os:
           - ubuntu-22.04
-          - macos-13
+          - macos-14
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: git submodule update --init --recursive --force
       - uses: actions/setup-go@v4
         with:
@@ -33,14 +45,6 @@ jobs:
       - name: test-integration
         run: make test-integration
 
-      - name: Test erigon as a library
-        env:
-          GIT_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: make test-erigon-ext GIT_COMMIT=$GIT_COMMIT
-
-  #        name: history-v3-test-integration
-  #        run: make test3-integration
-
   tests-windows:
     strategy:
       matrix:
@@ -48,7 +52,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: git submodule update --init --recursive --force
       - uses: actions/setup-go@v4
         with:

@@ -1,0 +1,2459 @@
+On branch upstream-v3.0.0
+You have unmerged paths.
+  (fix conflicts and run "git commit")
+  (use "git merge --abort" to abort the merge)
+
+Changes to be committed:
+	modified:   .buildkite/pipeline.yml
+	modified:   .github/CONTRIBUTING.md
+	modified:   .github/ISSUE_TEMPLATE/question.md
+	modified:   .github/workflows/check.yml
+	modified:   .github/workflows/docker-tags.yml
+	new file:   .github/workflows/manifest.yml
+	new file:   .github/workflows/qa-rpc-integration-tests.yml
+	new file:   .github/workflows/qa-sync-from-scratch-minimal-node.yml
+	new file:   .github/workflows/qa-sync-from-scratch.yml
+	new file:   .github/workflows/test-erigon-is-library.yml
+	modified:   .github/workflows/test-integration-caplin.yml
+	modified:   .gitignore
+	modified:   .golangci.yml
+	modified:   COPYING
+	deleted:    COPYING.LESSER
+	modified:   DEV_CHAIN.md
+	modified:   README.md
+	modified:   TESTING.md
+	modified:   accounts/abi/abi.go
+	modified:   accounts/abi/abi_test.go
+	modified:   accounts/abi/argument.go
+	modified:   accounts/abi/bind/auth.go
+	modified:   accounts/abi/bind/backend.go
+	modified:   accounts/abi/bind/backends/simulated_test.go
+	modified:   accounts/abi/bind/base.go
+	modified:   accounts/abi/bind/base_test.go
+	modified:   accounts/abi/bind/bind.go
+	modified:   accounts/abi/bind/bind_test.go
+	modified:   accounts/abi/bind/util.go
+	modified:   accounts/abi/bind/util_test.go
+	modified:   accounts/abi/doc.go
+	modified:   accounts/abi/error.go
+	modified:   accounts/abi/event.go
+	modified:   accounts/abi/event_test.go
+	modified:   accounts/abi/method.go
+	modified:   accounts/abi/method_test.go
+	modified:   accounts/abi/pack.go
+	modified:   accounts/abi/pack_test.go
+	modified:   accounts/abi/packing_test.go
+	modified:   accounts/abi/reflect.go
+	modified:   accounts/abi/reflect_test.go
+	modified:   accounts/abi/topics.go
+	modified:   accounts/abi/topics_test.go
+	modified:   accounts/abi/type.go
+	modified:   accounts/abi/type_test.go
+	modified:   accounts/abi/unpack.go
+	modified:   accounts/abi/unpack_test.go
+	modified:   cl/abstract/beacon_state.go
+	new file:   cl/abstract/mock_services/beacon_state_mutator_mock.go
+	renamed:    cl/phase1/core/state/mock_services/beacon_state_reader_mock.go -> cl/abstract/mock_services/beacon_state_reader_mock.go
+	modified:   cl/aggregation/mock_services/aggregation_pool_mock.go
+	modified:   cl/aggregation/pool.go
+	modified:   cl/aggregation/pool_impl.go
+	modified:   cl/aggregation/pool_test.go
+	modified:   cl/antiquary/antiquary.go
+	modified:   cl/antiquary/beacon_states_collector.go
+	modified:   cl/antiquary/state_antiquary.go
+	modified:   cl/antiquary/state_antiquary_test.go
+	modified:   cl/antiquary/tests/tests.go
+	modified:   cl/antiquary/utils.go
+	modified:   cl/beacon/beacon_router_configuration/cfg.go
+	modified:   cl/beacon/beaconevents/emitter.go
+	modified:   cl/beacon/beaconevents/emitter_test.go
+	modified:   cl/beacon/beaconhttp/api.go
+	modified:   cl/beacon/beaconhttp/args.go
+	modified:   cl/beacon/beaconhttp/beacon_response.go
+	modified:   cl/beacon/beaconhttp/types.go
+	modified:   cl/beacon/beacontest/errors.go
+	modified:   cl/beacon/beacontest/harness.go
+	modified:   cl/beacon/beacontest/harness_test.go
+	modified:   cl/beacon/beacontest/harness_test_data.yml
+	modified:   cl/beacon/beacontest/linux_basepathfs.go
+	new file:   cl/beacon/builder/client.go
+	new file:   cl/beacon/builder/client_test.go
+	new file:   cl/beacon/builder/interface.go
+	new file:   cl/beacon/builder/mock_services/builder_client_mock.go
+	new file:   cl/beacon/builder/test_data/mock_blinded_block.json
+	new file:   cl/beacon/builder/test_data/mock_blinded_block_resp.json
+	new file:   cl/beacon/builder/test_data/mock_header.json
+	new file:   cl/beacon/builder/types.go
+	modified:   cl/beacon/building/endpoints.go
+	modified:   cl/beacon/building/state.go
+	modified:   cl/beacon/handler/attestation_rewards.go
+	modified:   cl/beacon/handler/blobs.go
+	modified:   cl/beacon/handler/blocks.go
+	modified:   cl/beacon/handler/builder.go
+	modified:   cl/beacon/handler/committees.go
+	modified:   cl/beacon/handler/config.go
+	modified:   cl/beacon/handler/data_test.go
+	modified:   cl/beacon/handler/duties_attester.go
+	modified:   cl/beacon/handler/duties_proposer.go
+	modified:   cl/beacon/handler/duties_sync.go
+	modified:   cl/beacon/handler/events.go
+	modified:   cl/beacon/handler/forkchoice.go
+	modified:   cl/beacon/handler/format.go
+	modified:   cl/beacon/handler/genesis.go
+	modified:   cl/beacon/handler/harness_test.go
+	modified:   cl/beacon/handler/headers.go
+	modified:   cl/beacon/handler/lightclient.go
+	modified:   cl/beacon/handler/lighthouse.go
+	modified:   cl/beacon/handler/liveness.go
+	modified:   cl/beacon/handler/pool.go
+	modified:   cl/beacon/handler/pool_test.go
+	modified:   cl/beacon/handler/rewards.go
+	modified:   cl/beacon/handler/rewards_test.go
+	modified:   cl/beacon/handler/states.go
+	modified:   cl/beacon/handler/states_test.go
+	modified:   cl/beacon/handler/subscription.go
+	modified:   cl/beacon/handler/test_data/blinded_block_1.json
+	modified:   cl/beacon/handler/test_data/blob_sidecars_1.json
+	modified:   cl/beacon/handler/test_data/block_1.json
+	modified:   cl/beacon/handler/utils_test.go
+	modified:   cl/beacon/handler/validator_registration.go
+	modified:   cl/beacon/handler/validator_registration_test.go
+	modified:   cl/beacon/handler/validator_test.go
+	modified:   cl/beacon/handler/validators.go
+	modified:   cl/beacon/router.go
+	modified:   cl/beacon/rw.go
+	modified:   cl/beacon/synced_data/interface.go
+	modified:   cl/beacon/synced_data/mock_services/synced_data_mock.go
+	modified:   cl/beacon/synced_data/synced_data.go
+	modified:   cl/clparams/config_test.go
+	new file:   cl/clparams/initial_state/gnosis.state.ssz
+	modified:   cl/clparams/initial_state/initial_state.go
+	modified:   cl/clparams/initial_state/initial_state_test.go
+	modified:   cl/clparams/version.go
+	modified:   cl/clstages/clstages.go
+	modified:   cl/cltypes/aggregate.go
+	modified:   cl/cltypes/beacon_block.go
+	renamed:    cl/cltypes/blinded_beacon_block.go -> cl/cltypes/beacon_block_blinded.go
+	new file:   cl/cltypes/beacon_block_interface.go
+	modified:   cl/cltypes/beacon_block_test.go
+	modified:   cl/cltypes/beacon_committee_subscriptions.go
+	modified:   cl/cltypes/beacon_header.go
+	modified:   cl/cltypes/beacon_kzgcommitment.go
+	modified:   cl/cltypes/beacon_kzgcommitment_test.go
+	modified:   cl/cltypes/blob_sidecar.go
+	new file:   cl/cltypes/block_production.go
+	modified:   cl/cltypes/bls_to_execution_change.go
+	modified:   cl/cltypes/bls_to_execution_test.go
+	new file:   cl/cltypes/builder.go
+	modified:   cl/cltypes/clone.go
+	modified:   cl/cltypes/contribution.go
+	modified:   cl/cltypes/eth1_block.go
+	modified:   cl/cltypes/eth1_data.go
+	modified:   cl/cltypes/eth1_data_test.go
+	modified:   cl/cltypes/eth1_header.go
+	modified:   cl/cltypes/eth1_header_test.go
+	modified:   cl/cltypes/fork.go
+	modified:   cl/cltypes/fork_test.go
+	modified:   cl/cltypes/historical_summary.go
+	modified:   cl/cltypes/historical_summary_test.go
+	modified:   cl/cltypes/indexed_attestation.go
+	modified:   cl/cltypes/justification_bits.go
+	modified:   cl/cltypes/justification_bits_test.go
+	modified:   cl/cltypes/light_client.go
+	modified:   cl/cltypes/lightclient_utils/lightclient.go
+	modified:   cl/cltypes/network.go
+	modified:   cl/cltypes/network_test.go
+	modified:   cl/cltypes/participation_flags.go
+	modified:   cl/cltypes/participation_flags_test.go
+	modified:   cl/cltypes/slashings.go
+	modified:   cl/cltypes/slashings_test.go
+	modified:   cl/cltypes/solid/attestation.go
+	modified:   cl/cltypes/solid/attestation_data.go
+	modified:   cl/cltypes/solid/attestation_test.go
+	modified:   cl/cltypes/solid/bitlist.go
+	modified:   cl/cltypes/solid/bitlist_test.go
+	modified:   cl/cltypes/solid/checkpoint.go
+	modified:   cl/cltypes/solid/checkpoint_test.go
+	modified:   cl/cltypes/solid/extra_data.go
+	modified:   cl/cltypes/solid/extra_data_test.go
+	modified:   cl/cltypes/solid/hash_list.go
+	modified:   cl/cltypes/solid/hash_vector.go
+	modified:   cl/cltypes/solid/hashutil.go
+	modified:   cl/cltypes/solid/hashutil_test.go
+	modified:   cl/cltypes/solid/interfaces.go
+	modified:   cl/cltypes/solid/list_ssz.go
+	modified:   cl/cltypes/solid/list_ssz_test.go
+	modified:   cl/cltypes/solid/list_test.go
+	modified:   cl/cltypes/solid/pending_attestation.go
+	modified:   cl/cltypes/solid/pending_attestation_test.go
+	modified:   cl/cltypes/solid/ranger.go
+	modified:   cl/cltypes/solid/sync_committee.go
+	modified:   cl/cltypes/solid/sync_committee_test.go
+	modified:   cl/cltypes/solid/transactions.go
+	modified:   cl/cltypes/solid/uint64_list.go
+	modified:   cl/cltypes/solid/uint64_raw_list.go
+	modified:   cl/cltypes/solid/uint64_vector.go
+	modified:   cl/cltypes/solid/uint64slice_byte.go
+	modified:   cl/cltypes/solid/uint64slice_byte_test.go
+	modified:   cl/cltypes/solid/validator.go
+	modified:   cl/cltypes/solid/validator_set.go
+	modified:   cl/cltypes/solid/validator_test.go
+	modified:   cl/cltypes/sync_aggregator_selection_data.go
+	modified:   cl/cltypes/validator.go
+	modified:   cl/cltypes/validator_test.go
+	modified:   cl/cltypes/withdrawal.go
+	modified:   cl/coverage
+	modified:   cl/fork/fork.go
+	modified:   cl/fork/fork_test.go
+	modified:   cl/gossip/gossip.go
+	modified:   cl/merkle_tree/hasher.go
+	modified:   cl/merkle_tree/init.go
+	modified:   cl/merkle_tree/list.go
+	modified:   cl/merkle_tree/merkle_root.go
+	modified:   cl/merkle_tree/merkle_root_test.go
+	modified:   cl/merkle_tree/primitives.go
+	modified:   cl/merkle_tree/utils.go
+	modified:   cl/merkle_tree/zero.go
+	modified:   cl/persistence/base_encoding/primitives.go
+	modified:   cl/persistence/base_encoding/primitives_test.go
+	modified:   cl/persistence/base_encoding/rabbit.go
+	modified:   cl/persistence/base_encoding/rabbit_test.go
+	modified:   cl/persistence/base_encoding/uint64_diff.go
+	modified:   cl/persistence/beacon_indicies/indicies.go
+	modified:   cl/persistence/beacon_indicies/indicies_test.go
+	modified:   cl/persistence/blob_storage/blob_db.go
+	modified:   cl/persistence/blob_storage/blob_db_test.go
+	modified:   cl/persistence/block_store.go
+	deleted:    cl/persistence/db_config/db_config.go
+	deleted:    cl/persistence/db_config/db_config_test.go
+	modified:   cl/persistence/format/snapshot_format/blocks.go
+	modified:   cl/persistence/format/snapshot_format/blocks_test.go
+	modified:   cl/persistence/format/snapshot_format/getters/execution_snapshot.go
+	modified:   cl/persistence/format/snapshot_format/test_util.go
+	modified:   cl/persistence/interface.go
+	modified:   cl/persistence/state/epoch_data.go
+	modified:   cl/persistence/state/epoch_data_test.go
+	modified:   cl/persistence/state/historical_states_reader/attesting_indicies.go
+	modified:   cl/persistence/state/historical_states_reader/historical_states_reader.go
+	modified:   cl/persistence/state/historical_states_reader/historical_states_reader_test.go
+	modified:   cl/persistence/state/slot_data.go
+	modified:   cl/persistence/state/slot_data_test.go
+	modified:   cl/persistence/state/state_accessors.go
+	modified:   cl/persistence/state/static_validator_table.go
+	modified:   cl/persistence/state/static_validator_table_test.go
+	modified:   cl/persistence/state/validator_events.go
+	modified:   cl/persistence/state/validator_events_test.go
+	modified:   cl/phase1/core/checkpoint.go
+	modified:   cl/phase1/core/rawdb/config.go
+	modified:   cl/phase1/core/state/accessors.go
+	modified:   cl/phase1/core/state/cache.go
+	modified:   cl/phase1/core/state/cache_accessors.go
+	modified:   cl/phase1/core/state/cache_getters.go
+	modified:   cl/phase1/core/state/cache_mutators.go
+	modified:   cl/phase1/core/state/cache_setters.go
+	modified:   cl/phase1/core/state/copy.go
+	deleted:    cl/phase1/core/state/interface.go
+	modified:   cl/phase1/core/state/lru/lru.go
+	modified:   cl/phase1/core/state/mutators.go
+	modified:   cl/phase1/core/state/mutators_test.go
+	modified:   cl/phase1/core/state/raw/copy.go
+	modified:   cl/phase1/core/state/raw/errors.go
+	modified:   cl/phase1/core/state/raw/events.go
+	modified:   cl/phase1/core/state/raw/getters.go
+	modified:   cl/phase1/core/state/raw/hashing.go
+	modified:   cl/phase1/core/state/raw/misc_test.go
+	modified:   cl/phase1/core/state/raw/params.go
+	modified:   cl/phase1/core/state/raw/setters.go
+	modified:   cl/phase1/core/state/raw/setters_test.go
+	modified:   cl/phase1/core/state/raw/ssz.go
+	modified:   cl/phase1/core/state/raw/state.go
+	modified:   cl/phase1/core/state/raw/test_util.go
+	modified:   cl/phase1/core/state/root_test.go
+	modified:   cl/phase1/core/state/shuffling/shuffling.go
+	modified:   cl/phase1/core/state/shuffling/shuffling_test.go
+	modified:   cl/phase1/core/state/shuffling/util.go
+	modified:   cl/phase1/core/state/ssz.go
+	modified:   cl/phase1/core/state/ssz_test.go
+	modified:   cl/phase1/core/state/upgrade.go
+	modified:   cl/phase1/core/state/upgrade_test.go
+	modified:   cl/phase1/core/state/util.go
+	modified:   cl/phase1/core/state/utils_test.go
+	modified:   cl/phase1/execution_client/block_collector/block_collector.go
+	modified:   cl/phase1/execution_client/block_collector/block_collector_test.go
+	modified:   cl/phase1/execution_client/execution_client_direct.go
+	modified:   cl/phase1/execution_client/execution_client_rpc.go
+	modified:   cl/phase1/execution_client/execution_engine_mock.go
+	modified:   cl/phase1/execution_client/interface.go
+	modified:   cl/phase1/execution_client/rpc_helper/jwt_roundtripper.go
+	modified:   cl/phase1/execution_client/rpc_helper/methods.go
+	new file:   cl/phase1/execution_client/types.go
+	modified:   cl/phase1/forkchoice/blob_sidecars.go
+	modified:   cl/phase1/forkchoice/checkpoint_state.go
+	modified:   cl/phase1/forkchoice/fork_choice_test.go
+	modified:   cl/phase1/forkchoice/fork_graph/diff_storage/diff_storage.go
+	modified:   cl/phase1/forkchoice/fork_graph/diff_storage/diff_storage_test.go
+	modified:   cl/phase1/forkchoice/fork_graph/fork_graph_disk_fs.go
+	modified:   cl/phase1/forkchoice/fork_graph/fork_graph_test.go
+	modified:   cl/phase1/forkchoice/fork_graph/interface.go
+	modified:   cl/phase1/forkchoice/forkchoice.go
+	modified:   cl/phase1/forkchoice/get_head.go
+	modified:   cl/phase1/forkchoice/interface.go
+	modified:   cl/phase1/forkchoice/mock_services/forkchoice_mock.go
+	modified:   cl/phase1/forkchoice/on_attestation.go
+	modified:   cl/phase1/forkchoice/on_attester_slashing.go
+	modified:   cl/phase1/forkchoice/on_block.go
+	modified:   cl/phase1/forkchoice/on_tick.go
+	new file:   cl/phase1/forkchoice/optimistic/optimistic.go
+	new file:   cl/phase1/forkchoice/optimistic/optimistic_impl.go
+	new file:   cl/phase1/forkchoice/optimistic/optimistic_test.go
+	modified:   cl/phase1/forkchoice/utils.go
+	modified:   cl/phase1/network/backward_beacon_downloader.go
+	modified:   cl/phase1/network/beacon_downloader.go
+	modified:   cl/phase1/network/blobs.go
+	modified:   cl/phase1/network/gossip_manager.go
+	modified:   cl/phase1/network/services/aggregate_and_proof_service.go
+	modified:   cl/phase1/network/services/aggregate_and_proof_service_test.go
+	modified:   cl/phase1/network/services/attestation_service.go
+	modified:   cl/phase1/network/services/attestation_service_test.go
+	modified:   cl/phase1/network/services/blob_sidecar_service.go
+	modified:   cl/phase1/network/services/blob_sidecar_service_test.go
+	modified:   cl/phase1/network/services/block_service.go
+	modified:   cl/phase1/network/services/block_service_test.go
+	modified:   cl/phase1/network/services/bls_to_execution_change_service.go
+	new file:   cl/phase1/network/services/bls_to_execution_change_service_test.go
+	modified:   cl/phase1/network/services/constants.go
+	new file:   cl/phase1/network/services/global_mock_test.go
+	modified:   cl/phase1/network/services/interface.go
+	modified:   cl/phase1/network/services/mock_services/aggregate_and_proof_service_mock.go
+	modified:   cl/phase1/network/services/mock_services/attestation_service_mock.go
+	modified:   cl/phase1/network/services/mock_services/blob_sidecars_service_mock.go
+	modified:   cl/phase1/network/services/mock_services/block_service_mock.go
+	modified:   cl/phase1/network/services/mock_services/bls_to_execution_change_service_mock.go
+	modified:   cl/phase1/network/services/mock_services/proposer_slashing_service_mock.go
+	modified:   cl/phase1/network/services/mock_services/sync_committee_messages_service_mock.go
+	modified:   cl/phase1/network/services/mock_services/sync_contribution_service_mock.go
+	modified:   cl/phase1/network/services/mock_services/voluntary_exit_service_mock.go
+	modified:   cl/phase1/network/services/proposer_slashing_service.go
+	new file:   cl/phase1/network/services/proposer_slashing_service_test.go
+	modified:   cl/phase1/network/services/sync_committee_messages_service.go
+	modified:   cl/phase1/network/services/sync_committee_messages_service_test.go
+	modified:   cl/phase1/network/services/sync_contribution_service.go
+	modified:   cl/phase1/network/services/sync_contribution_service_test.go
+	modified:   cl/phase1/network/services/voluntary_exit_service.go
+	new file:   cl/phase1/network/services/voluntary_exit_service_test.go
+	modified:   cl/phase1/network/subnets/subnets.go
+	modified:   cl/phase1/stages/clstages.go
+	modified:   cl/phase1/stages/stage_history_download.go
+	modified:   cl/pool/operation_pool.go
+	modified:   cl/pool/operations_pool.go
+	modified:   cl/pool/operations_pool_test.go
+	modified:   cl/rpc/rpc.go
+	modified:   cl/sentinel/communication/ssz_snappy/encoding.go
+	modified:   cl/sentinel/communication/topics.go
+	modified:   cl/sentinel/config.go
+	modified:   cl/sentinel/config_test.go
+	modified:   cl/sentinel/discovery.go
+	modified:   cl/sentinel/gater.go
+	modified:   cl/sentinel/handlers/blobs.go
+	modified:   cl/sentinel/handlers/blobs_test.go
+	modified:   cl/sentinel/handlers/blocks.go
+	modified:   cl/sentinel/handlers/blocks_by_range_test.go
+	modified:   cl/sentinel/handlers/blocks_by_root_test.go
+	modified:   cl/sentinel/handlers/handlers.go
+	modified:   cl/sentinel/handlers/heartbeats.go
+	modified:   cl/sentinel/handlers/heartbeats_test.go
+	modified:   cl/sentinel/handlers/light_client.go
+	modified:   cl/sentinel/handlers/light_client_test.go
+	modified:   cl/sentinel/handlers/utils_test.go
+	modified:   cl/sentinel/handshake/handshake.go
+	modified:   cl/sentinel/httpreqresp/server.go
+	modified:   cl/sentinel/libp2p_settings.go
+	modified:   cl/sentinel/msg_id.go
+	modified:   cl/sentinel/msg_id_test.go
+	modified:   cl/sentinel/peers/peers.go
+	modified:   cl/sentinel/peers/pool.go
+	modified:   cl/sentinel/sentinel.go
+	modified:   cl/sentinel/sentinel_gossip_test.go
+	modified:   cl/sentinel/sentinel_requests_test.go
+	modified:   cl/sentinel/service/notifiers.go
+	modified:   cl/sentinel/service/service.go
+	modified:   cl/sentinel/utils.go
+	modified:   cl/sentinel/utils_test.go
+	modified:   cl/spectest/consensus_tests/appendix.go
+	modified:   cl/spectest/consensus_tests/bls.go
+	modified:   cl/spectest/consensus_tests/eip4844_proofs.go
+	modified:   cl/spectest/consensus_tests/epoch_processing.go
+	modified:   cl/spectest/consensus_tests/finality.go
+	modified:   cl/spectest/consensus_tests/fork_choice.go
+	modified:   cl/spectest/consensus_tests/forks.go
+	modified:   cl/spectest/consensus_tests/light_client.go
+	modified:   cl/spectest/consensus_tests/operations.go
+	modified:   cl/spectest/consensus_tests/rewards.go
+	modified:   cl/spectest/consensus_tests/sanity.go
+	modified:   cl/spectest/consensus_tests/shuffling.go
+	modified:   cl/spectest/consensus_tests/ssz_static.go
+	modified:   cl/spectest/consensus_tests/transition.go
+	modified:   cl/spectest/tests_test.go
+	modified:   cl/ssz/decode.go
+	modified:   cl/ssz/encode.go
+	modified:   cl/ssz/ssz_test.go
+	modified:   cl/transition/compat.go
+	modified:   cl/transition/impl/eth2/block_processing_test.go
+	modified:   cl/transition/impl/eth2/impl.go
+	modified:   cl/transition/impl/eth2/statechange/finalization_and_justification.go
+	modified:   cl/transition/impl/eth2/statechange/process_effective_balance_update.go
+	modified:   cl/transition/impl/eth2/statechange/process_epoch.go
+	modified:   cl/transition/impl/eth2/statechange/process_epoch_test.go
+	modified:   cl/transition/impl/eth2/statechange/process_historical_roots.go
+	modified:   cl/transition/impl/eth2/statechange/process_historical_roots_update.go
+	modified:   cl/transition/impl/eth2/statechange/process_inactivity_scores.go
+	modified:   cl/transition/impl/eth2/statechange/process_registry_updates.go
+	modified:   cl/transition/impl/eth2/statechange/process_rewards_and_penalties.go
+	modified:   cl/transition/impl/eth2/statechange/process_slashings.go
+	modified:   cl/transition/impl/eth2/statechange/process_sync_committee_update.go
+	modified:   cl/transition/impl/eth2/statechange/process_sync_committee_update_test.go
+	modified:   cl/transition/impl/eth2/statechange/resets.go
+	modified:   cl/transition/impl/eth2/utils.go
+	modified:   cl/transition/impl/eth2/validation.go
+	modified:   cl/transition/impl/funcmap/impl.go
+	modified:   cl/transition/machine/block.go
+	modified:   cl/transition/machine/helpers.go
+	modified:   cl/transition/machine/machine.go
+	modified:   cl/transition/machine/transition.go
+	modified:   cl/utils/blob.go
+	modified:   cl/utils/bytes.go
+	modified:   cl/utils/bytes_test.go
+	modified:   cl/utils/crypto.go
+	modified:   cl/utils/crypto_test.go
+	modified:   cl/utils/eth_clock/ethereum_clock.go
+	modified:   cl/utils/eth_clock/ethereum_clock_mock.go
+	modified:   cl/utils/eth_clock/ethereum_clock_test.go
+	modified:   cl/utils/math.go
+	modified:   cl/utils/math_test.go
+	modified:   cl/utils/merkle.go
+	modified:   cl/utils/set.go
+	modified:   cl/utils/time_test.go
+	modified:   cl/validator/attestation_producer/attestation_producer.go
+	modified:   cl/validator/attestation_producer/attestation_producer_test.go
+	modified:   cl/validator/attestation_producer/interface.go
+	modified:   cl/validator/committee_subscription/committee_subscription.go
+	modified:   cl/validator/committee_subscription/interface.go
+	modified:   cl/validator/committee_subscription/mock_services/committee_subscribe_mock.go
+	modified:   cl/validator/sync_contribution_pool/interface.go
+	modified:   cl/validator/sync_contribution_pool/mock_services/sync_contribution_pool_mock.go
+	modified:   cl/validator/sync_contribution_pool/sync_contribution_pool.go
+	modified:   cl/validator/sync_contribution_pool/sync_contribution_pool_test.go
+	modified:   cl/validator/validator_params/validator_params.go
+	modified:   cmd/abigen/main.go
+	modified:   cmd/bootnode/main.go
+	modified:   cmd/capcli/cli.go
+	modified:   cmd/capcli/main.go
+	new file:   cmd/caplin/caplin1/option.go
+	modified:   cmd/caplin/caplin1/run.go
+	modified:   cmd/caplin/caplincli/config.go
+	modified:   cmd/caplin/caplinflags/flags.go
+	modified:   cmd/caplin/main.go
+	new file:   cmd/commitment-prefix/main.go
+	new file:   cmd/commitment-prefix/readme.md
+	modified:   cmd/devnet/README.md
+	modified:   cmd/devnet/accounts/accounts.go
+	modified:   cmd/devnet/accounts/steps/steps.go
+	modified:   cmd/devnet/accounts/util.go
+	modified:   cmd/devnet/admin/ping.go
+	modified:   cmd/devnet/args/args.go
+	modified:   cmd/devnet/args/node_args.go
+	modified:   cmd/devnet/args/node_args_test.go
+	modified:   cmd/devnet/blocks/checks.go
+	modified:   cmd/devnet/blocks/fees.go
+	modified:   cmd/devnet/blocks/generator.go
+	modified:   cmd/devnet/blocks/waiter.go
+	modified:   cmd/devnet/contracts/backend.go
+	modified:   cmd/devnet/contracts/gen.go
+	modified:   cmd/devnet/contracts/gen_childreceiver.go
+	modified:   cmd/devnet/contracts/gen_childsender.go
+	modified:   cmd/devnet/contracts/gen_faucet.go
+	modified:   cmd/devnet/contracts/gen_rootreceiver.go
+	modified:   cmd/devnet/contracts/gen_rootsender.go
+	modified:   cmd/devnet/contracts/gen_subscription.go
+	modified:   cmd/devnet/contracts/gen_testrootchain.go
+	modified:   cmd/devnet/contracts/gen_teststatesender.go
+	modified:   cmd/devnet/contracts/steps/l1l2transfers.go
+	modified:   cmd/devnet/contracts/steps/l2l1transfers.go
+	modified:   cmd/devnet/contracts/steps/subscriber.go
+	modified:   cmd/devnet/contracts/util.go
+	modified:   cmd/devnet/devnet/context.go
+	modified:   cmd/devnet/devnet/devnet.go
+	modified:   cmd/devnet/devnet/network.go
+	modified:   cmd/devnet/devnet/node.go
+	modified:   cmd/devnet/devnet/service.go
+	modified:   cmd/devnet/devnetutils/utils.go
+	modified:   cmd/devnet/devnetutils/utils_test.go
+	modified:   cmd/devnet/networks/devnet_bor.go
+	modified:   cmd/devnet/networks/devnet_dev.go
+	modified:   cmd/devnet/requests/account.go
+	modified:   cmd/devnet/requests/admin.go
+	modified:   cmd/devnet/requests/block.go
+	modified:   cmd/devnet/requests/errors.go
+	modified:   cmd/devnet/requests/event.go
+	modified:   cmd/devnet/requests/nopgenerator.go
+	modified:   cmd/devnet/requests/request_generator.go
+	modified:   cmd/devnet/requests/request_generator_test.go
+	modified:   cmd/devnet/requests/trace.go
+	modified:   cmd/devnet/requests/transaction.go
+	modified:   cmd/devnet/requests/tx.go
+	modified:   cmd/devnet/scenarios/context.go
+	modified:   cmd/devnet/scenarios/errors.go
+	modified:   cmd/devnet/scenarios/results.go
+	modified:   cmd/devnet/scenarios/run.go
+	modified:   cmd/devnet/scenarios/scenario.go
+	modified:   cmd/devnet/scenarios/stack.go
+	modified:   cmd/devnet/scenarios/suite.go
+	modified:   cmd/devnet/services/accounts/faucet.go
+	modified:   cmd/devnet/services/context.go
+	modified:   cmd/devnet/services/polygon/checkpoint.go
+	modified:   cmd/devnet/services/polygon/heimdall.go
+	modified:   cmd/devnet/services/polygon/heimdall_test.go
+	new file:   cmd/devnet/services/polygon/heimdallsim/heimdall_simulator.go
+	renamed:    polygon/heimdall/simulator/simulator_test.go -> cmd/devnet/services/polygon/heimdallsim/heimdall_simulator_test.go
+	renamed:    polygon/heimdall/simulator/testdata/v1-000000-000500-borevents.seg -> cmd/devnet/services/polygon/heimdallsim/testdata/v1-000000-000500-borevents.seg
+	renamed:    polygon/heimdall/simulator/testdata/v1-000000-000500-borspans.seg -> cmd/devnet/services/polygon/heimdallsim/testdata/v1-000000-000500-borspans.seg
+	renamed:    polygon/heimdall/simulator/testdata/v1-000500-001000-borevents.seg -> cmd/devnet/services/polygon/heimdallsim/testdata/v1-000500-001000-borevents.seg
+	modified:   cmd/devnet/services/polygon/proofgenerator.go
+	modified:   cmd/devnet/services/polygon/statesync.go
+	modified:   cmd/devnet/services/polygon/util.go
+	modified:   cmd/devnet/services/subscriptions.go
+	modified:   cmd/devnet/tests/bor_devnet_test.go
+	modified:   cmd/devnet/tests/context.go
+	modified:   cmd/devnet/tests/generic_devnet_test.go
+	modified:   cmd/devnet/transactions/block.go
+	modified:   cmd/devnet/transactions/tx.go
+	modified:   cmd/diag/flags/flags.go
+	modified:   cmd/diag/util/util.go
+	modified:   cmd/downloader/downloadernat/nat.go
+	modified:   cmd/downloader/readme.md
+	modified:   cmd/downloader/torrent_hashes_update.sh
+	modified:   cmd/erigon/main.go
+	modified:   cmd/erigoncustom/main.go
+	modified:   cmd/evm/README.md
+	modified:   cmd/evm/compiler.go
+	modified:   cmd/evm/disasm.go
+	modified:   cmd/evm/internal/compiler/compiler.go
+	modified:   cmd/evm/internal/t8ntool/execution.go
+	modified:   cmd/evm/internal/t8ntool/flags.go
+	modified:   cmd/evm/internal/t8ntool/gen_stenv.go
+	modified:   cmd/evm/internal/t8ntool/transition.go
+	modified:   cmd/evm/main.go
+	modified:   cmd/evm/runner.go
+	modified:   cmd/evm/staterunner.go
+	modified:   cmd/evm/t8n_test.go
+	modified:   cmd/hack/db/lmdb.go
+	modified:   cmd/hack/flow/flow.go
+	modified:   cmd/hack/hack.go
+	modified:   cmd/hack/scripts/geth_log_parse.py
+	modified:   cmd/hack/tool/fromdb/tool.go
+	modified:   cmd/hack/tool/tool.go
+	modified:   cmd/integration/Readme.md
+	modified:   cmd/integration/commands/flags.go
+	modified:   cmd/integration/commands/refetence_db.go
+	modified:   cmd/integration/commands/reset_state.go
+	modified:   cmd/integration/commands/root.go
+	new file:   cmd/integration/commands/state_domains.go
+	modified:   cmd/integration/commands/state_stages.go
+	modified:   cmd/observer/database/db.go
+	modified:   cmd/observer/database/db_retrier.go
+	modified:   cmd/observer/database/db_sqlite.go
+	modified:   cmd/observer/database/db_sqlite_test.go
+	modified:   cmd/observer/main.go
+	modified:   cmd/observer/observer/client_id.go
+	modified:   cmd/observer/observer/command.go
+	modified:   cmd/observer/observer/crawler.go
+	modified:   cmd/observer/observer/diplomacy.go
+	modified:   cmd/observer/observer/diplomat.go
+	modified:   cmd/observer/observer/handshake.go
+	modified:   cmd/observer/observer/handshake_test.go
+	modified:   cmd/observer/observer/interrogation_error.go
+	modified:   cmd/observer/observer/interrogator.go
+	modified:   cmd/observer/observer/keygen.go
+	modified:   cmd/observer/observer/keygen_test.go
+	modified:   cmd/observer/observer/node_utils/node_addr.go
+	modified:   cmd/observer/observer/node_utils/node_id.go
+	modified:   cmd/observer/observer/sentry_candidates/intake.go
+	modified:   cmd/observer/observer/sentry_candidates/log.go
+	modified:   cmd/observer/observer/sentry_candidates/log_test.go
+	modified:   cmd/observer/observer/server.go
+	modified:   cmd/observer/observer/status_logger.go
+	modified:   cmd/observer/reports/clients_estimate_report.go
+	modified:   cmd/observer/reports/clients_report.go
+	modified:   cmd/observer/reports/command.go
+	modified:   cmd/observer/reports/sentry_candidates_report.go
+	modified:   cmd/observer/reports/status_report.go
+	modified:   cmd/observer/utils/pubkey_hex.go
+	modified:   cmd/observer/utils/retry.go
+	deleted:    cmd/observer/utils/sleep.go
+	modified:   cmd/observer/utils/task_queue.go
+	modified:   cmd/p2psim/main.go
+	modified:   cmd/pics/contracts/gen.go
+	modified:   cmd/pics/contracts/gen_token.go
+	modified:   cmd/pics/pics.go
+	modified:   cmd/pics/state.go
+	modified:   cmd/prometheus/dashboards/erigon.json
+	modified:   cmd/prometheus/dashboards/erigon_internals.json
+	modified:   cmd/prometheus/prometheus.yml
+	new file:   cmd/prometheus/vmetrics.yml
+	deleted:    cmd/release/Dockerfile
+	deleted:    cmd/release/README.md
+	deleted:    cmd/release/docker-compose.yml
+	deleted:    cmd/release/go.mod
+	deleted:    cmd/release/go.sum
+	deleted:    cmd/release/main.go
+	deleted:    cmd/release/nginx.conf
+	deleted:    cmd/release/page/assets/Erigon_Logotipo_color.svg
+	deleted:    cmd/release/page/assets/Erigon_cartoon_no_Helmet.svg
+	deleted:    cmd/release/page/assets/Rubik-Black.ttf
+	deleted:    cmd/release/page/assets/Rubik-Regular.ttf
+	deleted:    cmd/release/page/favicon-16x16.png
+	deleted:    cmd/release/page/favicon-32x32.png
+	deleted:    cmd/release/page/favicon.ico
+	deleted:    cmd/release/page/index.html
+	deleted:    cmd/release/page/main.css
+	deleted:    cmd/release/page/main.js
+	modified:   cmd/rlpdump/main.go
+	modified:   cmd/rpcdaemon/README.md
+	modified:   cmd/rpcdaemon/cli/config.go
+	modified:   cmd/rpcdaemon/cli/config_test.go
+	modified:   cmd/rpcdaemon/cli/httpcfg/http_cfg.go
+	modified:   cmd/rpcdaemon/cli/rpc_allow_list.go
+	modified:   cmd/rpcdaemon/graphql/gqlgen.yml
+	modified:   cmd/rpcdaemon/graphql/graph/generated.go
+	modified:   cmd/rpcdaemon/graphql/graph/helpers.go
+	modified:   cmd/rpcdaemon/graphql/graph/model/models_gen.go
+	modified:   cmd/rpcdaemon/graphql/graph/resolver.go
+	modified:   cmd/rpcdaemon/graphql/graph/schema.graphqls
+	modified:   cmd/rpcdaemon/graphql/graph/schema.resolvers.go
+	modified:   cmd/rpcdaemon/graphql/graphql.go
+	modified:   cmd/rpcdaemon/graphql/graphql_test.go
+	modified:   cmd/rpcdaemon/graphql/query_block.graphql
+	modified:   cmd/rpcdaemon/health/check_block.go
+	modified:   cmd/rpcdaemon/health/check_peers.go
+	modified:   cmd/rpcdaemon/health/check_synced.go
+	modified:   cmd/rpcdaemon/health/check_time.go
+	modified:   cmd/rpcdaemon/health/health.go
+	modified:   cmd/rpcdaemon/health/health_test.go
+	modified:   cmd/rpcdaemon/health/interfaces.go
+	modified:   cmd/rpcdaemon/health/parse_api.go
+	modified:   cmd/rpcdaemon/postman/README.md
+	modified:   cmd/rpcdaemon/rpcdaemontest/test_util.go
+	modified:   cmd/rpcdaemon/rpcservices/eth_backend.go
+	modified:   cmd/rpcdaemon/rpcservices/eth_mining.go
+	modified:   cmd/rpcdaemon/rpcservices/eth_txpool.go
+	modified:   cmd/rpcdaemon/test.http
+	new file:   cmd/rpctest/getBlockByNumber.json
+	modified:   cmd/rpctest/getLogs.json
+	modified:   cmd/rpctest/heavyStorageRangeAt.json
+	modified:   cmd/rpctest/main.go
+	modified:   cmd/rpctest/rpctest/account_range_verify.go
+	modified:   cmd/rpctest/rpctest/bench1.go
+	modified:   cmd/rpctest/rpctest/bench2.go
+	modified:   cmd/rpctest/rpctest/bench3.go
+	modified:   cmd/rpctest/rpctest/bench4.go
+	modified:   cmd/rpctest/rpctest/bench5.go
+	modified:   cmd/rpctest/rpctest/bench6.go
+	modified:   cmd/rpctest/rpctest/bench7.go
+	modified:   cmd/rpctest/rpctest/bench9.go
+	modified:   cmd/rpctest/rpctest/bench_blockbynumber.go
+	modified:   cmd/rpctest/rpctest/bench_debugTrace.go
+	modified:   cmd/rpctest/rpctest/bench_ethcall.go
+	modified:   cmd/rpctest/rpctest/bench_ethcreateaccesslist.go
+	modified:   cmd/rpctest/rpctest/bench_ethgetBalance.go
+	modified:   cmd/rpctest/rpctest/bench_ethgetblockbyhash.go
+	modified:   cmd/rpctest/rpctest/bench_ethgetblockbynumber.go
+	modified:   cmd/rpctest/rpctest/bench_ethgetlogs.go
+	modified:   cmd/rpctest/rpctest/bench_gettransactionbyhash.go
+	modified:   cmd/rpctest/rpctest/bench_otsgetblockTransactions.go
+	modified:   cmd/rpctest/rpctest/bench_overlaygetlogs.go
+	modified:   cmd/rpctest/rpctest/bench_traceblock.go
+	modified:   cmd/rpctest/rpctest/bench_tracecall.go
+	modified:   cmd/rpctest/rpctest/bench_tracecallmany.go
+	modified:   cmd/rpctest/rpctest/bench_tracefilter.go
+	modified:   cmd/rpctest/rpctest/bench_tracereplaytransaction.go
+	modified:   cmd/rpctest/rpctest/bench_txreceipts.go
+	modified:   cmd/rpctest/rpctest/replay.go
+	modified:   cmd/rpctest/rpctest/request_generator.go
+	modified:   cmd/rpctest/rpctest/request_generator_test.go
+	modified:   cmd/rpctest/rpctest/type.go
+	modified:   cmd/rpctest/rpctest/utils.go
+	modified:   cmd/sentinel/main.go
+	modified:   cmd/sentinel/sentinelcli/cliSettings.go
+	modified:   cmd/sentinel/sentinelcli/flags/defaultFlags.go
+	modified:   cmd/sentinel/sentinelcli/flags/flags.go
+	modified:   cmd/sentinel/sentinelflags/flags.go
+	modified:   cmd/sentry/main.go
+	modified:   cmd/silkworm_api/snapshot_idx.go
+	modified:   cmd/snapshots/cmp/cmp.go
+	modified:   cmd/snapshots/copy/copy.go
+	modified:   cmd/snapshots/flags/flags.go
+	modified:   cmd/snapshots/main.go
+	modified:   cmd/snapshots/sync/context.go
+	modified:   cmd/snapshots/sync/sync.go
+	modified:   cmd/snapshots/sync/util.go
+	modified:   cmd/snapshots/torrents/torrents.go
+	modified:   cmd/snapshots/verify/verify.go
+	new file:   cmd/state/commands/cat_snapshot.go
+	deleted:    cmd/state/commands/check_change_sets.go
+	modified:   cmd/state/commands/check_enc.go
+	modified:   cmd/state/commands/check_index.go
+	modified:   cmd/state/commands/global_flags_vars.go
+	modified:   cmd/state/commands/index_stats.go
+	modified:   cmd/state/commands/opcode_tracer.go
+	modified:   cmd/state/commands/root.go
+	deleted:    cmd/state/commands/state_root.go
+	modified:   cmd/state/commands/verify_txlookup.go
+	modified:   cmd/state/exec3/calltracer_v3.go
+	new file:   cmd/state/exec3/historical_trace_worker.go
+	new file:   cmd/state/exec3/trace_worker.go
+	modified:   cmd/state/main.go
+	modified:   cmd/state/stats/index_stats.go
+	modified:   cmd/state/verify/check_changeset_enc.go
+	modified:   cmd/state/verify/check_indexes.go
+	modified:   cmd/state/verify/verify_txlookup.go
+	modified:   cmd/txpool/main.go
+	modified:   cmd/txpool/readme.md
+	modified:   cmd/utils/cmd.go
+	modified:   cmd/utils/flags/flags.go
+	modified:   cmd/utils/flags/flags_test.go
+	modified:   cmd/utils/flags/helpers.go
+	modified:   cmd/utils/flags_test.go
+	modified:   cmd/verkle/main.go
+	modified:   cmd/verkle/verkletrie/incrementAccount.go
+	modified:   cmd/verkle/verkletrie/incrementStorage.go
+	modified:   cmd/verkle/verkletrie/pedersen_hashstate.go
+	modified:   cmd/verkle/verkletrie/verkle_marker.go
+	modified:   cmd/verkle/verkletrie/verkle_tree_writer.go
+	modified:   cmd/verkle/verkletrie/workers.go
+	modified:   common/bitutil/compress.go
+	modified:   common/bitutil/compress_test.go
+	modified:   common/bytes.go
+	modified:   common/bytes_test.go
+	modified:   common/changeset/accs.go
+	modified:   common/changeset/storage_changeset_test.go
+	modified:   common/compiler/helpers.go
+	modified:   common/compiler/solidity.go
+	modified:   common/compiler/vyper.go
+	modified:   common/compiler/vyper_test.go
+	modified:   common/debug.go
+	modified:   common/debug/callers.go
+	modified:   common/debug/log_panic.go
+	modified:   common/debug/memstats.go
+	modified:   common/debug/pprof_cgo.go
+	modified:   common/debugprint/receipts.go
+	modified:   common/fdlimit/fdlimit_bsd.go
+	modified:   common/fdlimit/fdlimit_darwin.go
+	modified:   common/fdlimit/fdlimit_test.go
+	modified:   common/fdlimit/fdlimit_unix.go
+	modified:   common/fdlimit/fdlimit_windows.go
+	modified:   common/format.go
+	modified:   common/math/big.go
+	modified:   common/math/big_test.go
+	modified:   common/math/integer.go
+	modified:   common/math/integer_test.go
+	modified:   common/math/modexp.go
+	modified:   common/mclock/mclock.go
+	modified:   common/mclock/simclock.go
+	modified:   common/mclock/simclock_test.go
+	modified:   common/path.go
+	modified:   common/paths/paths.go
+	modified:   common/prque/lazyqueue.go
+	modified:   common/prque/lazyqueue_test.go
+	modified:   common/prque/prque.go
+	modified:   common/size.go
+	modified:   common/size_test.go
+	modified:   common/test_utils.go
+	modified:   common/tuples.go
+	modified:   common/tuples_test.go
+	modified:   common/types.go
+	modified:   common/types_test.go
+	modified:   common/u256/big.go
+	modified:   consensus/aura/aura.go
+	modified:   consensus/aura/aura_test.go
+	modified:   consensus/aura/auraabi/abi.go
+	modified:   consensus/aura/auraabi/gen_block_reward.go
+	modified:   consensus/aura/auraabi/gen_validator_set.go
+	modified:   consensus/aura/aurainterfaces/interface.go
+	modified:   consensus/aura/config.go
+	modified:   consensus/aura/config_test.go
+	modified:   consensus/aura/contract_abi.go
+	modified:   consensus/aura/contracts/embed.go
+	modified:   consensus/aura/empty_step.go
+	modified:   consensus/aura/epoch.go
+	modified:   consensus/aura/finality_test.go
+	modified:   consensus/aura/gaslimit_override.go
+	modified:   consensus/aura/rolling_finality.go
+	modified:   consensus/aura/types.go
+	modified:   consensus/aura/unassemble.go
+	modified:   consensus/aura/validators.go
+	modified:   consensus/chain_header_reader_mock.go
+	deleted:    consensus/chain_reader.go
+	modified:   consensus/clique/api.go
+	modified:   consensus/clique/clique.go
+	modified:   consensus/clique/clique_test.go
+	modified:   consensus/clique/keys.go
+	modified:   consensus/clique/snapshot.go
+	modified:   consensus/clique/snapshot_test.go
+	modified:   consensus/clique/verifier.go
+	modified:   consensus/consensus.go
+	modified:   consensus/errors.go
+	modified:   consensus/ethash/algorithm.go
+	modified:   consensus/ethash/algorithm_test.go
+	modified:   consensus/ethash/api.go
+	modified:   consensus/ethash/consensus.go
+	modified:   consensus/ethash/consensus_test.go
+	modified:   consensus/ethash/difficulty.go
+	modified:   consensus/ethash/ethash.go
+	modified:   consensus/ethash/ethash_test.go
+	modified:   consensus/ethash/ethashcfg/ethashcfg.go
+	modified:   consensus/ethash/fake.go
+	modified:   consensus/ethash/meter.go
+	modified:   consensus/ethash/sealer.go
+	modified:   consensus/ethash/sealer_test.go
+	modified:   consensus/merge/merge.go
+	modified:   consensus/merge/merge_test.go
+	modified:   consensus/misc/dao.go
+	modified:   consensus/misc/eip1559.go
+	modified:   consensus/misc/eip1559_test.go
+	new file:   consensus/misc/eip2935.go
+	modified:   consensus/misc/eip4788.go
+	modified:   consensus/misc/eip4844.go
+	modified:   consensus/misc/eip4844_test.go
+	new file:   consensus/misc/eip7002.go
+	new file:   consensus/misc/eip7251.go
+	modified:   consensus/misc/gaslimit.go
+	modified:   consensus/misc/pos.go
+	modified:   consensus/result.go
+	deleted:    core/allocs/goerli.json
+	modified:   core/asm/asm.go
+	modified:   core/asm/asm_test.go
+	modified:   core/asm/compiler.go
+	modified:   core/asm/compiler_test.go
+	modified:   core/asm/lex_test.go
+	modified:   core/asm/lexer.go
+	modified:   core/block_builder_parameters.go
+	modified:   core/block_validator.go
+	modified:   core/block_validator_test.go
+	modified:   core/blockchain.go
+	modified:   core/blocks.go
+	deleted:    core/bor_fee_log.go
+	modified:   core/chain_makers.go
+	modified:   core/error.go
+	modified:   core/events.go
+	modified:   core/evm.go
+	modified:   core/forkid/forkid.go
+	modified:   core/forkid/forkid_test.go
+	modified:   core/gaspool.go
+	modified:   core/genesis_test.go
+	new file:   core/genesis_test.json
+	modified:   core/mkalloc.go
+	deleted:    core/rawdb/accessors_account.go
+	new file:   core/rawdb/accessors_canonical_reader.go
+	new file:   core/rawdb/accessors_canonical_reader_test.go
+	modified:   core/rawdb/accessors_chain_test.go
+	modified:   core/rawdb/accessors_indexes.go
+	modified:   core/rawdb/accessors_indexes_test.go
+	modified:   core/rawdb/bor_receipts.go
+	modified:   core/rawdb/rawdbhelpers/rawdbhelpers.go
+	modified:   core/rawdb/rawdbreset/reset_stages.go
+	modified:   core/rawdb/state_version.go
+	modified:   core/rlp_test.go
+	modified:   core/skip_analysis.go
+	modified:   core/snaptype/block_types.go
+	modified:   core/snaptype/block_types_test.go
+	modified:   core/state/access_list.go
+	modified:   core/state/access_list_test.go
+	modified:   core/state/cached_reader.go
+	deleted:    core/state/cached_reader2.go
+	new file:   core/state/cached_reader3.go
+	modified:   core/state/cached_writer.go
+	deleted:    core/state/change_set_writer.go
+	modified:   core/state/contracts/gen.go
+	modified:   core/state/contracts/gen_changer.go
+	modified:   core/state/contracts/gen_phoenix.go
+	modified:   core/state/contracts/gen_poly.go
+	modified:   core/state/contracts/gen_revive.go
+	modified:   core/state/contracts/gen_revive2.go
+	modified:   core/state/contracts/gen_selfdestruct.go
+	modified:   core/state/database.go
+	modified:   core/state/database_test.go
+	deleted:    core/state/db_state_reader.go
+	deleted:    core/state/db_state_writer.go
+	modified:   core/state/dump.go
+	deleted:    core/state/helper.go
+	modified:   core/state/history_reader_inc.go
+	modified:   core/state/history_reader_v3.go
+	deleted:    core/state/history_test.go
+	deleted:    core/state/history_walk.go
+	modified:   core/state/historyv2read/history.go
+	modified:   core/state/intra_block_state.go
+	modified:   core/state/intra_block_state_test.go
+	modified:   core/state/journal.go
+	deleted:    core/state/plain_readonly.go
+	modified:   core/state/plain_state_reader.go
+	modified:   core/state/plain_state_writer.go
+	modified:   core/state/recon_state.go
+	modified:   core/state/recon_writer_inc.go
+	modified:   core/state/rw_v3.go
+	new file:   core/state/snapshots/salt-state.txt
+	modified:   core/state/state_object.go
+	modified:   core/state/state_object_test.go
+	new file:   core/state/state_reader_v4.go
+	modified:   core/state/state_test.go
+	new file:   core/state/state_types.go
+	new file:   core/state/state_writer_v4.go
+	modified:   core/state/transient_storage.go
+	renamed:    cmd/state/exec22/txtask.go -> core/state/txtask.go
+	modified:   core/system_contract_lookup.go
+	modified:   core/systemcontracts/upgrade.go
+	new file:   core/test/domains_restart_test.go
+	new file:   core/tracing/gen_balance_change_reason_stringer.go
+	new file:   core/tracing/gen_gas_change_reason_stringer.go
+	new file:   core/tracing/hooks.go
+	modified:   core/tx_cacher.go
+	modified:   core/types/access_list_tx.go
+	modified:   core/types/accounts/account.go
+	modified:   core/types/accounts/account_benchmark_test.go
+	modified:   core/types/accounts/account_proof.go
+	modified:   core/types/accounts/account_test.go
+	new file:   core/types/authorization.go
+	modified:   core/types/blacklist.go
+	modified:   core/types/blob_tx.go
+	modified:   core/types/blob_tx_wrapper.go
+	modified:   core/types/block.go
+	modified:   core/types/block_test.go
+	modified:   core/types/bloom9.go
+	modified:   core/types/bloom9_test.go
+	new file:   core/types/consolidation_request.go
+	new file:   core/types/deposit_request.go
+	modified:   core/types/dynamic_fee_tx.go
+	modified:   core/types/encdec_test.go
+	modified:   core/types/gen_erigon_log_json.go
+	modified:   core/types/gen_genesis.go
+	modified:   core/types/gen_genesis_account.go
+	modified:   core/types/gen_header_json.go
+	modified:   core/types/gen_log_json.go
+	modified:   core/types/gen_withdrawal_json.go
+	modified:   core/types/hashing.go
+	modified:   core/types/hashing_test.go
+	modified:   core/types/legacy_tx.go
+	modified:   core/types/log.go
+	modified:   core/types/log_test.go
+	new file:   core/types/request.go
+	new file:   core/types/set_code_tx.go
+	modified:   core/types/state_data.go
+	modified:   core/types/transaction_signing_test.go
+	modified:   core/types/transaction_test.go
+	modified:   core/types/withdrawal.go
+	new file:   core/types/withdrawal_request.go
+	modified:   core/types/withdrawal_test.go
+	modified:   core/vm/absint_cfg.go
+	modified:   core/vm/absint_cfg_proof_check.go
+	modified:   core/vm/absint_cfg_proof_gen.go
+	modified:   core/vm/analysis.go
+	modified:   core/vm/analysis_test.go
+	modified:   core/vm/common.go
+	modified:   core/vm/contract.go
+	modified:   core/vm/contracts.go
+	modified:   core/vm/contracts_test.go
+	modified:   core/vm/doc.go
+	modified:   core/vm/eips.go
+	modified:   core/vm/errors.go
+	modified:   core/vm/evm.go
+	modified:   core/vm/evm_test.go
+	modified:   core/vm/gas.go
+	modified:   core/vm/gas_table.go
+	modified:   core/vm/gas_table_test.go
+	modified:   core/vm/instructions.go
+	modified:   core/vm/instructions_test.go
+	modified:   core/vm/interface.go
+	modified:   core/vm/interpreter.go
+	modified:   core/vm/jump_table.go
+	modified:   core/vm/logger.go
+	modified:   core/vm/memory.go
+	modified:   core/vm/memory_table.go
+	modified:   core/vm/memory_test.go
+	modified:   core/vm/mock_vm.go
+	modified:   core/vm/opcodes.go
+	modified:   core/vm/operations_acl.go
+	modified:   core/vm/runtime/doc.go
+	modified:   core/vm/runtime/env.go
+	modified:   core/vm/runtime/runtime.go
+	modified:   core/vm/runtime/runtime_example_test.go
+	modified:   core/vm/runtime/runtime_test.go
+	new file:   core/vm/runtime/snapshots/salt-state.txt
+	modified:   core/vm/stack/stack.go
+	modified:   core/vm/stack_table.go
+	new file:   core/vm/testdata/precompiles/blsG1Add-eip.json
+	modified:   core/vm/testdata/precompiles/blsG1Add.json
+	new file:   core/vm/testdata/precompiles/blsG1Mul-eip.json
+	modified:   core/vm/testdata/precompiles/blsG1Mul.json
+	new file:   core/vm/testdata/precompiles/blsG1MultiExp-eip.json
+	modified:   core/vm/testdata/precompiles/blsG1MultiExp.json
+	new file:   core/vm/testdata/precompiles/blsG2Add-eip.json
+	modified:   core/vm/testdata/precompiles/blsG2Add.json
+	new file:   core/vm/testdata/precompiles/blsG2Mul-eip.json
+	modified:   core/vm/testdata/precompiles/blsG2Mul.json
+	new file:   core/vm/testdata/precompiles/blsG2MultiExp-eip.json
+	modified:   core/vm/testdata/precompiles/blsG2MultiExp.json
+	new file:   core/vm/testdata/precompiles/blsMapG1-eip.json
+	modified:   core/vm/testdata/precompiles/blsMapG1.json
+	new file:   core/vm/testdata/precompiles/blsMapG2-eip.json
+	modified:   core/vm/testdata/precompiles/blsMapG2.json
+	new file:   core/vm/testdata/precompiles/blsPairing-eip.json
+	new file:   core/vm/testdata/precompiles/fail-blsG1Add-eip.json
+	new file:   core/vm/testdata/precompiles/fail-blsG1Mul-eip.json
+	new file:   core/vm/testdata/precompiles/fail-blsG1MultiExp-eip.json
+	new file:   core/vm/testdata/precompiles/fail-blsG2Add-eip.json
+	new file:   core/vm/testdata/precompiles/fail-blsG2Mul-eip.json
+	new file:   core/vm/testdata/precompiles/fail-blsG2MultiExp-eip.json
+	new file:   core/vm/testdata/precompiles/fail-blsMapG1-eip.json
+	new file:   core/vm/testdata/precompiles/fail-blsMapG2-eip.json
+	new file:   core/vm/testdata/precompiles/fail-blsPairing-eip.json
+	modified:   crypto/bn256/bn256_fast.go
+	modified:   crypto/bn256/bn256_slow.go
+	modified:   crypto/bn256/google/bn256.go
+	modified:   crypto/crypto.go
+	modified:   crypto/crypto_test.go
+	modified:   crypto/cryptopool/pool.go
+	modified:   crypto/ecies/ecies.go
+	modified:   crypto/ecies/ecies_test.go
+	modified:   crypto/ecies/params.go
+	modified:   crypto/secp256r1/publickey.go
+	modified:   crypto/secp256r1/verifier.go
+	modified:   crypto/signature_cgo.go
+	modified:   crypto/signature_nocgo.go
+	modified:   crypto/signature_test.go
+	modified:   dataflow/states.go
+	modified:   debug.Dockerfile
+	modified:   diagnostics/block_body_download_stats.go
+	modified:   diagnostics/bodies_info.go
+	modified:   diagnostics/bootnodes.go
+	modified:   diagnostics/cmd_line.go
+	modified:   diagnostics/db.go
+	modified:   diagnostics/flags.go
+	modified:   diagnostics/header_downloader_stats.go
+	modified:   diagnostics/headers.go
+	modified:   diagnostics/logs.go
+	modified:   diagnostics/mem.go
+	modified:   diagnostics/nodeinfo.go
+	modified:   diagnostics/peers.go
+	modified:   diagnostics/snapshot_sync.go
+	modified:   diagnostics/version.go
+	modified:   docker-compose.yml
+	modified:   docs/evm_semantics.md
+	modified:   docs/examples/single-process.md
+	modified:   docs/programmers_guide/db_faq.md
+	modified:   docs/programmers_guide/db_walkthrough.MD
+	modified:   docs/programmers_guide/dupsort.md
+	modified:   docs/readthedocs/source/etl.rst
+	modified:   docs/readthedocs/source/installation.rst
+	modified:   docs/readthedocs/source/rpc/index.rst
+	modified:   docs/readthedocs/source/rpc/tutorial.rst
+	modified:   docs/readthedocs/source/stagedsync.rst
+	modified:   docs/readthedocs/source/types.rst
+	modified:   erigon-lib/.golangci.yml
+	deleted:    erigon-lib/LICENSE
+	modified:   erigon-lib/Makefile
+	deleted:    erigon-lib/README.md
+	modified:   erigon-lib/bptree/binary_file.go
+	modified:   erigon-lib/bptree/bulk.go
+	modified:   erigon-lib/bptree/bulk_test.go
+	modified:   erigon-lib/bptree/felt.go
+	modified:   erigon-lib/bptree/graph.go
+	modified:   erigon-lib/bptree/key_factory.go
+	modified:   erigon-lib/bptree/node.go
+	modified:   erigon-lib/bptree/tree.go
+	modified:   erigon-lib/bptree/tree_test.go
+	modified:   erigon-lib/bptree/util.go
+	modified:   erigon-lib/chain/aura_config.go
+	modified:   erigon-lib/chain/chain_config_test.go
+	modified:   erigon-lib/chain/chain_db.go
+	modified:   erigon-lib/chain/consensus.go
+	modified:   erigon-lib/chain/snapcfg/util.go
+	modified:   erigon-lib/commitment/bin_patricia_hashed.go
+	modified:   erigon-lib/commitment/bin_patricia_hashed_test.go
+	modified:   erigon-lib/commitment/commitment.go
+	new file:   erigon-lib/commitment/commitment_bench_test.go
+	modified:   erigon-lib/commitment/commitment_test.go
+	modified:   erigon-lib/commitment/hex_patricia_hashed.go
+	modified:   erigon-lib/commitment/hex_patricia_hashed_bench_test.go
+	modified:   erigon-lib/commitment/hex_patricia_hashed_fuzz_test.go
+	modified:   erigon-lib/commitment/hex_patricia_hashed_test.go
+	modified:   erigon-lib/commitment/patricia_state_mock_test.go
+	modified:   erigon-lib/common/address.go
+	modified:   erigon-lib/common/assert/assert_disable.go
+	modified:   erigon-lib/common/assert/assert_enable.go
+	modified:   erigon-lib/common/background/progress.go
+	modified:   erigon-lib/common/big.go
+	modified:   erigon-lib/common/bitutil/select.go
+	new file:   erigon-lib/common/bitutil/select_test.go
+	modified:   erigon-lib/common/bytes.go
+	modified:   erigon-lib/common/bytes4.go
+	modified:   erigon-lib/common/bytes48.go
+	modified:   erigon-lib/common/bytes64.go
+	modified:   erigon-lib/common/bytes96.go
+	modified:   erigon-lib/common/chan.go
+	modified:   erigon-lib/common/cli.go
+	modified:   erigon-lib/common/cmp/cmp.go
+	modified:   erigon-lib/common/collections.go
+	new file:   erigon-lib/common/concurrent/concurrent.go
+	modified:   erigon-lib/common/copybytes.go
+	new file:   erigon-lib/common/cryptozerocopy/crypto_zero_copy.go
+	modified:   erigon-lib/common/datadir/dirs.go
+	modified:   erigon-lib/common/dbg/dbg_ctx.go
+	modified:   erigon-lib/common/dbg/dbg_env.go
+	modified:   erigon-lib/common/dbg/experiments.go
+	modified:   erigon-lib/common/dbg/leak_detector.go
+	modified:   erigon-lib/common/dbg/log_panic.go
+	modified:   erigon-lib/common/dir/rw_dir.go
+	modified:   erigon-lib/common/dir/rw_dir_generic.go
+	modified:   erigon-lib/common/dir/rw_dir_windows.go
+	modified:   erigon-lib/common/disk/common.go
+	modified:   erigon-lib/common/disk/disk.go
+	modified:   erigon-lib/common/disk/disk_darwin.go
+	modified:   erigon-lib/common/disk/disk_linux.go
+	modified:   erigon-lib/common/eth.go
+	modified:   erigon-lib/common/eth2shuffle/shuffle.go
+	modified:   erigon-lib/common/eth2shuffle/shuffle_bench_test.go
+	modified:   erigon-lib/common/eth2shuffle/shuffle_test.go
+	modified:   erigon-lib/common/fixedgas/protocol.go
+	new file:   erigon-lib/common/generics/generics.go
+	modified:   erigon-lib/common/hash.go
+	modified:   erigon-lib/common/hasher.go
+	modified:   erigon-lib/common/hextobytes.go
+	modified:   erigon-lib/common/hexutil/hexutil.go
+	modified:   erigon-lib/common/hexutil/hexutil_test.go
+	modified:   erigon-lib/common/hexutil/json.go
+	modified:   erigon-lib/common/hexutil/json_test.go
+	modified:   erigon-lib/common/hexutility/bytes.go
+	modified:   erigon-lib/common/hexutility/errors.go
+	modified:   erigon-lib/common/hexutility/hex.go
+	modified:   erigon-lib/common/hexutility/hex_test.go
+	modified:   erigon-lib/common/hexutility/json.go
+	modified:   erigon-lib/common/hexutility/text.go
+	modified:   erigon-lib/common/length/length.go
+	modified:   erigon-lib/common/math/integer.go
+	modified:   erigon-lib/common/mem/common.go
+	modified:   erigon-lib/common/mem/mem.go
+	modified:   erigon-lib/common/mem/mem_linux.go
+	modified:   erigon-lib/common/metrics/block_metrics.go
+	modified:   erigon-lib/common/metrics/metrics_enabled.go
+	modified:   erigon-lib/common/ring/ring.go
+	new file:   erigon-lib/common/sleep.go
+	new file:   erigon-lib/common/sleep_test.go
+	modified:   erigon-lib/common/sorted.go
+	modified:   erigon-lib/common/sorted_test.go
+	modified:   erigon-lib/common/u256/big.go
+	modified:   erigon-lib/config3/config3.go
+	deleted:    erigon-lib/config3/erigon3_test_disable.go
+	deleted:    erigon-lib/config3/erigon3_test_enable.go
+	deleted:    erigon-lib/config3/erigon4_test_enable.go
+	modified:   erigon-lib/crypto/blake2b/blake2b_test.go
+	modified:   erigon-lib/crypto/cryptopool/pool.go
+	modified:   erigon-lib/crypto/kzg/kzg.go
+	modified:   erigon-lib/crypto/secp256k1.go
+	modified:   erigon-lib/diagnostics/bodies.go
+	modified:   erigon-lib/diagnostics/headers.go
+	modified:   erigon-lib/diagnostics/network.go
+	modified:   erigon-lib/diagnostics/network_test.go
+	modified:   erigon-lib/diagnostics/provider.go
+	modified:   erigon-lib/diagnostics/provider_test.go
+	new file:   erigon-lib/diagnostics/utils_test.go
+	modified:   erigon-lib/direct/downloader_client.go
+	modified:   erigon-lib/direct/eth_backend_client.go
+	modified:   erigon-lib/direct/execution_client.go
+	modified:   erigon-lib/direct/mining_client.go
+	modified:   erigon-lib/direct/sentinel_client.go
+	modified:   erigon-lib/direct/sentry_client.go
+	modified:   erigon-lib/direct/sentry_client_mock.go
+	modified:   erigon-lib/direct/state_diff_client.go
+	modified:   erigon-lib/direct/txpool_client.go
+	modified:   erigon-lib/diskutils/diskutils.go
+	modified:   erigon-lib/diskutils/diskutils_darwin.go
+	modified:   erigon-lib/downloader/README.md
+	modified:   erigon-lib/downloader/downloader_grpc_server.go
+	modified:   erigon-lib/downloader/downloader_test.go
+	modified:   erigon-lib/downloader/downloadercfg/downloadercfg.go
+	modified:   erigon-lib/downloader/downloadercfg/logger.go
+	modified:   erigon-lib/downloader/downloadercfg/logger_libutp.go
+	modified:   erigon-lib/downloader/downloadergrpc/client.go
+	modified:   erigon-lib/downloader/mdbx_piece_completion.go
+	modified:   erigon-lib/downloader/mdbx_piece_completion_test.go
+	deleted:    erigon-lib/downloader/path.go
+	deleted:    erigon-lib/downloader/path_plan9.go
+	deleted:    erigon-lib/downloader/path_unix.go
+	deleted:    erigon-lib/downloader/path_windows.go
+	modified:   erigon-lib/downloader/rclone.go
+	modified:   erigon-lib/downloader/rclone_test.go
+	modified:   erigon-lib/downloader/snaptype/caplin_types.go
+	modified:   erigon-lib/downloader/snaptype/caplin_types_test.go
+	modified:   erigon-lib/downloader/snaptype/files.go
+	modified:   erigon-lib/downloader/snaptype/snaptypes.go
+	modified:   erigon-lib/downloader/snaptype/type.go
+	modified:   erigon-lib/downloader/torrent_files.go
+	modified:   erigon-lib/downloader/util.go
+	modified:   erigon-lib/downloader/webseed.go
+	modified:   erigon-lib/etl/README.md
+	modified:   erigon-lib/etl/buffers.go
+	modified:   erigon-lib/etl/collector.go
+	modified:   erigon-lib/etl/dataprovider.go
+	modified:   erigon-lib/etl/etl.go
+	modified:   erigon-lib/etl/etl_test.go
+	modified:   erigon-lib/etl/heap.go
+	modified:   erigon-lib/etl/progress.go
+	renamed:    erigon-lib/gointerfaces/downloader/downloader.pb.go -> erigon-lib/gointerfaces/downloaderproto/downloader.pb.go
+	new file:   erigon-lib/gointerfaces/downloaderproto/downloader_client_mock.go
+	renamed:    erigon-lib/gointerfaces/downloader/downloader_grpc.pb.go -> erigon-lib/gointerfaces/downloaderproto/downloader_grpc.pb.go
+	new file:   erigon-lib/gointerfaces/downloaderproto/mockgen.go
+	deleted:    erigon-lib/gointerfaces/execution/execution.pb.go
+	renamed:    erigon-lib/gointerfaces/execution/execution_grpc.pb.go -> erigon-lib/gointerfaces/executionproto/execution_grpc.pb.go
+	modified:   erigon-lib/gointerfaces/grpcutil/utils.go
+	deleted:    erigon-lib/gointerfaces/remote/mockgen.go
+	deleted:    erigon-lib/gointerfaces/remote/sort.go
+	renamed:    erigon-lib/gointerfaces/remote/ethbackend.pb.go -> erigon-lib/gointerfaces/remoteproto/ethbackend.pb.go
+	renamed:    erigon-lib/gointerfaces/remote/ethbackend_grpc.pb.go -> erigon-lib/gointerfaces/remoteproto/ethbackend_grpc.pb.go
+	renamed:    erigon-lib/gointerfaces/remote/kv.pb.go -> erigon-lib/gointerfaces/remoteproto/kv.pb.go
+	renamed:    erigon-lib/gointerfaces/remote/kv_client_mock.go -> erigon-lib/gointerfaces/remoteproto/kv_client_mock.go
+	renamed:    erigon-lib/gointerfaces/remote/kv_grpc.pb.go -> erigon-lib/gointerfaces/remoteproto/kv_grpc.pb.go
+	renamed:    erigon-lib/gointerfaces/remote/kv_state_changes_client_mock.go -> erigon-lib/gointerfaces/remoteproto/kv_state_changes_client_mock.go
+	new file:   erigon-lib/gointerfaces/remoteproto/mockgen.go
+	new file:   erigon-lib/gointerfaces/remoteproto/sort.go
+	renamed:    erigon-lib/gointerfaces/remote/sort_test.go -> erigon-lib/gointerfaces/remoteproto/sort_test.go
+	renamed:    erigon-lib/gointerfaces/sentinel/sentinel.pb.go -> erigon-lib/gointerfaces/sentinelproto/sentinel.pb.go
+	renamed:    erigon-lib/gointerfaces/sentinel/sentinel_grpc.pb.go -> erigon-lib/gointerfaces/sentinelproto/sentinel_grpc.pb.go
+	deleted:    erigon-lib/gointerfaces/sentry/mockgen.go
+	new file:   erigon-lib/gointerfaces/sentryproto/mockgen.go
+	renamed:    erigon-lib/gointerfaces/sentry/sentry.pb.go -> erigon-lib/gointerfaces/sentryproto/sentry.pb.go
+	renamed:    erigon-lib/gointerfaces/sentry/sentry_client_mock.go -> erigon-lib/gointerfaces/sentryproto/sentry_client_mock.go
+	renamed:    erigon-lib/gointerfaces/sentry/sentry_grpc.pb.go -> erigon-lib/gointerfaces/sentryproto/sentry_grpc.pb.go
+	renamed:    erigon-lib/gointerfaces/sentry/sentry_server_mock.go -> erigon-lib/gointerfaces/sentryproto/sentry_server_mock.go
+	renamed:    erigon-lib/gointerfaces/txpool/mining.pb.go -> erigon-lib/gointerfaces/txpoolproto/mining.pb.go
+	renamed:    erigon-lib/gointerfaces/txpool/mining_grpc.pb.go -> erigon-lib/gointerfaces/txpoolproto/mining_grpc.pb.go
+	renamed:    erigon-lib/gointerfaces/txpool/txpool.pb.go -> erigon-lib/gointerfaces/txpoolproto/txpool.pb.go
+	renamed:    erigon-lib/gointerfaces/txpool/txpool_grpc.pb.go -> erigon-lib/gointerfaces/txpoolproto/txpool_grpc.pb.go
+	modified:   erigon-lib/gointerfaces/type_utils.go
+	renamed:    erigon-lib/gointerfaces/types/types.pb.go -> erigon-lib/gointerfaces/typesproto/types.pb.go
+	modified:   erigon-lib/gointerfaces/version.go
+	modified:   erigon-lib/kv/Readme.md
+	modified:   erigon-lib/kv/backup/backup.go
+	modified:   erigon-lib/kv/bitmapdb/bitmapdb.go
+	modified:   erigon-lib/kv/bitmapdb/bitmapdb_test.go
+	new file:   erigon-lib/kv/bitmapdb/fixed_size.go
+	new file:   erigon-lib/kv/bitmapdb/fixed_size_test.go
+	modified:   erigon-lib/kv/bitmapdb/stream.go
+	modified:   erigon-lib/kv/dbutils/composite_keys.go
+	modified:   erigon-lib/kv/dbutils/composite_keys_test.go
+	modified:   erigon-lib/kv/dbutils/helper.go
+	modified:   erigon-lib/kv/dbutils/history_index.go
+	modified:   erigon-lib/kv/dbutils/suffix_type.go
+	new file:   erigon-lib/kv/files.go
+	modified:   erigon-lib/kv/helpers.go
+	deleted:    erigon-lib/kv/iter/iter_interface.go
+	modified:   erigon-lib/kv/kvcache/cache.go
+	modified:   erigon-lib/kv/kvcache/cache_test.go
+	modified:   erigon-lib/kv/kvcache/dummy.go
+	modified:   erigon-lib/kv/kvcfg/accessors_config.go
+	modified:   erigon-lib/kv/mdbx/kv_abstract_test.go
+	modified:   erigon-lib/kv/mdbx/kv_mdbx.go
+	modified:   erigon-lib/kv/mdbx/kv_mdbx_temporary.go
+	modified:   erigon-lib/kv/mdbx/kv_mdbx_test.go
+	modified:   erigon-lib/kv/mdbx/kv_migrator_test.go
+	modified:   erigon-lib/kv/mdbx/util.go
+	modified:   erigon-lib/kv/membatch/database_test.go
+	modified:   erigon-lib/kv/membatch/mapmutation.go
+	modified:   erigon-lib/kv/membatch/mapmutation_test.go
+	modified:   erigon-lib/kv/membatchwithdb/memory_mutation.go
+	modified:   erigon-lib/kv/membatchwithdb/memory_mutation_cursor.go
+	modified:   erigon-lib/kv/membatchwithdb/memory_mutation_diff.go
+	modified:   erigon-lib/kv/membatchwithdb/memory_mutation_test.go
+	modified:   erigon-lib/kv/memdb/memory_database.go
+	modified:   erigon-lib/kv/order/order.go
+	modified:   erigon-lib/kv/rawdbv3/txnum.go
+	new file:   erigon-lib/kv/rawdbv3/txnum_test.go
+	modified:   erigon-lib/kv/remotedbserver/remotedbserver.go
+	modified:   erigon-lib/kv/remotedbserver/remotedbserver_test.go
+	modified:   erigon-lib/kv/remotedbserver/snapshots_mock.go
+	renamed:    erigon-lib/kv/iter/iter.go -> erigon-lib/kv/stream/stream.go
+	new file:   erigon-lib/kv/stream/stream_exact.go
+	renamed:    erigon-lib/kv/iter/helpers.go -> erigon-lib/kv/stream/stream_helpers.go
+	new file:   erigon-lib/kv/stream/stream_interface.go
+	renamed:    erigon-lib/kv/iter/iter_test.go -> erigon-lib/kv/stream/stream_test.go
+	modified:   erigon-lib/kv/temporal/historyv2/account_changeset.go
+	modified:   erigon-lib/kv/temporal/historyv2/account_changeset_test.go
+	modified:   erigon-lib/kv/temporal/historyv2/changeset.go
+	modified:   erigon-lib/kv/temporal/historyv2/find_by_history.go
+	modified:   erigon-lib/kv/temporal/historyv2/storage_changeset.go
+	modified:   erigon-lib/kv/temporal/kv_temporal.go
+	modified:   erigon-lib/kv/temporal/temporaltest/kv_temporal_testdb.go
+	new file:   erigon-lib/log/LICENSE
+	new file:   erigon-lib/log/skip.go
+	new file:   erigon-lib/log/v3/bench_test.go
+	new file:   erigon-lib/log/v3/doc.go
+	new file:   erigon-lib/log/v3/ext/ext_test.go
+	new file:   erigon-lib/log/v3/ext/handler.go
+	new file:   erigon-lib/log/v3/ext/id.go
+	new file:   erigon-lib/log/v3/format.go
+	new file:   erigon-lib/log/v3/handler.go
+	new file:   erigon-lib/log/v3/log_test.go
+	new file:   erigon-lib/log/v3/logger.go
+	new file:   erigon-lib/log/v3/logger_test.go
+	new file:   erigon-lib/log/v3/root.go
+	new file:   erigon-lib/log/v3/syslog.go
+	new file:   erigon-lib/log/v3/term/LICENSE
+	new file:   erigon-lib/log/v3/term/doc.go
+	new file:   erigon-lib/log/v3/term/terminal_appengine.go
+	new file:   erigon-lib/log/v3/term/terminal_darwin.go
+	new file:   erigon-lib/log/v3/term/terminal_freebsd.go
+	new file:   erigon-lib/log/v3/term/terminal_linux.go
+	new file:   erigon-lib/log/v3/term/terminal_netbsd.go
+	new file:   erigon-lib/log/v3/term/terminal_notwindows.go
+	new file:   erigon-lib/log/v3/term/terminal_openbsd.go
+	new file:   erigon-lib/log/v3/term/terminal_solaris.go
+	new file:   erigon-lib/log/v3/term/terminal_windows.go
+	modified:   erigon-lib/metrics/counter.go
+	modified:   erigon-lib/metrics/duration_observer.go
+	modified:   erigon-lib/metrics/gauge.go
+	modified:   erigon-lib/metrics/histogram.go
+	modified:   erigon-lib/metrics/parsing.go
+	modified:   erigon-lib/metrics/register.go
+	modified:   erigon-lib/metrics/set.go
+	modified:   erigon-lib/metrics/setup.go
+	modified:   erigon-lib/metrics/summary.go
+	modified:   erigon-lib/metrics/timer.go
+	modified:   erigon-lib/metrics/value_getter.go
+	modified:   erigon-lib/mmap/mmap_unix.go
+	modified:   erigon-lib/mmap/mmap_windows.go
+	modified:   erigon-lib/mmap/total_memory.go
+	modified:   erigon-lib/mmap/total_memory_cgroups_stub.go
+	modified:   erigon-lib/pedersen_hash/hash.go
+	modified:   erigon-lib/recsplit/eliasfano16/elias_fano.go
+	modified:   erigon-lib/recsplit/eliasfano16/elias_fano_fuzz_test.go
+	modified:   erigon-lib/recsplit/eliasfano32/elias_fano.go
+	modified:   erigon-lib/recsplit/eliasfano32/elias_fano_fuzz_test.go
+	modified:   erigon-lib/recsplit/eliasfano32/elias_fano_test.go
+	modified:   erigon-lib/recsplit/golomb_rice.go
+	modified:   erigon-lib/recsplit/index.go
+	modified:   erigon-lib/recsplit/index_reader.go
+	modified:   erigon-lib/recsplit/index_test.go
+	modified:   erigon-lib/recsplit/recsplit.go
+	modified:   erigon-lib/recsplit/recsplit_fuzz_test.go
+	modified:   erigon-lib/recsplit/recsplit_test.go
+	modified:   erigon-lib/rlp/commitment.go
+	modified:   erigon-lib/rlp/encode.go
+	modified:   erigon-lib/rlp/encode_test.go
+	modified:   erigon-lib/rlp/parse.go
+	modified:   erigon-lib/rlp/parse_test.go
+	modified:   erigon-lib/rlp2/commitment.go
+	modified:   erigon-lib/rlp2/decoder.go
+	modified:   erigon-lib/rlp2/encodel.go
+	modified:   erigon-lib/rlp2/encoder.go
+	modified:   erigon-lib/rlp2/parse.go
+	modified:   erigon-lib/rlp2/parse_test.go
+	modified:   erigon-lib/rlp2/types.go
+	modified:   erigon-lib/rlp2/unmarshaler.go
+	modified:   erigon-lib/rlp2/unmarshaler_test.go
+	modified:   erigon-lib/rlp2/util.go
+	modified:   erigon-lib/rules.go
+	modified:   erigon-lib/seg/compress.go
+	modified:   erigon-lib/seg/compress_fuzz_test.go
+	modified:   erigon-lib/seg/compress_test.go
+	modified:   erigon-lib/seg/decompress.go
+	modified:   erigon-lib/seg/decompress_bench_test.go
+	modified:   erigon-lib/seg/decompress_fuzz_test.go
+	modified:   erigon-lib/seg/decompress_test.go
+	modified:   erigon-lib/seg/parallel_compress.go
+	modified:   erigon-lib/seg/patricia/patricia.go
+	modified:   erigon-lib/seg/patricia/patricia_fuzz_test.go
+	modified:   erigon-lib/seg/patricia/patricia_test.go
+	modified:   erigon-lib/seg/silkworm_seg_fuzz_test.go
+	modified:   erigon-lib/state/aggregator.go
+	modified:   erigon-lib/state/aggregator_bench_test.go
+	modified:   erigon-lib/state/aggregator_files.go
+	modified:   erigon-lib/state/aggregator_fuzz_test.go
+	modified:   erigon-lib/state/aggregator_test.go
+	new file:   erigon-lib/state/appendable.go
+	new file:   erigon-lib/state/appendable_test.go
+	new file:   erigon-lib/state/archive.go
+	new file:   erigon-lib/state/archive_test.go
+	new file:   erigon-lib/state/bps_tree.go
+	modified:   erigon-lib/state/btree_index.go
+	new file:   erigon-lib/state/btree_index_test.go
+	modified:   erigon-lib/state/domain.go
+	modified:   erigon-lib/state/domain_committed.go
+	modified:   erigon-lib/state/domain_shared.go
+	new file:   erigon-lib/state/domain_shared_bench_test.go
+	new file:   erigon-lib/state/domain_shared_test.go
+	modified:   erigon-lib/state/domain_test.go
+	new file:   erigon-lib/state/existence_filter.go
+	modified:   erigon-lib/state/files_item.go
+	modified:   erigon-lib/state/gc_test.go
+	modified:   erigon-lib/state/history.go
+	modified:   erigon-lib/state/history_test.go
+	modified:   erigon-lib/state/inverted_index.go
+	modified:   erigon-lib/state/inverted_index_test.go
+	new file:   erigon-lib/state/iters.go
+	new file:   erigon-lib/state/iters_mock.go
+	modified:   erigon-lib/state/merge.go
+	modified:   erigon-lib/state/merge_test.go
+	new file:   erigon-lib/state/metrics.go
+	new file:   erigon-lib/state/reconst.go
+	new file:   erigon-lib/state/state_changeset.go
+	new file:   erigon-lib/state/state_changeset_test.go
+	modified:   erigon-lib/state/state_recon.go
+	new file:   erigon-lib/state/state_util.go
+	modified:   erigon-lib/tools.go
+	modified:   erigon-lib/tools/golangci_lint.sh
+	deleted:    erigon-lib/tools/licenses_check.sh
+	modified:   erigon-lib/txpool/fetch.go
+	modified:   erigon-lib/txpool/fetch_test.go
+	modified:   erigon-lib/txpool/pool_mock.go
+	modified:   erigon-lib/txpool/send.go
+	modified:   erigon-lib/txpool/test_util.go
+	modified:   erigon-lib/txpool/testdata.go
+	modified:   erigon-lib/txpool/txpool_grpc_server.go
+	deleted:    erigon-lib/txpool/txpooluitl/all_components.go
+	modified:   erigon-lib/types/clonable/clonable.go
+	modified:   erigon-lib/types/ssz/errors.go
+	modified:   erigon-lib/types/ssz/ssz.go
+	modified:   erigon-lib/types/testdata.go
+	modified:   erigon-lib/types/txn_packets.go
+	modified:   erigon-lib/types/txn_packets_fuzz_test.go
+	modified:   erigon-lib/types/txn_packets_test.go
+	modified:   erigon-lib/types/txn_test.go
+	modified:   erigon-lib/types/txn_types_fuzz_test.go
+	modified:   erigon-lib/wrap/e3_wrapper.go
+	modified:   eth/api.go
+	modified:   eth/api_backend.go
+	modified:   eth/bloombits.go
+	modified:   eth/calltracer/calltracer.go
+	new file:   eth/consensuschain/consensus_chain_reader.go
+	modified:   eth/discovery.go
+	modified:   eth/ethconfig/estimate/esitmated_ram.go
+	modified:   eth/ethconfig/gen_config.go
+	modified:   eth/ethconfig/tx_pool.go
+	modified:   eth/ethconsensusconfig/config.go
+	modified:   eth/ethutils/receipt.go
+	modified:   eth/ethutils/utils.go
+	modified:   eth/filters/api.go
+	modified:   eth/filters/api_test.go
+	modified:   eth/filters/filter_system_test.go
+	modified:   eth/filters/filter_test.go
+	modified:   eth/gasprice/feehistory.go
+	modified:   eth/gasprice/feehistory_test.go
+	modified:   eth/gasprice/gasprice_test.go
+	modified:   eth/gasprice/gaspricecfg/gaspricecfg.go
+	new file:   eth/integrity/e3_ef_files.go
+	modified:   eth/integrity/e3_history_no_system_txs.go
+	new file:   eth/integrity/integrity_action_type.go
+	modified:   eth/integrity/no_gaps_in_canonical_headers.go
+	modified:   eth/integrity/snap_blocks_read.go
+	deleted:    eth/integrity/trie.go
+	modified:   eth/protocols/eth/discovery.go
+	modified:   eth/protocols/eth/handler.go
+	modified:   eth/protocols/eth/handler_test.go
+	modified:   eth/protocols/eth/protocol.go
+	modified:   eth/protocols/eth/protocol_test.go
+	modified:   eth/stagedsync/README.md
+	modified:   eth/stagedsync/chain_reader.go
+	modified:   eth/stagedsync/stage.go
+	modified:   eth/stagedsync/stage_blockhashes.go
+	modified:   eth/stagedsync/stage_bodies.go
+	modified:   eth/stagedsync/stage_bodies_test.go
+	modified:   eth/stagedsync/stage_bor_heimdall_test.go
+	modified:   eth/stagedsync/stage_call_traces.go
+	modified:   eth/stagedsync/stage_call_traces_test.go
+	new file:   eth/stagedsync/stage_custom_trace.go
+	modified:   eth/stagedsync/stage_execute.go
+	modified:   eth/stagedsync/stage_execute_test.go
+	modified:   eth/stagedsync/stage_finish.go
+	deleted:    eth/stagedsync/stage_hashstate.go
+	deleted:    eth/stagedsync/stage_hashstate_test.go
+	modified:   eth/stagedsync/stage_headers.go
+	modified:   eth/stagedsync/stage_indexes.go
+	modified:   eth/stagedsync/stage_indexes_test.go
+	deleted:    eth/stagedsync/stage_interhashes.go
+	deleted:    eth/stagedsync/stage_interhashes_test.go
+	modified:   eth/stagedsync/stage_log_index.go
+	deleted:    eth/stagedsync/stage_log_index_test.go
+	modified:   eth/stagedsync/stage_mining_bor_heimdall.go
+	modified:   eth/stagedsync/stage_mining_bor_heimdall_test.go
+	modified:   eth/stagedsync/stage_mining_finish.go
+	new file:   eth/stagedsync/stage_polygon_sync.go
+	modified:   eth/stagedsync/stage_postexec.go
+	modified:   eth/stagedsync/stage_senders.go
+	modified:   eth/stagedsync/stage_senders_test.go
+	new file:   eth/stagedsync/stage_trie3.go
+	new file:   eth/stagedsync/stage_trie3_test.go
+	modified:   eth/stagedsync/stage_txlookup.go
+	modified:   eth/stagedsync/stage_verkle_trie.go
+	modified:   eth/stagedsync/stagedsynctest/chain_configs.go
+	modified:   eth/stagedsync/stagedsynctest/harness.go
+	modified:   eth/stagedsync/stages/metrics.go
+	modified:   eth/stagedsync/stages/stages.go
+	modified:   eth/stagedsync/sync_test.go
+	modified:   eth/stagedsync/testutil.go
+	modified:   eth/stagedsync/types.go
+	new file:   eth/tracers/config/api.go
+	modified:   eth/tracers/internal/tracetest/util.go
+	modified:   eth/tracers/js/bigint.go
+	modified:   eth/tracers/js/goja.go
+	modified:   eth/tracers/js/internal/tracers/4byte_tracer_legacy.js
+	modified:   eth/tracers/js/internal/tracers/bigram_tracer.js
+	modified:   eth/tracers/js/internal/tracers/call_tracer_legacy.js
+	modified:   eth/tracers/js/internal/tracers/evmdis_tracer.js
+	modified:   eth/tracers/js/internal/tracers/noop_tracer_legacy.js
+	modified:   eth/tracers/js/internal/tracers/opcount_tracer.js
+	modified:   eth/tracers/js/internal/tracers/prestate_tracer_legacy.js
+	modified:   eth/tracers/js/internal/tracers/tracers.go
+	modified:   eth/tracers/js/internal/tracers/trigram_tracer.js
+	modified:   eth/tracers/js/internal/tracers/unigram_tracer.js
+	modified:   eth/tracers/js/tracer_test.go
+	modified:   eth/tracers/logger/access_list_tracer.go
+	modified:   eth/tracers/logger/access_list_tracer_test.go
+	modified:   eth/tracers/logger/gen_structlog.go
+	modified:   eth/tracers/logger/json_stream.go
+	modified:   eth/tracers/logger/logger.go
+	modified:   eth/tracers/logger/logger_json.go
+	modified:   eth/tracers/logger/logger_test.go
+	modified:   eth/tracers/native/4byte.go
+	modified:   eth/tracers/native/call.go
+	modified:   eth/tracers/native/gen_account_json.go
+	modified:   eth/tracers/native/gen_callframe_json.go
+	modified:   eth/tracers/native/mux.go
+	modified:   eth/tracers/native/noop.go
+	modified:   eth/tracers/native/prestate.go
+	modified:   eth/tracers/native/tracer.go
+	modified:   eth/tracers/tracer.go
+	modified:   eth/tracers/tracers.go
+	modified:   eth/tracers/tracers_test.go
+	modified:   ethdb/cbor/marshal.go
+	modified:   ethdb/db_interface.go
+	modified:   ethdb/kv_util.go
+	modified:   ethdb/privateapi/all.go
+	modified:   ethdb/privateapi/ethbackend.go
+	modified:   ethdb/privateapi/logsfilter.go
+	modified:   ethdb/privateapi/logsfilter_test.go
+	modified:   ethdb/privateapi/mining.go
+	modified:   ethdb/prune/storage_mode.go
+	modified:   ethdb/prune/storage_mode_test.go
+	modified:   ethdb/walk.go
+	modified:   ethstats/ethstats.go
+	modified:   event/example_feed_test.go
+	modified:   event/example_scope_test.go
+	modified:   event/example_subscription_test.go
+	modified:   event/feed.go
+	modified:   event/feed_test.go
+	modified:   event/subscription.go
+	modified:   event/subscription_test.go
+	modified:   interfaces.go
+	new file:   migrations/commitment.go
+	modified:   migrations/db_schema_version.go
+	modified:   migrations/migrations.go
+	modified:   migrations/migrations_test.go
+	modified:   migrations/prohibit_new_downloads_lock.go
+	deleted:    migrations/txs_begin_end.go
+	deleted:    migrations/txs_begin_end_test.go
+	deleted:    migrations/txs_v3.go
+	deleted:    migrations/txs_v3_test.go
+	modified:   node/doc.go
+	modified:   node/endpoints.go
+	modified:   node/errors.go
+	modified:   node/lifecycle.go
+	modified:   node/node_example_test.go
+	modified:   node/node_test.go
+	modified:   node/nodecfg/config.go
+	modified:   node/nodecfg/config_test.go
+	modified:   node/rpcstack.go
+	modified:   node/rpcstack_test.go
+	modified:   node/utils_test.go
+	modified:   oss-fuzz.sh
+	modified:   p2p/dial.go
+	modified:   p2p/dial_integration_test.go
+	modified:   p2p/dial_test.go
+	modified:   p2p/discover/common.go
+	modified:   p2p/discover/lookup.go
+	modified:   p2p/discover/lookup_util_test.go
+	modified:   p2p/discover/node.go
+	modified:   p2p/discover/ntp.go
+	modified:   p2p/discover/table.go
+	modified:   p2p/discover/table_integration_test.go
+	modified:   p2p/discover/table_test.go
+	modified:   p2p/discover/table_util_test.go
+	modified:   p2p/discover/v4_lookup_test.go
+	modified:   p2p/discover/v4_udp.go
+	modified:   p2p/discover/v4_udp_test.go
+	modified:   p2p/discover/v4wire/v4wire.go
+	modified:   p2p/discover/v4wire/v4wire_test.go
+	modified:   p2p/discover/v5_lookup_test.go
+	modified:   p2p/discover/v5_udp.go
+	modified:   p2p/discover/v5_udp_integration_test.go
+	modified:   p2p/discover/v5_udp_test.go
+	modified:   p2p/discover/v5wire/crypto.go
+	modified:   p2p/discover/v5wire/crypto_test.go
+	modified:   p2p/discover/v5wire/encoding.go
+	modified:   p2p/discover/v5wire/encoding_test.go
+	modified:   p2p/discover/v5wire/msg.go
+	modified:   p2p/discover/v5wire/session.go
+	modified:   p2p/dnsdisc/client.go
+	modified:   p2p/dnsdisc/client_test.go
+	modified:   p2p/dnsdisc/doc.go
+	modified:   p2p/dnsdisc/error.go
+	modified:   p2p/dnsdisc/sync.go
+	modified:   p2p/dnsdisc/sync_test.go
+	modified:   p2p/dnsdisc/tree.go
+	modified:   p2p/dnsdisc/tree_test.go
+	modified:   p2p/enode/idscheme.go
+	modified:   p2p/enode/idscheme_test.go
+	modified:   p2p/enode/iter.go
+	modified:   p2p/enode/iter_integration_test.go
+	modified:   p2p/enode/iter_test.go
+	modified:   p2p/enode/localnode.go
+	modified:   p2p/enode/localnode_test.go
+	modified:   p2p/enode/node.go
+	modified:   p2p/enode/node_test.go
+	modified:   p2p/enode/nodedb.go
+	modified:   p2p/enode/nodedb_test.go
+	modified:   p2p/enode/urlv4.go
+	modified:   p2p/enode/urlv4_test.go
+	modified:   p2p/enr/enr.go
+	modified:   p2p/enr/enr_test.go
+	modified:   p2p/enr/entries.go
+	modified:   p2p/message.go
+	modified:   p2p/message_test.go
+	modified:   p2p/metrics.go
+	modified:   p2p/nat/nat.go
+	modified:   p2p/nat/nat_stun.go
+	modified:   p2p/nat/nat_test.go
+	modified:   p2p/nat/natpmp.go
+	modified:   p2p/nat/natupnp.go
+	modified:   p2p/nat/natupnp_test.go
+	modified:   p2p/netutil/addrutil.go
+	modified:   p2p/netutil/error.go
+	modified:   p2p/netutil/error_test.go
+	modified:   p2p/netutil/iptrack.go
+	modified:   p2p/netutil/iptrack_test.go
+	modified:   p2p/netutil/net.go
+	modified:   p2p/netutil/net_test.go
+	modified:   p2p/netutil/toobig_notwindows.go
+	modified:   p2p/netutil/toobig_windows.go
+	modified:   p2p/node_key_config.go
+	modified:   p2p/peer.go
+	modified:   p2p/peer_error.go
+	modified:   p2p/peer_test.go
+	modified:   p2p/protocol.go
+	modified:   p2p/rlpx/buffer.go
+	modified:   p2p/rlpx/buffer_test.go
+	modified:   p2p/rlpx/rlpx.go
+	modified:   p2p/rlpx/rlpx_test.go
+	modified:   p2p/sentry/eth_handshake.go
+	modified:   p2p/sentry/eth_handshake_test.go
+	modified:   p2p/sentry/sentry_grpc_server.go
+	modified:   p2p/sentry/sentry_grpc_server_test.go
+	modified:   p2p/sentry/sentry_multi_client/broadcast.go
+	modified:   p2p/sentry/sentry_multi_client/sentry_api.go
+	modified:   p2p/sentry/simulator/sentry_simulator.go
+	modified:   p2p/sentry/simulator/simulator_test.go
+	modified:   p2p/sentry/status_data_provider.go
+	modified:   p2p/server.go
+	modified:   p2p/server_test.go
+	modified:   p2p/simulations/adapters/inproc_test.go
+	modified:   p2p/simulations/adapters/types.go
+	modified:   p2p/simulations/connect.go
+	modified:   p2p/simulations/events.go
+	modified:   p2p/simulations/http.go
+	modified:   p2p/simulations/mocker.go
+	modified:   p2p/simulations/network.go
+	modified:   p2p/simulations/pipes/pipes.go
+	modified:   p2p/simulations/simulation.go
+	modified:   p2p/simulations/test.go
+	modified:   p2p/transport.go
+	modified:   p2p/transport_test.go
+	modified:   p2p/util.go
+	modified:   p2p/util_test.go
+	new file:   params/bootnodes_amoy.go
+	modified:   params/bootnodes_mumbai.go
+	modified:   params/chainspecs/chiado.json
+	modified:   params/chainspecs/gnosis.json
+	deleted:    params/chainspecs/goerli.json
+	modified:   params/chainspecs/holesky.json
+	modified:   params/chainspecs/mainnet.json
+	modified:   params/chainspecs/sepolia.json
+	modified:   params/config_test.go
+	modified:   params/dao.go
+	modified:   params/denomination.go
+	modified:   params/mining.go
+	modified:   polygon/bor/bor.go
+	modified:   polygon/bor/bor_test.go
+	modified:   polygon/bor/borcfg/bor_config.go
+	modified:   polygon/bor/borcfg/bor_config_test.go
+	modified:   polygon/bor/errors.go
+	modified:   polygon/bor/fake.go
+	new file:   polygon/bor/fee_log.go
+	modified:   polygon/bor/finality/api.go
+	modified:   polygon/bor/finality/bor_verifier.go
+	modified:   polygon/bor/finality/flags/flags.go
+	deleted:    polygon/bor/finality/generics/generics.go
+	modified:   polygon/bor/finality/milestone_rewind.go
+	modified:   polygon/bor/finality/rawdb/checkpoint.go
+	modified:   polygon/bor/finality/rawdb/milestone.go
+	modified:   polygon/bor/finality/whitelist.go
+	modified:   polygon/bor/finality/whitelist/checkpoint.go
+	modified:   polygon/bor/finality/whitelist/finality.go
+	modified:   polygon/bor/finality/whitelist/service.go
+	modified:   polygon/bor/finality/whitelist/service_test.go
+	modified:   polygon/bor/finality/whitelist_helpers.go
+	modified:   polygon/bor/genesis_contracts.go
+	modified:   polygon/bor/merkle.go
+	modified:   polygon/bor/snapshot.go
+	modified:   polygon/bor/snapshot_test.go
+	modified:   polygon/bor/snaptype/types_test.go
+	modified:   polygon/bor/spanner.go
+	modified:   polygon/bor/spanner_mock.go
+	modified:   polygon/bor/spanner_test_validators.go
+	modified:   polygon/bor/statefull/processor.go
+	modified:   polygon/bor/types/bor_receipt.go
+	modified:   polygon/bor/valset/errors.go
+	modified:   polygon/bor/valset/validator.go
+	modified:   polygon/bor/valset/validator_set.go
+	new file:   polygon/bridge/bridge.go
+	new file:   polygon/bridge/bridge_test.go
+	new file:   polygon/bridge/db.go
+	new file:   polygon/bridge/log_prefix.go
+	new file:   polygon/bridge/service.go
+	modified:   polygon/heimdall/checkpoint.go
+	new file:   polygon/heimdall/checkpoint_test.go
+	modified:   polygon/heimdall/client.go
+	modified:   polygon/heimdall/client_mock.go
+	modified:   polygon/heimdall/client_test.go
+	new file:   polygon/heimdall/closed_range.go
+	new file:   polygon/heimdall/entity.go
+	new file:   polygon/heimdall/entity_fetcher.go
+	new file:   polygon/heimdall/entity_fetcher_test.go
+	new file:   polygon/heimdall/entity_store.go
+	modified:   polygon/heimdall/event_record.go
+	deleted:    polygon/heimdall/heimdall.go
+	deleted:    polygon/heimdall/heimdall_mock.go
+	deleted:    polygon/heimdall/heimdall_no_store.go
+	deleted:    polygon/heimdall/heimdall_no_store_mock.go
+	deleted:    polygon/heimdall/heimdall_test.go
+	new file:   polygon/heimdall/heimdalltest/test_json_marshal.go
+	modified:   polygon/heimdall/http_client_mock.go
+	modified:   polygon/heimdall/log_prefix.go
+	modified:   polygon/heimdall/metrics.go
+	modified:   polygon/heimdall/milestone.go
+	new file:   polygon/heimdall/milestone_test.go
+	new file:   polygon/heimdall/range_index.go
+	new file:   polygon/heimdall/range_index_test.go
+	new file:   polygon/heimdall/scraper.go
+	new file:   polygon/heimdall/service.go
+	new file:   polygon/heimdall/service_store.go
+	deleted:    polygon/heimdall/simulator/heimdall_simulator.go
+	modified:   polygon/heimdall/span.go
+	modified:   polygon/heimdall/span_id.go
+	modified:   polygon/heimdall/span_id_test.go
+	new file:   polygon/heimdall/span_test.go
+	deleted:    polygon/heimdall/storage.go
+	deleted:    polygon/heimdall/storage_mock.go
+	modified:   polygon/heimdall/waypoint.go
+	modified:   polygon/p2p/fetcher_base.go
+	modified:   polygon/p2p/fetcher_base_test.go
+	modified:   polygon/p2p/fetcher_errors.go
+	modified:   polygon/p2p/fetcher_penalizing.go
+	modified:   polygon/p2p/fetcher_penalizing_test.go
+	modified:   polygon/p2p/fetcher_tracking.go
+	modified:   polygon/p2p/fetcher_tracking_test.go
+	modified:   polygon/p2p/message_listener.go
+	modified:   polygon/p2p/message_listener_test.go
+	modified:   polygon/p2p/message_sender.go
+	modified:   polygon/p2p/message_sender_test.go
+	modified:   polygon/p2p/peer_id.go
+	modified:   polygon/p2p/peer_penalizer.go
+	modified:   polygon/p2p/peer_shuffle.go
+	modified:   polygon/p2p/peer_sync_progress.go
+	modified:   polygon/p2p/peer_sync_progress_test.go
+	modified:   polygon/p2p/peer_tracker.go
+	modified:   polygon/p2p/peer_tracker_test.go
+	modified:   polygon/p2p/service.go
+	modified:   polygon/p2p/service_mock.go
+	new file:   polygon/polygoncommon/database.go
+	new file:   polygon/polygoncommon/event_notifier.go
+	new file:   polygon/polygoncommon/observers.go
+	deleted:    polygon/sync/accumulated_headers_verifier.go
+	modified:   polygon/sync/block_downloader.go
+	modified:   polygon/sync/block_downloader_test.go
+	modified:   polygon/sync/blocks_verifier.go
+	modified:   polygon/sync/canonical_chain_builder.go
+	new file:   polygon/sync/canonical_chain_builder_factory.go
+	modified:   polygon/sync/canonical_chain_builder_mock.go
+	modified:   polygon/sync/canonical_chain_builder_test.go
+	modified:   polygon/sync/difficulty.go
+	modified:   polygon/sync/difficulty_test.go
+	modified:   polygon/sync/event_channel.go
+	modified:   polygon/sync/event_channel_test.go
+	modified:   polygon/sync/header_time_validator.go
+	modified:   polygon/sync/header_validator.go
+	new file:   polygon/sync/heimdall_waypoints_fetcher.go
+	new file:   polygon/sync/heimdall_waypoints_fetcher_mock.go
+	modified:   polygon/sync/log_prefix.go
+	modified:   polygon/sync/service.go
+	modified:   polygon/sync/spans_cache.go
+	deleted:    polygon/sync/storage.go
+	deleted:    polygon/sync/storage_mock.go
+	new file:   polygon/sync/store.go
+	new file:   polygon/sync/store_mock.go
+	modified:   polygon/sync/sync.go
+	modified:   polygon/sync/tip_events.go
+	modified:   polygon/sync/validator_set_interface.go
+	new file:   polygon/sync/waypoint_headers_verifier.go
+	new file:   polygon/sync/waypoint_headers_verifier_test.go
+	modified:   polygon/tracer/bor_state_sync_txn_tracer.go
+	modified:   polygon/tracer/trace_bor_state_sync_txn.go
+	modified:   rlp/decode.go
+	modified:   rlp/decode_tail_test.go
+	modified:   rlp/decode_test.go
+	modified:   rlp/doc.go
+	new file:   rlp/encbuffer.go
+	modified:   rlp/encode.go
+	modified:   rlp/encode_test.go
+	modified:   rlp/encoder_example_test.go
+	new file:   rlp/internal/rlpstruct/rlpstruct.go
+	modified:   rlp/iterator.go
+	modified:   rlp/iterator_test.go
+	modified:   rlp/raw.go
+	modified:   rlp/raw_test.go
+	modified:   rlp/typecache.go
+	modified:   rpc/allow_list.go
+	modified:   rpc/allow_list_test.go
+	modified:   rpc/client.go
+	modified:   rpc/client_example_test.go
+	modified:   rpc/client_test.go
+	modified:   rpc/doc.go
+	modified:   rpc/endpoints.go
+	modified:   rpc/errors.go
+	modified:   rpc/handler.go
+	modified:   rpc/handler_test.go
+	deleted:    rpc/helpers.go
+	modified:   rpc/http_test.go
+	modified:   rpc/inproc.go
+	modified:   rpc/ipc.go
+	modified:   rpc/json.go
+	modified:   rpc/metrics.go
+	modified:   rpc/rpccfg/rpccfg.go
+	modified:   rpc/server.go
+	modified:   rpc/server_test.go
+	modified:   rpc/service.go
+	modified:   rpc/stdio.go
+	modified:   rpc/subscription.go
+	modified:   rpc/subscription_test.go
+	modified:   rpc/testservice_test.go
+	modified:   rpc/types.go
+	modified:   rpc/types_test.go
+	modified:   rpc/websocket.go
+	modified:   rpc/websocket_bench_test.go
+	modified:   rpc/websocket_test.go
+	modified:   rules.go
+	modified:   sonar-project.properties
+	modified:   spectest/case.go
+	modified:   spectest/suite.go
+	modified:   spectest/util.go
+	modified:   tests/block_test.go
+	modified:   tests/block_test_util.go
+	modified:   tests/bor/helper/miner.go
+	modified:   tests/bor/mining_test.go
+	modified:   tests/contracts/gen_selfDestructor.go
+	modified:   tests/contracts/gen_testcontract.go
+	modified:   tests/difficulty_test.go
+	modified:   tests/difficulty_test_util.go
+	modified:   tests/erigon-ext-test/main.go
+	modified:   tests/exec_spec_test.go
+	modified:   tests/execution-spec-tests/berlin/eip2930_access_list/acl/access_list.json
+	modified:   tests/execution-spec-tests/byzantium/eip198_modexp_precompile/modexp/modexp.json
+	modified:   tests/execution-spec-tests/cancun/eip1153_tstore/tstorage/gas_usage.json
+	modified:   tests/execution-spec-tests/cancun/eip1153_tstore/tstorage/run_until_out_of_gas.json
+	modified:   tests/execution-spec-tests/cancun/eip1153_tstore/tstorage/tload_after_sstore.json
+	modified:   tests/execution-spec-tests/cancun/eip1153_tstore/tstorage/tload_after_tstore.json
+	modified:   tests/execution-spec-tests/cancun/eip1153_tstore/tstorage/tload_after_tstore_is_zero.json
+	modified:   tests/execution-spec-tests/cancun/eip1153_tstore/tstorage/transient_storage_unset_values.json
+	modified:   tests/execution-spec-tests/cancun/eip1153_tstore/tstorage_create_contexts/contract_creation.json
+	modified:   tests/execution-spec-tests/cancun/eip1153_tstore/tstorage_execution_contexts/subcall.json
+	modified:   tests/execution-spec-tests/cancun/eip1153_tstore/tstorage_reentrancy_contexts/reentrant_call.json
+	modified:   tests/execution-spec-tests/cancun/eip1153_tstore/tstorage_selfdestruct/reentrant_selfdestructing_call.json
+	modified:   tests/execution-spec-tests/cancun/eip4788_beacon_root/beacon_root_contract/beacon_root_contract_calls.json
+	new file:   tests/execution-spec-tests/cancun/eip4788_beacon_root/beacon_root_contract/beacon_root_contract_deploy.json
+	modified:   tests/execution-spec-tests/cancun/eip4788_beacon_root/beacon_root_contract/beacon_root_contract_timestamps.json
+	modified:   tests/execution-spec-tests/cancun/eip4788_beacon_root/beacon_root_contract/beacon_root_equal_to_timestamp.json
+	modified:   tests/execution-spec-tests/cancun/eip4788_beacon_root/beacon_root_contract/beacon_root_selfdestruct.json
+	new file:   tests/execution-spec-tests/cancun/eip4788_beacon_root/beacon_root_contract/beacon_root_transition.json
+	modified:   tests/execution-spec-tests/cancun/eip4788_beacon_root/beacon_root_contract/calldata_lengths.json
+	modified:   tests/execution-spec-tests/cancun/eip4788_beacon_root/beacon_root_contract/invalid_beacon_root_calldata_value.json
+	new file:   tests/execution-spec-tests/cancun/eip4788_beacon_root/beacon_root_contract/multi_block_beacon_root_timestamp_calls.json
+	new file:   tests/execution-spec-tests/cancun/eip4788_beacon_root/beacon_root_contract/no_beacon_root_contract_at_transition.json
+	modified:   tests/execution-spec-tests/cancun/eip4788_beacon_root/beacon_root_contract/tx_to_beacon_root_contract.json
+	new file:   tests/execution-spec-tests/cancun/eip4844_blobs/blob_txs/blob_gas_subtraction_tx.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/blob_txs/blob_tx_attribute_calldata_opcodes.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/blob_txs/blob_tx_attribute_gasprice_opcode.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/blob_txs/blob_tx_attribute_opcodes.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/blob_txs/blob_tx_attribute_value_opcode.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/blob_txs/blob_type_tx_pre_fork.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/blob_txs/insufficient_balance_blob_tx.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/blob_txs/insufficient_balance_blob_tx_combinations.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/blob_txs/invalid_blob_hash_versioning_multiple_txs.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/blob_txs/invalid_blob_hash_versioning_single_tx.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/blob_txs/invalid_blob_tx_contract_creation.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/blob_txs/invalid_block_blob_count.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/blob_txs/invalid_normal_gas.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/blob_txs/invalid_tx_blob_count.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/blob_txs/invalid_tx_max_fee_per_blob_gas.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/blob_txs/sufficient_balance_blob_tx.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/blob_txs/sufficient_balance_blob_tx_pre_fund_tx.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/blob_txs/valid_blob_tx_combinations.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/blob_txs_full/reject_valid_full_blob_in_block_rlp.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/blobhash_opcode/blobhash_gas_cost.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/blobhash_opcode/blobhash_invalid_blob_index.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/blobhash_opcode/blobhash_multiple_txs_in_block.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/blobhash_opcode/blobhash_scenarios.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/blobhash_opcode_contexts/blobhash_opcode_contexts.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/excess_blob_gas/correct_decreasing_blob_gas_costs.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/excess_blob_gas/correct_excess_blob_gas_calculation.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/excess_blob_gas/correct_increasing_blob_gas_costs.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/excess_blob_gas/invalid_blob_gas_used_in_header.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/excess_blob_gas/invalid_excess_blob_gas_above_target_change.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/excess_blob_gas/invalid_excess_blob_gas_change.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/excess_blob_gas/invalid_excess_blob_gas_target_blobs_increase_from_zero.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/excess_blob_gas/invalid_negative_excess_blob_gas.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/excess_blob_gas/invalid_non_multiple_excess_blob_gas.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/excess_blob_gas/invalid_static_excess_blob_gas.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/excess_blob_gas/invalid_static_excess_blob_gas_from_zero_on_blobs_above_target.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/excess_blob_gas/invalid_zero_excess_blob_gas_in_header.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/excess_blob_gas_fork_transition/fork_transition_excess_blob_gas.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/excess_blob_gas_fork_transition/invalid_post_fork_block_without_blob_fields.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/excess_blob_gas_fork_transition/invalid_pre_fork_block_with_blob_fields.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/point_evaluation_precompile/invalid_precompile_calls.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/point_evaluation_precompile/point_evaluation_precompile_before_fork.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/point_evaluation_precompile/point_evaluation_precompile_calls.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/point_evaluation_precompile/point_evaluation_precompile_during_fork.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/point_evaluation_precompile/point_evaluation_precompile_external_vectors.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/point_evaluation_precompile/point_evaluation_precompile_gas_tx_to.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/point_evaluation_precompile/valid_precompile_calls.json
+	modified:   tests/execution-spec-tests/cancun/eip4844_blobs/point_evaluation_precompile_gas/point_evaluation_precompile_gas_usage.json
+	modified:   tests/execution-spec-tests/cancun/eip5656_mcopy/mcopy/mcopy_on_empty_memory.json
+	modified:   tests/execution-spec-tests/cancun/eip5656_mcopy/mcopy/valid_mcopy_operations.json
+	modified:   tests/execution-spec-tests/cancun/eip5656_mcopy/mcopy_contexts/no_memory_corruption_on_upper_call_stack_levels.json
+	modified:   tests/execution-spec-tests/cancun/eip5656_mcopy/mcopy_memory_expansion/mcopy_huge_memory_expansion.json
+	modified:   tests/execution-spec-tests/cancun/eip5656_mcopy/mcopy_memory_expansion/mcopy_memory_expansion.json
+	modified:   tests/execution-spec-tests/cancun/eip6780_selfdestruct/dynamic_create2_selfdestruct_collision/dynamic_create2_selfdestruct_collision.json
+	modified:   tests/execution-spec-tests/cancun/eip6780_selfdestruct/dynamic_create2_selfdestruct_collision/dynamic_create2_selfdestruct_collision_multi_tx.json
+	new file:   tests/execution-spec-tests/cancun/eip6780_selfdestruct/dynamic_create2_selfdestruct_collision/dynamic_create2_selfdestruct_collision_two_different_transactions.json
+	modified:   tests/execution-spec-tests/cancun/eip6780_selfdestruct/reentrancy_selfdestruct_revert/reentrancy_selfdestruct_revert.json
+	modified:   tests/execution-spec-tests/cancun/eip6780_selfdestruct/selfdestruct/create_selfdestruct_same_tx.json
+	new file:   tests/execution-spec-tests/cancun/eip6780_selfdestruct/selfdestruct/create_selfdestruct_same_tx_increased_nonce.json
+	modified:   tests/execution-spec-tests/cancun/eip6780_selfdestruct/selfdestruct/delegatecall_from_new_contract_to_pre_existing_contract.json
+	modified:   tests/execution-spec-tests/cancun/eip6780_selfdestruct/selfdestruct/delegatecall_from_pre_existing_contract_to_new_contract.json
+	modified:   tests/execution-spec-tests/cancun/eip6780_selfdestruct/selfdestruct/recreate_self_destructed_contract_different_txs.json
+	modified:   tests/execution-spec-tests/cancun/eip6780_selfdestruct/selfdestruct/self_destructing_initcode.json
+	modified:   tests/execution-spec-tests/cancun/eip6780_selfdestruct/selfdestruct/self_destructing_initcode_create_tx.json
+	modified:   tests/execution-spec-tests/cancun/eip6780_selfdestruct/selfdestruct/selfdestruct_created_same_block_different_tx.json
+	modified:   tests/execution-spec-tests/cancun/eip6780_selfdestruct/selfdestruct/selfdestruct_pre_existing.json
+	modified:   tests/execution-spec-tests/cancun/eip6780_selfdestruct/selfdestruct_revert/selfdestruct_created_in_same_tx_with_revert.json
+	modified:   tests/execution-spec-tests/cancun/eip6780_selfdestruct/selfdestruct_revert/selfdestruct_not_created_in_same_tx_with_revert.json
+	modified:   tests/execution-spec-tests/cancun/eip7516_blobgasfee/blobgasfee_opcode/blobbasefee_before_fork.json
+	modified:   tests/execution-spec-tests/cancun/eip7516_blobgasfee/blobgasfee_opcode/blobbasefee_during_fork.json
+	modified:   tests/execution-spec-tests/cancun/eip7516_blobgasfee/blobgasfee_opcode/blobbasefee_out_of_gas.json
+	modified:   tests/execution-spec-tests/cancun/eip7516_blobgasfee/blobgasfee_opcode/blobbasefee_stack_overflow.json
+	new file:   tests/execution-spec-tests/constantinople/create2/recreate/recreate.json
+	modified:   tests/execution-spec-tests/frontier/opcodes/call_and_callcode_gas_calculation/value_transfer_gas_calculation.json
+	modified:   tests/execution-spec-tests/frontier/opcodes/dup/dup.json
+	new file:   tests/execution-spec-tests/frontier/opcodes/selfdestruct/double_kill.json
+	modified:   tests/execution-spec-tests/homestead/yul/yul_example/yul.json
+	modified:   tests/execution-spec-tests/istanbul/eip1344_chainid/chainid/chainid.json
+	modified:   tests/execution-spec-tests/paris/security/selfdestruct_balance_bug/tx_selfdestruct_balance_bug.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_g1add/call_types.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_g1add/gas.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_g1add/invalid.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_g1add/valid.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_g1msm/call_types.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_g1msm/invalid.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_g1msm/valid.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_g1mul/call_types.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_g1mul/gas.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_g1mul/invalid.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_g1mul/valid.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_g2add/call_types.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_g2add/gas.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_g2add/invalid.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_g2add/valid.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_g2msm/call_types.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_g2msm/invalid.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_g2msm/valid.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_g2mul/call_types.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_g2mul/gas.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_g2mul/invalid.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_g2mul/valid.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_map_fp2_to_g2/call_types.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_map_fp2_to_g2/gas.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_map_fp2_to_g2/invalid.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_map_fp2_to_g2/valid.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_map_fp_to_g1/call_types.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_map_fp_to_g1/gas.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_map_fp_to_g1/invalid.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_map_fp_to_g1/valid.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_pairing/call_types.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_pairing/invalid.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_pairing/valid.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_precompiles_before_fork/precompile_before_fork.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_variable_length_input_contracts/invalid_gas_g1msm.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_variable_length_input_contracts/invalid_gas_g2msm.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_variable_length_input_contracts/invalid_gas_pairing.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_variable_length_input_contracts/invalid_length_g1msm.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_variable_length_input_contracts/invalid_length_g2msm.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_variable_length_input_contracts/invalid_length_pairing.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_variable_length_input_contracts/valid_gas_g1msm.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_variable_length_input_contracts/valid_gas_g2msm.json
+	new file:   tests/execution-spec-tests/prague/eip2537_bls_12_381_precompiles/bls12_variable_length_input_contracts/valid_gas_pairing.json
+	new file:   tests/execution-spec-tests/prague/eip2935_historical_block_hashes_from_state/block_hashes/block_hashes_history.json
+	new file:   tests/execution-spec-tests/prague/eip2935_historical_block_hashes_from_state/block_hashes/block_hashes_history_at_transition.json
+	new file:   tests/execution-spec-tests/prague/eip2935_historical_block_hashes_from_state/block_hashes/invalid_history_contract_calls.json
+	new file:   tests/execution-spec-tests/prague/eip6110_deposits/deposits/deposit.json
+	new file:   tests/execution-spec-tests/prague/eip6110_deposits/deposits/deposit_negative.json
+	new file:   tests/execution-spec-tests/prague/eip7002_el_triggerable_withdrawals/withdrawal_requests/withdrawal_requests.json
+	new file:   tests/execution-spec-tests/prague/eip7002_el_triggerable_withdrawals/withdrawal_requests/withdrawal_requests_negative.json
+	new file:   tests/execution-spec-tests/prague/eip7251_consolidations/consolidations/consolidation_requests.json
+	new file:   tests/execution-spec-tests/prague/eip7251_consolidations/consolidations/consolidation_requests_negative.json
+	new file:   tests/execution-spec-tests/prague/eip7685_general_purpose_el_requests/deposits_withdrawals_consolidations/invalid_deposit_withdrawal_consolidation_requests.json
+	new file:   tests/execution-spec-tests/prague/eip7685_general_purpose_el_requests/deposits_withdrawals_consolidations/valid_deposit_withdrawal_consolidation_request_from_same_tx.json
+	new file:   tests/execution-spec-tests/prague/eip7685_general_purpose_el_requests/deposits_withdrawals_consolidations/valid_deposit_withdrawal_consolidation_requests.json
+	new file:   tests/execution-spec-tests/prague/eip7702_eoa_code_tx/eoa_code_txs/address_from_set_code.json
+	new file:   tests/execution-spec-tests/prague/eip7702_eoa_code_tx/eoa_code_txs/ext_code_on_set_code.json
+	new file:   tests/execution-spec-tests/prague/eip7702_eoa_code_tx/eoa_code_txs/self_code_on_set_code.json
+	new file:   tests/execution-spec-tests/prague/eip7702_eoa_code_tx/eoa_code_txs/set_code_call_set_code.json
+	new file:   tests/execution-spec-tests/prague/eip7702_eoa_code_tx/eoa_code_txs/set_code_invalid_authorization_tuple.json
+	new file:   tests/execution-spec-tests/prague/eip7702_eoa_code_tx/eoa_code_txs/set_code_multiple_valid_authorization_tuples_first_invalid_same_signer.json
+	new file:   tests/execution-spec-tests/prague/eip7702_eoa_code_tx/eoa_code_txs/set_code_multiple_valid_authorization_tuples_same_signer.json
+	new file:   tests/execution-spec-tests/prague/eip7702_eoa_code_tx/eoa_code_txs/set_code_to_account_deployed_in_same_tx.json
+	new file:   tests/execution-spec-tests/prague/eip7702_eoa_code_tx/eoa_code_txs/set_code_to_contract_creator.json
+	new file:   tests/execution-spec-tests/prague/eip7702_eoa_code_tx/eoa_code_txs/set_code_to_self_caller.json
+	new file:   tests/execution-spec-tests/prague/eip7702_eoa_code_tx/eoa_code_txs/set_code_to_self_destruct.json
+	new file:   tests/execution-spec-tests/prague/eip7702_eoa_code_tx/eoa_code_txs/set_code_to_sstore.json
+	new file:   tests/execution-spec-tests/prague/eip7702_eoa_code_tx/eoa_code_txs/set_code_to_sstore_then_sload.json
+	new file:   tests/execution-spec-tests/prague/eip7702_eoa_code_tx/eoa_code_txs/set_code_to_tstore_reentry.json
+	modified:   tests/execution-spec-tests/shanghai/eip3651_warm_coinbase/warm_coinbase/warm_coinbase_call_out_of_gas.json
+	modified:   tests/execution-spec-tests/shanghai/eip3651_warm_coinbase/warm_coinbase/warm_coinbase_gas_usage.json
+	modified:   tests/execution-spec-tests/shanghai/eip3855_push0/push0/push0_before_jumpdest.json
+	modified:   tests/execution-spec-tests/shanghai/eip3855_push0/push0/push0_during_staticcall.json
+	modified:   tests/execution-spec-tests/shanghai/eip3855_push0/push0/push0_fill_stack.json
+	modified:   tests/execution-spec-tests/shanghai/eip3855_push0/push0/push0_gas_cost.json
+	modified:   tests/execution-spec-tests/shanghai/eip3855_push0/push0/push0_key_sstore.json
+	modified:   tests/execution-spec-tests/shanghai/eip3855_push0/push0/push0_stack_overflow.json
+	modified:   tests/execution-spec-tests/shanghai/eip3855_push0/push0/push0_storage_overwrite.json
+	modified:   tests/execution-spec-tests/shanghai/eip3860_initcode/initcode/contract_creating_tx.json
+	modified:   tests/execution-spec-tests/shanghai/eip3860_initcode/initcode/create_opcode_initcode.json
+	modified:   tests/execution-spec-tests/shanghai/eip3860_initcode/initcode/gas_usage.json
+	modified:   tests/execution-spec-tests/shanghai/eip4895_withdrawals/withdrawals/balance_within_block.json
+	modified:   tests/execution-spec-tests/shanghai/eip4895_withdrawals/withdrawals/large_amount.json
+	modified:   tests/execution-spec-tests/shanghai/eip4895_withdrawals/withdrawals/many_withdrawals.json
+	modified:   tests/execution-spec-tests/shanghai/eip4895_withdrawals/withdrawals/multiple_withdrawals_same_address.json
+	modified:   tests/execution-spec-tests/shanghai/eip4895_withdrawals/withdrawals/newly_created_contract.json
+	modified:   tests/execution-spec-tests/shanghai/eip4895_withdrawals/withdrawals/no_evm_execution.json
+	modified:   tests/execution-spec-tests/shanghai/eip4895_withdrawals/withdrawals/self_destructing_account.json
+	modified:   tests/execution-spec-tests/shanghai/eip4895_withdrawals/withdrawals/use_value_in_contract.json
+	modified:   tests/execution-spec-tests/shanghai/eip4895_withdrawals/withdrawals/use_value_in_tx.json
+	modified:   tests/execution-spec-tests/shanghai/eip4895_withdrawals/withdrawals/withdrawing_to_precompiles.json
+	modified:   tests/execution-spec-tests/shanghai/eip4895_withdrawals/withdrawals/zero_amount.json
+	modified:   tests/fuzzers/abi/abifuzzer.go
+	modified:   tests/fuzzers/abi/abifuzzer_test.go
+	modified:   tests/fuzzers/bitutil/compress_fuzz.go
+	modified:   tests/fuzzers/bls12381/precompile_fuzzer.go
+	modified:   tests/fuzzers/bn256/bn256_fuzz.go
+	modified:   tests/fuzzers/difficulty/debug/main.go
+	modified:   tests/fuzzers/difficulty/difficulty-fuzz.go
+	modified:   tests/fuzzers/rlp/rlp_fuzzer.go
+	modified:   tests/fuzzers/runtime/runtime_fuzz.go
+	modified:   tests/fuzzers/secp256k1/secp_fuzzer.go
+	modified:   tests/gen_btheader.go
+	modified:   tests/gen_difficultytest.go
+	modified:   tests/gen_stenv.go
+	modified:   tests/init.go
+	modified:   tests/init_test.go
+	modified:   tests/rlp_test.go
+	modified:   tests/rlp_test_util.go
+	modified:   tests/solidity/contracts/OpCodes.sol
+	modified:   tests/solidity/test/opCodes.js
+	modified:   tests/state_test.go
+	modified:   tests/state_test_util.go
+	modified:   tests/statedb_chain_test.go
+	modified:   tests/statedb_insert_chain_transaction_test.go
+	modified:   tests/transaction_test.go
+	modified:   tests/transaction_test_util.go
+	modified:   tools.go
+	modified:   turbo/adapter/block_propagator.go
+	modified:   turbo/adapter/ethapi/backend.go
+	modified:   turbo/adapter/ethapi/get_proof.go
+	modified:   turbo/adapter/ethapi/internal.go
+	modified:   turbo/adapter/ethapi/state_overrides.go
+	modified:   turbo/app/README.md
+	modified:   turbo/app/backup_cmd.go
+	modified:   turbo/app/import_cmd.go
+	modified:   turbo/app/init_cmd.go
+	modified:   turbo/app/make_app.go
+	modified:   turbo/app/support_cmd.go
+	modified:   turbo/builder/block_builder.go
+	modified:   turbo/builder/latest_block_built.go
+	modified:   turbo/builder/latest_block_built_test.go
+	modified:   turbo/cli/config_file.go
+	modified:   turbo/cli/helpers.go
+	modified:   turbo/cmdtest/test_cmd.go
+	modified:   turbo/debug/api.go
+	modified:   turbo/debug/flags.go
+	modified:   turbo/debug/loudpanic.go
+	deleted:    turbo/debug/loudpanic_fallback.go
+	modified:   turbo/debug/signal.go
+	modified:   turbo/debug/signal_windows.go
+	modified:   turbo/debug/trace.go
+	modified:   turbo/debug/trace_fallback.go
+	modified:   turbo/engineapi/engine_block_downloader/block_downloader.go
+	modified:   turbo/engineapi/engine_block_downloader/body.go
+	modified:   turbo/engineapi/engine_block_downloader/core.go
+	modified:   turbo/engineapi/engine_helpers/constants.go
+	modified:   turbo/engineapi/engine_helpers/fork_validator.go
+	modified:   turbo/engineapi/engine_types/jsonrpc.go
+	modified:   turbo/engineapi/engine_types/status.go
+	modified:   turbo/execution/eth1/block_building.go
+	modified:   turbo/execution/eth1/eth1_utils/grpc.go
+	modified:   turbo/execution/eth1/eth1_utils/grpc_test.go
+	modified:   turbo/execution/eth1/inserters.go
+	modified:   turbo/jsonrpc/admin_api.go
+	modified:   turbo/jsonrpc/bor_api.go
+	modified:   turbo/jsonrpc/bor_helper.go
+	modified:   turbo/jsonrpc/bor_snapshot.go
+	modified:   turbo/jsonrpc/contracts/gen.go
+	modified:   turbo/jsonrpc/contracts/gen_poly.go
+	modified:   turbo/jsonrpc/contracts/gen_token.go
+	modified:   turbo/jsonrpc/db_api_deprecated.go
+	modified:   turbo/jsonrpc/debug_api.go
+	modified:   turbo/jsonrpc/erigon_api.go
+	modified:   turbo/jsonrpc/erigon_block.go
+	modified:   turbo/jsonrpc/erigon_cache_check.go
+	modified:   turbo/jsonrpc/erigon_nodeInfo.go
+	modified:   turbo/jsonrpc/erigon_receipts.go
+	modified:   turbo/jsonrpc/erigon_system.go
+	modified:   turbo/jsonrpc/error_messages.go
+	modified:   turbo/jsonrpc/eth_deprecated.go
+	modified:   turbo/jsonrpc/eth_mining.go
+	modified:   turbo/jsonrpc/eth_subscribe_test.go
+	modified:   turbo/jsonrpc/eth_system.go
+	modified:   turbo/jsonrpc/eth_txs.go
+	modified:   turbo/jsonrpc/eth_uncles.go
+	modified:   turbo/jsonrpc/get_chain_config_test.go
+	modified:   turbo/jsonrpc/graphql_api.go
+	modified:   turbo/jsonrpc/net_api.go
+	modified:   turbo/jsonrpc/otterscan_block_details.go
+	modified:   turbo/jsonrpc/otterscan_contract_creator_test.go
+	modified:   turbo/jsonrpc/otterscan_default_tracer.go
+	modified:   turbo/jsonrpc/otterscan_has_code.go
+	modified:   turbo/jsonrpc/otterscan_search_backward.go
+	modified:   turbo/jsonrpc/otterscan_search_backward_multi_test.go
+	modified:   turbo/jsonrpc/otterscan_search_backward_test.go
+	modified:   turbo/jsonrpc/otterscan_search_forward.go
+	modified:   turbo/jsonrpc/otterscan_search_forward_multi_test.go
+	modified:   turbo/jsonrpc/otterscan_search_forward_test.go
+	modified:   turbo/jsonrpc/otterscan_search_multi.go
+	modified:   turbo/jsonrpc/otterscan_search_test.go
+	new file:   turbo/jsonrpc/otterscan_search_v3.go
+	modified:   turbo/jsonrpc/otterscan_trace_contract_creator.go
+	modified:   turbo/jsonrpc/otterscan_trace_operations.go
+	modified:   turbo/jsonrpc/otterscan_trace_touch.go
+	modified:   turbo/jsonrpc/otterscan_trace_transaction.go
+	modified:   turbo/jsonrpc/otterscan_transaction_by_sender_and_nonce.go
+	modified:   turbo/jsonrpc/otterscan_transaction_error.go
+	modified:   turbo/jsonrpc/otterscan_types.go
+	modified:   turbo/jsonrpc/overlay_api.go
+	modified:   turbo/jsonrpc/overlay_create_tracer.go
+	modified:   turbo/jsonrpc/parity_api.go
+	new file:   turbo/jsonrpc/receipts/receipts_generator.go
+	modified:   turbo/jsonrpc/storage_range.go
+	modified:   turbo/jsonrpc/trace_types.go
+	modified:   turbo/jsonrpc/txpool_api.go
+	modified:   turbo/jsonrpc/web3_api.go
+	modified:   turbo/logging/flags.go
+	modified:   turbo/logging/logging.go
+	modified:   turbo/mock/txpool.go
+	modified:   turbo/rlphacks/bytes.go
+	modified:   turbo/rlphacks/bytes_test.go
+	modified:   turbo/rlphacks/serializable.go
+	modified:   turbo/rlphacks/struct.go
+	modified:   turbo/rlphacks/utils_bytes.go
+	new file:   turbo/rpchelper/config.go
+	modified:   turbo/rpchelper/filter_id.go
+	modified:   turbo/rpchelper/filters.go
+	modified:   turbo/rpchelper/filters_deadlock_test.go
+	modified:   turbo/rpchelper/filters_test.go
+	modified:   turbo/rpchelper/helper.go
+	modified:   turbo/rpchelper/interface.go
+	modified:   turbo/rpchelper/logsfilter.go
+	new file:   turbo/rpchelper/metrics.go
+	modified:   turbo/rpchelper/rpc_block.go
+	modified:   turbo/rpchelper/subscription.go
+	modified:   turbo/services/interfaces.go
+	modified:   turbo/shards/events.go
+	modified:   turbo/shards/state_cache.go
+	modified:   turbo/shards/state_cache_test.go
+	modified:   turbo/shards/state_change_accumulator.go
+	modified:   turbo/shards/trie_cache.go
+	deleted:    turbo/shards/trie_cache_test.go
+	modified:   turbo/silkworm/silkworm.go
+	modified:   turbo/snapshotsync/freezeblocks/beacon_block_reader.go
+	modified:   turbo/snapshotsync/freezeblocks/block_reader_test.go
+	modified:   turbo/snapshotsync/freezeblocks/block_snapshots_test.go
+	modified:   turbo/snapshotsync/freezeblocks/caplin_snapshots.go
+	modified:   turbo/snapshotsync/freezeblocks/dump_test.go
+	modified:   turbo/snapshotsync/snap/flags.go
+	new file:   turbo/snapshotsync/snapshotsync_test.go
+	modified:   turbo/stages/blockchain_test.go
+	modified:   turbo/stages/bodydownload/body_algos.go
+	modified:   turbo/stages/bodydownload/body_data_struct.go
+	modified:   turbo/stages/bodydownload/body_test.go
+	modified:   turbo/stages/bodydownload/prefetched_blocks.go
+	modified:   turbo/stages/chain_makers_test.go
+	modified:   turbo/stages/genesis_test.go
+	modified:   turbo/stages/headerdownload/header_algo_test.go
+	modified:   turbo/stages/headerdownload/header_algos.go
+	modified:   turbo/stages/headerdownload/header_data_struct.go
+	modified:   turbo/stages/mock/sentry_mock_test.go
+	modified:   turbo/stages/stageloop.go
+	modified:   turbo/testlog/testlog.go
+	modified:   turbo/trie/account_node_test.go
+	modified:   turbo/trie/debug.go
+	deleted:    turbo/trie/debug_test.go
+	modified:   turbo/trie/delete_subrtee_test.go
+	modified:   turbo/trie/encoding.go
+	modified:   turbo/trie/encoding_test.go
+	modified:   turbo/trie/errors.go
+	modified:   turbo/trie/flatdb_sub_trie_loader_test.go
+	modified:   turbo/trie/gen_struct_step.go
+	modified:   turbo/trie/hack.go
+	modified:   turbo/trie/hashbuilder.go
+	modified:   turbo/trie/hasher.go
+	modified:   turbo/trie/hasher_test.go
+	deleted:    turbo/trie/intermediate_hash_receiver.go
+	modified:   turbo/trie/intermediate_hashes_test.go
+	modified:   turbo/trie/node.go
+	modified:   turbo/trie/proof.go
+	modified:   turbo/trie/retain_list.go
+	modified:   turbo/trie/retain_list_test.go
+	deleted:    turbo/trie/stark_stats.go
+	modified:   turbo/trie/stream.go
+	modified:   turbo/trie/stream_test.go
+	deleted:    turbo/trie/structural_branch_test.go
+	modified:   turbo/trie/structural_test.go
+	modified:   turbo/trie/sub_trie_loader.go
+	modified:   turbo/trie/trie.go
+	deleted:    turbo/trie/trie_from_witness.go
+	modified:   turbo/trie/trie_root.go
+	deleted:    turbo/trie/trie_root_test.go
+	modified:   turbo/trie/trie_test.go
+	modified:   turbo/trie/trie_transform.go
+	deleted:    turbo/trie/trie_witness.go
+	modified:   turbo/trie/utils.go
+	modified:   turbo/trie/visual.go
+	modified:   turbo/trie/vtree/verkle_utils.go
+	modified:   turbo/trie/vtree/verkle_utils_test.go
+	deleted:    turbo/trie/witness.go
+	deleted:    turbo/trie/witness_builder.go
+	deleted:    turbo/trie/witness_builder_test.go
+	deleted:    turbo/trie/witness_marshalling.go
+	deleted:    turbo/trie/witness_operators.go
+	deleted:    turbo/trie/witness_operators_test.go
+	deleted:    turbo/trie/witness_stats.go
+	deleted:    turbo/trie/witness_test.go
+	modified:   visual/common.go
+	modified:   visual/hexary.go
+	modified:   visual/quad.go
+	modified:   wmake.ps1
+
+Unmerged paths:
+  (use "git add/rm <file>..." as appropriate to mark resolution)
+	both modified:   .github/workflows/ci.yml
+	deleted by them: .github/workflows/download-page.yml
+	deleted by us:   .github/workflows/hive-nightly.yml
+	both modified:   .github/workflows/qa-clean-exit-block-downloading.yml
+	both modified:   .github/workflows/qa-clean-exit-snapshot-downloading.yml
+	both modified:   .github/workflows/qa-snap-download.yml
+	both modified:   .github/workflows/qa-tip-tracking.yml
+	both modified:   .github/workflows/release.yml
+	both modified:   .github/workflows/test-integration.yml
+	both modified:   .goreleaser.yml
+	both modified:   Dockerfile
+	both modified:   Dockerfile.debian
+	both modified:   Makefile
+	both modified:   accounts/abi/bind/backends/simulated.go
+	both modified:   accounts/abi/bind/template.go
+	both modified:   cl/beacon/handler/block_production.go
+	both modified:   cl/beacon/handler/handler.go
+	both modified:   cl/beacon/handler/node.go
+	both modified:   cl/clparams/config.go
+	both modified:   cl/phase1/forkchoice/fork_graph/fork_graph_disk.go
+	both modified:   cl/sentinel/gossip.go
+	both modified:   cl/sentinel/service/start.go
+	both modified:   cl/transition/impl/eth2/operations.go
+	both modified:   cmd/devnet/main.go
+	both modified:   cmd/devnet/services/polygon/proofgenerator_test.go
+	both modified:   cmd/diag/db/db.go
+	both modified:   cmd/diag/downloader/diag_downloader.go
+	both modified:   cmd/diag/main.go
+	both added:      cmd/diag/readme.md
+	both modified:   cmd/diag/stages/stages.go
+	both added:      cmd/diag/ui/ui.go
+	both modified:   cmd/downloader/main.go
+	both modified:   cmd/integration/commands/stages.go
+	both modified:   cmd/integration/main.go
+	both modified:   cmd/rpcdaemon/main.go
+	both modified:   cmd/snapshots/manifest/manifest.go
+	both modified:   cmd/state/exec3/state.go
+	both modified:   cmd/state/exec3/state_recon.go
+	both modified:   cmd/utils/flags.go
+	both modified:   core/genesis_write.go
+	both modified:   core/rawdb/accessors_chain.go
+	both modified:   core/rawdb/accessors_metadata.go
+	both modified:   core/rawdb/blockio/block_writer.go
+	both modified:   core/state_processor.go
+	both modified:   core/state_transition.go
+	both modified:   core/types/gen_receipt_json.go
+	both modified:   core/types/genesis.go
+	both modified:   core/types/receipt.go
+	deleted by them: core/types/receipt_codecgen_gen.go
+	both modified:   core/types/receipt_test.go
+	both modified:   core/types/transaction.go
+	both modified:   core/types/transaction_marshalling.go
+	both modified:   core/types/transaction_signing.go
+	both modified:   core/vm/evmtypes/evmtypes.go
+	both modified:   diagnostics/setup.go
+	deleted by them: erigon-lib/.github/workflows/ci.yml
+	both modified:   erigon-lib/chain/chain_config.go
+	both modified:   erigon-lib/chain/networkname/network_name.go
+	both modified:   erigon-lib/diagnostics/block_execution.go
+	both modified:   erigon-lib/diagnostics/client.go
+	both modified:   erigon-lib/diagnostics/entities.go
+	both modified:   erigon-lib/diagnostics/resources_usage.go
+	both modified:   erigon-lib/diagnostics/snapshots.go
+	both added:      erigon-lib/diagnostics/snapshots_test.go
+	both modified:   erigon-lib/diagnostics/speedtest.go
+	both modified:   erigon-lib/diagnostics/stages.go
+	both added:      erigon-lib/diagnostics/stages_test.go
+	both modified:   erigon-lib/diagnostics/sys_info.go
+	both added:      erigon-lib/diagnostics/utils.go
+	both modified:   erigon-lib/downloader/downloader.go
+	both added:      erigon-lib/downloader/downloadercfg/dns_cache_resolver.go
+	both modified:   erigon-lib/go.mod
+	both modified:   erigon-lib/go.sum
+	both modified:   erigon-lib/gointerfaces/executionproto/execution.pb.go
+	both modified:   erigon-lib/kv/kv_interface.go
+	both modified:   erigon-lib/kv/remotedb/kv_remote.go
+	both modified:   erigon-lib/kv/tables.go
+	both modified:   erigon-lib/txpool/pool.go
+	both modified:   erigon-lib/txpool/pool_fuzz_test.go
+	both modified:   erigon-lib/txpool/pool_test.go
+	both modified:   erigon-lib/txpool/txpoolcfg/txpoolcfg.go
+	both modified:   erigon-lib/txpool/txpoolutil/all_components.go
+	both modified:   erigon-lib/types/txn.go
+	both modified:   eth/backend.go
+	both modified:   eth/ethconfig/config.go
+	both modified:   eth/gasprice/gasprice.go
+	both modified:   eth/protocols/eth/handlers.go
+	both modified:   eth/stagedsync/bor_heimdall_shared.go
+	both modified:   eth/stagedsync/default_stages.go
+	both modified:   eth/stagedsync/exec3.go
+	both modified:   eth/stagedsync/stage_bor_heimdall.go
+	both modified:   eth/stagedsync/stage_mining_create_block.go
+	both modified:   eth/stagedsync/stage_mining_exec.go
+	both modified:   eth/stagedsync/stage_snapshots.go
+	both modified:   eth/stagedsync/stagebuilder.go
+	both modified:   eth/stagedsync/sync.go
+	deleted by them: eth/tracers/api.go
+	both modified:   eth/tracers/internal/tracetest/calltrace_test.go
+	both modified:   eth/tracers/internal/tracetest/prestate_test.go
+	both modified:   ethdb/cbor/pool.go
+	both modified:   go.mod
+	both modified:   go.sum
+	both modified:   migrations/prohibit_new_downloads2.go
+	both modified:   node/node.go
+	both modified:   node/nodecfg/defaults.go
+	both modified:   p2p/sentry/sentry_multi_client/sentry_multi_client.go
+	both modified:   params/bootnodes.go
+	both modified:   params/config.go
+	both modified:   params/network_params.go
+	both modified:   params/protocol_params.go
+	both modified:   params/version.go
+	both added:      polygon/bor/bordb/prune.go
+	both modified:   polygon/bor/finality/whitelist/milestone.go
+	both modified:   polygon/bor/snaptype/types.go
+	both modified:   polygon/sync/execution_client.go
+	both modified:   rpc/http.go
+	both modified:   tests/erigon-ext-test/go.mod.template
+	both modified:   turbo/adapter/ethapi/api.go
+	both modified:   turbo/app/snapshots_cmd.go
+	both modified:   turbo/cli/default_flags.go
+	both modified:   turbo/cli/flags.go
+	both modified:   turbo/engineapi/engine_server.go
+	both modified:   turbo/engineapi/interface.go
+	both modified:   turbo/execution/eth1/eth1_chain_reader.go/chain_reader.go
+	both modified:   turbo/execution/eth1/ethereum_execution.go
+	both modified:   turbo/execution/eth1/forkchoice.go
+	both modified:   turbo/execution/eth1/getters.go
+	both modified:   turbo/jsonrpc/call_traces_test.go
+	both modified:   turbo/jsonrpc/corner_cases_support_test.go
+	both modified:   turbo/jsonrpc/daemon.go
+	both modified:   turbo/jsonrpc/debug_api_test.go
+	both modified:   turbo/jsonrpc/erigon_receipts_test.go
+	both modified:   turbo/jsonrpc/eth_accounts.go
+	both modified:   turbo/jsonrpc/eth_api.go
+	both modified:   turbo/jsonrpc/eth_api_test.go
+	both modified:   turbo/jsonrpc/eth_block.go
+	both modified:   turbo/jsonrpc/eth_block_test.go
+	both modified:   turbo/jsonrpc/eth_call.go
+	both modified:   turbo/jsonrpc/eth_callMany.go
+	both modified:   turbo/jsonrpc/eth_callMany_test.go
+	both modified:   turbo/jsonrpc/eth_call_test.go
+	both modified:   turbo/jsonrpc/eth_filters.go
+	both modified:   turbo/jsonrpc/eth_filters_test.go
+	both modified:   turbo/jsonrpc/eth_mining_test.go
+	both modified:   turbo/jsonrpc/eth_receipts.go
+	both modified:   turbo/jsonrpc/eth_system_test.go
+	both modified:   turbo/jsonrpc/gen_traces_test.go
+	both modified:   turbo/jsonrpc/otterscan_api.go
+	both modified:   turbo/jsonrpc/otterscan_contract_creator.go
+	both modified:   turbo/jsonrpc/otterscan_generic_tracer.go
+	both modified:   turbo/jsonrpc/otterscan_search_trace.go
+	both modified:   turbo/jsonrpc/otterscan_transaction_by_sender_and_nonce_test.go
+	both modified:   turbo/jsonrpc/parity_api_test.go
+	both modified:   turbo/jsonrpc/send_transaction.go
+	both modified:   turbo/jsonrpc/send_transaction_test.go
+	both modified:   turbo/jsonrpc/trace_adhoc.go
+	both modified:   turbo/jsonrpc/trace_adhoc_test.go
+	both modified:   turbo/jsonrpc/trace_api.go
+	both modified:   turbo/jsonrpc/trace_filtering.go
+	both modified:   turbo/jsonrpc/tracing.go
+	both modified:   turbo/jsonrpc/txpool_api_test.go
+	both modified:   turbo/node/node.go
+	both modified:   turbo/snapshotsync/freezeblocks/block_reader.go
+	both modified:   turbo/snapshotsync/freezeblocks/block_snapshots.go
+	both modified:   turbo/snapshotsync/freezeblocks/bor_snapshots.go
+	both modified:   turbo/snapshotsync/snapshotsync.go
+	both modified:   turbo/stages/mock/mock_sentry.go
+	both modified:   turbo/transactions/call.go
+	both modified:   turbo/transactions/tracing.go
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   tests/testdata (new commits)
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	status_merge.txt
+

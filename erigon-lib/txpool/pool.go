@@ -1,18 +1,18 @@
-/*
-   Copyright 2022 The Erigon contributors
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
+// Copyright 2022 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
 
 package txpool
 
@@ -41,8 +41,8 @@ import (
 	"github.com/google/btree"
 	"github.com/hashicorp/golang-lru/v2/simplelru"
 	"github.com/holiman/uint256"
-	"github.com/ledgerwatch/log/v3"
 
+<<<<<<< HEAD
 	"github.com/ledgerwatch/erigon-lib/chain"
 	"github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/assert"
@@ -63,6 +63,27 @@ import (
 	"github.com/ledgerwatch/erigon-lib/txpool/txpoolcfg"
 	"github.com/ledgerwatch/erigon-lib/types"
 	types2 "github.com/ledgerwatch/erigon-lib/types"
+=======
+	"github.com/erigontech/erigon-lib/chain"
+	"github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/assert"
+	"github.com/erigontech/erigon-lib/common/dbg"
+	"github.com/erigontech/erigon-lib/common/fixedgas"
+	"github.com/erigontech/erigon-lib/common/hexutility"
+	"github.com/erigontech/erigon-lib/common/u256"
+	libkzg "github.com/erigontech/erigon-lib/crypto/kzg"
+	"github.com/erigontech/erigon-lib/gointerfaces"
+	"github.com/erigontech/erigon-lib/gointerfaces/grpcutil"
+	remote "github.com/erigontech/erigon-lib/gointerfaces/remoteproto"
+	"github.com/erigontech/erigon-lib/gointerfaces/txpoolproto"
+	"github.com/erigontech/erigon-lib/kv"
+	"github.com/erigontech/erigon-lib/kv/kvcache"
+	"github.com/erigontech/erigon-lib/kv/mdbx"
+	"github.com/erigontech/erigon-lib/log/v3"
+	"github.com/erigontech/erigon-lib/metrics"
+	"github.com/erigontech/erigon-lib/txpool/txpoolcfg"
+	"github.com/erigontech/erigon-lib/types"
+>>>>>>> v3.0.0-alpha1
 )
 
 const DefaultBlockGasLimit = uint64(30000000)
@@ -204,7 +225,7 @@ type TxPool struct {
 	//   - and as a result reducing lock contention
 	unprocessedRemoteTxs    *types.TxSlots
 	unprocessedRemoteByHash map[string]int                                  // to reject duplicates
-	byHash                  map[string]*metaTx                              // tx_hash => tx : only those records not committed to db yet
+	byHash                  map[string]*metaTx                              // tx_hash => txn : only those records not committed to db yet
 	discardReasonsLRU       *simplelru.LRU[string, txpoolcfg.DiscardReason] // tx_hash => discard_reason : non-persisted
 	pending                 *PendingPool
 	baseFee                 *SubPool
@@ -213,7 +234,7 @@ type TxPool struct {
 	minedBlobTxsByHash      map[string]*metaTx               // (hash => mt): map of recently mined blobs
 	isLocalLRU              *simplelru.LRU[string, struct{}] // tx_hash => is_local : to restore isLocal flag of unwinded transactions
 	newPendingTxs           chan types.Announcements         // notifications about new txs in Pending sub-pool
-	all                     *BySenderAndNonce                // senderID => (sorted map of tx nonce => *metaTx)
+	all                     *BySenderAndNonce                // senderID => (sorted map of txn nonce => *metaTx)
 	deletedTxs              []*metaTx                        // list of discarded txs since last db commit
 	promoted                types.Announcements
 	cfg                     txpoolcfg.Config
@@ -232,6 +253,8 @@ type TxPool struct {
 	isPostAgra              atomic.Bool
 	cancunTime              *uint64
 	isPostCancun            atomic.Bool
+	pragueTime              *uint64
+	isPostPrague            atomic.Bool
 	maxBlobsPerBlock        uint64
 	feeCalculator           FeeCalculator
 	logger                  log.Logger
@@ -252,9 +275,14 @@ type FeeCalculator interface {
 }
 
 func New(newTxs chan types.Announcements, coreDB kv.RoDB, cfg txpoolcfg.Config, cache kvcache.Cache,
+<<<<<<< HEAD
 	chainID uint256.Int, shanghaiTime, agraBlock, cancunTime *big.Int,
 	regolithTime, canyonTime, ecotoneTime, fjordTime *big.Int,
 	maxBlobsPerBlock uint64, feeCalculator FeeCalculator, logger log.Logger,
+=======
+	chainID uint256.Int, shanghaiTime, agraBlock, cancunTime, pragueTime *big.Int, maxBlobsPerBlock uint64,
+	feeCalculator FeeCalculator, logger log.Logger,
+>>>>>>> v3.0.0-alpha1
 ) (*TxPool, error) {
 	localsHistory, err := simplelru.NewLRU[string, struct{}](10_000, nil)
 	if err != nil {
@@ -324,6 +352,13 @@ func New(newTxs chan types.Announcements, coreDB kv.RoDB, cfg txpoolcfg.Config, 
 		}
 		cancunTimeU64 := cancunTime.Uint64()
 		res.cancunTime = &cancunTimeU64
+	}
+	if pragueTime != nil {
+		if !pragueTime.IsUint64() {
+			return nil, errors.New("pragueTime overflow")
+		}
+		pragueTimeU64 := pragueTime.Uint64()
+		res.pragueTime = &pragueTimeU64
 	}
 
 	if regolithTime != nil {
@@ -816,7 +851,7 @@ func (p *TxPool) best(n uint16, txs *types.TxsRlp, tx kv.Tx, onTopOf, availableG
 
 	isShanghai := p.isShanghai() || p.isAgra() || p.isCanyon()
 
-	txs.Resize(uint(cmp.Min(int(n), len(best.ms))))
+	txs.Resize(uint(min(int(n), len(best.ms))))
 	var toRemove []*metaTx
 	count := 0
 	i := 0
@@ -861,9 +896,9 @@ func (p *TxPool) best(n uint16, txs *types.TxsRlp, tx kv.Tx, onTopOf, availableG
 		// make sure we have enough gas in the caller to add this transaction.
 		// not an exact science using intrinsic gas but as close as we could hope for at
 		// this stage
-		intrinsicGas, _ := txpoolcfg.CalcIntrinsicGas(uint64(mt.Tx.DataLen), uint64(mt.Tx.DataNonZeroLen), nil, mt.Tx.Creation, true, true, isShanghai)
+		intrinsicGas, _ := txpoolcfg.CalcIntrinsicGas(uint64(mt.Tx.DataLen), uint64(mt.Tx.DataNonZeroLen), uint64(mt.Tx.AuthorizationLen), nil, mt.Tx.Creation, true, true, isShanghai)
 		if intrinsicGas > availableGas {
-			// we might find another TX with a low enough intrinsic gas to include so carry on
+			// we might find another txn with a low enough intrinsic gas to include so carry on
 			continue
 		}
 		availableGas -= intrinsicGas
@@ -903,7 +938,7 @@ func (p *TxPool) AddRemoteTxs(_ context.Context, newTxs types.TxSlots) {
 	if p.cfg.NoGossip {
 		// if no gossip, then
 		// disable adding remote transactions
-		// consume remote tx from fetch
+		// consume remote txn from fetch
 		return
 	}
 
@@ -995,6 +1030,12 @@ func (p *TxPool) validateTx(txn *types.TxSlot, isLocal bool, stateCache kvcache.
 		}
 	}
 
+	if txn.Type == types.SetCodeTxType {
+		if !p.isPrague() {
+			return txpoolcfg.TypeNotActivated
+		}
+	}
+
 	// Drop non-local transactions under our own minimal accepted gas price or tip
 	if !isLocal && uint256.NewInt(p.cfg.MinFeeCap).Cmp(&txn.FeeCap) == 1 {
 		if txn.Traced {
@@ -1002,7 +1043,7 @@ func (p *TxPool) validateTx(txn *types.TxSlot, isLocal bool, stateCache kvcache.
 		}
 		return txpoolcfg.UnderPriced
 	}
-	gas, reason := txpoolcfg.CalcIntrinsicGas(uint64(txn.DataLen), uint64(txn.DataNonZeroLen), nil, txn.Creation, true, true, isShanghai)
+	gas, reason := txpoolcfg.CalcIntrinsicGas(uint64(txn.DataLen), uint64(txn.DataNonZeroLen), uint64(txn.AuthorizationLen), nil, txn.Creation, true, true, isShanghai)
 	if txn.Traced {
 		p.logger.Info(fmt.Sprintf("TX TRACING: validateTx intrinsic gas idHash=%x gas=%d", txn.IDHash, gas))
 	}
@@ -1077,29 +1118,32 @@ func requiredBalance(txn *types.TxSlot) *uint256.Int {
 	return total
 }
 
-func (p *TxPool) isShanghai() bool {
+func isTimeBasedForkActivated(isPostFlag *atomic.Bool, forkTime *uint64) bool {
 	// once this flag has been set for the first time we no longer need to check the timestamp
-	set := p.isPostShanghai.Load()
+	set := isPostFlag.Load()
 	if set {
 		return true
 	}
-	if p.shanghaiTime == nil {
+	if forkTime == nil { // the fork is not enabled
 		return false
 	}
-	shanghaiTime := *p.shanghaiTime
 
-	// a zero here means Shanghai is always active
-	if shanghaiTime == 0 {
-		p.isPostShanghai.Swap(true)
+	// a zero here means the fork is always active
+	if *forkTime == 0 {
+		isPostFlag.Swap(true)
 		return true
 	}
 
 	now := time.Now().Unix()
-	activated := uint64(now) >= shanghaiTime
+	activated := uint64(now) >= *forkTime
 	if activated {
-		p.isPostShanghai.Swap(true)
+		isPostFlag.Swap(true)
 	}
 	return activated
+}
+
+func (p *TxPool) isShanghai() bool {
+	return isTimeBasedForkActivated(&p.isPostShanghai, p.shanghaiTime)
 }
 
 func (p *TxPool) isAgra() bool {
@@ -1139,28 +1183,11 @@ func (p *TxPool) isAgra() bool {
 }
 
 func (p *TxPool) isCancun() bool {
-	// once this flag has been set for the first time we no longer need to check the timestamp
-	set := p.isPostCancun.Load()
-	if set {
-		return true
-	}
-	if p.cancunTime == nil {
-		return false
-	}
-	cancunTime := *p.cancunTime
+	return isTimeBasedForkActivated(&p.isPostCancun, p.cancunTime)
+}
 
-	// a zero here means Cancun is always active
-	if cancunTime == 0 {
-		p.isPostCancun.Swap(true)
-		return true
-	}
-
-	now := time.Now().Unix()
-	activated := uint64(now) >= cancunTime
-	if activated {
-		p.isPostCancun.Swap(true)
-	}
-	return activated
+func (p *TxPool) isPrague() bool {
+	return isTimeBasedForkActivated(&p.isPostPrague, p.pragueTime)
 }
 
 func (p *TxPool) isRegolith() bool {
@@ -1629,7 +1656,7 @@ func (p *TxPool) addLocked(mt *metaTx, announcements *types.Announcements) txpoo
 		p.discardLocked(found, txpoolcfg.ReplacedByHigherTip)
 	}
 
-	// Don't add blob tx to queued if it's less than current pending blob base fee
+	// Don't add blob txn to queued if it's less than current pending blob base fee
 	if mt.Tx.Type == types.BlobTxType && mt.Tx.BlobFeeCap.LtUint64(p.pendingBlobFee.Load()) {
 		return txpoolcfg.FeeTooLow
 	}
@@ -1837,7 +1864,7 @@ func (p *TxPool) onSenderStateChange(senderID uint64, senderNonce uint64, sender
 		}
 		mt.minFeeCap = *minFeeCap
 		if mt.Tx.Tip.IsUint64() {
-			minTip = cmp.Min(minTip, mt.Tx.Tip.Uint64())
+			minTip = min(minTip, mt.Tx.Tip.Uint64())
 		}
 		mt.minTip = minTip
 
@@ -2052,7 +2079,7 @@ func MainLoop(ctx context.Context, db kv.RwDB, p *TxPool, newTxs chan types.Anno
 					// drain newTxs for emptying newTx channel
 					// newTx channel will be filled only with local transactions
 					// early return to avoid outbound transaction propagation
-					log.Debug("[txpool] tx gossip disabled", "state", "drain new transactions")
+					log.Debug("[txpool] txn gossip disabled", "state", "drain new transactions")
 					return
 				}
 
@@ -2078,7 +2105,7 @@ func MainLoop(ctx context.Context, db kv.RwDB, p *TxPool, newTxs chan types.Anno
 							continue
 						}
 						// Strip away blob wrapper, if applicable
-						slotRlp, err2 := types2.UnwrapTxPlayloadRlp(slotRlp)
+						slotRlp, err2 := types.UnwrapTxPlayloadRlp(slotRlp)
 						if err2 != nil {
 							continue
 						}
@@ -2119,12 +2146,12 @@ func MainLoop(ctx context.Context, db kv.RwDB, p *TxPool, newTxs chan types.Anno
 				const localTxsBroadcastMaxPeers uint64 = 10
 				txSentTo := send.BroadcastPooledTxs(localTxRlps, localTxsBroadcastMaxPeers)
 				for i, peer := range txSentTo {
-					p.logger.Trace("Local tx broadcast", "txHash", hex.EncodeToString(broadcastHashes.At(i)), "to peer", peer)
+					p.logger.Trace("Local txn broadcast", "txHash", hex.EncodeToString(broadcastHashes.At(i)), "to peer", peer)
 				}
 				hashSentTo := send.AnnouncePooledTxs(localTxTypes, localTxSizes, localTxHashes, localTxsBroadcastMaxPeers*2)
 				for i := 0; i < localTxHashes.Len(); i++ {
 					hash := localTxHashes.At(i)
-					p.logger.Trace("Local tx announced", "txHash", hex.EncodeToString(hash), "to peer", hashSentTo[i], "baseFee", p.pendingBaseFee.Load())
+					p.logger.Trace("Local txn announced", "txHash", hex.EncodeToString(hash), "to peer", hashSentTo[i], "baseFee", p.pendingBaseFee.Load())
 				}
 
 				// broadcast remote transactions
@@ -2139,7 +2166,7 @@ func MainLoop(ctx context.Context, db kv.RwDB, p *TxPool, newTxs chan types.Anno
 			}
 			if p.cfg.NoGossip {
 				// avoid transaction gossiping for new peers
-				log.Debug("[txpool] tx gossip disabled", "state", "sync new peers")
+				log.Debug("[txpool] txn gossip disabled", "state", "sync new peers")
 				continue
 			}
 			t := time.Now()
@@ -2156,7 +2183,7 @@ func MainLoop(ctx context.Context, db kv.RwDB, p *TxPool, newTxs chan types.Anno
 func (p *TxPool) flushNoFsync(ctx context.Context, db kv.RwDB) (written uint64, err error) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
-	//it's important that write db tx is done inside lock, to make last writes visible for all read operations
+	//it's important that write db txn is done inside lock, to make last writes visible for all read operations
 	if err := db.UpdateNosync(ctx, func(tx kv.RwTx) error {
 		err = p.flushLocked(tx)
 		if err != nil {
@@ -2182,8 +2209,19 @@ func (p *TxPool) flush(ctx context.Context, db kv.RwDB) (written uint64, err err
 		return 0, err
 	}
 
-	// fsync
-	if err := db.Update(ctx, func(tx kv.RwTx) error { return nil }); err != nil {
+	// fsync. increase state version - just to make RwTx non-empty (mdbx skips empty RwTx)
+	if err := db.Update(ctx, func(tx kv.RwTx) error {
+		v, err := tx.GetOne(kv.PoolInfo, PoolStateVersion)
+		if err != nil {
+			return err
+		}
+		var version uint64
+		if len(v) == 8 {
+			version = binary.BigEndian.Uint64(v)
+		}
+		version++
+		return tx.Put(kv.PoolInfo, PoolStateVersion, hexutility.EncodeTs(version))
+	}); err != nil {
 		return 0, err
 	}
 	return written, nil
@@ -2265,7 +2303,7 @@ func (p *TxPool) flushLocked(tx kv.RwTx) (err error) {
 		return err
 	}
 
-	// clean - in-memory data structure as later as possible - because if during this Tx will happen error,
+	// clean - in-memory data structure as later as possible - because if during this txn will happen error,
 	// DB will stay consistent but some in-memory structures may be already cleaned, and retry will not work
 	// failed write transaction must not create side-effects
 	p.deletedTxs = p.deletedTxs[:0]
@@ -2293,7 +2331,7 @@ func (p *TxPool) fromDB(ctx context.Context, tx kv.Tx, coreTx kv.Tx) error {
 
 	if p.lastSeenBlock.Load() < lastSeenProgress {
 		// TODO we need to process the blocks since the
-		// last seen to make sure that the tx pool is in
+		// last seen to make sure that the txn pool is in
 		// sync with the processed blocks
 
 		p.lastSeenBlock.Store(lastSeenProgress)
@@ -2525,11 +2563,11 @@ func (p *TxPool) deprecatedForEach(_ context.Context, f func(rlp []byte, sender 
 		if slot.Rlp == nil {
 			v, err := tx.GetOne(kv.PoolTransaction, slot.IDHash[:])
 			if err != nil {
-				p.logger.Warn("[txpool] foreach: get tx from db", "err", err)
+				p.logger.Warn("[txpool] foreach: get txn from db", "err", err)
 				return true
 			}
 			if v == nil {
-				p.logger.Warn("[txpool] foreach: tx not found in db")
+				p.logger.Warn("[txpool] foreach: txn not found in db")
 				return true
 			}
 			slotRlp = v[20:]
@@ -2545,6 +2583,7 @@ var PoolChainConfigKey = []byte("chain_config")
 var PoolLastSeenBlockKey = []byte("last_seen_block")
 var PoolPendingBaseFeeKey = []byte("pending_base_fee")
 var PoolPendingBlobFeeKey = []byte("pending_blob_fee")
+var PoolStateVersion = []byte("state_version")
 
 // recentlyConnectedPeers does buffer IDs of recently connected good peers
 // then sync of pooled Transaction can happen to all of then at once
@@ -2626,7 +2665,13 @@ func (sc *sendersBatch) info(cacheView kvcache.CacheView, id uint64) (nonce uint
 	if len(encoded) == 0 {
 		return emptySender.nonce, emptySender.balance, nil
 	}
-	nonce, balance, err = types.DecodeSender(encoded)
+	if cacheView.StateV3() {
+		var bp *uint256.Int
+		nonce, bp, _ = types.DecodeAccountBytesV3(encoded)
+		balance = *bp
+	} else {
+		nonce, balance, err = types.DecodeSender(encoded)
+	}
 	if err != nil {
 		return 0, emptySender.balance, err
 	}
@@ -2751,7 +2796,7 @@ func (b *BySenderAndNonce) has(mt *metaTx) bool {
 func (b *BySenderAndNonce) delete(mt *metaTx, reason txpoolcfg.DiscardReason, logger log.Logger) {
 	if _, ok := b.tree.Delete(mt); ok {
 		if mt.Tx.Traced {
-			logger.Info("TX TRACING: Deleted tx by nonce", "idHash", fmt.Sprintf("%x", mt.Tx.IDHash), "sender", mt.Tx.SenderID, "nonce", mt.Tx.Nonce, "reason", reason)
+			logger.Info("TX TRACING: Deleted txn by nonce", "idHash", fmt.Sprintf("%x", mt.Tx.IDHash), "sender", mt.Tx.SenderID, "nonce", mt.Tx.Nonce, "reason", reason)
 		}
 
 		senderID := mt.Tx.SenderID
@@ -2779,13 +2824,13 @@ func (b *BySenderAndNonce) replaceOrInsert(mt *metaTx, logger log.Logger) *metaT
 
 	if ok {
 		if mt.Tx.Traced {
-			logger.Info("TX TRACING: Replaced tx by nonce", "idHash", fmt.Sprintf("%x", mt.Tx.IDHash), "sender", mt.Tx.SenderID, "nonce", mt.Tx.Nonce)
+			logger.Info("TX TRACING: Replaced txn by nonce", "idHash", fmt.Sprintf("%x", mt.Tx.IDHash), "sender", mt.Tx.SenderID, "nonce", mt.Tx.Nonce)
 		}
 		return it
 	}
 
 	if mt.Tx.Traced {
-		logger.Info("TX TRACING: Inserted tx by nonce", "idHash", fmt.Sprintf("%x", mt.Tx.IDHash), "sender", mt.Tx.SenderID, "nonce", mt.Tx.Nonce)
+		logger.Info("TX TRACING: Inserted txn by nonce", "idHash", fmt.Sprintf("%x", mt.Tx.IDHash), "sender", mt.Tx.SenderID, "nonce", mt.Tx.Nonce)
 	}
 
 	b.senderIDTxnCount[mt.Tx.SenderID]++

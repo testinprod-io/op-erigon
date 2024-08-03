@@ -1,3 +1,19 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package jsonrpc
 
 import (
@@ -6,10 +22,9 @@ import (
 	"fmt"
 	"github.com/ledgerwatch/erigon-lib/opstack"
 
-	"github.com/RoaringBitmap/roaring/roaring64"
 	jsoniter "github.com/json-iterator/go"
-	"github.com/ledgerwatch/log/v3"
 
+<<<<<<< HEAD
 	"github.com/ledgerwatch/erigon-lib/chain"
 	"github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/hexutil"
@@ -37,6 +52,35 @@ import (
 
 // Transaction implements trace_transaction
 func (api *TraceAPIImpl) Transaction(ctx context.Context, txHash common.Hash, gasBailOut *bool, traceConfig *tracers.TraceConfig) (ParityTraces, error) {
+=======
+	"github.com/erigontech/erigon-lib/chain"
+	"github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/hexutil"
+	"github.com/erigontech/erigon-lib/kv"
+	"github.com/erigontech/erigon-lib/kv/order"
+	"github.com/erigontech/erigon-lib/kv/rawdbv3"
+	"github.com/erigontech/erigon-lib/kv/stream"
+	"github.com/erigontech/erigon-lib/log/v3"
+	"github.com/erigontech/erigon/consensus"
+	"github.com/erigontech/erigon/consensus/ethash"
+	"github.com/erigontech/erigon/core"
+	"github.com/erigontech/erigon/core/rawdb"
+	"github.com/erigontech/erigon/core/state"
+	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/core/vm"
+	"github.com/erigontech/erigon/core/vm/evmtypes"
+	"github.com/erigontech/erigon/eth/consensuschain"
+	"github.com/erigontech/erigon/eth/tracers/config"
+	"github.com/erigontech/erigon/ethdb"
+	bortypes "github.com/erigontech/erigon/polygon/bor/types"
+	"github.com/erigontech/erigon/rpc"
+	"github.com/erigontech/erigon/turbo/rpchelper"
+	"github.com/erigontech/erigon/turbo/transactions"
+)
+
+// Transaction implements trace_transaction
+func (api *TraceAPIImpl) Transaction(ctx context.Context, txHash common.Hash, gasBailOut *bool, traceConfig *config.TraceConfig) (ParityTraces, error) {
+>>>>>>> v3.0.0-alpha1
 	if gasBailOut == nil {
 		gasBailOut = new(bool) // false by default
 	}
@@ -127,7 +171,11 @@ func (api *TraceAPIImpl) Transaction(ctx context.Context, txHash common.Hash, ga
 }
 
 // Get implements trace_get
+<<<<<<< HEAD
 func (api *TraceAPIImpl) Get(ctx context.Context, txHash common.Hash, indicies []hexutil.Uint64, gasBailOut *bool, traceConfig *tracers.TraceConfig) (*ParityTrace, error) {
+=======
+func (api *TraceAPIImpl) Get(ctx context.Context, txHash common.Hash, indicies []hexutil.Uint64, gasBailOut *bool, traceConfig *config.TraceConfig) (*ParityTrace, error) {
+>>>>>>> v3.0.0-alpha1
 	// Parity fails if it gets more than a single index. It returns nothing in this case. Must we?
 	if len(indicies) > 1 {
 		return nil, nil
@@ -163,7 +211,11 @@ func rewardKindToString(kind consensus.RewardKind) string {
 }
 
 // Block implements trace_block
+<<<<<<< HEAD
 func (api *TraceAPIImpl) Block(ctx context.Context, blockNr rpc.BlockNumber, gasBailOut *bool, traceConfig *tracers.TraceConfig) (ParityTraces, error) {
+=======
+func (api *TraceAPIImpl) Block(ctx context.Context, blockNr rpc.BlockNumber, gasBailOut *bool, traceConfig *config.TraceConfig) (ParityTraces, error) {
+>>>>>>> v3.0.0-alpha1
 	if gasBailOut == nil {
 		gasBailOut = new(bool) // false by default
 	}
@@ -195,7 +247,11 @@ func (api *TraceAPIImpl) Block(ctx context.Context, blockNr rpc.BlockNumber, gas
 		return nil, err
 	}
 	signer := types.MakeSigner(cfg, blockNum, block.Time())
+<<<<<<< HEAD
 	traces, syscall, err := api.callManyTransactions(ctx, tx, block, []string{TraceTypeTrace}, -1 /* all tx indices */, *gasBailOut /* gasBailOut */, signer, cfg, traceConfig)
+=======
+	traces, syscall, err := api.callManyTransactions(ctx, tx, block, []string{TraceTypeTrace}, -1 /* all txn indices */, *gasBailOut /* gasBailOut */, signer, cfg, traceConfig)
+>>>>>>> v3.0.0-alpha1
 	if err != nil {
 		return nil, err
 	}
@@ -236,63 +292,10 @@ func (api *TraceAPIImpl) Block(ctx context.Context, blockNr rpc.BlockNumber, gas
 	return out, err
 }
 
-func traceFilterBitmaps(tx kv.Tx, req TraceFilterRequest, from, to uint64) (fromAddresses, toAddresses map[common.Address]struct{}, allBlocks *roaring64.Bitmap, err error) {
+func traceFilterBitmapsV3(tx kv.TemporalTx, req TraceFilterRequest, from, to uint64) (fromAddresses, toAddresses map[common.Address]struct{}, allBlocks stream.U64, err error) {
 	fromAddresses = make(map[common.Address]struct{}, len(req.FromAddress))
 	toAddresses = make(map[common.Address]struct{}, len(req.ToAddress))
-	allBlocks = roaring64.New()
-	var blocksTo roaring64.Bitmap
-	for _, addr := range req.FromAddress {
-		if addr != nil {
-			b, err := bitmapdb.Get64(tx, kv.CallFromIndex, addr.Bytes(), from, to)
-			if err != nil {
-				if errors.Is(err, ethdb.ErrKeyNotFound) {
-					continue
-				}
-				return nil, nil, nil, err
-			}
-			allBlocks.Or(b)
-			fromAddresses[*addr] = struct{}{}
-		}
-	}
-
-	for _, addr := range req.ToAddress {
-		if addr != nil {
-			b, err := bitmapdb.Get64(tx, kv.CallToIndex, addr.Bytes(), from, to)
-			if err != nil {
-				if errors.Is(err, ethdb.ErrKeyNotFound) {
-					continue
-				}
-				return nil, nil, nil, err
-			}
-			blocksTo.Or(b)
-			toAddresses[*addr] = struct{}{}
-		}
-	}
-
-	switch req.Mode {
-	case TraceFilterModeIntersection:
-		allBlocks.And(&blocksTo)
-	case TraceFilterModeUnion:
-		fallthrough
-	default:
-		allBlocks.Or(&blocksTo)
-	}
-
-	// Special case - if no addresses specified, take all traces
-	if len(req.FromAddress) == 0 && len(req.ToAddress) == 0 {
-		allBlocks.AddRange(from, to)
-	} else {
-		allBlocks.RemoveRange(0, from)
-		allBlocks.RemoveRange(to, uint64(0x100000000))
-	}
-
-	return fromAddresses, toAddresses, allBlocks, nil
-}
-
-func traceFilterBitmapsV3(tx kv.TemporalTx, req TraceFilterRequest, from, to uint64) (fromAddresses, toAddresses map[common.Address]struct{}, allBlocks iter.U64, err error) {
-	fromAddresses = make(map[common.Address]struct{}, len(req.FromAddress))
-	toAddresses = make(map[common.Address]struct{}, len(req.ToAddress))
-	var blocksTo iter.U64
+	var blocksTo stream.U64
 
 	for _, addr := range req.FromAddress {
 		if addr != nil {
@@ -300,7 +303,7 @@ func traceFilterBitmapsV3(tx kv.TemporalTx, req TraceFilterRequest, from, to uin
 			if errors.Is(err, ethdb.ErrKeyNotFound) {
 				continue
 			}
-			allBlocks = iter.Union[uint64](allBlocks, it, order.Asc, -1)
+			allBlocks = stream.Union[uint64](allBlocks, it, order.Asc, -1)
 			fromAddresses[*addr] = struct{}{}
 		}
 	}
@@ -311,23 +314,23 @@ func traceFilterBitmapsV3(tx kv.TemporalTx, req TraceFilterRequest, from, to uin
 			if errors.Is(err, ethdb.ErrKeyNotFound) {
 				continue
 			}
-			blocksTo = iter.Union[uint64](blocksTo, it, order.Asc, -1)
+			blocksTo = stream.Union[uint64](blocksTo, it, order.Asc, -1)
 			toAddresses[*addr] = struct{}{}
 		}
 	}
 
 	switch req.Mode {
 	case TraceFilterModeIntersection:
-		allBlocks = iter.Intersect[uint64](allBlocks, blocksTo, -1)
+		allBlocks = stream.Intersect[uint64](allBlocks, blocksTo, -1)
 	case TraceFilterModeUnion:
 		fallthrough
 	default:
-		allBlocks = iter.Union[uint64](allBlocks, blocksTo, order.Asc, -1)
+		allBlocks = stream.Union[uint64](allBlocks, blocksTo, order.Asc, -1)
 	}
 
 	// Special case - if no addresses specified, take all traces
 	if len(req.FromAddress) == 0 && len(req.ToAddress) == 0 {
-		allBlocks = iter.Range[uint64](from, to)
+		allBlocks = stream.Range[uint64](from, to)
 		//} else {
 		//allBlocks.RemoveRange(0, from)
 		//allBlocks.RemoveRange(to, uint64(0x100000000))
@@ -339,8 +342,13 @@ func traceFilterBitmapsV3(tx kv.TemporalTx, req TraceFilterRequest, from, to uin
 // Filter implements trace_filter
 // NOTE: We do not store full traces - we just store index for each address
 // Pull blocks which have txs with matching address
+<<<<<<< HEAD
 func (api *TraceAPIImpl) Filter(ctx context.Context, req TraceFilterRequest, gasBailOut *bool, traceConfig *tracers.TraceConfig, stream *jsoniter.Stream) error {
+=======
+func (api *TraceAPIImpl) Filter(ctx context.Context, req TraceFilterRequest, gasBailOut *bool, traceConfig *config.TraceConfig, stream *jsoniter.Stream) error {
+>>>>>>> v3.0.0-alpha1
 	if gasBailOut == nil {
+		//nolint
 		gasBailOut = new(bool) // false by default
 	}
 	dbtx, err1 := api.kv.BeginRo(ctx)
@@ -367,6 +375,7 @@ func (api *TraceAPIImpl) Filter(ctx context.Context, req TraceFilterRequest, gas
 		return fmt.Errorf("invalid parameters: fromBlock cannot be greater than toBlock")
 	}
 
+<<<<<<< HEAD
 	if api.historyV3(dbtx) {
 		return api.filterV3(ctx, dbtx.(kv.TemporalTx), fromBlock, toBlock, req, traceConfig, stream)
 	}
@@ -530,6 +539,12 @@ func (api *TraceAPIImpl) Filter(ctx context.Context, req TraceFilterRequest, gas
 }
 
 func (api *TraceAPIImpl) filterV3(ctx context.Context, dbtx kv.TemporalTx, fromBlock, toBlock uint64, req TraceFilterRequest, traceConfig *tracers.TraceConfig, stream *jsoniter.Stream) error {
+=======
+	return api.filterV3(ctx, dbtx.(kv.TemporalTx), fromBlock, toBlock, req, stream, *gasBailOut, traceConfig)
+}
+
+func (api *TraceAPIImpl) filterV3(ctx context.Context, dbtx kv.TemporalTx, fromBlock, toBlock uint64, req TraceFilterRequest, stream *jsoniter.Stream, gasBailOut bool, traceConfig *config.TraceConfig) error {
+>>>>>>> v3.0.0-alpha1
 	var fromTxNum, toTxNum uint64
 	var err error
 	if fromBlock > 0 {
@@ -547,6 +562,8 @@ func (api *TraceAPIImpl) filterV3(ctx context.Context, dbtx kv.TemporalTx, fromB
 	if err != nil {
 		return err
 	}
+	it := rawdbv3.TxNums2BlockNums(dbtx, allTxs, order.Asc)
+	defer it.Close()
 
 	chainConfig, err := api.chainConfig(ctx, dbtx)
 	if err != nil {
@@ -571,7 +588,6 @@ func (api *TraceAPIImpl) filterV3(ctx context.Context, dbtx kv.TemporalTx, fromB
 	nSeen := uint64(0)
 	nExported := uint64(0)
 	includeAll := len(fromAddresses) == 0 && len(toAddresses) == 0
-	it := MapTxNum2BlockNum(dbtx, allTxs)
 
 	var lastBlockHash common.Hash
 	var lastHeader *types.Header
@@ -769,9 +785,12 @@ func (api *TraceAPIImpl) filterV3(ctx context.Context, dbtx kv.TemporalTx, fromB
 		}
 
 		stateReader.SetTxNum(txNum)
-		stateCache := shards.NewStateCache(32, 0 /* no limit */) // this cache living only during current RPC call, but required to store state writes
-		cachedReader := state.NewCachedReader(stateReader, stateCache)
-		cachedWriter := state.NewCachedWriter(noop, stateCache)
+		//stateCache := shards.NewStateCache(32, 0 /* no limit */) // this cache living only during current RPC call, but required to store state writes
+		//cachedReader := state.NewCachedReader(stateReader, stateCache)
+		cachedReader := stateReader
+		//cachedWriter := state.NewCachedWriter(noop, stateCache)
+		cachedWriter := noop
+
 		vmConfig.SkipAnalysis = core.SkipAnalysis(chainConfig, blockNum)
 		traceResult := &TraceCallResult{Trace: []*ParityTrace{}}
 		var ot OeTracer
@@ -787,15 +806,15 @@ func (api *TraceAPIImpl) filterV3(ctx context.Context, dbtx kv.TemporalTx, fromB
 		vmConfig.Tracer = &ot
 		ibs := state.New(cachedReader)
 
-		blockCtx := transactions.NewEVMBlockContext(engine, lastHeader, true /* requireCanonical */, dbtx, api._blockReader)
+		blockCtx := transactions.NewEVMBlockContext(engine, lastHeader, true /* requireCanonical */, dbtx, api._blockReader, chainConfig)
 		txCtx := core.NewEVMTxContext(msg)
 		blockCtx.L1CostFunc = opstack.NewL1CostFunc(chainConfig, ibs)
 		evm := vm.NewEVM(blockCtx, txCtx, ibs, chainConfig, vmConfig)
 
 		gp := new(core.GasPool).AddGas(msg.Gas()).AddBlobGas(msg.BlobGas())
 		ibs.SetTxContext(txHash, lastBlockHash, txIndex)
-		var execResult *core.ExecutionResult
-		execResult, err = core.ApplyMessage(evm, msg, gp, true /* refunds */, false /* gasBailout */)
+		var execResult *evmtypes.ExecutionResult
+		execResult, err = core.ApplyMessage(evm, msg, gp, true /* refunds */, gasBailOut)
 		if err != nil {
 			if first {
 				first = false
@@ -903,7 +922,11 @@ func (api *TraceAPIImpl) callManyTransactions(
 	gasBailOut bool,
 	signer *types.Signer,
 	cfg *chain.Config,
+<<<<<<< HEAD
 	traceConfig *tracers.TraceConfig,
+=======
+	traceConfig *config.TraceConfig,
+>>>>>>> v3.0.0-alpha1
 ) ([]*TraceCallResult, consensus.SystemCall, error) {
 	blockNumber := block.NumberU64()
 	pNo := blockNumber
@@ -932,7 +955,7 @@ func (api *TraceAPIImpl) callManyTransactions(
 	}
 
 	callParams := make([]TraceCallParam, 0, len(txs))
-	reader, err := rpchelper.CreateHistoryStateReader(dbtx, blockNumber, txIndex, api.historyV3(dbtx), cfg.ChainName)
+	reader, err := rpchelper.CreateHistoryStateReader(dbtx, blockNumber, txIndex, cfg.ChainName)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -943,16 +966,16 @@ func (api *TraceAPIImpl) callManyTransactions(
 	}
 
 	engine := api.engine()
-	consensusHeaderReader := stagedsync.NewChainReaderImpl(cfg, dbtx, nil, nil)
+	consensusHeaderReader := consensuschain.NewReader(cfg, dbtx, nil, nil)
 	logger := log.New("trace_filtering")
-	err = core.InitializeBlockExecution(engine.(consensus.Engine), consensusHeaderReader, block.HeaderNoCopy(), cfg, initialState, logger)
+	err = core.InitializeBlockExecution(engine.(consensus.Engine), consensusHeaderReader, block.HeaderNoCopy(), cfg, initialState, logger, nil)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	msgs := make([]types.Message, len(txs))
-	for i, tx := range txs {
-		isBorStateSyncTxn := tx == borStateSyncTxn
+	for i, txn := range txs {
+		isBorStateSyncTxn := txn == borStateSyncTxn
 		var txnHash common.Hash
 		var msg types.Message
 		var err error
@@ -960,10 +983,10 @@ func (api *TraceAPIImpl) callManyTransactions(
 			txnHash = borStateSyncTxnHash
 			// we use an empty message for bor state sync txn since it gets handled differently
 		} else {
-			txnHash = tx.Hash()
-			msg, err = tx.AsMessage(*signer, header.BaseFee, rules)
+			txnHash = txn.Hash()
+			msg, err = txn.AsMessage(*signer, header.BaseFee, rules)
 			if err != nil {
-				return nil, nil, fmt.Errorf("convert tx into msg: %w", err)
+				return nil, nil, fmt.Errorf("convert txn into msg: %w", err)
 			}
 
 			// gnosis might have a fee free account here

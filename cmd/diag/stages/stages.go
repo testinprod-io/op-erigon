@@ -1,14 +1,42 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package stages
 
 import (
+<<<<<<< HEAD
+=======
+	"strconv"
+	"strings"
+>>>>>>> v3.0.0-alpha1
 	"sync"
 	"time"
 
 	"github.com/jedib0t/go-pretty/v6/table"
+<<<<<<< HEAD
 	"github.com/ledgerwatch/erigon-lib/diagnostics"
 	"github.com/ledgerwatch/erigon/cmd/diag/flags"
 	"github.com/ledgerwatch/erigon/cmd/diag/util"
+=======
+>>>>>>> v3.0.0-alpha1
 	"github.com/urfave/cli/v2"
+
+	"github.com/erigontech/erigon-lib/diagnostics"
+	"github.com/erigontech/erigon/cmd/diag/flags"
+	"github.com/erigontech/erigon/cmd/diag/util"
 )
 
 var Command = cli.Command{
@@ -191,11 +219,41 @@ func createStageRowFromStage(stage diagnostics.SyncStage) table.Row {
 }
 
 func createSubStageRowFromSubstageStage(substage diagnostics.SyncSubStage) table.Row {
+<<<<<<< HEAD
+=======
+	progress := substage.Stats.Progress
+
+	if substage.State == diagnostics.Completed {
+		progress = "100%"
+	} else {
+		if substage.ID == "E3 Indexing" {
+			if progress == "100%" {
+				progress = "> 50%"
+			} else {
+				prgint := convertProgress(progress)
+				progress = strconv.Itoa(prgint/2) + "%"
+			}
+		}
+	}
+
+>>>>>>> v3.0.0-alpha1
 	return table.Row{
 		"",
 		substage.ID,
 		substage.State.String(),
 		substage.Stats.TimeElapsed,
+<<<<<<< HEAD
 		substage.Stats.Progress,
 	}
 }
+=======
+		progress,
+	}
+}
+
+func convertProgress(progress string) int {
+	progress = strings.ReplaceAll(progress, "%", "")
+	progressInt, _ := strconv.Atoi(progress)
+	return progressInt
+}
+>>>>>>> v3.0.0-alpha1

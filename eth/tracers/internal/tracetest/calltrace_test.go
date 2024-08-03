@@ -1,18 +1,21 @@
 // Copyright 2021 The go-ethereum Authors
-// This file is part of the go-ethereum library.
+// (original work)
+// Copyright 2024 The Erigon Authors
+// (modifications)
+// This file is part of Erigon.
 //
-// The go-ethereum library is free software: you can redistribute it and/or modify
+// Erigon is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The go-ethereum library is distributed in the hope that it will be useful,
+// Erigon is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
 
 package tracetest
 
@@ -27,6 +30,7 @@ import (
 	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/require"
 
+<<<<<<< HEAD
 	"github.com/ledgerwatch/erigon-lib/chain"
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/dir"
@@ -45,6 +49,27 @@ import (
 	"github.com/ledgerwatch/erigon/params"
 	"github.com/ledgerwatch/erigon/tests"
 	"github.com/ledgerwatch/erigon/turbo/stages/mock"
+=======
+	"github.com/erigontech/erigon-lib/chain"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/dir"
+	"github.com/erigontech/erigon-lib/common/hexutil"
+	"github.com/erigontech/erigon-lib/common/hexutility"
+	"github.com/erigontech/erigon/common"
+	"github.com/erigontech/erigon/common/math"
+	"github.com/erigontech/erigon/consensus"
+	"github.com/erigontech/erigon/core"
+	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/core/vm"
+	"github.com/erigontech/erigon/core/vm/evmtypes"
+	"github.com/erigontech/erigon/crypto"
+	"github.com/erigontech/erigon/eth/tracers"
+	_ "github.com/erigontech/erigon/eth/tracers/js"
+	_ "github.com/erigontech/erigon/eth/tracers/native"
+	"github.com/erigontech/erigon/params"
+	"github.com/erigontech/erigon/tests"
+	"github.com/erigontech/erigon/turbo/stages/mock"
+>>>>>>> v3.0.0-alpha1
 )
 
 type callContext struct {
@@ -135,7 +160,11 @@ func testCallTracer(tracerName string, dirPath string, t *testing.T) {
 			signer := types.MakeSigner(test.Genesis.Config, uint64(test.Context.Number), uint64(test.Context.Time))
 			context := evmtypes.BlockContext{
 				CanTransfer: core.CanTransfer,
+<<<<<<< HEAD
 				Transfer:    core.Transfer,
+=======
+				Transfer:    consensus.Transfer,
+>>>>>>> v3.0.0-alpha1
 				Coinbase:    test.Context.Miner,
 				BlockNumber: uint64(test.Context.Number),
 				Time:        uint64(test.Context.Time),
@@ -151,7 +180,11 @@ func testCallTracer(tracerName string, dirPath string, t *testing.T) {
 			dbTx, err := m.DB.BeginRw(m.Ctx)
 			require.NoError(t, err)
 			defer dbTx.Rollback()
+<<<<<<< HEAD
 			statedb, err := tests.MakePreState(rules, dbTx, test.Genesis.Alloc, uint64(test.Context.Number))
+=======
+			statedb, err := tests.MakePreState(rules, dbTx, test.Genesis.Alloc, uint64(test.Context.Number), m.HistoryV3)
+>>>>>>> v3.0.0-alpha1
 			require.NoError(t, err)
 			tracer, err := tracers.New(tracerName, new(tracers.Context), test.TracerConfig)
 			if err != nil {
@@ -248,7 +281,7 @@ func benchTracer(b *testing.B, tracerName string, test *callTracerTest) {
 	}
 	context := evmtypes.BlockContext{
 		CanTransfer: core.CanTransfer,
-		Transfer:    core.Transfer,
+		Transfer:    consensus.Transfer,
 		Coinbase:    test.Context.Miner,
 		BlockNumber: uint64(test.Context.Number),
 		Time:        uint64(test.Context.Time),
@@ -259,7 +292,7 @@ func benchTracer(b *testing.B, tracerName string, test *callTracerTest) {
 	dbTx, err := m.DB.BeginRw(m.Ctx)
 	require.NoError(b, err)
 	defer dbTx.Rollback()
-	statedb, _ := tests.MakePreState(rules, dbTx, test.Genesis.Alloc, uint64(test.Context.Number))
+	statedb, _ := tests.MakePreState(rules, dbTx, test.Genesis.Alloc, uint64(test.Context.Number), m.HistoryV3)
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -282,7 +315,7 @@ func benchTracer(b *testing.B, tracerName string, test *callTracerTest) {
 }
 
 // TestZeroValueToNotExitCall tests the calltracer(s) on the following:
-// Tx to A, A calls B with zero value. B does not already exist.
+// txn to A, A calls B with zero value. B does not already exist.
 // Expected: that enter/exit is invoked and the inner call is shown in the result
 func TestZeroValueToNotExitCall(t *testing.T) {
 	var to = libcommon.HexToAddress("0x00000000000000000000000000000000deadbeef")
@@ -308,7 +341,7 @@ func TestZeroValueToNotExitCall(t *testing.T) {
 	}
 	context := evmtypes.BlockContext{
 		CanTransfer: core.CanTransfer,
-		Transfer:    core.Transfer,
+		Transfer:    consensus.Transfer,
 		Coinbase:    libcommon.Address{},
 		BlockNumber: 8000000,
 		Time:        5,
@@ -336,7 +369,7 @@ func TestZeroValueToNotExitCall(t *testing.T) {
 	require.NoError(t, err)
 	defer dbTx.Rollback()
 
-	statedb, _ := tests.MakePreState(rules, dbTx, alloc, context.BlockNumber)
+	statedb, _ := tests.MakePreState(rules, dbTx, alloc, context.BlockNumber, m.HistoryV3)
 	// Create the tracer, the EVM environment and run it
 	tracer, err := tracers.New("callTracer", nil, nil)
 	if err != nil {

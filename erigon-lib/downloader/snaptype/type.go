@@ -1,3 +1,19 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package snaptype
 
 import (
@@ -12,14 +28,14 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/ledgerwatch/erigon-lib/chain"
-	"github.com/ledgerwatch/erigon-lib/common/background"
-	"github.com/ledgerwatch/erigon-lib/common/dbg"
-	"github.com/ledgerwatch/erigon-lib/common/dir"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon-lib/recsplit"
-	"github.com/ledgerwatch/erigon-lib/seg"
-	"github.com/ledgerwatch/log/v3"
+	"github.com/erigontech/erigon-lib/chain"
+	"github.com/erigontech/erigon-lib/common/background"
+	"github.com/erigontech/erigon-lib/common/dbg"
+	"github.com/erigontech/erigon-lib/common/dir"
+	"github.com/erigontech/erigon-lib/kv"
+	"github.com/erigontech/erigon-lib/log/v3"
+	"github.com/erigontech/erigon-lib/recsplit"
+	"github.com/erigontech/erigon-lib/seg"
 )
 
 type Version uint8
@@ -89,7 +105,12 @@ func GetIndexSalt(baseDir string) (uint32, error) {
 	}
 
 	fpath := filepath.Join(baseDir, "salt-blocks.txt")
-	if !dir.FileExist(fpath) {
+	exists, err := dir.FileExist(fpath)
+	if err != nil {
+		return 0, err
+	}
+
+	if !exists {
 		dir.MustExist(baseDir)
 
 		saltBytes := make([]byte, 4)
@@ -145,7 +166,7 @@ func (i Index) HasFile(info FileInfo, logger log.Logger) bool {
 
 	defer idx.Close()
 
-	return idx.ModTime().After(segment.ModTime())
+	return true // idx.ModTime().After(segment.ModTime())
 }
 
 type Type interface {
@@ -400,14 +421,14 @@ func BuildIndex(ctx context.Context, info FileInfo, salt uint32, firstDataId uin
 		TmpDir:     tmpDir,
 		IndexFile:  filepath.Join(info.Dir(), info.Type.IdxFileName(info.Version, info.From, info.To)),
 		BaseDataID: firstDataId,
-		Salt:       salt,
+		Salt:       &salt,
 	}, logger)
 	if err != nil {
 		return err
 	}
 	rs.LogLvl(log.LvlDebug)
 
-	defer d.EnableMadvNormal().DisableReadAhead()
+	defer d.EnableReadAhead().DisableReadAhead()
 
 	for {
 		g := d.MakeGetter()

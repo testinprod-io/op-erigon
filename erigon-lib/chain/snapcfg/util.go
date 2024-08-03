@@ -1,3 +1,19 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package snapcfg
 
 import (
@@ -9,19 +25,20 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ledgerwatch/erigon-lib/chain/networkname"
-	"github.com/ledgerwatch/erigon-lib/downloader/snaptype"
-	snapshothashes "github.com/ledgerwatch/erigon-snapshot"
-	"github.com/ledgerwatch/erigon-snapshot/webseed"
 	"github.com/pelletier/go-toml/v2"
 	"github.com/tidwall/btree"
+
+	snapshothashes "github.com/erigontech/erigon-snapshot"
+	"github.com/erigontech/erigon-snapshot/webseed"
+
+	"github.com/erigontech/erigon-lib/chain/networkname"
+	"github.com/erigontech/erigon-lib/downloader/snaptype"
 )
 
 var (
-	Mainnet = fromToml(snapshothashes.Mainnet)
-	// Holesky    = fromToml(snapshothashes.Holesky)
+	Mainnet    = fromToml(snapshothashes.Mainnet)
+	Holesky    = fromToml(snapshothashes.Holesky)
 	Sepolia    = fromToml(snapshothashes.Sepolia)
-	Goerli     = fromToml(snapshothashes.Goerli)
 	Mumbai     = fromToml(snapshothashes.Mumbai)
 	Amoy       = fromToml(snapshothashes.Amoy)
 	BorMainnet = fromToml(snapshothashes.BorMainnet)
@@ -79,6 +96,10 @@ func (p Preverified) Typed(types []snaptype.Type) Preverified {
 
 		parts := strings.Split(name, "-")
 		if len(parts) < 3 {
+			if strings.HasPrefix(p.Name, "domain") || strings.HasPrefix(p.Name, "history") || strings.HasPrefix(p.Name, "idx") {
+				bestVersions.Set(p.Name, p)
+				continue
+			}
 			continue
 		}
 		typeName, _ := strings.CutSuffix(parts[2], filepath.Ext(parts[2]))
@@ -137,12 +158,22 @@ func (p Preverified) Versioned(preferredVersion snaptype.Version, minVersion sna
 
 	for _, p := range p {
 		v, name, ok := strings.Cut(p.Name, "-")
-
 		if !ok {
+			if strings.HasPrefix(p.Name, "domain") || strings.HasPrefix(p.Name, "history") || strings.HasPrefix(p.Name, "idx") {
+				bestVersions.Set(p.Name, p)
+				continue
+			}
 			continue
 		}
 
 		parts := strings.Split(name, "-")
+		if len(parts) < 3 {
+			if strings.HasPrefix(p.Name, "domain") || strings.HasPrefix(p.Name, "history") || strings.HasPrefix(p.Name, "idx") {
+				bestVersions.Set(p.Name, p)
+				continue
+			}
+			continue
+		}
 		typeName, _ := strings.CutSuffix(parts[2], filepath.Ext(parts[2]))
 		include := false
 
@@ -326,10 +357,9 @@ func (c Cfg) MergeLimit(t snaptype.Enum, fromBlock uint64) uint64 {
 }
 
 var knownPreverified = map[string]Preverified{
-	networkname.MainnetChainName: Mainnet,
-	// networkname.HoleskyChainName:    HoleskyChainSnapshotCfg,
+	networkname.MainnetChainName:    Mainnet,
+	networkname.HoleskyChainName:    Holesky,
 	networkname.SepoliaChainName:    Sepolia,
-	networkname.GoerliChainName:     Goerli,
 	networkname.MumbaiChainName:     Mumbai,
 	networkname.AmoyChainName:       Amoy,
 	networkname.BorMainnetChainName: BorMainnet,
@@ -383,11 +413,9 @@ func MergeSteps(networkName string, snapType snaptype.Enum, fromBlock uint64) []
 // KnownCfg return list of preverified hashes for given network, but apply whiteList filter if it's not empty
 func KnownCfg(networkName string) *Cfg {
 	c, ok := knownPreverified[networkName]
-
 	if !ok {
 		return newCfg(networkName, Preverified{})
 	}
-
 	return newCfg(networkName, c.Typed(knownTypes[networkName]))
 }
 
@@ -404,12 +432,12 @@ func VersionedCfg(networkName string, preferred snaptype.Version, min snaptype.V
 var KnownWebseeds = map[string][]string{
 	networkname.MainnetChainName:    webseedsParse(webseed.Mainnet),
 	networkname.SepoliaChainName:    webseedsParse(webseed.Sepolia),
-	networkname.GoerliChainName:     webseedsParse(webseed.Goerli),
 	networkname.MumbaiChainName:     webseedsParse(webseed.Mumbai),
 	networkname.AmoyChainName:       webseedsParse(webseed.Amoy),
 	networkname.BorMainnetChainName: webseedsParse(webseed.BorMainnet),
 	networkname.GnosisChainName:     webseedsParse(webseed.Gnosis),
 	networkname.ChiadoChainName:     webseedsParse(webseed.Chiado),
+	networkname.HoleskyChainName:    webseedsParse(webseed.Holesky),
 }
 
 func webseedsParse(in []byte) (res []string) {

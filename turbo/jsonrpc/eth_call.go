@@ -1,3 +1,19 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package jsonrpc
 
 import (
@@ -7,6 +23,7 @@ import (
 	"math/big"
 
 	"github.com/holiman/uint256"
+<<<<<<< HEAD
 	"github.com/ledgerwatch/log/v3"
 	"google.golang.org/grpc"
 
@@ -19,21 +36,32 @@ import (
 	"github.com/ledgerwatch/erigon-lib/kv/membatchwithdb"
 	"github.com/ledgerwatch/erigon-lib/opstack"
 	types2 "github.com/ledgerwatch/erigon-lib/types"
+=======
+	"google.golang.org/grpc"
 
-	"github.com/ledgerwatch/erigon/core"
-	"github.com/ledgerwatch/erigon/core/state"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/core/types/accounts"
-	"github.com/ledgerwatch/erigon/core/vm"
-	"github.com/ledgerwatch/erigon/crypto"
-	"github.com/ledgerwatch/erigon/eth/stagedsync"
-	"github.com/ledgerwatch/erigon/eth/tracers/logger"
-	"github.com/ledgerwatch/erigon/params"
-	"github.com/ledgerwatch/erigon/rpc"
-	ethapi2 "github.com/ledgerwatch/erigon/turbo/adapter/ethapi"
-	"github.com/ledgerwatch/erigon/turbo/rpchelper"
-	"github.com/ledgerwatch/erigon/turbo/transactions"
-	"github.com/ledgerwatch/erigon/turbo/trie"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/hexutil"
+	"github.com/erigontech/erigon-lib/common/hexutility"
+	"github.com/erigontech/erigon-lib/gointerfaces"
+	txpool_proto "github.com/erigontech/erigon-lib/gointerfaces/txpoolproto"
+	"github.com/erigontech/erigon-lib/kv"
+	"github.com/erigontech/erigon-lib/log/v3"
+	types2 "github.com/erigontech/erigon-lib/types"
+>>>>>>> v3.0.0-alpha1
+
+	"github.com/erigontech/erigon/core"
+	"github.com/erigontech/erigon/core/state"
+	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/core/types/accounts"
+	"github.com/erigontech/erigon/core/vm"
+	"github.com/erigontech/erigon/core/vm/evmtypes"
+	"github.com/erigontech/erigon/crypto"
+	"github.com/erigontech/erigon/eth/tracers/logger"
+	"github.com/erigontech/erigon/params"
+	"github.com/erigontech/erigon/rpc"
+	ethapi2 "github.com/erigontech/erigon/turbo/adapter/ethapi"
+	"github.com/erigontech/erigon/turbo/rpchelper"
+	"github.com/erigontech/erigon/turbo/transactions"
 )
 
 var latestNumOrHash = rpc.BlockNumberOrHashWithNumber(rpc.LatestBlockNumber)
@@ -84,7 +112,7 @@ func (api *APIImpl) Call(ctx context.Context, args ethapi2.CallArgs, blockNrOrHa
 		return nil, nil
 	}
 
-	stateReader, err := rpchelper.CreateStateReader(ctx, tx, blockNrOrHash, 0, api.filters, api.stateCache, api.historyV3(tx), chainConfig.ChainName)
+	stateReader, err := rpchelper.CreateStateReader(ctx, tx, blockNrOrHash, 0, api.filters, api.stateCache, chainConfig.ChainName)
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +251,7 @@ func (api *APIImpl) EstimateGas(ctx context.Context, argsOrNil *ethapi2.CallArgs
 		if err != nil {
 			return 0, err
 		}
-		stateReader := state.NewCachedReader2(cacheView, dbtx)
+		stateReader := rpchelper.CreateLatestCachedStateReader(cacheView, dbtx)
 		state := state.New(stateReader)
 		if state == nil {
 			return 0, fmt.Errorf("can't get the current state")
@@ -272,7 +300,7 @@ func (api *APIImpl) EstimateGas(ctx context.Context, argsOrNil *ethapi2.CallArgs
 		return 0, fmt.Errorf("could not find latest block in cache or db")
 	}
 
-	stateReader, err := rpchelper.CreateStateReaderFromBlockNumber(ctx, dbtx, latestCanBlockNumber, isLatest, 0, api.stateCache, api.historyV3(dbtx), chainConfig.ChainName)
+	stateReader, err := rpchelper.CreateStateReaderFromBlockNumber(ctx, dbtx, latestCanBlockNumber, isLatest, 0, api.stateCache, chainConfig.ChainName)
 	if err != nil {
 		return 0, err
 	}
@@ -284,7 +312,7 @@ func (api *APIImpl) EstimateGas(ctx context.Context, argsOrNil *ethapi2.CallArgs
 	}
 
 	// Create a helper to check if a gas allowance results in an executable transaction
-	executable := func(gas uint64) (bool, *core.ExecutionResult, error) {
+	executable := func(gas uint64) (bool, *evmtypes.ExecutionResult, error) {
 		result, err := caller.DoCallWithNewGas(ctx, gas)
 		if err != nil {
 			if errors.Is(err, core.ErrIntrinsicGas) {
@@ -347,6 +375,7 @@ func (api *APIImpl) EstimateGas(ctx context.Context, argsOrNil *ethapi2.CallArgs
 // GetProof is partially implemented; no Storage proofs, and proofs must be for
 // blocks within maxGetProofRewindBlockCount blocks of the head.
 func (api *APIImpl) GetProof(ctx context.Context, address libcommon.Address, storageKeys []libcommon.Hash, blockNrOrHash rpc.BlockNumberOrHash) (*accounts.AccProofResult, error) {
+<<<<<<< HEAD
 
 	tx, err := api.db.BeginRo(ctx)
 	if err != nil {
@@ -416,40 +445,90 @@ func (api *APIImpl) GetProof(ctx context.Context, address libcommon.Address, sto
 
 		interHashStageCfg := stagedsync.StageTrieCfg(nil, false, false, false, api.dirs.Tmp, api._blockReader, nil, api.historyV3(batch), api._agg)
 		loader, err = stagedsync.UnwindIntermediateHashesForTrieLoader("eth_getProof", rl, unwindState, stageState, batch, interHashStageCfg, nil, nil, ctx.Done(), api.logger)
+=======
+	return nil, fmt.Errorf("not supported by Erigon3")
+	/*
+		tx, err := api.db.BeginRo(ctx)
+>>>>>>> v3.0.0-alpha1
 		if err != nil {
 			return nil, err
 		}
-		tx = batch
-	} else {
-		loader = trie.NewFlatDBTrieLoader("eth_getProof", rl, nil, nil, false)
-	}
+		defer tx.Rollback()
 
-	reader, err := rpchelper.CreateStateReader(ctx, tx, blockNrOrHash, 0, api.filters, api.stateCache, api.historyV3(tx), "")
-	if err != nil {
-		return nil, err
-	}
-	a, err := reader.ReadAccountData(address)
-	if err != nil {
-		return nil, err
-	}
-	if a == nil {
-		a = &accounts.Account{}
-	}
-	pr, err := trie.NewProofRetainer(address, a, storageKeys, rl)
-	if err != nil {
-		return nil, err
-	}
+		blockNr, _, _, err := rpchelper.GetBlockNumber(blockNrOrHash, tx, api.filters)
+		if err != nil {
+			return nil, err
+		}
 
-	loader.SetProofRetainer(pr)
-	root, err := loader.CalcTrieRoot(tx, nil)
-	if err != nil {
-		return nil, err
-	}
+		header, err := api._blockReader.HeaderByNumber(ctx, tx, blockNr)
+		if err != nil {
+			return nil, err
+		}
 
-	if root != header.Root {
-		return nil, fmt.Errorf("mismatch in expected state root computed %v vs %v indicates bug in proof implementation", root, header.Root)
-	}
-	return pr.ProofResult()
+		latestBlock, err := rpchelper.GetLatestBlockNumber(tx)
+		if err != nil {
+			return nil, err
+		}
+
+		if latestBlock < blockNr {
+			// shouldn't happen, but check anyway
+			return nil, fmt.Errorf("block number is in the future latest=%d requested=%d", latestBlock, blockNr)
+		}
+
+		rl := trie.NewRetainList(0)
+		var loader *trie.FlatDBTrieLoader
+		if blockNr < latestBlock {
+			if latestBlock-blockNr > uint64(api.MaxGetProofRewindBlockCount) {
+				return nil, fmt.Errorf("requested block is too old, block must be within %d blocks of the head block number (currently %d)", uint64(api.MaxGetProofRewindBlockCount), latestBlock)
+			}
+			batch := membatchwithdb.NewMemoryBatch(tx, api.dirs.Tmp, api.logger)
+			defer batch.Rollback()
+
+			unwindState := &stagedsync.UnwindState{UnwindPoint: blockNr}
+			stageState := &stagedsync.StageState{BlockNumber: latestBlock}
+
+			hashStageCfg := stagedsync.StageHashStateCfg(nil, api.dirs, api.historyV3(batch))
+			if err := stagedsync.UnwindHashStateStage(unwindState, stageState, batch, hashStageCfg, ctx, api.logger); err != nil {
+				return nil, err
+			}
+
+			interHashStageCfg := stagedsync.StageTrieCfg(nil, false, false, false, api.dirs.Tmp, api._blockReader, nil, api.historyV3(batch), api._agg)
+			loader, err = stagedsync.UnwindIntermediateHashesForTrieLoader("eth_getProof", rl, unwindState, stageState, batch, interHashStageCfg, nil, nil, ctx.Done(), api.logger)
+			if err != nil {
+				return nil, err
+			}
+			tx = batch
+		} else {
+			loader = trie.NewFlatDBTrieLoader("eth_getProof", rl, nil, nil, false)
+		}
+
+		reader, err := rpchelper.CreateStateReader(ctx, tx, blockNrOrHash, 0, api.filters, api.stateCache, "")
+		if err != nil {
+			return nil, err
+		}
+		a, err := reader.ReadAccountData(address)
+		if err != nil {
+			return nil, err
+		}
+		if a == nil {
+			a = &accounts.Account{}
+		}
+		pr, err := trie.NewProofRetainer(address, a, storageKeys, rl)
+		if err != nil {
+			return nil, err
+		}
+
+		loader.SetProofRetainer(pr)
+		root, err := loader.CalcTrieRoot(tx, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		if root != header.Root {
+			return nil, fmt.Errorf("mismatch in expected state root computed %v vs %v indicates bug in proof implementation", root, header.Root)
+		}
+		return pr.ProofResult()
+	*/
 }
 
 func (api *APIImpl) tryBlockFromLru(hash libcommon.Hash) *types.Block {
@@ -525,9 +604,9 @@ func (api *APIImpl) CreateAccessList(ctx context.Context, args ethapi2.CallArgs,
 		if err != nil {
 			return nil, err
 		}
-		stateReader = state.NewCachedReader2(cacheView, tx)
+		stateReader = rpchelper.CreateLatestCachedStateReader(cacheView, tx)
 	} else {
-		stateReader, err = rpchelper.CreateHistoryStateReader(tx, blockNumber+1, 0, api.historyV3(tx), chainConfig.ChainName)
+		stateReader, err = rpchelper.CreateHistoryStateReader(tx, blockNumber+1, 0, chainConfig.ChainName)
 		if err != nil {
 			return nil, err
 		}
@@ -613,7 +692,7 @@ func (api *APIImpl) CreateAccessList(ctx context.Context, args ethapi2.CallArgs,
 		// Apply the transaction with the access list tracer
 		tracer := logger.NewAccessListTracer(accessList, excl, state)
 		config := vm.Config{Tracer: tracer, Debug: true, NoBaseFee: true}
-		blockCtx := transactions.NewEVMBlockContext(engine, header, bNrOrHash.RequireCanonical, tx, api._blockReader)
+		blockCtx := transactions.NewEVMBlockContext(engine, header, bNrOrHash.RequireCanonical, tx, api._blockReader, chainConfig)
 		txCtx := core.NewEVMTxContext(msg)
 		blockCtx.L1CostFunc = opstack.NewL1CostFunc(chainConfig, state)
 

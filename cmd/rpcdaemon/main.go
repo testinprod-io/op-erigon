@@ -1,3 +1,19 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package main
 
 import (
@@ -7,15 +23,20 @@ import (
 	"os"
 	"time"
 
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/cli"
-	"github.com/ledgerwatch/erigon/rpc"
-	"github.com/ledgerwatch/erigon/turbo/debug"
-	"github.com/ledgerwatch/erigon/turbo/jsonrpc"
+	"github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon/cmd/rpcdaemon/cli"
+	"github.com/erigontech/erigon/rpc"
+	"github.com/erigontech/erigon/turbo/debug"
+	"github.com/erigontech/erigon/turbo/jsonrpc"
 	"github.com/spf13/cobra"
 
+<<<<<<< HEAD
 	_ "github.com/ledgerwatch/erigon/core/snaptype"        //hack
 	_ "github.com/ledgerwatch/erigon/polygon/bor/snaptype" //hack
+=======
+	_ "github.com/erigontech/erigon/core/snaptype"        //hack
+	_ "github.com/erigontech/erigon/polygon/bor/snaptype" //hack
+>>>>>>> v3.0.0-alpha1
 )
 
 func main() {
@@ -24,7 +45,7 @@ func main() {
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 		logger := debug.SetupCobra(cmd, "sentry")
-		db, backend, txPool, mining, stateCache, blockReader, engine, ff, agg, err := cli.RemoteServices(ctx, cfg, logger, rootCancel)
+		db, backend, txPool, mining, stateCache, blockReader, engine, ff, err := cli.RemoteServices(ctx, cfg, logger, rootCancel)
 		if err != nil {
 			if !errors.Is(err, context.Canceled) {
 				logger.Error("Could not connect to DB", "err", err)
@@ -34,6 +55,7 @@ func main() {
 		defer db.Close()
 		defer engine.Close()
 
+<<<<<<< HEAD
 		var seqRPCService *rpc.Client
 		var historicalRPCService *rpc.Client
 
@@ -61,6 +83,9 @@ func main() {
 
 		// TODO: Replace with correct consensus Engine
 		apiList := jsonrpc.APIList(db, backend, txPool, mining, ff, stateCache, blockReader, agg, cfg, engine, seqRPCService, historicalRPCService, logger)
+=======
+		apiList := jsonrpc.APIList(db, backend, txPool, mining, ff, stateCache, blockReader, cfg, engine, logger)
+>>>>>>> v3.0.0-alpha1
 		rpc.PreAllocateRPCMetricLabels(apiList)
 		if err := cli.StartRpcServer(ctx, cfg, apiList, logger); err != nil {
 			logger.Error(err.Error())

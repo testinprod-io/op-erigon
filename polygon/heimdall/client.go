@@ -1,3 +1,19 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package heimdall
 
 import (
@@ -13,9 +29,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ledgerwatch/log/v3"
+	"github.com/erigontech/erigon-lib/log/v3"
 
-	"github.com/ledgerwatch/erigon-lib/metrics"
+	"github.com/erigontech/erigon-lib/metrics"
 )
 
 var (
@@ -47,9 +63,10 @@ type HeimdallClient interface {
 
 	FetchCheckpoint(ctx context.Context, number int64) (*Checkpoint, error)
 	FetchCheckpointCount(ctx context.Context) (int64, error)
-	FetchCheckpoints(ctx context.Context, page uint64, limit uint64) (Checkpoints, error)
+	FetchCheckpoints(ctx context.Context, page uint64, limit uint64) ([]*Checkpoint, error)
 	FetchMilestone(ctx context.Context, number int64) (*Milestone, error)
 	FetchMilestoneCount(ctx context.Context) (int64, error)
+	FetchFirstMilestoneNum(ctx context.Context) (int64, error)
 
 	// FetchNoAckMilestone fetches a bool value whether milestone corresponding to the given id failed in the Heimdall
 	FetchNoAckMilestone(ctx context.Context, milestoneID string) error
@@ -139,9 +156,9 @@ func (c *Client) FetchStateSyncEvents(ctx context.Context, fromID uint64, to tim
 
 		c.logger.Trace(heimdallLogPrefix("Fetching state sync events"), "queryParams", url.RawQuery)
 
-		ctx = withRequestType(ctx, stateSyncRequest)
+		reqCtx := withRequestType(ctx, stateSyncRequest)
 
-		response, err := FetchWithRetry[StateSyncEventsResponse](ctx, c, url, c.logger)
+		response, err := FetchWithRetry[StateSyncEventsResponse](reqCtx, c, url, c.logger)
 		if err != nil {
 			if errors.Is(err, ErrNoResponse) {
 				// for more info check https://github.com/maticnetwork/heimdall/pull/993
@@ -220,14 +237,14 @@ func (c *Client) FetchLatestSpan(ctx context.Context) (*Span, error) {
 func (c *Client) FetchSpan(ctx context.Context, spanID uint64) (*Span, error) {
 	url, err := spanURL(c.urlString, spanID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w, spanID=%d", err, spanID)
 	}
 
 	ctx = withRequestType(ctx, spanRequest)
 
 	response, err := FetchWithRetry[SpanResponse](ctx, c, url, c.logger)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w, spanID=%d", err, spanID)
 	}
 
 	return &response.Result, nil
@@ -250,7 +267,7 @@ func (c *Client) FetchCheckpoint(ctx context.Context, number int64) (*Checkpoint
 	return &response.Result, nil
 }
 
-func (c *Client) FetchCheckpoints(ctx context.Context, page uint64, limit uint64) (Checkpoints, error) {
+func (c *Client) FetchCheckpoints(ctx context.Context, page uint64, limit uint64) ([]*Checkpoint, error) {
 	url, err := checkpointListURL(c.urlString, page, limit)
 	if err != nil {
 		return nil, err
@@ -329,6 +346,26 @@ func (c *Client) FetchMilestoneCount(ctx context.Context) (int64, error) {
 	}
 
 	return response.Result.Count, nil
+}
+
+// Heimdall keeps only this amount of latest milestones
+// https://github.com/maticnetwork/heimdall/blob/master/helper/config.go#L141
+const milestonePruneNumber = int64(100)
+
+func (c *Client) FetchFirstMilestoneNum(ctx context.Context) (int64, error) {
+	count, err := c.FetchMilestoneCount(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	var first int64
+	if count < milestonePruneNumber {
+		first = 1
+	} else {
+		first = count - milestonePruneNumber + 1
+	}
+
+	return first, nil
 }
 
 // FetchLastNoAckMilestone fetches the last no-ack-milestone from heimdall

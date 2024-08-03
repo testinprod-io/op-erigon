@@ -1,18 +1,18 @@
-/*
-   Copyright 2021 Erigon contributors
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
+// Copyright 2021 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
 
 package state
 
@@ -20,291 +20,14 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"hash"
-	"time"
+	"strings"
 
-	"github.com/google/btree"
-	"github.com/ledgerwatch/log/v3"
-	"golang.org/x/crypto/sha3"
-
-	"github.com/ledgerwatch/erigon-lib/commitment"
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/length"
+	"github.com/erigontech/erigon-lib/commitment"
+	"github.com/erigontech/erigon-lib/common/length"
+	"github.com/erigontech/erigon-lib/recsplit"
 )
-
-// Defines how to evaluate commitments
-type CommitmentMode uint
-
-const (
-	CommitmentModeDisabled CommitmentMode = 0
-	CommitmentModeDirect   CommitmentMode = 1
-	CommitmentModeUpdate   CommitmentMode = 2
-)
-
-func (m CommitmentMode) String() string {
-	switch m {
-	case CommitmentModeDisabled:
-		return "disabled"
-	case CommitmentModeDirect:
-		return "direct"
-	case CommitmentModeUpdate:
-		return "update"
-	default:
-		return "unknown"
-	}
-}
-
-func ParseCommitmentMode(s string) CommitmentMode {
-	var mode CommitmentMode
-	switch s {
-	case "off":
-		mode = CommitmentModeDisabled
-	case "update":
-		mode = CommitmentModeUpdate
-	default:
-		mode = CommitmentModeDirect
-	}
-	return mode
-}
 
 type ValueMerger func(prev, current []byte) (merged []byte, err error)
-
-type DomainCommitted struct {
-	*Domain
-	mode         CommitmentMode
-	commTree     *btree.BTreeG[*CommitmentItem]
-	keccak       hash.Hash
-	patriciaTrie commitment.Trie
-	branchMerger *commitment.BranchMerger
-
-	comKeys uint64
-	comTook time.Duration
-	logger  log.Logger
-}
-
-func NewCommittedDomain(d *Domain, mode CommitmentMode, trieVariant commitment.TrieVariant, logger log.Logger) *DomainCommitted {
-	return &DomainCommitted{
-		Domain:       d,
-		patriciaTrie: commitment.InitializeTrie(trieVariant),
-		commTree:     btree.NewG[*CommitmentItem](32, commitmentItemLess),
-		keccak:       sha3.NewLegacyKeccak256(),
-		mode:         mode,
-		branchMerger: commitment.NewHexBranchMerger(8192),
-		logger:       logger,
-	}
-}
-
-func (d *DomainCommitted) SetCommitmentMode(m CommitmentMode) { d.mode = m }
-
-// TouchPlainKey marks plainKey as updated and applies different fn for different key types
-// (different behaviour for Code, Account and Storage key modifications).
-func (d *DomainCommitted) TouchPlainKey(key, val []byte, fn func(c *CommitmentItem, val []byte)) {
-	if d.mode == CommitmentModeDisabled {
-		return
-	}
-	c := &CommitmentItem{plainKey: common.Copy(key), hashedKey: d.hashAndNibblizeKey(key)}
-	if d.mode > CommitmentModeDirect {
-		fn(c, val)
-	}
-	d.commTree.ReplaceOrInsert(c)
-}
-
-func (d *DomainCommitted) TouchPlainKeyAccount(c *CommitmentItem, val []byte) {
-	if len(val) == 0 {
-		c.update.Flags = commitment.DeleteUpdate
-		return
-	}
-	c.update.DecodeForStorage(val)
-	c.update.Flags = commitment.BalanceUpdate | commitment.NonceUpdate
-	item, found := d.commTree.Get(&CommitmentItem{hashedKey: c.hashedKey})
-	if !found {
-		return
-	}
-	if item.update.Flags&commitment.CodeUpdate != 0 {
-		c.update.Flags |= commitment.CodeUpdate
-		copy(c.update.CodeHashOrStorage[:], item.update.CodeHashOrStorage[:])
-	}
-}
-
-func (d *DomainCommitted) TouchPlainKeyStorage(c *CommitmentItem, val []byte) {
-	c.update.ValLength = len(val)
-	if len(val) == 0 {
-		c.update.Flags = commitment.DeleteUpdate
-	} else {
-		c.update.Flags = commitment.StorageUpdate
-		copy(c.update.CodeHashOrStorage[:], val)
-	}
-}
-
-func (d *DomainCommitted) TouchPlainKeyCode(c *CommitmentItem, val []byte) {
-	c.update.Flags = commitment.CodeUpdate
-	item, found := d.commTree.Get(c)
-	if !found {
-		d.keccak.Reset()
-		d.keccak.Write(val)
-		copy(c.update.CodeHashOrStorage[:], d.keccak.Sum(nil))
-		return
-	}
-	if item.update.Flags&commitment.BalanceUpdate != 0 {
-		c.update.Flags |= commitment.BalanceUpdate
-		c.update.Balance.Set(&item.update.Balance)
-	}
-	if item.update.Flags&commitment.NonceUpdate != 0 {
-		c.update.Flags |= commitment.NonceUpdate
-		c.update.Nonce = item.update.Nonce
-	}
-	if item.update.Flags == commitment.DeleteUpdate && len(val) == 0 {
-		c.update.Flags = commitment.DeleteUpdate
-	} else {
-		d.keccak.Reset()
-		d.keccak.Write(val)
-		copy(c.update.CodeHashOrStorage[:], d.keccak.Sum(nil))
-	}
-}
-
-type CommitmentItem struct {
-	plainKey  []byte
-	hashedKey []byte
-	update    commitment.Update
-}
-
-func commitmentItemLess(i, j *CommitmentItem) bool {
-	return bytes.Compare(i.hashedKey, j.hashedKey) < 0
-}
-
-// Returns list of both plain and hashed keys. If .mode is CommitmentModeUpdate, updates also returned.
-func (d *DomainCommitted) TouchedKeyList() ([][]byte, [][]byte, []commitment.Update) {
-	plainKeys := make([][]byte, d.commTree.Len())
-	hashedKeys := make([][]byte, d.commTree.Len())
-	updates := make([]commitment.Update, d.commTree.Len())
-
-	j := 0
-	d.commTree.Ascend(func(item *CommitmentItem) bool {
-		plainKeys[j] = item.plainKey
-		hashedKeys[j] = item.hashedKey
-		updates[j] = item.update
-		j++
-		return true
-	})
-
-	d.commTree.Clear(true)
-	return plainKeys, hashedKeys, updates
-}
-
-// TODO(awskii): let trie define hashing function
-func (d *DomainCommitted) hashAndNibblizeKey(key []byte) []byte {
-	hashedKey := make([]byte, length.Hash)
-
-	d.keccak.Reset()
-	d.keccak.Write(key[:length.Addr])
-	copy(hashedKey[:length.Hash], d.keccak.Sum(nil))
-
-	if len(key[length.Addr:]) > 0 {
-		hashedKey = append(hashedKey, make([]byte, length.Hash)...)
-		d.keccak.Reset()
-		d.keccak.Write(key[length.Addr:])
-		copy(hashedKey[length.Hash:], d.keccak.Sum(nil))
-	}
-
-	nibblized := make([]byte, len(hashedKey)*2)
-	for i, b := range hashedKey {
-		nibblized[i*2] = (b >> 4) & 0xf
-		nibblized[i*2+1] = b & 0xf
-	}
-	return nibblized
-}
-
-// Evaluates commitment for processed state. Commit=true - store trie state after evaluation
-func (d *DomainCommitted) ComputeCommitment(trace bool) (rootHash []byte, branchNodeUpdates map[string]commitment.BranchData, err error) {
-	defer func(s time.Time) { d.comTook = time.Since(s) }(time.Now())
-
-	touchedKeys, hashedKeys, updates := d.TouchedKeyList()
-	d.comKeys = uint64(len(touchedKeys))
-
-	if len(touchedKeys) == 0 {
-		rootHash, err = d.patriciaTrie.RootHash()
-		return rootHash, nil, err
-	}
-
-	// data accessing functions should be set once before
-	d.patriciaTrie.Reset()
-	d.patriciaTrie.SetTrace(trace)
-
-	switch d.mode {
-	case CommitmentModeDirect:
-		rootHash, branchNodeUpdates, err = d.patriciaTrie.ReviewKeys(touchedKeys, hashedKeys)
-		if err != nil {
-			return nil, nil, err
-		}
-	case CommitmentModeUpdate:
-		rootHash, branchNodeUpdates, err = d.patriciaTrie.ProcessUpdates(touchedKeys, hashedKeys, updates)
-		if err != nil {
-			return nil, nil, err
-		}
-	case CommitmentModeDisabled:
-		return nil, nil, nil
-	default:
-		return nil, nil, fmt.Errorf("invalid commitment mode: %d", d.mode)
-	}
-	return rootHash, branchNodeUpdates, err
-}
-
-var keyCommitmentState = []byte("state")
-
-// SeekCommitment searches for last encoded state from DomainCommitted
-// and if state found, sets it up to current domain
-func (d *DomainCommitted) SeekCommitment(aggStep, sinceTx uint64) (blockNum, txNum uint64, err error) {
-	if d.patriciaTrie.Variant() != commitment.VariantHexPatriciaTrie {
-		return 0, 0, fmt.Errorf("state storing is only supported hex patricia trie")
-	}
-	// todo add support of bin state dumping
-
-	var (
-		latestState []byte
-		stepbuf     [2]byte
-		step               = uint16(sinceTx/aggStep) - 1
-		latestTxNum uint64 = sinceTx - 1
-	)
-
-	d.SetTxNum(latestTxNum)
-	ctx := d.BeginFilesRo()
-	defer ctx.Close()
-
-	for {
-		binary.BigEndian.PutUint16(stepbuf[:], step)
-
-		s, err := ctx.Get(keyCommitmentState, stepbuf[:], d.tx)
-		if err != nil {
-			return 0, 0, err
-		}
-		if len(s) < 8 {
-			break
-		}
-		v := binary.BigEndian.Uint64(s)
-		if v == latestTxNum && len(latestState) != 0 {
-			break
-		}
-		latestTxNum, latestState = v, s
-		lookupTxN := latestTxNum + aggStep
-		step = uint16(latestTxNum/aggStep) + 1
-		d.SetTxNum(lookupTxN)
-	}
-
-	var latest commitmentState
-	if err := latest.Decode(latestState); err != nil {
-		return 0, 0, nil
-	}
-
-	if hext, ok := d.patriciaTrie.(*commitment.HexPatriciaHashed); ok {
-		if err := hext.SetState(latest.trieState); err != nil {
-			return 0, 0, err
-		}
-	} else {
-		return 0, 0, fmt.Errorf("state storing is only supported hex patricia trie")
-	}
-
-	return latest.blockNum, latest.txNum, nil
-}
 
 type commitmentState struct {
 	txNum     uint64
@@ -314,7 +37,7 @@ type commitmentState struct {
 
 func (cs *commitmentState) Decode(buf []byte) error {
 	if len(buf) < 10 {
-		return fmt.Errorf("ivalid commitment state buffer size")
+		return fmt.Errorf("ivalid commitment state buffer size %d, expected at least 10b", len(buf))
 	}
 	pos := 0
 	cs.txNum = binary.BigEndian.Uint64(buf[pos : pos+8])
@@ -343,4 +66,284 @@ func (cs *commitmentState) Encode() ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+func decodeShorterKey(from []byte) uint64 {
+	of, n := binary.Uvarint(from)
+	if n == 0 {
+		panic(fmt.Sprintf("shorter key %x decode failed", from))
+	}
+	return of
+}
+
+func encodeShorterKey(buf []byte, offset uint64) []byte {
+	if len(buf) == 0 {
+		buf = make([]byte, 0, 8)
+	}
+	return binary.AppendUvarint(buf, offset)
+}
+
+// Finds shorter replacement for full key in given file item. filesItem -- result of merging of multiple files.
+// If item is nil, or shorter key was not found, or anything else goes wrong, nil key and false returned.
+func (dt *DomainRoTx) findShortenedKey(fullKey []byte, itemGetter ArchiveGetter, item *filesItem) (shortened []byte, found bool) {
+	if item == nil {
+		return nil, false
+	}
+	if !strings.Contains(item.decompressor.FileName(), dt.d.filenameBase) {
+		panic(fmt.Sprintf("findShortenedKeyEasier of %s called with merged file %s", dt.d.filenameBase, item.decompressor.FileName()))
+	}
+	if /*assert.Enable && */ itemGetter.FileName() != item.decompressor.FileName() {
+		panic(fmt.Sprintf("findShortenedKey of %s itemGetter (%s) is different to item.decompressor (%s)",
+			dt.d.filenameBase, itemGetter.FileName(), item.decompressor.FileName()))
+	}
+
+	//if idxList&withExistence != 0 {
+	//	hi, _ := dt.ht.iit.hashKey(fullKey)
+	//	if !item.existence.ContainsHash(hi) {
+	//		continue
+	//	}
+	//}
+
+	if dt.d.indexList&withHashMap != 0 {
+		reader := recsplit.NewIndexReader(item.index)
+		defer reader.Close()
+
+		offset, ok := reader.Lookup(fullKey)
+		if !ok {
+			return nil, false
+		}
+
+		itemGetter.Reset(offset)
+		if !itemGetter.HasNext() {
+			dt.d.logger.Warn("commitment branch key replacement seek failed",
+				"key", fmt.Sprintf("%x", fullKey), "idx", "hash", "file", item.decompressor.FileName())
+			return nil, false
+		}
+
+		k, _ := itemGetter.Next(nil)
+		if !bytes.Equal(fullKey, k) {
+			dt.d.logger.Warn("commitment branch key replacement seek invalid key",
+				"key", fmt.Sprintf("%x", fullKey), "idx", "hash", "file", item.decompressor.FileName())
+
+			return nil, false
+		}
+		return encodeShorterKey(nil, offset), true
+	}
+	if dt.d.indexList&withBTree != 0 {
+		cur, err := item.bindex.Seek(itemGetter, fullKey)
+		if err != nil {
+			dt.d.logger.Warn("commitment branch key replacement seek failed",
+				"key", fmt.Sprintf("%x", fullKey), "idx", "bt", "err", err, "file", item.decompressor.FileName())
+		}
+
+		if cur == nil || !bytes.Equal(cur.Key(), fullKey) {
+			return nil, false
+		}
+
+		offset := cur.offsetInFile()
+		if uint64(itemGetter.Size()) <= offset {
+			dt.d.logger.Warn("commitment branch key replacement seek gone too far",
+				"key", fmt.Sprintf("%x", fullKey), "offset", offset, "size", itemGetter.Size(), "file", item.decompressor.FileName())
+			return nil, false
+		}
+		return encodeShorterKey(nil, offset), true
+	}
+	return nil, false
+}
+
+func (dt *DomainRoTx) lookupFileByItsRange(txFrom uint64, txTo uint64) *filesItem {
+	var item *filesItem
+	for _, f := range dt.files {
+		if f.startTxNum == txFrom && f.endTxNum == txTo {
+			item = f.src
+			break
+		}
+	}
+	if item == nil {
+		dt.d.dirtyFiles.Walk(func(files []*filesItem) bool {
+			for _, f := range files {
+				if f.startTxNum == txFrom && f.endTxNum == txTo {
+					item = f
+					return false
+				}
+			}
+			return true
+		})
+	}
+
+	if item == nil {
+		fileStepsss := ""
+		for _, item := range dt.d.dirtyFiles.Items() {
+			fileStepsss += fmt.Sprintf("%d-%d;", item.startTxNum/dt.d.aggregationStep, item.endTxNum/dt.d.aggregationStep)
+		}
+		visibleFiles := ""
+		for _, f := range dt.files {
+			visibleFiles += fmt.Sprintf("%d-%d;", f.startTxNum/dt.d.aggregationStep, f.endTxNum/dt.d.aggregationStep)
+		}
+		dt.d.logger.Warn("lookupFileByItsRange: file not found",
+			"stepFrom", txFrom/dt.d.aggregationStep, "stepTo", txTo/dt.d.aggregationStep,
+			"files", fileStepsss, "_visibleFiles", visibleFiles,
+			"visibleFilesCount", len(dt.files), "filesCount", dt.d.dirtyFiles.Len())
+		return nil
+	}
+	return item
+}
+
+// searches in given list of files for a key or searches in domain files if list is empty
+func (dt *DomainRoTx) lookupByShortenedKey(shortKey []byte, getter ArchiveGetter) (fullKey []byte, found bool) {
+	if len(shortKey) < 1 {
+		return nil, false
+	}
+	offset := decodeShorterKey(shortKey)
+	defer func() {
+		if r := recover(); r != nil {
+			dt.d.logger.Crit("lookupByShortenedKey panics",
+				"err", r,
+				"offset", offset, "short", fmt.Sprintf("%x", shortKey),
+				"cleanFilesCount", len(dt.files), "dirtyFilesCount", dt.d.dirtyFiles.Len(),
+				"file", getter.FileName())
+		}
+	}()
+
+	//getter := NewArchiveGetter(item.decompressor.MakeGetter(), dt.d.compression)
+	getter.Reset(offset)
+	n := getter.HasNext()
+	if !n || uint64(getter.Size()) <= offset {
+		dt.d.logger.Warn("lookupByShortenedKey failed", "file", getter.FileName(), "short", fmt.Sprintf("%x", shortKey), "offset", offset, "hasNext", n, "size", getter.Size(), "offsetBigger", uint64(getter.Size()) <= offset)
+		return nil, false
+	}
+
+	fullKey, _ = getter.Next(nil)
+	return fullKey, true
+}
+
+// commitmentValTransform parses the value of the commitment record to extract references
+// to accounts and storage items, then looks them up in the new, merged files, and replaces them with
+// the updated references
+func (dt *DomainRoTx) commitmentValTransformDomain(rng MergeRange, accounts, storage *DomainRoTx, mergedAccount, mergedStorage *filesItem) (valueTransformer, error) {
+	hadToLookupStorage := mergedStorage == nil
+	if mergedStorage == nil {
+		mergedStorage = storage.lookupFileByItsRange(rng.from, rng.to)
+		if mergedStorage == nil {
+			// TODO may allow to merge, but storage keys will be stored as plainkeys
+			return nil, fmt.Errorf("merged v1-account.%d-%d.kv file not found", rng.from/dt.d.aggregationStep, rng.to/dt.d.aggregationStep)
+		}
+	}
+	hadToLookupAccount := mergedAccount == nil
+	if mergedAccount == nil {
+		mergedAccount = accounts.lookupFileByItsRange(rng.from, rng.to)
+		if mergedAccount == nil {
+			return nil, fmt.Errorf("merged v1-account.%d-%d.kv file not found", rng.from/dt.d.aggregationStep, rng.to/dt.d.aggregationStep)
+		}
+	}
+
+	dr := DomainRanges{values: rng}
+	accountFileMap := make(map[string]ArchiveGetter)
+	if accountList, _, _ := accounts.staticFilesInRange(dr); accountList != nil {
+		for _, f := range accountList {
+			accountFileMap[fmt.Sprintf("%d-%d", f.startTxNum, f.endTxNum)] = NewArchiveGetter(f.decompressor.MakeGetter(), accounts.d.compression)
+		}
+	}
+	storageFileMap := make(map[string]ArchiveGetter)
+	if storageList, _, _ := storage.staticFilesInRange(dr); storageList != nil {
+		for _, f := range storageList {
+			storageFileMap[fmt.Sprintf("%d-%d", f.startTxNum, f.endTxNum)] = NewArchiveGetter(f.decompressor.MakeGetter(), storage.d.compression)
+		}
+	}
+
+	ms := NewArchiveGetter(mergedStorage.decompressor.MakeGetter(), storage.d.compression)
+	ma := NewArchiveGetter(mergedAccount.decompressor.MakeGetter(), accounts.d.compression)
+	dt.d.logger.Debug("prepare commitmentValTransformDomain", "merge", rng.String("range", dt.d.aggregationStep), "Mstorage", hadToLookupStorage, "Maccount", hadToLookupAccount)
+
+	vt := func(valBuf []byte, keyFromTxNum, keyEndTxNum uint64) (transValBuf []byte, err error) {
+		if !dt.d.replaceKeysInValues || len(valBuf) == 0 || ((keyEndTxNum-keyFromTxNum)/dt.d.aggregationStep)%2 != 0 {
+			return valBuf, nil
+		}
+		sig, ok := storageFileMap[fmt.Sprintf("%d-%d", keyFromTxNum, keyEndTxNum)]
+		if !ok {
+			dirty := storage.lookupFileByItsRange(keyFromTxNum, keyEndTxNum)
+			if dirty == nil {
+				return nil, fmt.Errorf("dirty storage file not found %d-%d", keyFromTxNum/dt.d.aggregationStep, keyEndTxNum/dt.d.aggregationStep)
+			}
+			sig = NewArchiveGetter(dirty.decompressor.MakeGetter(), storage.d.compression)
+			storageFileMap[fmt.Sprintf("%d-%d", keyFromTxNum, keyEndTxNum)] = sig
+		}
+
+		aig, ok := accountFileMap[fmt.Sprintf("%d-%d", keyFromTxNum, keyEndTxNum)]
+		if !ok {
+			dirty := accounts.lookupFileByItsRange(keyFromTxNum, keyEndTxNum)
+			if dirty == nil {
+				return nil, fmt.Errorf("dirty account file not found %d-%d", keyFromTxNum/dt.d.aggregationStep, keyEndTxNum/dt.d.aggregationStep)
+			}
+			aig = NewArchiveGetter(dirty.decompressor.MakeGetter(), accounts.d.compression)
+			accountFileMap[fmt.Sprintf("%d-%d", keyFromTxNum, keyEndTxNum)] = aig
+		}
+
+		replacer := func(key []byte, isStorage bool) ([]byte, error) {
+			var found bool
+			auxBuf := dt.keyBuf[:0]
+			if isStorage {
+				if len(key) == length.Addr+length.Hash {
+					// Non-optimised key originating from a database record
+					auxBuf = append(auxBuf[:0], key...)
+				} else {
+					// Optimised key referencing a state file record (file number and offset within the file)
+					auxBuf, found = storage.lookupByShortenedKey(key, sig)
+					if !found {
+						dt.d.logger.Crit("valTransform: lost storage full key",
+							"shortened", fmt.Sprintf("%x", key),
+							"merging", rng.String("", dt.d.aggregationStep),
+							"valBuf", fmt.Sprintf("l=%d %x", len(valBuf), valBuf),
+						)
+						return nil, fmt.Errorf("lookup lost storage full key %x", key)
+					}
+				}
+
+				shortened, found := storage.findShortenedKey(auxBuf, ms, mergedStorage)
+				if !found {
+					if len(auxBuf) == length.Addr+length.Hash {
+						return auxBuf, nil // if plain key is lost, we can save original fullkey
+					}
+					// if shortened key lost, we can't continue
+					dt.d.logger.Crit("valTransform: replacement for full storage key was not found",
+						"step", fmt.Sprintf("%d-%d", keyFromTxNum/dt.d.aggregationStep, keyEndTxNum/dt.d.aggregationStep),
+						"shortened", fmt.Sprintf("%x", shortened), "toReplace", fmt.Sprintf("%x", auxBuf))
+
+					return nil, fmt.Errorf("replacement not found for storage %x", auxBuf)
+				}
+				return shortened, nil
+			}
+
+			if len(key) == length.Addr {
+				// Non-optimised key originating from a database record
+				auxBuf = append(auxBuf[:0], key...)
+			} else {
+				auxBuf, found = accounts.lookupByShortenedKey(key, aig)
+				if !found {
+					dt.d.logger.Crit("valTransform: lost account full key",
+						"shortened", fmt.Sprintf("%x", key),
+						"merging", rng.String("", dt.d.aggregationStep),
+						"valBuf", fmt.Sprintf("l=%d %x", len(valBuf), valBuf),
+					)
+					return nil, fmt.Errorf("lookup account full key: %x", key)
+				}
+			}
+
+			shortened, found := accounts.findShortenedKey(auxBuf, ma, mergedAccount)
+			if !found {
+				if len(auxBuf) == length.Addr {
+					return auxBuf, nil // if plain key is lost, we can save original fullkey
+				}
+				dt.d.logger.Crit("valTransform: replacement for full account key was not found",
+					"step", fmt.Sprintf("%d-%d", keyFromTxNum/dt.d.aggregationStep, keyEndTxNum/dt.d.aggregationStep),
+					"shortened", fmt.Sprintf("%x", shortened), "toReplace", fmt.Sprintf("%x", auxBuf))
+				return nil, fmt.Errorf("replacement not found for account  %x", auxBuf)
+			}
+			return shortened, nil
+		}
+
+		return commitment.BranchData(valBuf).ReplacePlainKeys(dt.comBuf[:0], replacer)
+	}
+
+	return vt, nil
 }

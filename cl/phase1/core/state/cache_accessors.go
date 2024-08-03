@@ -1,3 +1,19 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package state
 
 import (
@@ -6,15 +22,15 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/ledgerwatch/erigon/cl/cltypes/solid"
-	"github.com/ledgerwatch/erigon/cl/phase1/core/state/shuffling"
-	shuffling2 "github.com/ledgerwatch/erigon/cl/phase1/core/state/shuffling"
+	"github.com/erigontech/erigon/cl/cltypes/solid"
+	"github.com/erigontech/erigon/cl/phase1/core/state/shuffling"
+	shuffling2 "github.com/erigontech/erigon/cl/phase1/core/state/shuffling"
 
 	"github.com/Giulio2002/bls"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon/cl/clparams"
-	"github.com/ledgerwatch/erigon/cl/cltypes"
-	"github.com/ledgerwatch/erigon/cl/utils"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon/cl/clparams"
+	"github.com/erigontech/erigon/cl/cltypes"
+	"github.com/erigontech/erigon/cl/utils"
 )
 
 // these are view functions for the beacon state cache
@@ -340,7 +356,7 @@ func (b *CachingBeaconState) GetAttestingIndicies(
 // See: https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/beacon-chain.md#get_validator_churn_limit
 func (b *CachingBeaconState) GetValidatorChurnLimit() uint64 {
 	activeIndsCount := uint64(len(b.GetActiveValidatorsIndices(Epoch(b))))
-	return utils.Max64(
+	return max(
 		activeIndsCount/b.BeaconConfig().ChurnLimitQuotient,
 		b.BeaconConfig().MinPerEpochChurnLimit,
 	)
@@ -349,7 +365,7 @@ func (b *CachingBeaconState) GetValidatorChurnLimit() uint64 {
 // https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/beacon-chain.md#new-get_validator_activation_churn_limit
 func (b *CachingBeaconState) GetValidatorActivationChurnLimit() uint64 {
 	if b.Version() >= clparams.DenebVersion {
-		return utils.Min64(
+		return min(
 			b.BeaconConfig().MaxPerEpochActivationChurnLimit,
 			b.GetValidatorChurnLimit(),
 		)

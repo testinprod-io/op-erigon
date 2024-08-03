@@ -1,3 +1,19 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package stagedsync
 
 import (
@@ -6,18 +22,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math/big"
 	"strconv"
 	"time"
 
-	"github.com/ledgerwatch/log/v3"
+	"github.com/erigontech/erigon-lib/log/v3"
 
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/polygon/heimdall"
-	"github.com/ledgerwatch/erigon/rlp"
-	"github.com/ledgerwatch/erigon/turbo/services"
-	"github.com/ledgerwatch/erigon/turbo/snapshotsync/freezeblocks"
+	"github.com/erigontech/erigon-lib/kv"
+	"github.com/erigontech/erigon/accounts/abi"
+	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/polygon/bor/borcfg"
+	"github.com/erigontech/erigon/polygon/heimdall"
+	"github.com/erigontech/erigon/turbo/services"
+	"github.com/erigontech/erigon/turbo/snapshotsync/freezeblocks"
 )
 
 var (
@@ -112,7 +128,9 @@ func fetchAndWriteHeimdallSpan(
 		return 0, err
 	}
 
-	logger.Trace(fmt.Sprintf("[%s] Wrote span", logPrefix), "id", spanID)
+	if spanID%100 == 0 {
+		logger.Debug(fmt.Sprintf("[%s] Wrote span", logPrefix), "id", spanID)
+	}
 	return spanID, nil
 }
 
@@ -297,7 +315,7 @@ func fetchAndWriteHeimdallMilestonesIfNeeded(
 	}
 
 	for milestoneId := lastId + 1; milestoneId <= uint64(count) && (lastMilestone == nil || lastMilestone.EndBlock().Uint64() < toBlockNum); milestoneId++ {
-		if _, lastMilestone, err = fetchAndWriteHeimdallMilestone(ctx, milestoneId, uint64(count), tx, cfg.heimdallClient, logPrefix, logger); err != nil {
+		if _, lastMilestone, err = fetchAndWriteHeimdallMilestone(ctx, milestoneId, tx, cfg.heimdallClient, logPrefix, logger); err != nil {
 			if !errors.Is(err, heimdall.ErrNotInMilestoneList) {
 				return 0, err
 			}
@@ -316,7 +334,6 @@ var activeMilestones uint64 = 100
 func fetchAndWriteHeimdallMilestone(
 	ctx context.Context,
 	milestoneId uint64,
-	count uint64,
 	tx kv.RwTx,
 	heimdallClient heimdall.HeimdallClient,
 	logPrefix string,
@@ -354,19 +371,39 @@ func fetchRequiredHeimdallStateSyncEventsIfNeeded(
 	ctx context.Context,
 	header *types.Header,
 	tx kv.RwTx,
+<<<<<<< HEAD
 	cfg BorHeimdallCfg, //nolint:gocritic
+=======
+	borConfig *borcfg.BorConfig,
+	blockReader services.FullBlockReader,
+	heimdallClient heimdall.HeimdallClient,
+	chainID string,
+	stateReceiverABI abi.ABI,
+>>>>>>> v3.0.0-alpha1
 	logPrefix string,
 	logger log.Logger,
 	lastStateSyncEventID uint64,
 ) (uint64, int, time.Duration, error) {
 
 	headerNum := header.Number.Uint64()
-	if headerNum%cfg.borConfig.CalculateSprintLength(headerNum) != 0 || headerNum == 0 {
+	if headerNum%borConfig.CalculateSprintLength(headerNum) != 0 || headerNum == 0 {
 		// we fetch events only at beginning of each sprint
 		return lastStateSyncEventID, 0, 0, nil
 	}
 
-	return fetchAndWriteHeimdallStateSyncEvents(ctx, header, lastStateSyncEventID, tx, cfg, logPrefix, logger)
+	return fetchAndWriteHeimdallStateSyncEvents(
+		ctx,
+		header,
+		lastStateSyncEventID,
+		tx,
+		borConfig,
+		blockReader,
+		heimdallClient,
+		chainID,
+		stateReceiverABI,
+		logPrefix,
+		logger,
+	)
 }
 
 func fetchAndWriteHeimdallStateSyncEvents(
@@ -374,16 +411,19 @@ func fetchAndWriteHeimdallStateSyncEvents(
 	header *types.Header,
 	lastStateSyncEventID uint64,
 	tx kv.RwTx,
+<<<<<<< HEAD
 	cfg BorHeimdallCfg, //nolint:gocritic
+=======
+	config *borcfg.BorConfig,
+	blockReader services.FullBlockReader,
+	heimdallClient heimdall.HeimdallClient,
+	chainID string,
+	stateReceiverABI abi.ABI,
+>>>>>>> v3.0.0-alpha1
 	logPrefix string,
 	logger log.Logger,
 ) (uint64, int, time.Duration, error) {
 	fetchStart := time.Now()
-	config := cfg.borConfig
-	blockReader := cfg.blockReader
-	heimdallClient := cfg.heimdallClient
-	chainID := cfg.chainConfig.ChainID.String()
-	stateReceiverABI := cfg.stateReceiverABI
 	// Find out the latest eventId
 	var (
 		from uint64
@@ -464,16 +504,9 @@ func fetchAndWriteHeimdallStateSyncEvents(
 			)
 		}
 
-		eventRecordWithoutTime := eventRecord.BuildEventRecord()
-
-		recordBytes, err := rlp.EncodeToBytes(eventRecordWithoutTime)
+		data, err := eventRecord.Pack(stateReceiverABI)
 		if err != nil {
-			return lastStateSyncEventID, i, time.Since(fetchStart), err
-		}
-
-		data, err := stateReceiverABI.Pack("commitState", big.NewInt(eventRecord.Time.Unix()), recordBytes)
-		if err != nil {
-			logger.Error(fmt.Sprintf("[%s] Unable to pack tx for commitState", logPrefix), "err", err)
+			logger.Error(fmt.Sprintf("[%s] Unable to pack txn for commitState", logPrefix), "err", err)
 			return lastStateSyncEventID, i, time.Since(fetchStart), err
 		}
 

@@ -1,3 +1,19 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package jsonrpc
 
 import (
@@ -9,20 +25,21 @@ import (
 	"time"
 
 	"github.com/holiman/uint256"
-	"github.com/ledgerwatch/log/v3"
 
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
+	"github.com/erigontech/erigon-lib/log/v3"
 
-	"github.com/ledgerwatch/erigon/common/math"
-	"github.com/ledgerwatch/erigon/core"
-	"github.com/ledgerwatch/erigon/core/state"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/core/vm"
-	"github.com/ledgerwatch/erigon/core/vm/evmtypes"
-	"github.com/ledgerwatch/erigon/rpc"
-	"github.com/ledgerwatch/erigon/turbo/adapter/ethapi"
-	"github.com/ledgerwatch/erigon/turbo/rpchelper"
+	"github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/hexutil"
+
+	"github.com/erigontech/erigon/common/math"
+	"github.com/erigontech/erigon/core"
+	"github.com/erigontech/erigon/core/state"
+	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/core/vm"
+	"github.com/erigontech/erigon/core/vm/evmtypes"
+	"github.com/erigontech/erigon/rpc"
+	"github.com/erigontech/erigon/turbo/adapter/ethapi"
+	"github.com/erigontech/erigon/turbo/rpchelper"
 )
 
 type BlockOverrides struct {
@@ -56,7 +73,7 @@ func blockHeaderOverride(blockCtx *evmtypes.BlockContext, blockOverride BlockOve
 		blockCtx.Coinbase = *blockOverride.Coinbase
 	}
 	if blockOverride.Difficulty != nil {
-		blockCtx.Difficulty = big.NewInt(int64(*blockOverride.Difficulty))
+		blockCtx.Difficulty = new(big.Int).SetUint64(uint64(*blockOverride.Difficulty))
 	}
 	if blockOverride.Timestamp != nil {
 		blockCtx.Time = uint64(*blockOverride.Timestamp)
@@ -131,7 +148,7 @@ func (api *APIImpl) CallMany(ctx context.Context, bundles []Bundle, simulateCont
 
 	replayTransactions = block.Transactions()[:transactionIndex]
 
-	stateReader, err := rpchelper.CreateStateReader(ctx, tx, rpc.BlockNumberOrHashWithNumber(rpc.BlockNumber(blockNum-1)), 0, api.filters, api.stateCache, api.historyV3(tx), chainConfig.ChainName)
+	stateReader, err := rpchelper.CreateStateReader(ctx, tx, rpc.BlockNumberOrHashWithNumber(rpc.BlockNumber(blockNum-1)), 0, api.filters, api.stateCache, chainConfig.ChainName)
 
 	if err != nil {
 		return nil, err
@@ -156,8 +173,12 @@ func (api *APIImpl) CallMany(ctx context.Context, bundles []Bundle, simulateCont
 		return hash
 	}
 
+<<<<<<< HEAD
 	blockCtx = core.NewEVMBlockContext(header, getHash, api.engine(), nil /* author */)
 	blockCtx.L1CostFunc = opstack.NewL1CostFunc(chainConfig, st)
+=======
+	blockCtx = core.NewEVMBlockContext(header, getHash, api.engine(), nil /* author */, chainConfig)
+>>>>>>> v3.0.0-alpha1
 
 	// Get a new instance of the EVM
 	evm = vm.NewEVM(blockCtx, txCtx, st, chainConfig, vm.Config{Debug: false})
@@ -238,7 +259,7 @@ func (api *APIImpl) CallMany(ctx context.Context, bundles []Bundle, simulateCont
 			blockCtx.Coinbase = *bundle.BlockOverride.Coinbase
 		}
 		if bundle.BlockOverride.Difficulty != nil {
-			blockCtx.Difficulty = big.NewInt(int64(*bundle.BlockOverride.Difficulty))
+			blockCtx.Difficulty = new(big.Int).SetUint64(uint64(*bundle.BlockOverride.Difficulty))
 		}
 		if bundle.BlockOverride.Timestamp != nil {
 			blockCtx.Time = uint64(*bundle.BlockOverride.Timestamp)

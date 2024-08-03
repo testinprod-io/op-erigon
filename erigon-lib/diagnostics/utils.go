@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 package diagnostics
 
 import (
@@ -23,6 +24,43 @@ func ReadDataFromTable(db kv.RoDB, table string, key []byte) (data []byte) {
 		return []byte{}
 	}
 	return data
+=======
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
+package diagnostics
+
+import (
+	"encoding/json"
+	"fmt"
+	"reflect"
+
+	"github.com/erigontech/erigon-lib/kv"
+	"github.com/erigontech/erigon-lib/log/v3"
+)
+
+func ReadDataFromTable(tx kv.Tx, table string, key []byte) ([]byte, error) {
+	bytes, err := tx.GetOne(table, key)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes, nil
+>>>>>>> v3.0.0-alpha1
 }
 
 func PutDataToTable(table string, key []byte, info any) func(tx kv.RwTx) error {
@@ -89,3 +127,17 @@ func SecondsToHHMMString(seconds uint64) string {
 
 	return fmt.Sprintf("%dhrs:%dm", hours, minutes)
 }
+<<<<<<< HEAD
+=======
+
+func ParseData(data []byte, v interface{}) {
+	if len(data) == 0 {
+		return
+	}
+
+	err := json.Unmarshal(data, &v)
+	if err != nil {
+		log.Warn("[Diagnostics] Failed to parse data", "data", string(data), "type", reflect.TypeOf(v))
+	}
+}
+>>>>>>> v3.0.0-alpha1

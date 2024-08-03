@@ -1,12 +1,32 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package blockio
 
 import (
 	"context"
 	"encoding/binary"
+	"errors"
+	"time"
 
-	"github.com/ledgerwatch/erigon-lib/kv/backup"
-	"github.com/ledgerwatch/erigon-lib/kv/dbutils"
+	"github.com/erigontech/erigon-lib/kv/backup"
+	"github.com/erigontech/erigon-lib/kv/dbutils"
+	"github.com/erigontech/erigon-lib/metrics"
 
+<<<<<<< HEAD
 	"github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/hexutility"
 	"github.com/ledgerwatch/erigon-lib/etl"
@@ -15,6 +35,17 @@ import (
 	"github.com/ledgerwatch/erigon/core/rawdb"
 	"github.com/ledgerwatch/erigon/polygon/bor/bordb"
 	"github.com/ledgerwatch/log/v3"
+=======
+	"github.com/erigontech/erigon-lib/log/v3"
+
+	"github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/hexutility"
+	"github.com/erigontech/erigon-lib/etl"
+	"github.com/erigontech/erigon-lib/kv"
+	"github.com/erigontech/erigon-lib/kv/rawdbv3"
+	"github.com/erigontech/erigon/core/rawdb"
+	"github.com/erigontech/erigon/polygon/bor/bordb"
+>>>>>>> v3.0.0-alpha1
 )
 
 //Naming:
@@ -23,15 +54,10 @@ import (
 
 // BlockReader can read blocks from db and snapshots
 type BlockWriter struct {
-	historyV3 bool
-
-	// adding Auto-Increment BlockID
-	// allow store non-canonical Txs/Senders
-	txsV3 bool
 }
 
-func NewBlockWriter(historyV3 bool) *BlockWriter {
-	return &BlockWriter{historyV3: historyV3, txsV3: true}
+func NewBlockWriter() *BlockWriter {
+	return &BlockWriter{}
 }
 
 func (w *BlockWriter) FillHeaderNumberIndex(logPrefix string, tx kv.RwTx, tmpDir string, from, to uint64, ctx context.Context, logger log.Logger) error {
@@ -57,18 +83,19 @@ func (w *BlockWriter) FillHeaderNumberIndex(logPrefix string, tx kv.RwTx, tmpDir
 }
 
 func (w *BlockWriter) MakeBodiesCanonical(tx kv.RwTx, from uint64) error {
-	if w.historyV3 {
-		if err := rawdb.AppendCanonicalTxNums(tx, from); err != nil {
-			return err
+	if err := rawdb.AppendCanonicalTxNums(tx, from); err != nil {
+		var e1 rawdbv3.ErrTxNumsAppendWithGap
+		if ok := errors.As(err, &e1); ok {
+			// try again starting from latest available  block
+			return rawdb.AppendCanonicalTxNums(tx, e1.LastBlock()+1)
 		}
+		return err
 	}
 	return nil
 }
 func (w *BlockWriter) MakeBodiesNonCanonical(tx kv.RwTx, from uint64) error {
-	if w.historyV3 {
-		if err := rawdbv3.TxNums.Truncate(tx, from); err != nil {
-			return err
-		}
+	if err := rawdbv3.TxNums.Truncate(tx, from); err != nil {
+		return err
 	}
 	return nil
 }
@@ -88,7 +115,6 @@ func (w *BlockWriter) TruncateBodies(db kv.RoDB, tx kv.RwTx, from uint64) error 
 	}
 
 	if err := backup.ClearTables(context.Background(), db, tx,
-		kv.NonCanonicalTxs,
 		kv.EthTx,
 		kv.MaxTxNum,
 	); err != nil {
@@ -97,25 +123,32 @@ func (w *BlockWriter) TruncateBodies(db kv.RoDB, tx kv.RwTx, from uint64) error 
 	if err := rawdb.ResetSequence(tx, kv.EthTx, 0); err != nil {
 		return err
 	}
-
-	if err := rawdb.ResetSequence(tx, kv.NonCanonicalTxs, 0); err != nil {
-		return err
-	}
 	return nil
 }
 
+var (
+	mxPruneTookBlocks = metrics.GetOrCreateSummary(`prune_seconds{type="blocks"}`)
+	mxPruneTookBor    = metrics.GetOrCreateSummary(`prune_seconds{type="bor"}`)
+)
+
 // PruneBlocks - [1, to) old blocks after moving it to snapshots.
 // keeps genesis in db
-// doesn't change sequences of kv.EthTx and kv.NonCanonicalTxs
+// doesn't change sequences of kv.EthTx
 // doesn't delete Receipts, Senders, Canonical markers, TotalDifficulty
-func (w *BlockWriter) PruneBlocks(ctx context.Context, tx kv.RwTx, blockTo uint64, blocksDeleteLimit int) error {
+func (w *BlockWriter) PruneBlocks(ctx context.Context, tx kv.RwTx, blockTo uint64, blocksDeleteLimit int) (deleted int, err error) {
+	defer mxPruneTookBlocks.ObserveDuration(time.Now())
 	return rawdb.PruneBlocks(tx, blockTo, blocksDeleteLimit)
 }
 
 // PruneBorBlocks - [1, to) old blocks after moving it to snapshots.
 // keeps genesis in db
-// doesn't change sequences of kv.EthTx and kv.NonCanonicalTxs
+// doesn't change sequences of kv.EthTx
 // doesn't delete Receipts, Senders, Canonical markers, TotalDifficulty
+<<<<<<< HEAD
 func (w *BlockWriter) PruneBorBlocks(ctx context.Context, tx kv.RwTx, blockTo uint64, blocksDeleteLimit int, SpanIdAt func(number uint64) uint64) error {
+=======
+func (w *BlockWriter) PruneBorBlocks(ctx context.Context, tx kv.RwTx, blockTo uint64, blocksDeleteLimit int, SpanIdAt func(number uint64) uint64) (deleted int, err error) {
+	defer mxPruneTookBor.ObserveDuration(time.Now())
+>>>>>>> v3.0.0-alpha1
 	return bordb.PruneBorBlocks(tx, blockTo, blocksDeleteLimit, SpanIdAt)
 }

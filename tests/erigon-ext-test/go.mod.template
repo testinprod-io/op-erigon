@@ -2,8 +2,14 @@ module example.com/erigon-ext-test
 
 go 1.20
 
+<<<<<<< HEAD
 // TODO: Change module path to testinprod-io/op-erigon
 replace github.com/ledgerwatch/erigon => github.com/testinprod-io/op-erigon $COMMIT_SHA
 replace github.com/ledgerwatch/erigon-lib => github.com/testinprod-io/op-erigon/erigon-lib $COMMIT_SHA
+=======
+require github.com/erigontech/erigon $COMMIT_SHA
+
+replace github.com/erigontech/erigon-lib => github.com/erigontech/erigon/erigon-lib $COMMIT_SHA
+>>>>>>> v3.0.0-alpha1
 
 require github.com/ethereum/go-ethereum v1.13.3

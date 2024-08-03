@@ -1,3 +1,22 @@
+<<<<<<< HEAD
+=======
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
+>>>>>>> v3.0.0-alpha1
 package ui
 
 import (
@@ -8,14 +27,25 @@ import (
 	"sync"
 	"time"
 
+<<<<<<< HEAD
 	"github.com/ledgerwatch/erigonwatch"
 
+=======
+>>>>>>> v3.0.0-alpha1
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/jedib0t/go-pretty/v6/text"
+<<<<<<< HEAD
 	"github.com/ledgerwatch/erigon/cmd/diag/flags"
 	"github.com/urfave/cli/v2"
+=======
+	"github.com/urfave/cli/v2"
+
+	"github.com/erigontech/erigonwatch"
+
+	"github.com/erigontech/erigon/cmd/diag/flags"
+>>>>>>> v3.0.0-alpha1
 )
 
 var (

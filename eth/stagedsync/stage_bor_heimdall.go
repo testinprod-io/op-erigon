@@ -1,3 +1,19 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package stagedsync
 
 import (
@@ -12,9 +28,9 @@ import (
 	"time"
 
 	lru "github.com/hashicorp/golang-lru/arc/v2"
-	"github.com/ledgerwatch/log/v3"
 	"golang.org/x/sync/errgroup"
 
+<<<<<<< HEAD
 	"github.com/ledgerwatch/erigon-lib/chain"
 	"github.com/ledgerwatch/erigon-lib/chain/networkname"
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
@@ -35,10 +51,34 @@ import (
 	"github.com/ledgerwatch/erigon/polygon/heimdall"
 	"github.com/ledgerwatch/erigon/turbo/services"
 	"github.com/ledgerwatch/erigon/turbo/stages/headerdownload"
+=======
+	"github.com/erigontech/erigon-lib/log/v3"
+
+	"github.com/erigontech/erigon-lib/chain"
+	"github.com/erigontech/erigon-lib/chain/networkname"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/kv"
+	"github.com/erigontech/erigon/accounts/abi"
+	"github.com/erigontech/erigon/common/math"
+	"github.com/erigontech/erigon/consensus"
+	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/dataflow"
+	"github.com/erigontech/erigon/eth/ethconfig/estimate"
+	"github.com/erigontech/erigon/eth/stagedsync/stages"
+	"github.com/erigontech/erigon/polygon/bor"
+	"github.com/erigontech/erigon/polygon/bor/borcfg"
+	"github.com/erigontech/erigon/polygon/bor/finality"
+	"github.com/erigontech/erigon/polygon/bor/finality/whitelist"
+	borsnaptype "github.com/erigontech/erigon/polygon/bor/snaptype"
+	"github.com/erigontech/erigon/polygon/bor/valset"
+	"github.com/erigontech/erigon/polygon/heimdall"
+	"github.com/erigontech/erigon/polygon/sync"
+	"github.com/erigontech/erigon/turbo/services"
+	"github.com/erigontech/erigon/turbo/stages/headerdownload"
+>>>>>>> v3.0.0-alpha1
 )
 
 const (
-	InMemorySignatures      = 4096 // Number of recent block signatures to keep in memory
 	inmemorySnapshots       = 128  // Number of recent vote snapshots to keep in memory
 	snapshotPersistInterval = 1024 // Number of blocks after which to persist the vote snapshot to the database
 )
@@ -150,7 +190,9 @@ func BorHeimdallForward(
 				PeerID:  cfg.hd.SourcePeerId(hash),
 			}})
 			dataflow.HeaderDownloadStates.AddChange(headNumber, dataflow.HeaderInvalidated)
-			s.state.UnwindTo(unwindPoint, ForkReset(hash))
+			if err := s.state.UnwindTo(unwindPoint, ForkReset(hash), tx); err != nil {
+				return err
+			}
 			var reset uint64 = 0
 			finality.BorMilestoneRewind.Store(&reset)
 			return fmt.Errorf("verification failed for header %d: %x", headNumber, header.Hash())
@@ -171,7 +213,7 @@ func BorHeimdallForward(
 		return err
 	}
 
-	signatures, err := lru.NewARC[libcommon.Hash, libcommon.Address](InMemorySignatures)
+	signatures, err := lru.NewARC[libcommon.Hash, libcommon.Address](sync.InMemorySignatures)
 	if err != nil {
 		return err
 	}
@@ -268,7 +310,9 @@ func BorHeimdallForward(
 			}})
 
 			dataflow.HeaderDownloadStates.AddChange(blockNum, dataflow.HeaderInvalidated)
-			s.state.UnwindTo(blockNum-1, ForkReset(header.Hash()))
+			if err := s.state.UnwindTo(blockNum-1, ForkReset(header.Hash()), tx); err != nil {
+				return err
+			}
 			return fmt.Errorf("verification failed for header %d: %x", blockNum, header.Hash())
 		}
 
@@ -289,7 +333,7 @@ func BorHeimdallForward(
 			// if the last time we persisted snapshots is too far away re-run the forward
 			// initialization process - this is to avoid memory growth due to recusrion
 			// in persistValidatorSets
-			if snap == nil && blockNum-lastPersistedBlockNum > (snapshotPersistInterval*5) {
+			if snap == nil && (blockNum == 1 || blockNum-lastPersistedBlockNum > (snapshotPersistInterval*5)) {
 				snap, err = initValidatorSets(
 					ctx,
 					tx,
@@ -315,6 +359,7 @@ func BorHeimdallForward(
 			if err = persistValidatorSets(
 				snap,
 				u,
+				tx,
 				cfg.borConfig,
 				chain,
 				blockNum,
@@ -359,7 +404,11 @@ func BorHeimdallForward(
 					ctx,
 					header,
 					tx,
-					cfg,
+					cfg.borConfig,
+					cfg.blockReader,
+					cfg.heimdallClient,
+					cfg.chainConfig.ChainID.String(),
+					cfg.stateReceiverABI,
 					s.LogPrefix(),
 					logger,
 					lastStateSyncEventID,
@@ -418,7 +467,7 @@ func BorHeimdallForward(
 	}
 
 	logger.Info(
-		fmt.Sprintf("[%s] Sync events processed", s.LogPrefix()),
+		fmt.Sprintf("[%s] Sync events", s.LogPrefix()),
 		"progress", blockNum-1,
 		"lastSpanID", lastSpanID,
 		"lastSpanID", lastSpanID,
@@ -463,6 +512,7 @@ func loadSnapshot(
 func persistValidatorSets(
 	snap *bor.Snapshot,
 	u Unwinder,
+	chainDBTx kv.Tx,
 	config *borcfg.BorConfig,
 	chain consensus.ChainHeaderReader,
 	blockNum uint64,
@@ -535,10 +585,7 @@ func persistValidatorSets(
 		case <-logEvery.C:
 			if dbsize == 0 {
 				_ = snapDb.View(context.Background(), func(tx kv.Tx) error {
-					if cursor, err := tx.Cursor(kv.BorSeparate); err == nil {
-						dbsize, _ = cursor.Count()
-						cursor.Close()
-					}
+					dbsize, _ = tx.Count(kv.BorSeparate)
 					return nil
 				})
 			}
@@ -573,7 +620,9 @@ func persistValidatorSets(
 						break
 					}
 				}
-				u.UnwindTo(snap.Number, BadBlock(badHash, err))
+				if err := u.UnwindTo(snap.Number, BadBlock(badHash, err), chainDBTx); err != nil {
+					return err
+				}
 			} else {
 				return fmt.Errorf(
 					"snap.Apply %d, headers %d-%d: %w",
@@ -817,7 +866,13 @@ func checkBorHeaderExtraData(chr consensus.ChainHeaderReader, header *types.Head
 	return nil
 }
 
+<<<<<<< HEAD
 func BorHeimdallUnwind(u *UnwindState, ctx context.Context, _ *StageState, tx kv.RwTx, cfg BorHeimdallCfg) (err error) { //nolint:gocritic
+=======
+func BorHeimdallUnwind(u *UnwindState, ctx context.Context, _ *StageState, tx kv.RwTx, cfg BorHeimdallCfg) (err error) {
+	u.UnwindPoint = max(u.UnwindPoint, cfg.blockReader.FrozenBorBlocks()) // protect from unwind behind files
+
+>>>>>>> v3.0.0-alpha1
 	if cfg.borConfig == nil {
 		return
 	}

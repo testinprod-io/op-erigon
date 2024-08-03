@@ -1,18 +1,21 @@
 // Copyright 2015 The go-ethereum Authors
-// This file is part of the go-ethereum library.
+// (original work)
+// Copyright 2024 The Erigon Authors
+// (modifications)
+// This file is part of Erigon.
 //
-// The go-ethereum library is free software: you can redistribute it and/or modify
+// Erigon is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The go-ethereum library is distributed in the hope that it will be useful,
+// Erigon is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
 
 package gasprice
 
@@ -23,14 +26,23 @@ import (
 	"math/big"
 
 	"github.com/holiman/uint256"
+<<<<<<< HEAD
 	"github.com/ledgerwatch/erigon-lib/chain"
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon/eth/gasprice/gaspricecfg"
 	"github.com/ledgerwatch/erigon/params"
 	"github.com/ledgerwatch/log/v3"
+=======
+>>>>>>> v3.0.0-alpha1
 
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/rpc"
+	"github.com/erigontech/erigon-lib/chain"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/log/v3"
+	"github.com/erigontech/erigon/eth/gasprice/gaspricecfg"
+	"github.com/erigontech/erigon/params"
+
+	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/rpc"
 )
 
 const sampleNumber = 3 // Number of transactions sampled in a block
@@ -64,12 +76,16 @@ type Oracle struct {
 	percentile                        int
 	maxHeaderHistory, maxBlockHistory int
 
+<<<<<<< HEAD
 	minSuggestedPriorityFee *big.Int // for Optimism fee suggestion
+=======
+	log log.Logger
+>>>>>>> v3.0.0-alpha1
 }
 
 // NewOracle returns a new gasprice oracle which can recommend suitable
 // gasprice for newly created transaction.
-func NewOracle(backend OracleBackend, params gaspricecfg.Config, cache Cache) *Oracle {
+func NewOracle(backend OracleBackend, params gaspricecfg.Config, cache Cache, log log.Logger) *Oracle {
 	blocks := params.Blocks
 	if blocks < 1 {
 		blocks = 1
@@ -95,9 +111,15 @@ func NewOracle(backend OracleBackend, params gaspricecfg.Config, cache Cache) *O
 		log.Warn("Sanitizing invalid gasprice oracle ignore price", "provided", params.IgnorePrice, "updated", ignorePrice)
 	}
 
+<<<<<<< HEAD
 	setBorDefaultGpoIgnorePrice(backend.ChainConfig(), params)
 
 	r := &Oracle{
+=======
+	setBorDefaultGpoIgnorePrice(backend.ChainConfig(), params, log)
+
+	return &Oracle{
+>>>>>>> v3.0.0-alpha1
 		backend:          backend,
 		lastPrice:        params.Default,
 		maxPrice:         maxPrice,
@@ -107,6 +129,7 @@ func NewOracle(backend OracleBackend, params gaspricecfg.Config, cache Cache) *O
 		cache:            cache,
 		maxHeaderHistory: params.MaxHeaderHistory,
 		maxBlockHistory:  params.MaxBlockHistory,
+		log:              log,
 	}
 	if backend.ChainConfig().IsOptimism() {
 		r.minSuggestedPriorityFee = params.MinSuggestedPriorityFee
@@ -122,7 +145,7 @@ func NewOracle(backend OracleBackend, params gaspricecfg.Config, cache Cache) *O
 
 // SuggestTipCap returns a TipCap so that newly created transaction can
 // have a very high chance to be included in the following blocks.
-// NODE: if caller wants legacy tx SuggestedPrice, we need to add
+// NODE: if caller wants legacy txn SuggestedPrice, we need to add
 // baseFee to the returned bigInt
 func (oracle *Oracle) SuggestTipCap(ctx context.Context) (*big.Int, error) {
 	latestHead, latestPrice := oracle.cache.GetLatest()
@@ -183,13 +206,15 @@ func (oracle *Oracle) SuggestTipCap(ctx context.Context) (*big.Int, error) {
 type transactionsByGasPrice struct {
 	txs     []types.Transaction
 	baseFee *uint256.Int
+	log     log.Logger
 }
 
 func newTransactionsByGasPrice(txs []types.Transaction,
-	baseFee *uint256.Int) transactionsByGasPrice {
+	baseFee *uint256.Int, log log.Logger) transactionsByGasPrice {
 	return transactionsByGasPrice{
 		txs:     txs,
 		baseFee: baseFee,
+		log:     log,
 	}
 }
 
@@ -207,7 +232,7 @@ func (t *transactionsByGasPrice) Push(x interface{}) {
 	// not just its contents.
 	l, ok := x.(types.Transaction)
 	if !ok {
-		log.Error("Type assertion failure", "err", "cannot get types.Transaction from interface")
+		t.log.Error("Type assertion failure", "err", "cannot get types.Transaction from interface")
 	}
 	t.txs = append(t.txs, l)
 }
@@ -231,12 +256,12 @@ func (oracle *Oracle) getBlockPrices(ctx context.Context, blockNum uint64, limit
 	ignoreUnder, overflow := uint256.FromBig(ingoreUnderBig)
 	if overflow {
 		err := errors.New("overflow in getBlockPrices, gasprice.go: ignoreUnder too large")
-		log.Error("gasprice.go: getBlockPrices", "err", err)
+		oracle.log.Error("getBlockPrices", "err", err)
 		return err
 	}
 	block, err := oracle.backend.BlockByNumber(ctx, rpc.BlockNumber(blockNum))
 	if err != nil {
-		log.Error("gasprice.go: getBlockPrices", "err", err)
+		oracle.log.Error("getBlockPrices", "err", err)
 		return err
 	}
 
@@ -254,11 +279,11 @@ func (oracle *Oracle) getBlockPrices(ctx context.Context, blockNum uint64, limit
 		baseFee, overflow = uint256.FromBig(block.BaseFee())
 		if overflow {
 			err := errors.New("overflow in getBlockPrices, gasprice.go: baseFee > 2^256-1")
-			log.Error("gasprice.go: getBlockPrices", "err", err)
+			oracle.log.Error("getBlockPrices", "err", err)
 			return err
 		}
 	}
-	txs := newTransactionsByGasPrice(plainTxs, baseFee)
+	txs := newTransactionsByGasPrice(plainTxs, baseFee, oracle.log)
 	heap.Init(&txs)
 
 	count := 0
@@ -301,6 +326,7 @@ func (s *sortingHeap) Pop() interface{} {
 	return x
 }
 
+<<<<<<< HEAD
 type bigIntArray []*big.Int
 
 func (s bigIntArray) Len() int           { return len(s) }
@@ -310,6 +336,11 @@ func (s bigIntArray) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 // setBorDefaultGpoIgnorePrice enforces gpo IgnorePrice to be equal to BorDefaultGpoIgnorePrice (25gwei by default)
 // only for polygon amoy network.
 func setBorDefaultGpoIgnorePrice(chainConfig *chain.Config, gasPriceConfig gaspricecfg.Config) {
+=======
+// setBorDefaultGpoIgnorePrice enforces gpo IgnorePrice to be equal to BorDefaultGpoIgnorePrice (25gwei by default)
+// only for polygon amoy network.
+func setBorDefaultGpoIgnorePrice(chainConfig *chain.Config, gasPriceConfig gaspricecfg.Config, log log.Logger) {
+>>>>>>> v3.0.0-alpha1
 	if chainConfig.Bor != nil && chainConfig.ChainID.Cmp(params.AmoyChainConfig.ChainID) == 0 && gasPriceConfig.IgnorePrice != gaspricecfg.BorDefaultGpoIgnorePrice {
 		log.Warn("Sanitizing invalid bor gasprice oracle ignore price", "provided", gasPriceConfig.IgnorePrice, "updated", gaspricecfg.BorDefaultGpoIgnorePrice)
 		gasPriceConfig.IgnorePrice = gaspricecfg.BorDefaultGpoIgnorePrice

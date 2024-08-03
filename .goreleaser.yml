@@ -67,7 +67,12 @@ snapshot:
 
 dockers:
   - image_templates:
+<<<<<<< HEAD
       - testinprod/{{ .ProjectName }}:{{ .Version }}-amd64
+=======
+      - thorax/{{ .ProjectName }}:{{ .Version }}-amd64
+      - ghcr.io/erigontech/{{ .ProjectName }}:{{ .Version }}-amd64
+>>>>>>> v3.0.0-alpha1
     dockerfile: Dockerfile.release
     use: buildx
     skip_push: true
@@ -78,7 +83,12 @@ dockers:
       - --platform=linux/amd64
 
   - image_templates:
+<<<<<<< HEAD
       - testinprod/{{ .ProjectName }}:{{ .Version }}-arm64
+=======
+      - thorax/{{ .ProjectName }}:{{ .Version }}-arm64
+      - ghcr.io/erigontech/{{ .ProjectName }}:{{ .Version }}-arm64
+>>>>>>> v3.0.0-alpha1
     dockerfile: Dockerfile.release
     skip_push: true
     use: buildx
@@ -95,11 +105,31 @@ docker_manifests:
       - testinprod/{{ .ProjectName }}:{{ .Version }}-amd64
       - testinprod/{{ .ProjectName }}:{{ .Version }}-arm64
 
+<<<<<<< HEAD
   - name_template: testinprod/{{ .ProjectName }}:latest
     skip_push: true
     image_templates:
       - testinprod/{{ .ProjectName }}:{{ .Version }}-amd64
       - testinprod/{{ .ProjectName }}:{{ .Version }}-arm64
+=======
+  - name_template: ghcr.io/erigontech/{{ .ProjectName }}:{{ .Version }}
+    skip_push: true
+    image_templates:
+      - ghcr.io/erigontech/{{ .ProjectName }}:{{ .Version }}-amd64
+      - ghcr.io/erigontech/{{ .ProjectName }}:{{ .Version }}-arm64
+
+  - name_template: thorax/{{ .ProjectName }}:latest
+    skip_push: true
+    image_templates:
+      - thorax/{{ .ProjectName }}:{{ .Version }}-amd64
+      - thorax/{{ .ProjectName }}:{{ .Version }}-arm64
+
+  - name_template: ghcr.io/erigontech/{{ .ProjectName }}:latest
+    skip_push: true
+    image_templates:
+      - ghcr.io/erigontech/{{ .ProjectName }}:{{ .Version }}-amd64
+      - ghcr.io/erigontech/{{ .ProjectName }}:{{ .Version }}-arm64
+>>>>>>> v3.0.0-alpha1
 
 announce:
   slack:

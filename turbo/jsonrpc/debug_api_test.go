@@ -1,3 +1,19 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package jsonrpc
 
 import (
@@ -8,6 +24,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	jsoniter "github.com/json-iterator/go"
+<<<<<<< HEAD
 	"github.com/ledgerwatch/log/v3"
 	"github.com/stretchr/testify/require"
 
@@ -22,6 +39,24 @@ import (
 	"github.com/ledgerwatch/erigon/rpc"
 	"github.com/ledgerwatch/erigon/rpc/rpccfg"
 	"github.com/ledgerwatch/erigon/turbo/adapter/ethapi"
+=======
+	"github.com/stretchr/testify/require"
+
+	"github.com/erigontech/erigon-lib/log/v3"
+
+	"github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/kv"
+	"github.com/erigontech/erigon-lib/kv/kvcache"
+	"github.com/erigontech/erigon-lib/kv/order"
+	"github.com/erigontech/erigon-lib/kv/rawdbv3"
+	"github.com/erigontech/erigon-lib/kv/stream"
+	"github.com/erigontech/erigon/cmd/rpcdaemon/rpcdaemontest"
+	"github.com/erigontech/erigon/core/types"
+	tracersConfig "github.com/erigontech/erigon/eth/tracers/config"
+	"github.com/erigontech/erigon/rpc"
+	"github.com/erigontech/erigon/rpc/rpccfg"
+	"github.com/erigontech/erigon/turbo/adapter/ethapi"
+>>>>>>> v3.0.0-alpha1
 )
 
 var dumper = spew.ConfigState{Indent: "    "}
@@ -50,9 +85,12 @@ var debugTraceTransactionNoRefundTests = []struct {
 
 func TestTraceBlockByNumber(t *testing.T) {
 	m, _, _ := rpcdaemontest.CreateTestSentry(t)
-	agg := m.HistoryV3Components()
 	stateCache := kvcache.New(kvcache.DefaultCoherentConfig)
+<<<<<<< HEAD
 	baseApi := NewBaseApi(nil, stateCache, m.BlockReader, agg, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs, nil, nil)
+=======
+	baseApi := NewBaseApi(nil, stateCache, m.BlockReader, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs)
+>>>>>>> v3.0.0-alpha1
 	ethApi := NewEthAPI(baseApi, m.DB, nil, nil, nil, 5000000, 1e18, 100_000, false, 100_000, 128, log.New())
 	api := NewPrivateDebugAPI(baseApi, m.DB, 0)
 	for _, tt := range debugTraceTransactionTests {
@@ -66,7 +104,7 @@ func TestTraceBlockByNumber(t *testing.T) {
 		if err != nil {
 			t.Errorf("traceBlock %s: %v", tt.txHash, err)
 		}
-		err = api.TraceBlockByNumber(m.Ctx, rpc.BlockNumber(tx.BlockNumber.ToInt().Uint64()), &tracers.TraceConfig{}, stream)
+		err = api.TraceBlockByNumber(m.Ctx, rpc.BlockNumber(tx.BlockNumber.ToInt().Uint64()), &tracersConfig.TraceConfig{}, stream)
 		if err != nil {
 			t.Errorf("traceBlock %s: %v", tt.txHash, err)
 		}
@@ -83,7 +121,7 @@ func TestTraceBlockByNumber(t *testing.T) {
 	}
 	var buf bytes.Buffer
 	stream := jsoniter.NewStream(jsoniter.ConfigDefault, &buf, 4096)
-	err := api.TraceBlockByNumber(m.Ctx, rpc.LatestBlockNumber, &tracers.TraceConfig{}, stream)
+	err := api.TraceBlockByNumber(m.Ctx, rpc.LatestBlockNumber, &tracersConfig.TraceConfig{}, stream)
 	if err != nil {
 		t.Errorf("traceBlock %v: %v", rpc.LatestBlockNumber, err)
 	}
@@ -111,7 +149,7 @@ func TestTraceBlockByHash(t *testing.T) {
 		if err != nil {
 			t.Errorf("traceBlock %s: %v", tt.txHash, err)
 		}
-		err = api.TraceBlockByHash(m.Ctx, *tx.BlockHash, &tracers.TraceConfig{}, stream)
+		err = api.TraceBlockByHash(m.Ctx, *tx.BlockHash, &tracersConfig.TraceConfig{}, stream)
 		if err != nil {
 			t.Errorf("traceBlock %s: %v", tt.txHash, err)
 		}
@@ -134,7 +172,7 @@ func TestTraceTransaction(t *testing.T) {
 	for _, tt := range debugTraceTransactionTests {
 		var buf bytes.Buffer
 		stream := jsoniter.NewStream(jsoniter.ConfigDefault, &buf, 4096)
-		err := api.TraceTransaction(m.Ctx, common.HexToHash(tt.txHash), &tracers.TraceConfig{}, stream)
+		err := api.TraceTransaction(m.Ctx, common.HexToHash(tt.txHash), &tracersConfig.TraceConfig{}, stream)
 		if err != nil {
 			t.Errorf("traceTransaction %s: %v", tt.txHash, err)
 		}
@@ -164,7 +202,7 @@ func TestTraceTransactionNoRefund(t *testing.T) {
 		var buf bytes.Buffer
 		stream := jsoniter.NewStream(jsoniter.ConfigDefault, &buf, 4096)
 		var norefunds = true
-		err := api.TraceTransaction(m.Ctx, common.HexToHash(tt.txHash), &tracers.TraceConfig{NoRefunds: &norefunds}, stream)
+		err := api.TraceTransaction(m.Ctx, common.HexToHash(tt.txHash), &tracersConfig.TraceConfig{NoRefunds: &norefunds}, stream)
 		if err != nil {
 			t.Errorf("traceTransaction %s: %v", tt.txHash, err)
 		}
@@ -393,7 +431,7 @@ func TestMapTxNum2BlockNum(t *testing.T) {
 	}
 
 	addr := common.HexToAddress("0x537e697c7ab75a26f9ecf0ce810e3154dfcaaf44")
-	checkIter := func(t *testing.T, expectTxNums iter.U64, txNumsIter *MapTxNum2BlockNumIter) {
+	checkIter := func(t *testing.T, expectTxNums stream.U64, txNumsIter *rawdbv3.MapTxNum2BlockNumIter) {
 		for expectTxNums.HasNext() {
 			require.True(t, txNumsIter.HasNext())
 			expectTxNum, _ := expectTxNums.Next()
@@ -409,7 +447,7 @@ func TestMapTxNum2BlockNum(t *testing.T) {
 
 		txNums, err := tx.IndexRange(kv.LogAddrIdx, addr[:], 1024, -1, order.Desc, kv.Unlim)
 		require.NoError(t, err)
-		txNumsIter := MapDescendTxNum2BlockNum(tx, txNums)
+		txNumsIter := rawdbv3.TxNums2BlockNums(tx, txNums, order.Desc)
 		expectTxNums, err := tx.IndexRange(kv.LogAddrIdx, addr[:], 1024, -1, order.Desc, kv.Unlim)
 		require.NoError(t, err)
 		checkIter(t, expectTxNums, txNumsIter)
@@ -422,7 +460,7 @@ func TestMapTxNum2BlockNum(t *testing.T) {
 
 		txNums, err := tx.IndexRange(kv.LogAddrIdx, addr[:], 0, 1024, order.Asc, kv.Unlim)
 		require.NoError(t, err)
-		txNumsIter := MapDescendTxNum2BlockNum(tx, txNums)
+		txNumsIter := rawdbv3.TxNums2BlockNums(tx, txNums, order.Desc)
 		expectTxNums, err := tx.IndexRange(kv.LogAddrIdx, addr[:], 0, 1024, order.Asc, kv.Unlim)
 		require.NoError(t, err)
 		checkIter(t, expectTxNums, txNumsIter)
@@ -435,7 +473,7 @@ func TestMapTxNum2BlockNum(t *testing.T) {
 
 		txNums, err := tx.IndexRange(kv.LogAddrIdx, addr[:], 0, 1024, order.Asc, 2)
 		require.NoError(t, err)
-		txNumsIter := MapDescendTxNum2BlockNum(tx, txNums)
+		txNumsIter := rawdbv3.TxNums2BlockNums(tx, txNums, order.Desc)
 		expectTxNums, err := tx.IndexRange(kv.LogAddrIdx, addr[:], 0, 1024, order.Asc, 2)
 		require.NoError(t, err)
 		checkIter(t, expectTxNums, txNumsIter)

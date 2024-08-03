@@ -1,11 +1,36 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package diagnostics
 
 import (
 	"context"
 	"encoding/json"
+<<<<<<< HEAD
 
 	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/log/v3"
+=======
+	"fmt"
+	"io"
+
+	"github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/kv"
+	"github.com/erigontech/erigon-lib/log/v3"
+>>>>>>> v3.0.0-alpha1
 )
 
 var (
@@ -157,6 +182,15 @@ func (d *DiagnosticClient) runSubStageListener(rootCtx context.Context) {
 	}()
 }
 
+<<<<<<< HEAD
+=======
+func (d *DiagnosticClient) GetCurrentSyncIdxs() CurrentSyncStagesIdxs {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return d.getCurrentSyncIdxs()
+}
+
+>>>>>>> v3.0.0-alpha1
 func (d *DiagnosticClient) getCurrentSyncIdxs() CurrentSyncStagesIdxs {
 	currentIdxs := CurrentSyncStagesIdxs{
 		Stage:    -1,
@@ -201,9 +235,24 @@ func (d *DiagnosticClient) SetSubStagesList(stageId string, subStages []SyncSubS
 	}
 }
 
+<<<<<<< HEAD
 func (d *DiagnosticClient) SetCurrentSyncStage(css CurrentSyncStage) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
+=======
+func (d *DiagnosticClient) SetCurrentSyncStage(css CurrentSyncStage) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	stageState, err := d.GetStageState(css.Stage)
+	if err != nil {
+		return err
+	}
+
+	if stageState == Completed {
+		return nil
+	}
+
+>>>>>>> v3.0.0-alpha1
 	isSet := false
 	for idx, stage := range d.syncStages {
 		if !isSet {
@@ -217,6 +266,11 @@ func (d *DiagnosticClient) SetCurrentSyncStage(css CurrentSyncStage) {
 			d.setStagesState(idx, Queued)
 		}
 	}
+<<<<<<< HEAD
+=======
+
+	return nil
+>>>>>>> v3.0.0-alpha1
 }
 
 func (d *DiagnosticClient) setStagesState(stadeIdx int, state StageState) {
@@ -255,6 +309,7 @@ func (d *DiagnosticClient) SetCurrentSyncSubStage(css CurrentSyncSubStage) {
 	}
 }
 
+<<<<<<< HEAD
 func ReadSyncStages(db kv.RoDB) []SyncStage {
 	data := ReadDataFromTable(db, kv.DiagSyncStages, StagesListKey)
 
@@ -271,12 +326,56 @@ func ReadSyncStages(db kv.RoDB) []SyncStage {
 	} else {
 		return info
 	}
+=======
+// Deprecated - used only in tests. Non-thread-safe.
+func (d *DiagnosticClient) GetStageState(stageId string) (StageState, error) {
+	return d.getStageState(stageId)
+}
+
+func (d *DiagnosticClient) getStageState(stageId string) (StageState, error) {
+	for _, stage := range d.syncStages {
+		if stage.ID == stageId {
+			return stage.State, nil
+		}
+	}
+
+	stagesIdsList := make([]string, 0, len(d.syncStages))
+	for _, stage := range d.syncStages {
+		stagesIdsList = append(stagesIdsList, stage.ID)
+	}
+
+	return 0, fmt.Errorf("stage %s not found in stages list %s", stageId, stagesIdsList)
+}
+
+func SyncStagesFromTX(tx kv.Tx) ([]byte, error) {
+	bytes, err := ReadDataFromTable(tx, kv.DiagSyncStages, StagesListKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return common.CopyBytes(bytes), nil
+>>>>>>> v3.0.0-alpha1
 }
 
 func StagesListUpdater(info []SyncStage) func(tx kv.RwTx) error {
 	return PutDataToTable(kv.DiagSyncStages, StagesListKey, info)
 }
 
+<<<<<<< HEAD
 func (d *DiagnosticClient) GetSyncStages() []SyncStage {
 	return d.syncStages
 }
+=======
+// Deprecated - not thread-safe method. Used only in tests. Need introduce more thread-safe method or something special for tests.
+func (d *DiagnosticClient) GetSyncStages() []SyncStage {
+	return d.syncStages
+}
+
+func (d *DiagnosticClient) SyncStagesJson(w io.Writer) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if err := json.NewEncoder(w).Encode(d.syncStages); err != nil {
+		log.Debug("[diagnostics] HardwareInfoJson", "err", err)
+	}
+}
+>>>>>>> v3.0.0-alpha1
