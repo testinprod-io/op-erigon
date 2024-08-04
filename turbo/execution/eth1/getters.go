@@ -22,13 +22,6 @@ import (
 	"fmt"
 
 	"google.golang.org/protobuf/types/known/emptypb"
-<<<<<<< HEAD
-
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/gointerfaces"
-	"github.com/ledgerwatch/erigon-lib/kv"
-=======
->>>>>>> v3.0.0-alpha1
 
 	libcommon "github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/gointerfaces"
@@ -166,14 +159,11 @@ func (e *EthereumExecutionModule) GetBodiesByHashes(ctx context.Context, req *ex
 		txs, err := types.MarshalTransactionsBinary(body.Transactions)
 		if err != nil {
 			return nil, fmt.Errorf("ethereumExecutionModule.GetBodiesByHashes: MarshalTransactionsBinary error %w", err)
-<<<<<<< HEAD
-=======
 		}
 
 		reqs, err := types.MarshalRequestsBinary(body.Requests)
 		if err != nil {
 			return nil, fmt.Errorf("ethereumExecutionModule.GetBodiesByHashes: MarshalRequestsBinary error %w", err)
->>>>>>> v3.0.0-alpha1
 		}
 		bodies = append(bodies, &execution.BlockBody{
 			Transactions: txs,
@@ -217,14 +207,11 @@ func (e *EthereumExecutionModule) GetBodiesByRange(ctx context.Context, req *exe
 		txs, err := types.MarshalTransactionsBinary(body.Transactions)
 		if err != nil {
 			return nil, fmt.Errorf("ethereumExecutionModule.GetBodiesByRange: MarshalTransactionsBinary error %w", err)
-<<<<<<< HEAD
-=======
 		}
 
 		reqs, err := types.MarshalRequestsBinary(body.Requests)
 		if err != nil {
 			return nil, fmt.Errorf("ethereumExecutionModule.GetBodiesByHashes: MarshalRequestsBinary error %w", err)
->>>>>>> v3.0.0-alpha1
 		}
 		bodies = append(bodies, &execution.BlockBody{
 			Transactions: txs,

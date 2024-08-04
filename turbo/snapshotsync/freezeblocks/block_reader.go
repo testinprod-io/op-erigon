@@ -541,18 +541,7 @@ func (r *BlockReader) BodyWithTransactions(ctx context.Context, tx kv.Getter, ha
 	var baseTxnID uint64
 	var txCount uint32
 	var buf []byte
-<<<<<<< HEAD
-	seg, ok := view.BodiesSegment(blockHeight)
-	if !ok {
-		if dbgLogs {
-			log.Info(dbgPrefix + "no bodies file for this block num")
-		}
-		return nil, nil
-	}
-	body, baseTxnID, txsAmount, buf, err = r.bodyFromSnapshot(blockHeight, seg, buf)
-=======
 	body, baseTxnID, txCount, buf, err = r.bodyFromSnapshot(blockHeight, seg, buf)
->>>>>>> v3.0.0-alpha1
 	if err != nil {
 		return nil, err
 	}
@@ -612,13 +601,8 @@ func (r *BlockReader) Body(ctx context.Context, tx kv.Getter, hash common.Hash, 
 		if tx == nil {
 			return nil, 0, nil
 		}
-<<<<<<< HEAD
-		body, _, txAmount = rawdb.ReadBody(tx, hash, blockHeight)
-		return body, txAmount, nil
-=======
 		body, _, txCount = rawdb.ReadBody(tx, hash, blockHeight)
 		return body, txCount, nil
->>>>>>> v3.0.0-alpha1
 	}
 
 	seg, ok, release := r.sn.ViewSingleFile(coresnaptype.Bodies, blockHeight)

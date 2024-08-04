@@ -58,41 +58,40 @@ func (api *OtterscanAPIImpl) genericTracer(dbtx kv.Tx, ctx context.Context, bloc
 		log.Warn("[rpc genericTracer] txn is nil", "blockNum", blockNum, "txIndex", txIndex)
 		return nil
 	}
-<<<<<<< HEAD
 
-	header := block.Header()
-	rules := chainConfig.Rules(block.NumberU64(), header.Time)
-	signer := types.MakeSigner(chainConfig, blockNum, header.Time)
-	for idx, tx := range block.Transactions() {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-		}
+	// FIXME: V3_MERGE
+	// header := block.Header()
+	// rules := chainConfig.Rules(block.NumberU64(), header.Time)
+	// signer := types.MakeSigner(chainConfig, blockNum, header.Time)
+	// for idx, tx := range block.Transactions() {
+	// 	select {
+	// 	case <-ctx.Done():
+	// 		return ctx.Err()
+	// 	default:
+	// 	}
 
-		ibs.SetTxContext(tx.Hash(), block.Hash(), idx)
+	// 	ibs.SetTxContext(tx.Hash(), block.Hash(), idx)
 
-		msg, _ := tx.AsMessage(*signer, header.BaseFee, rules)
+	// 	msg, _ := tx.AsMessage(*signer, header.BaseFee, rules)
 
-		BlockContext := core.NewEVMBlockContext(header, core.GetHashFn(header, getHeader), engine, nil)
-		BlockContext.L1CostFunc = opstack.NewL1CostFunc(chainConfig, ibs)
-		TxContext := core.NewEVMTxContext(msg)
+	// 	BlockContext := core.NewEVMBlockContext(header, core.GetHashFn(header, getHeader), engine, nil)
+	// 	BlockContext.L1CostFunc = opstack.NewL1CostFunc(chainConfig, ibs)
+	// 	TxContext := core.NewEVMTxContext(msg)
 
-		vmenv := vm.NewEVM(BlockContext, TxContext, ibs, chainConfig, vm.Config{Debug: true, Tracer: tracer})
-		if _, err := core.ApplyMessage(vmenv, msg, new(core.GasPool).AddGas(tx.GetGas()).AddBlobGas(tx.GetBlobGas()), true /* refunds */, false /* gasBailout */); err != nil {
-			return err
-		}
-		_ = ibs.FinalizeTx(rules, cachedWriter)
+	// 	vmenv := vm.NewEVM(BlockContext, TxContext, ibs, chainConfig, vm.Config{Debug: true, Tracer: tracer})
+	// 	if _, err := core.ApplyMessage(vmenv, msg, new(core.GasPool).AddGas(tx.GetGas()).AddBlobGas(tx.GetBlobGas()), true /* refunds */, false /* gasBailout */); err != nil {
+	// 		return err
+	// 	}
+	// 	_ = ibs.FinalizeTx(rules, cachedWriter)
 
-		if tracer.Found() {
-			tracer.SetTransaction(tx)
-			return nil
-		}
-=======
+	// 	if tracer.Found() {
+	// 		tracer.SetTransaction(tx)
+	// 		return nil
+	// 	}
+	// }
 	_, err = executor.ExecTxn(txnID, txIndex, txn)
 	if err != nil {
 		return err
->>>>>>> v3.0.0-alpha1
 	}
 	return nil
 }

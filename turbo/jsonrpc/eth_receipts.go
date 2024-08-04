@@ -43,27 +43,10 @@ import (
 
 // getReceipts - checking in-mem cache, or else fallback to db, or else fallback to re-exec of block to re-gen receipts
 func (api *BaseAPI) getReceipts(ctx context.Context, tx kv.Tx, block *types.Block, senders []common.Address) (types.Receipts, error) {
-<<<<<<< HEAD
-	if receipts, ok := api.receiptsCache.Get(block.Hash()); ok {
-		return receipts, nil
-	}
-
-=======
->>>>>>> v3.0.0-alpha1
 	chainConfig, err := api.chainConfig(ctx, tx)
 	if err != nil {
 		return nil, err
 	}
-<<<<<<< HEAD
-
-	if receipts := rawdb.ReadReceipts(chainConfig, tx, block, senders); receipts != nil {
-		api.receiptsCache.Add(block.Hash(), receipts)
-		return receipts, nil
-	}
-
-	engine := api.engine()
-=======
->>>>>>> v3.0.0-alpha1
 
 	return api.receiptsGenerator.GetReceipts(ctx, chainConfig, tx, block, senders)
 }

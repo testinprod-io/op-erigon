@@ -22,19 +22,6 @@ import (
 
 	"github.com/erigontech/erigon-lib/log/v3"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/chain"
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon-lib/opstack"
-	"github.com/ledgerwatch/erigon/core"
-	"github.com/ledgerwatch/erigon/core/state"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/core/vm"
-	"github.com/ledgerwatch/erigon/eth/ethutils"
-	"github.com/ledgerwatch/erigon/turbo/rpchelper"
-	"github.com/ledgerwatch/erigon/turbo/shards"
-=======
 	"github.com/erigontech/erigon-lib/chain"
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/kv"
@@ -44,7 +31,6 @@ import (
 	"github.com/erigontech/erigon/core/vm"
 	"github.com/erigontech/erigon/eth/ethutils"
 	"github.com/erigontech/erigon/turbo/rpchelper"
->>>>>>> v3.0.0-alpha1
 )
 
 func (api *OtterscanAPIImpl) searchTraceBlock(ctx context.Context, addr common.Address, chainConfig *chain.Config, idx int, bNum uint64, results []*TransactionsWithReceipts) error {
@@ -133,12 +119,10 @@ func (api *OtterscanAPIImpl) traceBlock(dbtx kv.Tx, ctx context.Context, blockNu
 		msg, _ := txn.AsMessage(*signer, header.BaseFee, rules)
 
 		tracer := NewTouchTracer(searchAddr)
-<<<<<<< HEAD
-		BlockContext := core.NewEVMBlockContext(header, core.GetHashFn(header, getHeader), engine, nil)
-		BlockContext.L1CostFunc = opstack.NewL1CostFunc(chainConfig, ibs)
-=======
+
 		BlockContext := core.NewEVMBlockContext(header, core.GetHashFn(header, getHeader), engine, nil, chainConfig)
->>>>>>> v3.0.0-alpha1
+		BlockContext.L1CostFunc = opstack.NewL1CostFunc(chainConfig, ibs)
+
 		TxContext := core.NewEVMTxContext(msg)
 
 		vmenv := vm.NewEVM(BlockContext, TxContext, ibs, chainConfig, vm.Config{Debug: true, Tracer: tracer})
@@ -160,13 +144,9 @@ func (api *OtterscanAPIImpl) traceBlock(dbtx kv.Tx, ctx context.Context, blockNu
 				}
 				return false, nil, fmt.Errorf("requested receipt idx %d, but have only %d", idx, len(blockReceipts)) // otherwise return some error for debugging
 			}
-<<<<<<< HEAD
-			rpcTx := NewRPCTransaction(tx, block.Hash(), blockNum, uint64(idx), block.BaseFee(), receipt)
-			mReceipt := ethutils.MarshalReceipt(blockReceipts[idx], tx, chainConfig, block.HeaderNoCopy(), tx.Hash(), true)
-=======
-			rpcTx := NewRPCTransaction(txn, block.Hash(), blockNum, uint64(idx), block.BaseFee())
+
+			rpcTx := NewRPCTransaction(txn, block.Hash(), blockNum, uint64(idx), block.BaseFee(), receipt)
 			mReceipt := ethutils.MarshalReceipt(blockReceipts[idx], txn, chainConfig, block.HeaderNoCopy(), txn.Hash(), true)
->>>>>>> v3.0.0-alpha1
 			mReceipt["timestamp"] = block.Time()
 			rpcTxs = append(rpcTxs, rpcTx)
 			receipts = append(receipts, mReceipt)

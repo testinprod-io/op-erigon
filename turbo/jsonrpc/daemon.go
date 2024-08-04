@@ -17,22 +17,6 @@
 package jsonrpc
 
 import (
-<<<<<<< HEAD
-	"github.com/ledgerwatch/log/v3"
-
-	"github.com/ledgerwatch/erigon-lib/gointerfaces/txpool"
-
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon-lib/kv/kvcache"
-	libstate "github.com/ledgerwatch/erigon-lib/state"
-	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/cli/httpcfg"
-	"github.com/ledgerwatch/erigon/consensus"
-	"github.com/ledgerwatch/erigon/consensus/clique"
-	"github.com/ledgerwatch/erigon/polygon/bor"
-	"github.com/ledgerwatch/erigon/rpc"
-	"github.com/ledgerwatch/erigon/turbo/rpchelper"
-	"github.com/ledgerwatch/erigon/turbo/services"
-=======
 	"github.com/erigontech/erigon-lib/log/v3"
 
 	txpool "github.com/erigontech/erigon-lib/gointerfaces/txpoolproto"
@@ -45,24 +29,16 @@ import (
 	"github.com/erigontech/erigon/rpc"
 	"github.com/erigontech/erigon/turbo/rpchelper"
 	"github.com/erigontech/erigon/turbo/services"
->>>>>>> v3.0.0-alpha1
 )
 
 // APIList describes the list of available RPC apis
 func APIList(db kv.RoDB, eth rpchelper.ApiBackend, txPool txpool.TxpoolClient, mining txpool.MiningClient,
 	filters *rpchelper.Filters, stateCache kvcache.Cache,
-<<<<<<< HEAD
-	blockReader services.FullBlockReader, agg *libstate.Aggregator, cfg *httpcfg.HttpCfg, engine consensus.EngineReader,
+	blockReader services.FullBlockReader, cfg *httpcfg.HttpCfg, engine consensus.EngineReader,
 	seqRPCService *rpc.Client, historicalRPCService *rpc.Client,
 	logger log.Logger,
 ) (list []rpc.API) {
-	base := NewBaseApi(filters, stateCache, blockReader, agg, cfg.WithDatadir, cfg.EvmCallTimeout, engine, cfg.Dirs, seqRPCService, historicalRPCService)
-=======
-	blockReader services.FullBlockReader, cfg *httpcfg.HttpCfg, engine consensus.EngineReader,
-	logger log.Logger,
-) (list []rpc.API) {
-	base := NewBaseApi(filters, stateCache, blockReader, cfg.WithDatadir, cfg.EvmCallTimeout, engine, cfg.Dirs)
->>>>>>> v3.0.0-alpha1
+	base := NewBaseApi(filters, stateCache, blockReader, cfg.WithDatadir, cfg.EvmCallTimeout, engine, cfg.Dirs, seqRPCService, historicalRPCService)
 	ethImpl := NewEthAPI(base, db, eth, txPool, mining, cfg.Gascap, cfg.Feecap, cfg.ReturnDataLimit, cfg.AllowUnprotectedTxs, cfg.MaxGetProofRewindBlockCount, cfg.WebsocketSubscribeLogsChannelSize, logger)
 	erigonImpl := NewErigonAPI(base, db, eth)
 	txpoolImpl := NewTxPoolAPI(base, db, txPool)

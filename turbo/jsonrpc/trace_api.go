@@ -22,53 +22,30 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 
-<<<<<<< HEAD
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/cli/httpcfg"
-	"github.com/ledgerwatch/erigon/eth/tracers"
-	"github.com/ledgerwatch/erigon/rpc"
-=======
 	libcommon "github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/hexutil"
 	"github.com/erigontech/erigon-lib/kv"
 	"github.com/erigontech/erigon/cmd/rpcdaemon/cli/httpcfg"
 	"github.com/erigontech/erigon/eth/tracers/config"
 	"github.com/erigontech/erigon/rpc"
->>>>>>> v3.0.0-alpha1
 )
 
 // TraceAPI RPC interface into tracing API
 type TraceAPI interface {
 	// Ad-hoc (see ./trace_adhoc.go)
 
-<<<<<<< HEAD
-	ReplayBlockTransactions(ctx context.Context, blockNr rpc.BlockNumberOrHash, traceTypes []string, gasBailOut *bool, traceConfig *tracers.TraceConfig) ([]*TraceCallResult, error)
-	ReplayTransaction(ctx context.Context, txHash libcommon.Hash, traceTypes []string, gasBailOut *bool, traceConfig *tracers.TraceConfig) (*TraceCallResult, error)
-	Call(ctx context.Context, call TraceCallParam, types []string, blockNr *rpc.BlockNumberOrHash, traceConfig *tracers.TraceConfig) (*TraceCallResult, error)
-	CallMany(ctx context.Context, calls json.RawMessage, blockNr *rpc.BlockNumberOrHash, traceConfig *tracers.TraceConfig) ([]*TraceCallResult, error)
-=======
 	ReplayBlockTransactions(ctx context.Context, blockNr rpc.BlockNumberOrHash, traceTypes []string, gasBailOut *bool, traceConfig *config.TraceConfig) ([]*TraceCallResult, error)
 	ReplayTransaction(ctx context.Context, txHash libcommon.Hash, traceTypes []string, gasBailOut *bool, traceConfig *config.TraceConfig) (*TraceCallResult, error)
 	Call(ctx context.Context, call TraceCallParam, types []string, blockNr *rpc.BlockNumberOrHash, traceConfig *config.TraceConfig) (*TraceCallResult, error)
 	CallMany(ctx context.Context, calls json.RawMessage, blockNr *rpc.BlockNumberOrHash, traceConfig *config.TraceConfig) ([]*TraceCallResult, error)
->>>>>>> v3.0.0-alpha1
 	RawTransaction(ctx context.Context, txHash libcommon.Hash, traceTypes []string) ([]interface{}, error)
 
 	// Filtering (see ./trace_filtering.go)
 
-<<<<<<< HEAD
-	Transaction(ctx context.Context, txHash libcommon.Hash, gasBailOut *bool, traceConfig *tracers.TraceConfig) (ParityTraces, error)
-	Get(ctx context.Context, txHash libcommon.Hash, txIndicies []hexutil.Uint64, gasBailOut *bool, traceConfig *tracers.TraceConfig) (*ParityTrace, error)
-	Block(ctx context.Context, blockNr rpc.BlockNumber, gasBailOut *bool, traceConfig *tracers.TraceConfig) (ParityTraces, error)
-	Filter(ctx context.Context, req TraceFilterRequest, gasBailOut *bool, traceConfig *tracers.TraceConfig, stream *jsoniter.Stream) error
-=======
 	Transaction(ctx context.Context, txHash libcommon.Hash, gasBailOut *bool, traceConfig *config.TraceConfig) (ParityTraces, error)
 	Get(ctx context.Context, txHash libcommon.Hash, txIndicies []hexutil.Uint64, gasBailOut *bool, traceConfig *config.TraceConfig) (*ParityTrace, error)
 	Block(ctx context.Context, blockNr rpc.BlockNumber, gasBailOut *bool, traceConfig *config.TraceConfig) (ParityTraces, error)
 	Filter(ctx context.Context, req TraceFilterRequest, gasBailOut *bool, traceConfig *config.TraceConfig, stream *jsoniter.Stream) error
->>>>>>> v3.0.0-alpha1
 }
 
 // TraceAPIImpl is implementation of the TraceAPI interface based on remote Db access

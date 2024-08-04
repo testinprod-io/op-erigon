@@ -24,29 +24,6 @@ import (
 	"github.com/holiman/uint256"
 	"golang.org/x/sync/errgroup"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/chain"
-	"github.com/ledgerwatch/erigon-lib/common"
-	hexutil2 "github.com/ledgerwatch/erigon-lib/common/hexutil"
-	"github.com/ledgerwatch/erigon-lib/common/hexutility"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon-lib/kv/iter"
-	"github.com/ledgerwatch/erigon-lib/kv/order"
-	"github.com/ledgerwatch/erigon-lib/kv/rawdbv3"
-	"github.com/ledgerwatch/erigon/core/vm/evmtypes"
-	"github.com/ledgerwatch/erigon/eth/tracers"
-
-	"github.com/ledgerwatch/erigon/consensus"
-	"github.com/ledgerwatch/erigon/core"
-	"github.com/ledgerwatch/erigon/core/rawdb"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/core/vm"
-	"github.com/ledgerwatch/erigon/eth/ethutils"
-	"github.com/ledgerwatch/erigon/rpc"
-	"github.com/ledgerwatch/erigon/turbo/adapter/ethapi"
-	"github.com/ledgerwatch/erigon/turbo/rpchelper"
-	"github.com/ledgerwatch/erigon/turbo/transactions"
-=======
 	"github.com/erigontech/erigon-lib/chain"
 	"github.com/erigontech/erigon-lib/common"
 	hexutil2 "github.com/erigontech/erigon-lib/common/hexutil"
@@ -64,7 +41,6 @@ import (
 	"github.com/erigontech/erigon/turbo/adapter/ethapi"
 	"github.com/erigontech/erigon/turbo/rpchelper"
 	"github.com/erigontech/erigon/turbo/transactions"
->>>>>>> v3.0.0-alpha1
 )
 
 // API_LEVEL Must be incremented every time new additions are made
@@ -152,7 +128,6 @@ func (api *OtterscanAPIImpl) getTransactionByHash(ctx context.Context, tx kv.Tx,
 	return txn, block, blockHash, blockNum, txnIndex, nil
 }
 
-<<<<<<< HEAD
 func (api *OtterscanAPIImpl) relayToHistoricalBackend(ctx context.Context, result interface{}, method string, args ...interface{}) error {
 	return api.historicalRPCService.CallContext(ctx, result, method, args...)
 }
@@ -314,10 +289,7 @@ func (api *OtterscanAPIImpl) translateRelayTraceResult(gethTrace *GethTrace, tra
 	return nil
 }
 
-func (api *OtterscanAPIImpl) runTracer(ctx context.Context, tx kv.Tx, hash common.Hash, tracer vm.EVMLogger) (*core.ExecutionResult, error) {
-=======
 func (api *OtterscanAPIImpl) runTracer(ctx context.Context, tx kv.Tx, hash common.Hash, tracer vm.EVMLogger) (*evmtypes.ExecutionResult, error) {
->>>>>>> v3.0.0-alpha1
 	txn, block, _, _, txIndex, err := api.getTransactionByHash(ctx, tx, hash)
 	if err != nil {
 		return nil, err
@@ -424,177 +396,7 @@ func (api *OtterscanAPIImpl) SearchTransactionsBefore(ctx context.Context, addr 
 	}
 	defer dbtx.Rollback()
 
-<<<<<<< HEAD
-	if api.historyV3(dbtx) {
-		return api.searchTransactionsBeforeV3(dbtx.(kv.TemporalTx), ctx, addr, blockNum, pageSize)
-	}
-
-	callFromCursor, err := dbtx.Cursor(kv.CallFromIndex)
-	if err != nil {
-		return nil, err
-	}
-	defer callFromCursor.Close()
-
-	callToCursor, err := dbtx.Cursor(kv.CallToIndex)
-	if err != nil {
-		return nil, err
-	}
-	defer callToCursor.Close()
-
-	chainConfig, err := api.chainConfig(ctx, dbtx)
-	if err != nil {
-		return nil, err
-	}
-
-	isFirstPage := false
-	if blockNum == 0 {
-		isFirstPage = true
-	} else {
-		// Internal search code considers blockNum [including], so adjust the value
-		blockNum--
-	}
-
-	// Initialize search cursors at the first shard >= desired block number
-	callFromProvider := NewCallCursorBackwardBlockProvider(callFromCursor, addr, blockNum)
-	callToProvider := NewCallCursorBackwardBlockProvider(callToCursor, addr, blockNum)
-	callFromToProvider := newCallFromToBlockProvider(false, callFromProvider, callToProvider)
-
-	txs := make([]*RPCTransaction, 0, pageSize)
-	receipts := make([]map[string]interface{}, 0, pageSize)
-
-	resultCount := uint16(0)
-	hasMore := true
-	for {
-		if resultCount >= pageSize || !hasMore {
-			break
-		}
-
-		var results []*TransactionsWithReceipts
-		results, hasMore, err = api.traceBlocks(ctx, addr, chainConfig, pageSize, resultCount, callFromToProvider)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, r := range results {
-			if r == nil {
-				return nil, errors.New("internal error during search tracing")
-			}
-
-			for i := len(r.Txs) - 1; i >= 0; i-- {
-				txs = append(txs, r.Txs[i])
-			}
-			for i := len(r.Receipts) - 1; i >= 0; i-- {
-				receipts = append(receipts, r.Receipts[i])
-			}
-
-			resultCount += uint16(len(r.Txs))
-			if resultCount >= pageSize {
-				break
-			}
-		}
-	}
-
-	return &TransactionsWithReceipts{txs, receipts, isFirstPage, !hasMore}, nil
-}
-
-func (api *OtterscanAPIImpl) searchTransactionsBeforeV3(tx kv.TemporalTx, ctx context.Context, addr common.Address, fromBlockNum uint64, pageSize uint16) (*TransactionsWithReceipts, error) {
-	chainConfig, err := api.chainConfig(ctx, tx)
-	if err != nil {
-		return nil, err
-	}
-
-	isFirstPage := false
-	if fromBlockNum == 0 {
-		isFirstPage = true
-	} else {
-		// Internal search code considers blockNum [including], so adjust the value
-		fromBlockNum--
-	}
-	fromTxNum, err := rawdbv3.TxNums.Max(tx, fromBlockNum)
-	if err != nil {
-		return nil, err
-	}
-	itTo, err := tx.IndexRange(kv.TracesToIdx, addr[:], int(fromTxNum), -1, order.Desc, kv.Unlim)
-	if err != nil {
-		return nil, err
-	}
-	itFrom, err := tx.IndexRange(kv.TracesFromIdx, addr[:], int(fromTxNum), -1, order.Desc, kv.Unlim)
-	if err != nil {
-		return nil, err
-	}
-	txNums := iter.Union[uint64](itFrom, itTo, order.Desc, kv.Unlim)
-	txNumsIter := MapDescendTxNum2BlockNum(tx, txNums)
-
-	exec := txnExecutor(tx, chainConfig, api.engine(), api._blockReader, nil)
-	var blockHash common.Hash
-	var header *types.Header
-	txs := make([]*RPCTransaction, 0, pageSize)
-	receipts := make([]map[string]interface{}, 0, pageSize)
-	resultCount := uint16(0)
-
-	for txNumsIter.HasNext() {
-		txNum, blockNum, txIndex, isFinalTxn, blockNumChanged, err := txNumsIter.Next()
-		if err != nil {
-			return nil, err
-		}
-		if isFinalTxn {
-			continue
-		}
-
-		if blockNumChanged { // things which not changed within 1 block
-			if header, err = api._blockReader.HeaderByNumber(ctx, tx, blockNum); err != nil {
-				return nil, err
-			}
-			if header == nil {
-				log.Warn("[rpc] header is nil", "blockNum", blockNum)
-				continue
-			}
-			blockHash = header.Hash()
-			exec.changeBlock(header)
-		}
-
-		//fmt.Printf("txNum=%d, blockNum=%d, txIndex=%d, maxTxNumInBlock=%d,mixTxNumInBlock=%d\n", txNum, blockNum, txIndex, maxTxNumInBlock, minTxNumInBlock)
-		txn, err := api._txnReader.TxnByIdxInBlock(ctx, tx, blockNum, txIndex)
-		if err != nil {
-			return nil, err
-		}
-		if txn == nil {
-			continue
-		}
-		rawLogs, res, err := exec.execTx(txNum, txIndex, txn)
-		if err != nil {
-			return nil, err
-		}
-		var rpcTx *RPCTransaction
-		var receipt *types.Receipt
-		if chainConfig.IsOptimism() {
-			receipts := rawdb.ReadRawReceipts(tx, blockNum)
-			if len(receipts) <= txIndex {
-				return nil, fmt.Errorf("block has less receipts than expected: %d <= %d, block: %d", len(receipts), txIndex, blockNum)
-			}
-			receipt = receipts[txIndex]
-		}
-		rpcTx = NewRPCTransaction(txn, blockHash, blockNum, uint64(txIndex), header.BaseFee, receipt)
-		txs = append(txs, rpcTx)
-		receipt = &types.Receipt{
-			Type: txn.Type(), CumulativeGasUsed: res.UsedGas,
-			TransactionIndex: uint(txIndex),
-			BlockNumber:      header.Number, BlockHash: blockHash, Logs: rawLogs,
-		}
-		mReceipt := ethutils.MarshalReceipt(receipt, txn, chainConfig, header, txn.Hash(), true)
-		mReceipt["timestamp"] = header.Time
-		receipts = append(receipts, mReceipt)
-
-		resultCount++
-		if resultCount >= pageSize {
-			break
-		}
-	}
-	hasMore := txNumsIter.HasNext()
-	return &TransactionsWithReceipts{txs, receipts, isFirstPage, !hasMore}, nil
-=======
 	return api.searchTransactionsBeforeV3(dbtx.(kv.TemporalTx), ctx, addr, blockNum, pageSize)
->>>>>>> v3.0.0-alpha1
 }
 
 // Search transactions that touch a certain address.

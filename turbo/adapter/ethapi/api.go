@@ -594,13 +594,8 @@ func newRPCTransactionFromBlockIndex(b *types.Block, index uint64) *RPCTransacti
 */
 
 // newRPCTransactionFromBlockAndTxGivenIndex returns a transaction that will serialize to the RPC representation.
-<<<<<<< HEAD
-func newRPCTransactionFromBlockAndTxGivenIndex(b *types.Block, tx types.Transaction, index uint64, receipt *types.Receipt) *RPCTransaction {
-	return newRPCTransaction(tx, b.Hash(), b.NumberU64(), index, b.BaseFee(), receipt)
-=======
-func newRPCTransactionFromBlockAndTxGivenIndex(b *types.Block, txn types.Transaction, index uint64) *RPCTransaction {
-	return newRPCTransaction(txn, b.Hash(), b.NumberU64(), index, b.BaseFee())
->>>>>>> v3.0.0-alpha1
+func newRPCTransactionFromBlockAndTxGivenIndex(b *types.Block, txn types.Transaction, index uint64, receipt *types.Receipt) *RPCTransaction {
+	return newRPCTransaction(txn, b.Hash(), b.NumberU64(), index, b.BaseFee(), receipt)
 }
 
 /*

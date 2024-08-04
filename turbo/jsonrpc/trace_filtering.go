@@ -24,35 +24,6 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/chain"
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon-lib/kv/bitmapdb"
-	"github.com/ledgerwatch/erigon-lib/kv/iter"
-	"github.com/ledgerwatch/erigon-lib/kv/order"
-	"github.com/ledgerwatch/erigon-lib/kv/rawdbv3"
-	"github.com/ledgerwatch/erigon/consensus"
-	"github.com/ledgerwatch/erigon/consensus/ethash"
-	"github.com/ledgerwatch/erigon/core"
-	"github.com/ledgerwatch/erigon/core/rawdb"
-	"github.com/ledgerwatch/erigon/core/state"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/core/vm"
-	"github.com/ledgerwatch/erigon/eth/stagedsync"
-	"github.com/ledgerwatch/erigon/eth/tracers"
-	"github.com/ledgerwatch/erigon/ethdb"
-	bortypes "github.com/ledgerwatch/erigon/polygon/bor/types"
-	"github.com/ledgerwatch/erigon/rpc"
-	"github.com/ledgerwatch/erigon/turbo/rpchelper"
-	"github.com/ledgerwatch/erigon/turbo/shards"
-	"github.com/ledgerwatch/erigon/turbo/transactions"
-)
-
-// Transaction implements trace_transaction
-func (api *TraceAPIImpl) Transaction(ctx context.Context, txHash common.Hash, gasBailOut *bool, traceConfig *tracers.TraceConfig) (ParityTraces, error) {
-=======
 	"github.com/erigontech/erigon-lib/chain"
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/hexutil"
@@ -80,7 +51,6 @@ func (api *TraceAPIImpl) Transaction(ctx context.Context, txHash common.Hash, ga
 
 // Transaction implements trace_transaction
 func (api *TraceAPIImpl) Transaction(ctx context.Context, txHash common.Hash, gasBailOut *bool, traceConfig *config.TraceConfig) (ParityTraces, error) {
->>>>>>> v3.0.0-alpha1
 	if gasBailOut == nil {
 		gasBailOut = new(bool) // false by default
 	}
@@ -171,11 +141,7 @@ func (api *TraceAPIImpl) Transaction(ctx context.Context, txHash common.Hash, ga
 }
 
 // Get implements trace_get
-<<<<<<< HEAD
-func (api *TraceAPIImpl) Get(ctx context.Context, txHash common.Hash, indicies []hexutil.Uint64, gasBailOut *bool, traceConfig *tracers.TraceConfig) (*ParityTrace, error) {
-=======
 func (api *TraceAPIImpl) Get(ctx context.Context, txHash common.Hash, indicies []hexutil.Uint64, gasBailOut *bool, traceConfig *config.TraceConfig) (*ParityTrace, error) {
->>>>>>> v3.0.0-alpha1
 	// Parity fails if it gets more than a single index. It returns nothing in this case. Must we?
 	if len(indicies) > 1 {
 		return nil, nil
@@ -211,11 +177,7 @@ func rewardKindToString(kind consensus.RewardKind) string {
 }
 
 // Block implements trace_block
-<<<<<<< HEAD
-func (api *TraceAPIImpl) Block(ctx context.Context, blockNr rpc.BlockNumber, gasBailOut *bool, traceConfig *tracers.TraceConfig) (ParityTraces, error) {
-=======
 func (api *TraceAPIImpl) Block(ctx context.Context, blockNr rpc.BlockNumber, gasBailOut *bool, traceConfig *config.TraceConfig) (ParityTraces, error) {
->>>>>>> v3.0.0-alpha1
 	if gasBailOut == nil {
 		gasBailOut = new(bool) // false by default
 	}
@@ -247,11 +209,7 @@ func (api *TraceAPIImpl) Block(ctx context.Context, blockNr rpc.BlockNumber, gas
 		return nil, err
 	}
 	signer := types.MakeSigner(cfg, blockNum, block.Time())
-<<<<<<< HEAD
-	traces, syscall, err := api.callManyTransactions(ctx, tx, block, []string{TraceTypeTrace}, -1 /* all tx indices */, *gasBailOut /* gasBailOut */, signer, cfg, traceConfig)
-=======
 	traces, syscall, err := api.callManyTransactions(ctx, tx, block, []string{TraceTypeTrace}, -1 /* all txn indices */, *gasBailOut /* gasBailOut */, signer, cfg, traceConfig)
->>>>>>> v3.0.0-alpha1
 	if err != nil {
 		return nil, err
 	}
@@ -342,11 +300,7 @@ func traceFilterBitmapsV3(tx kv.TemporalTx, req TraceFilterRequest, from, to uin
 // Filter implements trace_filter
 // NOTE: We do not store full traces - we just store index for each address
 // Pull blocks which have txs with matching address
-<<<<<<< HEAD
-func (api *TraceAPIImpl) Filter(ctx context.Context, req TraceFilterRequest, gasBailOut *bool, traceConfig *tracers.TraceConfig, stream *jsoniter.Stream) error {
-=======
 func (api *TraceAPIImpl) Filter(ctx context.Context, req TraceFilterRequest, gasBailOut *bool, traceConfig *config.TraceConfig, stream *jsoniter.Stream) error {
->>>>>>> v3.0.0-alpha1
 	if gasBailOut == nil {
 		//nolint
 		gasBailOut = new(bool) // false by default
@@ -375,176 +329,10 @@ func (api *TraceAPIImpl) Filter(ctx context.Context, req TraceFilterRequest, gas
 		return fmt.Errorf("invalid parameters: fromBlock cannot be greater than toBlock")
 	}
 
-<<<<<<< HEAD
-	if api.historyV3(dbtx) {
-		return api.filterV3(ctx, dbtx.(kv.TemporalTx), fromBlock, toBlock, req, traceConfig, stream)
-	}
-	toBlock++ //+1 because internally Erigon using semantic [from, to), but some RPC have different semantic
-	fromAddresses, toAddresses, allBlocks, err := traceFilterBitmaps(dbtx, req, fromBlock, toBlock)
-	if err != nil {
-		return err
-	}
-
-	chainConfig, err := api.chainConfig(ctx, dbtx)
-	if err != nil {
-		return err
-	}
-
-	var json = jsoniter.ConfigCompatibleWithStandardLibrary
-	stream.WriteArrayStart()
-	first := true
-	// Execute all transactions in picked blocks
-
-	count := uint64(^uint(0)) // this just makes it easier to use below
-	if req.Count != nil {
-		count = *req.Count
-	}
-	after := uint64(0) // this just makes it easier to use below
-	if req.After != nil {
-		after = *req.After
-	}
-	nSeen := uint64(0)
-	nExported := uint64(0)
-
-	it := allBlocks.Iterator()
-	for it.HasNext() {
-		b := it.Next()
-		// Extract transactions from block
-		block, bErr := api.blockByNumberWithSenders(ctx, dbtx, b)
-		if bErr != nil {
-			if first {
-				first = false
-			} else {
-				stream.WriteMore()
-			}
-			stream.WriteObjectStart()
-			rpc.HandleError(bErr, stream)
-			stream.WriteObjectEnd()
-			continue
-		}
-		if block == nil {
-			if first {
-				first = false
-			} else {
-				stream.WriteMore()
-			}
-			stream.WriteObjectStart()
-			rpc.HandleError(fmt.Errorf("could not find block %d", b), stream)
-			stream.WriteObjectEnd()
-			continue
-		}
-
-		blockHash := block.Hash()
-		blockNumber := block.NumberU64()
-		signer := types.MakeSigner(chainConfig, b, block.Time())
-		t, syscall, tErr := api.callManyTransactions(ctx, dbtx, block, []string{TraceTypeTrace}, -1 /* all tx indices */, *gasBailOut, signer, chainConfig, traceConfig)
-		if tErr != nil {
-			if first {
-				first = false
-			} else {
-				stream.WriteMore()
-			}
-			stream.WriteObjectStart()
-			rpc.HandleError(tErr, stream)
-			stream.WriteObjectEnd()
-			continue
-		}
-		isIntersectionMode := req.Mode == TraceFilterModeIntersection
-		includeAll := len(fromAddresses) == 0 && len(toAddresses) == 0
-		for i, trace := range t {
-			txPosition := uint64(i)
-			// Check if transaction concerns any of the addresses we wanted
-			for _, pt := range trace.Trace {
-				if includeAll || filterTrace(pt, fromAddresses, toAddresses, isIntersectionMode) {
-					nSeen++
-					pt.BlockHash = &blockHash
-					pt.BlockNumber = &blockNumber
-					pt.TransactionHash = trace.TransactionHash
-					pt.TransactionPosition = &txPosition
-					b, err := json.Marshal(pt)
-					if err != nil {
-						if first {
-							first = false
-						} else {
-							stream.WriteMore()
-						}
-						stream.WriteObjectStart()
-						rpc.HandleError(err, stream)
-						stream.WriteObjectEnd()
-						continue
-					}
-					if nSeen > after && nExported < count {
-						if first {
-							first = false
-						} else {
-							stream.WriteMore()
-						}
-						if _, err := stream.Write(b); err != nil {
-							return err
-						}
-						nExported++
-					}
-				}
-			}
-		}
-
-		rewards, err := api.engine().CalculateRewards(chainConfig, block.Header(), block.Uncles(), syscall)
-		if err != nil {
-			return err
-		}
-
-		for _, r := range rewards {
-			if _, ok := toAddresses[r.Beneficiary]; ok || includeAll {
-				nSeen++
-				var tr ParityTrace
-				rewardAction := &RewardTraceAction{}
-				rewardAction.Author = r.Beneficiary
-				rewardAction.RewardType = rewardKindToString(r.Kind)
-				rewardAction.Value.ToInt().Set(r.Amount.ToBig())
-				tr.Action = rewardAction
-				tr.BlockHash = &common.Hash{}
-				copy(tr.BlockHash[:], block.Hash().Bytes())
-				tr.BlockNumber = new(uint64)
-				*tr.BlockNumber = block.NumberU64()
-				tr.Type = "reward" // nolint: goconst
-				tr.TraceAddress = []int{}
-				b, err := json.Marshal(tr)
-				if err != nil {
-					if first {
-						first = false
-					} else {
-						stream.WriteMore()
-					}
-					stream.WriteObjectStart()
-					rpc.HandleError(err, stream)
-					stream.WriteObjectEnd()
-					continue
-				}
-				if nSeen > after && nExported < count {
-					if first {
-						first = false
-					} else {
-						stream.WriteMore()
-					}
-					if _, err := stream.Write(b); err != nil {
-						return err
-					}
-					nExported++
-				}
-			}
-		}
-	}
-	stream.WriteArrayEnd()
-	return stream.Flush()
-}
-
-func (api *TraceAPIImpl) filterV3(ctx context.Context, dbtx kv.TemporalTx, fromBlock, toBlock uint64, req TraceFilterRequest, traceConfig *tracers.TraceConfig, stream *jsoniter.Stream) error {
-=======
 	return api.filterV3(ctx, dbtx.(kv.TemporalTx), fromBlock, toBlock, req, stream, *gasBailOut, traceConfig)
 }
 
 func (api *TraceAPIImpl) filterV3(ctx context.Context, dbtx kv.TemporalTx, fromBlock, toBlock uint64, req TraceFilterRequest, stream *jsoniter.Stream, gasBailOut bool, traceConfig *config.TraceConfig) error {
->>>>>>> v3.0.0-alpha1
 	var fromTxNum, toTxNum uint64
 	var err error
 	if fromBlock > 0 {
@@ -922,11 +710,7 @@ func (api *TraceAPIImpl) callManyTransactions(
 	gasBailOut bool,
 	signer *types.Signer,
 	cfg *chain.Config,
-<<<<<<< HEAD
-	traceConfig *tracers.TraceConfig,
-=======
 	traceConfig *config.TraceConfig,
->>>>>>> v3.0.0-alpha1
 ) ([]*TraceCallResult, consensus.SystemCall, error) {
 	blockNumber := block.NumberU64()
 	pNo := blockNumber

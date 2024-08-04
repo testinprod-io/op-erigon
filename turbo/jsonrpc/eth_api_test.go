@@ -23,12 +23,7 @@ import (
 	"math/big"
 	"testing"
 
-<<<<<<< HEAD
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
-=======
 	"github.com/erigontech/erigon-lib/common/hexutil"
->>>>>>> v3.0.0-alpha1
 
 	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/assert"
@@ -36,19 +31,6 @@ import (
 
 	"github.com/ledgerwatch/erigon-lib/common"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/kv/kvcache"
-	"github.com/ledgerwatch/erigon/core"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/rpc"
-	"github.com/ledgerwatch/erigon/rpc/rpccfg"
-	"github.com/ledgerwatch/erigon/turbo/adapter/ethapi"
-	"github.com/ledgerwatch/erigon/turbo/stages/mock"
-
-	"github.com/ledgerwatch/log/v3"
-
-	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/rpcdaemontest"
-=======
 	"github.com/erigontech/erigon-lib/common"
 
 	"github.com/erigontech/erigon-lib/kv/kvcache"
@@ -61,16 +43,11 @@ import (
 	"github.com/erigontech/erigon-lib/log/v3"
 
 	"github.com/erigontech/erigon/cmd/rpcdaemon/rpcdaemontest"
->>>>>>> v3.0.0-alpha1
 )
 
 func newBaseApiForTest(m *mock.MockSentry) *BaseAPI {
 	stateCache := kvcache.New(kvcache.DefaultCoherentConfig)
-<<<<<<< HEAD
-	return NewBaseApi(nil, stateCache, m.BlockReader, agg, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs, nil, nil)
-=======
-	return NewBaseApi(nil, stateCache, m.BlockReader, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs)
->>>>>>> v3.0.0-alpha1
+	return NewBaseApi(nil, stateCache, m.BlockReader, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs, nil, nil)
 }
 
 func TestGetBalanceChangesInBlock(t *testing.T) {
@@ -99,11 +76,7 @@ func TestGetTransactionReceipt(t *testing.T) {
 	m, _, _ := rpcdaemontest.CreateTestSentry(t)
 	db := m.DB
 	stateCache := kvcache.New(kvcache.DefaultCoherentConfig)
-<<<<<<< HEAD
-	api := NewEthAPI(NewBaseApi(nil, stateCache, m.BlockReader, agg, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs, nil, nil), db, nil, nil, nil, 5000000, 1e18, 100_000, false, 100_000, 128, log.New())
-=======
-	api := NewEthAPI(NewBaseApi(nil, stateCache, m.BlockReader, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs), db, nil, nil, nil, 5000000, 1e18, 100_000, false, 100_000, 128, log.New())
->>>>>>> v3.0.0-alpha1
+	api := NewEthAPI(NewBaseApi(nil, stateCache, m.BlockReader, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs, nil, nil), db, nil, nil, nil, 5000000, 1e18, 100_000, false, 100_000, 128, log.New())
 	// Call GetTransactionReceipt for transaction which is not in the database
 	if _, err := api.GetTransactionReceipt(context.Background(), common.Hash{}); err != nil {
 		t.Errorf("calling GetTransactionReceipt with empty hash: %v", err)

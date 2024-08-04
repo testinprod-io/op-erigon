@@ -124,11 +124,7 @@ func (br *BlockRetire) retireBorBlocks(ctx context.Context, minBlockNum uint64, 
 
 		// this is one off code to fix an issue in 2.49.x->2.52.x which missed
 		// removal of intermediate segments after a merge operation
-<<<<<<< HEAD
-		removeBorOverlapsAfterMerge(br.borSnapshots().dir, files, br.borSnapshots().BlocksAvailable())
-=======
 		removeBorOverlaps(br.borSnapshots().dir, files, br.borSnapshots().BlocksAvailable())
->>>>>>> v3.0.0-alpha1
 	}
 
 	return blocksRetired, nil

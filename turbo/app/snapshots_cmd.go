@@ -86,15 +86,10 @@ func joinFlags(lists ...[]cli.Flag) (res []cli.Flag) {
 var snapshotCommand = cli.Command{
 	Name:  "snapshots",
 	Usage: `Managing snapshots (historical data partitions)`,
-<<<<<<< HEAD
-	Before: func(context *cli.Context) error {
-		_, _, _, err := debug.Setup(context, true /* rootLogger */)
-=======
 	Before: func(cliCtx *cli.Context) error {
 		go mem.LogMemStats(cliCtx.Context, log.New())
 		go disk.UpdateDiskStats(cliCtx.Context, log.New())
 		_, _, _, err := debug.Setup(cliCtx, true /* rootLogger */)
->>>>>>> v3.0.0-alpha1
 		if err != nil {
 			return err
 		}
@@ -373,11 +368,7 @@ var (
 	}
 )
 
-<<<<<<< HEAD
-func doIntegrity(cliCtx *cli.Context) error {
-=======
 func doBtSearch(cliCtx *cli.Context) error {
->>>>>>> v3.0.0-alpha1
 	logger, _, _, err := debug.Setup(cliCtx, true /* root logger */)
 	if err != nil {
 		return err
@@ -627,37 +618,7 @@ func doDecompressSpeed(cliCtx *cli.Context) error {
 	return nil
 }
 
-<<<<<<< HEAD
-func doRam(cliCtx *cli.Context) error {
-	var logger log.Logger
-	var err error
-	if logger, _, _, err = debug.Setup(cliCtx, true /* rootLogger */); err != nil {
-		return err
-	}
-	defer logger.Info("Done")
-	args := cliCtx.Args()
-	if args.Len() < 1 {
-		return fmt.Errorf("expecting file path as a first argument")
-	}
-	f := args.First()
-	var m runtime.MemStats
-	dbg.ReadMemStats(&m)
-	before := m.Alloc
-	logger.Info("RAM before open", "alloc", common.ByteCount(m.Alloc), "sys", common.ByteCount(m.Sys))
-	decompressor, err := seg.NewDecompressor(f)
-	if err != nil {
-		return err
-	}
-	defer decompressor.Close()
-	dbg.ReadMemStats(&m)
-	logger.Info("RAM after open", "alloc", common.ByteCount(m.Alloc), "sys", common.ByteCount(m.Sys), "diff", common.ByteCount(m.Alloc-before))
-	return nil
-}
-
-func doIndicesCommand(cliCtx *cli.Context) error {
-=======
 func doIndicesCommand(cliCtx *cli.Context, dirs datadir.Dirs) error {
->>>>>>> v3.0.0-alpha1
 	logger, _, _, err := debug.Setup(cliCtx, true /* rootLogger */)
 	if err != nil {
 		return err
@@ -750,16 +711,7 @@ func openSnaps(ctx context.Context, cfg ethconfig.BlocksFreezing, dirs datadir.D
 		csn.LogStat("caplin")
 	}
 
-<<<<<<< HEAD
-	csn = freezeblocks.NewCaplinSnapshots(cfg, beaconConfig, dirs, logger)
-	if err = csn.ReopenFolder(); err != nil {
-		return
-	}
-
-	borSnaps.LogStat("bor:open")
-=======
 	borSnaps.LogStat("bor")
->>>>>>> v3.0.0-alpha1
 	agg = openAgg(ctx, dirs, chainDB, logger)
 	err = chainDB.View(ctx, func(tx kv.Tx) error {
 		ac := agg.BeginFilesRo()
@@ -899,16 +851,9 @@ func doCompress(cliCtx *cli.Context) error {
 
 	return nil
 }
-<<<<<<< HEAD
-func doRetireCommand(cliCtx *cli.Context) error {
-	var logger log.Logger
-	var err error
-	if logger, _, _, err = debug.Setup(cliCtx, true /* rootLogger */); err != nil {
-=======
 func doRetireCommand(cliCtx *cli.Context, dirs datadir.Dirs) error {
 	logger, _, _, err := debug.Setup(cliCtx, true /* rootLogger */)
 	if err != nil {
->>>>>>> v3.0.0-alpha1
 		return err
 	}
 	defer logger.Info("Done")

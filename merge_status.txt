@@ -2395,59 +2395,7 @@ Unmerged paths:
 	both modified:   polygon/sync/execution_client.go
 	both modified:   rpc/http.go
 	both modified:   tests/erigon-ext-test/go.mod.template
-	both modified:   turbo/adapter/ethapi/api.go
-	both modified:   turbo/app/snapshots_cmd.go
-	both modified:   turbo/cli/default_flags.go
-	both modified:   turbo/cli/flags.go
-	both modified:   turbo/engineapi/engine_server.go
-	both modified:   turbo/engineapi/interface.go
-	both modified:   turbo/execution/eth1/eth1_chain_reader.go/chain_reader.go
-	both modified:   turbo/execution/eth1/ethereum_execution.go
-	both modified:   turbo/execution/eth1/forkchoice.go
-	both modified:   turbo/execution/eth1/getters.go
-	both modified:   turbo/jsonrpc/call_traces_test.go
-	both modified:   turbo/jsonrpc/corner_cases_support_test.go
-	both modified:   turbo/jsonrpc/daemon.go
-	both modified:   turbo/jsonrpc/debug_api_test.go
-	both modified:   turbo/jsonrpc/erigon_receipts_test.go
-	both modified:   turbo/jsonrpc/eth_accounts.go
-	both modified:   turbo/jsonrpc/eth_api.go
-	both modified:   turbo/jsonrpc/eth_api_test.go
-	both modified:   turbo/jsonrpc/eth_block.go
-	both modified:   turbo/jsonrpc/eth_block_test.go
-	both modified:   turbo/jsonrpc/eth_call.go
-	both modified:   turbo/jsonrpc/eth_callMany.go
-	both modified:   turbo/jsonrpc/eth_callMany_test.go
-	both modified:   turbo/jsonrpc/eth_call_test.go
-	both modified:   turbo/jsonrpc/eth_filters.go
-	both modified:   turbo/jsonrpc/eth_filters_test.go
-	both modified:   turbo/jsonrpc/eth_mining_test.go
-	both modified:   turbo/jsonrpc/eth_receipts.go
-	both modified:   turbo/jsonrpc/eth_system_test.go
-	both modified:   turbo/jsonrpc/gen_traces_test.go
-	both modified:   turbo/jsonrpc/otterscan_api.go
-	both modified:   turbo/jsonrpc/otterscan_contract_creator.go
-	both modified:   turbo/jsonrpc/otterscan_generic_tracer.go
-	both modified:   turbo/jsonrpc/otterscan_search_trace.go
-	both modified:   turbo/jsonrpc/otterscan_transaction_by_sender_and_nonce_test.go
-	both modified:   turbo/jsonrpc/parity_api_test.go
-	both modified:   turbo/jsonrpc/send_transaction.go
-	both modified:   turbo/jsonrpc/send_transaction_test.go
-	both modified:   turbo/jsonrpc/trace_adhoc.go
-	both modified:   turbo/jsonrpc/trace_adhoc_test.go
-	both modified:   turbo/jsonrpc/trace_api.go
-	both modified:   turbo/jsonrpc/trace_filtering.go
-	both modified:   turbo/jsonrpc/tracing.go
-	both modified:   turbo/jsonrpc/txpool_api_test.go
-	both modified:   turbo/node/node.go
-	both modified:   turbo/snapshotsync/freezeblocks/block_reader.go
-	both modified:   turbo/snapshotsync/freezeblocks/block_snapshots.go
-	both modified:   turbo/snapshotsync/freezeblocks/bor_snapshots.go
-	both modified:   turbo/snapshotsync/snapshotsync.go
-	both modified:   turbo/stages/mock/mock_sentry.go
-	both modified:   turbo/transactions/call.go
-	both modified:   turbo/transactions/tracing.go
-
+	
 Changes not staged for commit:
   (use "git add <file>..." to update what will be committed)
   (use "git restore <file>..." to discard changes in working directory)

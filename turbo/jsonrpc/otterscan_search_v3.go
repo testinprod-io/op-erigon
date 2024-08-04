@@ -102,9 +102,18 @@ func (api *OtterscanAPIImpl) buildSearchResults(ctx context.Context, tx kv.Tempo
 			return nil, nil, false, err
 		}
 		rawLogs := exec.GetLogs(txIndex, txn)
-		rpcTx := NewRPCTransaction(txn, blockHash, blockNum, uint64(txIndex), header.BaseFee)
+
+		var receipt *types.Receipt
+		if chainConfig.IsOptimism() {
+			receipts := rawdb.ReadRawReceipts(tx, blockNum)
+			if len(receipts) <= txIndex {
+				return nil, nil, false, fmt.Errorf("block has less receipts than expected: %d <= %d, block: %d", len(receipts), txIndex, blockNum)
+			}
+			receipt = receipts[txIndex]
+		}
+		rpcTx := NewRPCTransaction(txn, blockHash, blockNum, uint64(txIndex), header.BaseFee, receipt)
 		txs = append(txs, rpcTx)
-		receipt := &types.Receipt{
+		receipt = &types.Receipt{
 			Type:              txn.Type(),
 			GasUsed:           res.UsedGas,
 			CumulativeGasUsed: res.UsedGas, // TODO: cumulative gas is wrong, wait for cumulative gas index fix

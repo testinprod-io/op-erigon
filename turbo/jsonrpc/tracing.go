@@ -26,13 +26,7 @@ import (
 	"github.com/holiman/uint256"
 	jsoniter "github.com/json-iterator/go"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
-	"github.com/ledgerwatch/erigon-lib/opstack"
-=======
 	"github.com/erigontech/erigon-lib/log/v3"
->>>>>>> v3.0.0-alpha1
 
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/hexutil"
@@ -390,11 +384,7 @@ func (api *PrivateDebugAPIImpl) TraceCall(ctx context.Context, args ethapi.CallA
 
 	var stateReader state.StateReader
 	if config == nil || config.TxIndex == nil || isLatest {
-<<<<<<< HEAD
-		stateReader, err = rpchelper.CreateStateReader(ctx, dbtx, blockNrOrHash, 0, api.filters, api.stateCache, api.historyV3(dbtx), chainConfig.ChainName)
-=======
 		stateReader, err = rpchelper.CreateStateReader(ctx, dbtx, blockNrOrHash, 0, api.filters, api.stateCache, chainConfig.ChainName)
->>>>>>> v3.0.0-alpha1
 	} else {
 		stateReader, err = rpchelper.CreateHistoryStateReader(dbtx, blockNumber, int(*config.TxIndex), chainConfig.ChainName)
 	}
@@ -541,12 +531,9 @@ func (api *PrivateDebugAPIImpl) TraceCallMany(ctx context.Context, bundles []Bun
 		return hash
 	}
 
-<<<<<<< HEAD
-	blockCtx = core.NewEVMBlockContext(header, getHash, api.engine(), nil /* author */)
-	blockCtx.L1CostFunc = opstack.NewL1CostFunc(chainConfig, st)
-=======
 	blockCtx = core.NewEVMBlockContext(header, getHash, api.engine(), nil /* author */, chainConfig)
->>>>>>> v3.0.0-alpha1
+	blockCtx.L1CostFunc = opstack.NewL1CostFunc(chainConfig, st)
+
 	// Get a new instance of the EVM
 	evm = vm.NewEVM(blockCtx, txCtx, st, chainConfig, vm.Config{Debug: false})
 	signer := types.MakeSigner(chainConfig, blockNum, block.Time())

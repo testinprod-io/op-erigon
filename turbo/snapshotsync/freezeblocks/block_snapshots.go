@@ -389,21 +389,6 @@ func (s *RoSnapshots) EnableMadvWillNeed() *RoSnapshots {
 	return s
 }
 
-<<<<<<< HEAD
-func (s *RoSnapshots) EnableMadvNormal() *RoSnapshots {
-	s.segments.Scan(func(segtype snaptype.Enum, value *segments) bool {
-		value.lock.RLock()
-		defer value.lock.RUnlock()
-		for _, sn := range value.segments {
-			sn.EnableMadvNormal()
-		}
-		return true
-	})
-	return s
-}
-
-=======
->>>>>>> v3.0.0-alpha1
 // minimax of existing indices
 func (s *RoSnapshots) idxAvailability() uint64 {
 	// Use-Cases:
@@ -1425,14 +1410,9 @@ func (br *BlockRetire) retireBlocks(ctx context.Context, minBlockNum uint64, max
 		return ok, err
 	}
 
-<<<<<<< HEAD
-	if err := snapshots.removeOverlapsAfterMerge(); err != nil {
-		return ok, err
-=======
 	// remove old garbage files
 	if err := snapshots.removeOverlapsAfterMerge(); err != nil {
 		return false, err
->>>>>>> v3.0.0-alpha1
 	}
 	return ok, nil
 }

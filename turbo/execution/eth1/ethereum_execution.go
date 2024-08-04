@@ -23,21 +23,8 @@ import (
 	"math/big"
 	"sync/atomic"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/log/v3"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/protobuf/types/known/emptypb"
-
-	"github.com/ledgerwatch/erigon-lib/chain"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/gointerfaces"
-	"github.com/ledgerwatch/erigon-lib/gointerfaces/execution"
-	"github.com/ledgerwatch/erigon-lib/kv/dbutils"
-	"github.com/ledgerwatch/erigon-lib/wrap"
-=======
-	"golang.org/x/sync/semaphore"
-	"google.golang.org/protobuf/types/known/emptypb"
->>>>>>> v3.0.0-alpha1
 
 	"github.com/erigontech/erigon-lib/log/v3"
 

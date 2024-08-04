@@ -519,16 +519,6 @@ func setEmbeddedRpcDaemon(ctx *cli.Context, cfg *nodecfg.Config, logger log.Logg
 		RpcStreamingDisable:               ctx.Bool(utils.RpcStreamingDisableFlag.Name),
 		DBReadConcurrency:                 ctx.Int(utils.DBReadConcurrencyFlag.Name),
 		RpcAllowListFilePath:              ctx.String(utils.RpcAccessListFlag.Name),
-<<<<<<< HEAD
-		Gascap:                            ctx.Uint64(utils.RpcGasCapFlag.Name),
-		Feecap:                            ctx.Float64(utils.RPCGlobalTxFeeCapFlag.Name),
-		MaxTraces:                         ctx.Uint64(utils.TraceMaxtracesFlag.Name),
-		TraceCompatibility:                ctx.Bool(utils.RpcTraceCompatFlag.Name),
-		BatchLimit:                        ctx.Int(utils.RpcBatchLimit.Name),
-		ReturnDataLimit:                   ctx.Int(utils.RpcReturnDataLimit.Name),
-		AllowUnprotectedTxs:               ctx.Bool(utils.AllowUnprotectedTxs.Name),
-		MaxGetProofRewindBlockCount:       ctx.Int(utils.RpcMaxGetProofRewindBlockCount.Name),
-=======
 		RpcFiltersConfig: rpchelper.FiltersConfig{
 			RpcSubscriptionFiltersMaxLogs:      ctx.Int(RpcSubscriptionFiltersMaxLogsFlag.Name),
 			RpcSubscriptionFiltersMaxHeaders:   ctx.Int(RpcSubscriptionFiltersMaxHeadersFlag.Name),
@@ -544,7 +534,6 @@ func setEmbeddedRpcDaemon(ctx *cli.Context, cfg *nodecfg.Config, logger log.Logg
 		ReturnDataLimit:             ctx.Int(utils.RpcReturnDataLimit.Name),
 		AllowUnprotectedTxs:         ctx.Bool(utils.AllowUnprotectedTxs.Name),
 		MaxGetProofRewindBlockCount: ctx.Int(utils.RpcMaxGetProofRewindBlockCount.Name),
->>>>>>> v3.0.0-alpha1
 
 		OtsMaxPageSize: ctx.Uint64(utils.OtsSearchMaxCapFlag.Name),
 

@@ -26,26 +26,6 @@ import (
 
 	"github.com/holiman/uint256"
 
-<<<<<<< HEAD
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
-	"github.com/ledgerwatch/erigon-lib/common/hexutility"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon-lib/opstack"
-	types2 "github.com/ledgerwatch/erigon-lib/types"
-	math2 "github.com/ledgerwatch/erigon/common/math"
-	"github.com/ledgerwatch/erigon/core"
-	"github.com/ledgerwatch/erigon/core/state"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/core/types/accounts"
-	"github.com/ledgerwatch/erigon/core/vm"
-	"github.com/ledgerwatch/erigon/eth/tracers"
-	"github.com/ledgerwatch/erigon/polygon/tracer"
-	"github.com/ledgerwatch/erigon/rpc"
-	"github.com/ledgerwatch/erigon/turbo/rpchelper"
-	"github.com/ledgerwatch/erigon/turbo/shards"
-	"github.com/ledgerwatch/erigon/turbo/transactions"
-=======
 	libcommon "github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/hexutil"
 	"github.com/erigontech/erigon-lib/common/hexutility"
@@ -64,7 +44,6 @@ import (
 	"github.com/erigontech/erigon/rpc"
 	"github.com/erigontech/erigon/turbo/rpchelper"
 	"github.com/erigontech/erigon/turbo/transactions"
->>>>>>> v3.0.0-alpha1
 )
 
 const (
@@ -262,11 +241,7 @@ func (args *TraceCallParam) ToMessage(globalGasCap uint64, baseFee *uint256.Int)
 	return msg, nil
 }
 
-<<<<<<< HEAD
-func parseOeTracerConfig(traceConfig *tracers.TraceConfig) (OeTracerConfig, error) {
-=======
 func parseOeTracerConfig(traceConfig *config.TraceConfig) (OeTracerConfig, error) {
->>>>>>> v3.0.0-alpha1
 	if traceConfig == nil || traceConfig.TracerConfig == nil || *traceConfig.TracerConfig == nil {
 		return OeTracerConfig{}, nil
 	}
@@ -775,11 +750,7 @@ func (sd *StateDiff) CompareStates(initialIbs, ibs *state.IntraBlockState) {
 	}
 }
 
-<<<<<<< HEAD
-func (api *TraceAPIImpl) ReplayTransaction(ctx context.Context, txHash libcommon.Hash, traceTypes []string, gasBailOut *bool, traceConfig *tracers.TraceConfig) (*TraceCallResult, error) {
-=======
 func (api *TraceAPIImpl) ReplayTransaction(ctx context.Context, txHash libcommon.Hash, traceTypes []string, gasBailOut *bool, traceConfig *config.TraceConfig) (*TraceCallResult, error) {
->>>>>>> v3.0.0-alpha1
 	if gasBailOut == nil {
 		gasBailOut = new(bool) // false by default
 	}
@@ -879,11 +850,7 @@ func (api *TraceAPIImpl) ReplayTransaction(ctx context.Context, txHash libcommon
 	return result, nil
 }
 
-<<<<<<< HEAD
-func (api *TraceAPIImpl) ReplayBlockTransactions(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash, traceTypes []string, gasBailOut *bool, traceConfig *tracers.TraceConfig) ([]*TraceCallResult, error) {
-=======
 func (api *TraceAPIImpl) ReplayBlockTransactions(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash, traceTypes []string, gasBailOut *bool, traceConfig *config.TraceConfig) ([]*TraceCallResult, error) {
->>>>>>> v3.0.0-alpha1
 	if gasBailOut == nil {
 		gasBailOut = new(bool) // false by default
 	}
@@ -926,11 +893,7 @@ func (api *TraceAPIImpl) ReplayBlockTransactions(ctx context.Context, blockNrOrH
 
 	signer := types.MakeSigner(chainConfig, blockNumber, block.Time())
 	// Returns an array of trace arrays, one trace array for each transaction
-<<<<<<< HEAD
-	traces, _, err := api.callManyTransactions(ctx, tx, block, traceTypes, -1 /* all tx indices */, *gasBailOut, signer, chainConfig, traceConfig)
-=======
 	traces, _, err := api.callManyTransactions(ctx, tx, block, traceTypes, -1 /* all txn indices */, *gasBailOut, signer, chainConfig, traceConfig)
->>>>>>> v3.0.0-alpha1
 	if err != nil {
 		return nil, err
 	}
@@ -958,11 +921,7 @@ func (api *TraceAPIImpl) ReplayBlockTransactions(ctx context.Context, blockNrOrH
 }
 
 // Call implements trace_call.
-<<<<<<< HEAD
-func (api *TraceAPIImpl) Call(ctx context.Context, args TraceCallParam, traceTypes []string, blockNrOrHash *rpc.BlockNumberOrHash, traceConfig *tracers.TraceConfig) (*TraceCallResult, error) {
-=======
 func (api *TraceAPIImpl) Call(ctx context.Context, args TraceCallParam, traceTypes []string, blockNrOrHash *rpc.BlockNumberOrHash, traceConfig *config.TraceConfig) (*TraceCallResult, error) {
->>>>>>> v3.0.0-alpha1
 	tx, err := api.kv.BeginRo(ctx)
 	if err != nil {
 		return nil, err
@@ -1101,11 +1060,7 @@ func (api *TraceAPIImpl) Call(ctx context.Context, args TraceCallParam, traceTyp
 }
 
 // CallMany implements trace_callMany.
-<<<<<<< HEAD
-func (api *TraceAPIImpl) CallMany(ctx context.Context, calls json.RawMessage, parentNrOrHash *rpc.BlockNumberOrHash, traceConfig *tracers.TraceConfig) ([]*TraceCallResult, error) {
-=======
 func (api *TraceAPIImpl) CallMany(ctx context.Context, calls json.RawMessage, parentNrOrHash *rpc.BlockNumberOrHash, traceConfig *config.TraceConfig) ([]*TraceCallResult, error) {
->>>>>>> v3.0.0-alpha1
 	dbtx, err := api.kv.BeginRo(ctx)
 	if err != nil {
 		return nil, err
@@ -1185,21 +1140,13 @@ func (api *TraceAPIImpl) CallMany(ctx context.Context, calls json.RawMessage, pa
 			return nil, fmt.Errorf("convert callParam to msg: %w", err)
 		}
 	}
-<<<<<<< HEAD
-	results, _, err := api.doCallMany(ctx, dbtx, msgs, callParams, parentNrOrHash, nil, true /* gasBailout */, -1 /* all tx indices */, traceConfig)
-=======
 	results, _, err := api.doCallMany(ctx, dbtx, msgs, callParams, parentNrOrHash, nil, true /* gasBailout */, -1 /* all txn indices */, traceConfig)
->>>>>>> v3.0.0-alpha1
 	return results, err
 }
 
 func (api *TraceAPIImpl) doCallMany(ctx context.Context, dbtx kv.Tx, msgs []types.Message, callParams []TraceCallParam,
 	parentNrOrHash *rpc.BlockNumberOrHash, header *types.Header, gasBailout bool, txIndexNeeded int,
-<<<<<<< HEAD
-	traceConfig *tracers.TraceConfig,
-=======
 	traceConfig *config.TraceConfig,
->>>>>>> v3.0.0-alpha1
 ) ([]*TraceCallResult, *state.IntraBlockState, error) {
 	chainConfig, err := api.chainConfig(ctx, dbtx)
 	if err != nil {
@@ -1255,15 +1202,13 @@ func (api *TraceAPIImpl) doCallMany(ctx context.Context, dbtx kv.Tx, msgs []type
 		useParent = true
 	}
 
-<<<<<<< HEAD
 	l1CostFunc := opstack.NewL1CostFunc(chainConfig, ibs)
-=======
+
 	var baseTxNum uint64
 	historicalStateReader, isHistoricalStateReader := stateReader.(state.HistoricalStateReader)
 	if isHistoricalStateReader {
 		baseTxNum = historicalStateReader.GetTxNum()
 	}
->>>>>>> v3.0.0-alpha1
 	for txIndex, msg := range msgs {
 		if isHistoricalStateReader {
 			historicalStateReader.SetTxNum(baseTxNum + uint64(txIndex))

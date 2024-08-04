@@ -23,20 +23,6 @@ import (
 	"math/big"
 
 	"github.com/holiman/uint256"
-<<<<<<< HEAD
-	"github.com/ledgerwatch/log/v3"
-	"google.golang.org/grpc"
-
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
-	"github.com/ledgerwatch/erigon-lib/common/hexutility"
-	"github.com/ledgerwatch/erigon-lib/gointerfaces"
-	txpool_proto "github.com/ledgerwatch/erigon-lib/gointerfaces/txpool"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon-lib/kv/membatchwithdb"
-	"github.com/ledgerwatch/erigon-lib/opstack"
-	types2 "github.com/ledgerwatch/erigon-lib/types"
-=======
 	"google.golang.org/grpc"
 
 	libcommon "github.com/erigontech/erigon-lib/common"
@@ -47,7 +33,6 @@ import (
 	"github.com/erigontech/erigon-lib/kv"
 	"github.com/erigontech/erigon-lib/log/v3"
 	types2 "github.com/erigontech/erigon-lib/types"
->>>>>>> v3.0.0-alpha1
 
 	"github.com/erigontech/erigon/core"
 	"github.com/erigontech/erigon/core/state"
@@ -375,81 +360,9 @@ func (api *APIImpl) EstimateGas(ctx context.Context, argsOrNil *ethapi2.CallArgs
 // GetProof is partially implemented; no Storage proofs, and proofs must be for
 // blocks within maxGetProofRewindBlockCount blocks of the head.
 func (api *APIImpl) GetProof(ctx context.Context, address libcommon.Address, storageKeys []libcommon.Hash, blockNrOrHash rpc.BlockNumberOrHash) (*accounts.AccProofResult, error) {
-<<<<<<< HEAD
-
-	tx, err := api.db.BeginRo(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-	if api.historyV3(tx) {
-		return nil, fmt.Errorf("not supported by Erigon3")
-	}
-
-	// Handle pre-bedrock blocks
-	blockNum, err := api.blockNumberFromBlockNumberOrHash(tx, &blockNrOrHash)
-	if err != nil {
-		return nil, err
-	}
-	chainConfig, err := api.chainConfig(ctx, tx)
-	if err != nil {
-		return nil, fmt.Errorf("read chain config: %v", err)
-	}
-	if chainConfig.IsOptimismPreBedrock(blockNum) {
-		if api.historicalRPCService == nil {
-			return nil, rpc.ErrNoHistoricalFallback
-		}
-		var result accounts.AccProofResult
-		if err := api.relayToHistoricalBackend(ctx, &result, "eth_getProof", address, storageKeys, hexutil.EncodeUint64(blockNum)); err != nil {
-			return nil, fmt.Errorf("historical backend error: %w", err)
-		}
-		return &result, nil
-	}
-
-	blockNr, _, _, err := rpchelper.GetBlockNumber(blockNrOrHash, tx, api.filters)
-	if err != nil {
-		return nil, err
-	}
-
-	header, err := api._blockReader.HeaderByNumber(ctx, tx, blockNr)
-	if err != nil {
-		return nil, err
-	}
-
-	latestBlock, err := rpchelper.GetLatestBlockNumber(tx)
-	if err != nil {
-		return nil, err
-	}
-
-	if latestBlock < blockNr {
-		// shouldn't happen, but check anyway
-		return nil, fmt.Errorf("block number is in the future latest=%d requested=%d", latestBlock, blockNr)
-	}
-
-	rl := trie.NewRetainList(0)
-	var loader *trie.FlatDBTrieLoader
-	if blockNr < latestBlock {
-		if latestBlock-blockNr > uint64(api.MaxGetProofRewindBlockCount) {
-			return nil, fmt.Errorf("requested block is too old, block must be within %d blocks of the head block number (currently %d)", uint64(api.MaxGetProofRewindBlockCount), latestBlock)
-		}
-		batch := membatchwithdb.NewMemoryBatch(tx, api.dirs.Tmp, api.logger)
-		defer batch.Rollback()
-
-		unwindState := &stagedsync.UnwindState{UnwindPoint: blockNr}
-		stageState := &stagedsync.StageState{BlockNumber: latestBlock}
-
-		hashStageCfg := stagedsync.StageHashStateCfg(nil, api.dirs, api.historyV3(batch))
-		if err := stagedsync.UnwindHashStateStage(unwindState, stageState, batch, hashStageCfg, ctx, api.logger); err != nil {
-			return nil, err
-		}
-
-		interHashStageCfg := stagedsync.StageTrieCfg(nil, false, false, false, api.dirs.Tmp, api._blockReader, nil, api.historyV3(batch), api._agg)
-		loader, err = stagedsync.UnwindIntermediateHashesForTrieLoader("eth_getProof", rl, unwindState, stageState, batch, interHashStageCfg, nil, nil, ctx.Done(), api.logger)
-=======
 	return nil, fmt.Errorf("not supported by Erigon3")
 	/*
 		tx, err := api.db.BeginRo(ctx)
->>>>>>> v3.0.0-alpha1
 		if err != nil {
 			return nil, err
 		}

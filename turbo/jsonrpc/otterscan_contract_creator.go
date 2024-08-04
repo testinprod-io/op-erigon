@@ -164,13 +164,6 @@ func (api *OtterscanAPIImpl) GetContractCreator(ctx context.Context, addr common
 		return nil, fmt.Errorf("binary search between %d-%d doesn't find anything", nextTxnID, prevTxnID)
 	}
 
-<<<<<<< HEAD
-	// TODO: check if precompiled contract
-	if !tracer.Found() {
-		return nil, nil
-	}
-
-=======
 	ok, bn, err := rawdbv3.TxNums.FindBlockNum(tx, creationTxnID)
 	if err != nil {
 		return nil, err
@@ -189,10 +182,15 @@ func (api *OtterscanAPIImpl) GetContractCreator(ctx context.Context, addr common
 
 	// Trace block, find txn and contract creator
 	tracer := NewCreateTracer(ctx, addr)
+
+	// TODO: check if precompiled contract
+	if !tracer.Found() {
+		return nil, nil
+	}
+
 	if err := api.genericTracer(tx, ctx, bn, creationTxnID, txIndex, chainConfig, tracer); err != nil {
 		return nil, err
 	}
->>>>>>> v3.0.0-alpha1
 	return &ContractCreatorData{
 		Tx:      tracer.Tx.Hash(),
 		Creator: tracer.Creator,
