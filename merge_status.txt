@@ -2293,14 +2293,6 @@ Unmerged paths:
 	both modified:   Makefile
 	both modified:   accounts/abi/bind/backends/simulated.go
 	both modified:   accounts/abi/bind/template.go
-	both modified:   cl/beacon/handler/block_production.go
-	both modified:   cl/beacon/handler/handler.go
-	both modified:   cl/beacon/handler/node.go
-	both modified:   cl/clparams/config.go
-	both modified:   cl/phase1/forkchoice/fork_graph/fork_graph_disk.go
-	both modified:   cl/sentinel/gossip.go
-	both modified:   cl/sentinel/service/start.go
-	both modified:   cl/transition/impl/eth2/operations.go
 	both modified:   cmd/devnet/main.go
 	both modified:   cmd/devnet/services/polygon/proofgenerator_test.go
 	both modified:   cmd/diag/db/db.go

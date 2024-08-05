@@ -304,13 +304,7 @@ func (b ConfigByte) MarshalJSON() ([]byte, error) {
 type ConfigForkVersion uint32
 
 func (v ConfigForkVersion) MarshalJSON() ([]byte, error) {
-<<<<<<< HEAD
-	tmp := make([]byte, 4)
-	binary.BigEndian.PutUint32(tmp, uint32(v))
-	return []byte(fmt.Sprintf("\"0x%x\"", tmp)), nil
-=======
 	return []byte(fmt.Sprintf("\"0x%08x\"", v)), nil
->>>>>>> v3.0.0-alpha1
 }
 
 // BeaconChainConfig contains constant configs for node to participate in beacon chain.

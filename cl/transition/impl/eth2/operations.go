@@ -363,11 +363,7 @@ func (I *impl) ProcessExecutionPayload(s abstract.BeaconState, parentHash, prevR
 			return fmt.Errorf("ProcessExecutionPayload: invalid eth1 chain. mismatching parent")
 		}
 	}
-<<<<<<< HEAD
-	if payload.PrevRandao != s.GetRandaoMixes(state.Epoch(s)) {
-=======
 	if prevRandao != s.GetRandaoMixes(state.Epoch(s)) {
->>>>>>> v3.0.0-alpha1
 		return fmt.Errorf(
 			"ProcessExecutionPayload: randao mix mismatches with mix digest, expected %x, got %x",
 			s.GetRandaoMixes(state.Epoch(s)),

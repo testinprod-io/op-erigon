@@ -23,15 +23,6 @@ import (
 	"strings"
 	"time"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon/cl/gossip"
-	"github.com/ledgerwatch/erigon/cl/persistence/blob_storage"
-	"github.com/ledgerwatch/erigon/cl/phase1/forkchoice"
-	"github.com/ledgerwatch/erigon/cl/sentinel"
-	"github.com/ledgerwatch/erigon/cl/utils/eth_clock"
-	"github.com/ledgerwatch/erigon/common/math"
-	"github.com/ledgerwatch/erigon/turbo/snapshotsync/freezeblocks"
-=======
 	"github.com/erigontech/erigon/cl/gossip"
 	"github.com/erigontech/erigon/cl/persistence/blob_storage"
 	"github.com/erigontech/erigon/cl/phase1/forkchoice"
@@ -39,7 +30,6 @@ import (
 	"github.com/erigontech/erigon/cl/utils/eth_clock"
 	"github.com/erigontech/erigon/common/math"
 	"github.com/erigontech/erigon/turbo/snapshotsync/freezeblocks"
->>>>>>> v3.0.0-alpha1
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"

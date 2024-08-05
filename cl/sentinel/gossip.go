@@ -533,46 +533,6 @@ type GossipSubscription struct {
 	closeOnce sync.Once
 }
 
-<<<<<<< HEAD
-func (sub *GossipSubscription) Listen() {
-	go func() {
-		var err error
-		checkingInterval := time.NewTicker(100 * time.Millisecond)
-		for {
-			select {
-			case <-sub.ctx.Done():
-				return
-			case <-checkingInterval.C:
-
-				expirationTime := sub.expiration.Load().(time.Time)
-				if sub.subscribed.Load() && time.Now().After(expirationTime) {
-					sub.stopCh <- struct{}{}
-					if cancelFunc := sub.cf; cancelFunc != nil {
-						cancelFunc() // stop pubsub.Subscription.Next
-					}
-					sub.topic.Close()
-					sub.subscribed.Store(false)
-					log.Info("[Gossip] Unsubscribed from topic", "topic", sub.sub.Topic())
-					sub.s.updateENROnSubscription(sub.sub.Topic(), false)
-					continue
-				}
-				if !sub.subscribed.Load() && time.Now().Before(expirationTime) {
-					sub.stopCh = make(chan struct{}, 3)
-					sub.sub, err = sub.topic.Subscribe()
-					if err != nil {
-						log.Warn("[Gossip] failed to begin topic subscription", "err", err)
-						time.Sleep(30 * time.Second)
-						continue
-					}
-					var sctx context.Context
-					sctx, sub.cf = context.WithCancel(sub.ctx)
-					go sub.run(sctx, sub.sub, sub.sub.Topic())
-					sub.subscribed.Store(true)
-					sub.s.updateENROnSubscription(sub.sub.Topic(), true)
-					log.Info("[Gossip] Subscribed to topic", "topic", sub.sub.Topic())
-				}
-			}
-=======
 func (sub *GossipSubscription) checkIfTopicNeedsToEnabledOrDisabled() {
 	var err error
 	expirationTime := sub.expiration.Load().(time.Time)
@@ -590,7 +550,6 @@ func (sub *GossipSubscription) checkIfTopicNeedsToEnabledOrDisabled() {
 		if err != nil {
 			log.Warn("[Gossip] failed to begin topic subscription", "err", err)
 			return
->>>>>>> v3.0.0-alpha1
 		}
 		var sctx context.Context
 		sctx, sub.cf = context.WithCancel(sub.ctx)

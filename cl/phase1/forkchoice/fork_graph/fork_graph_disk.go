@@ -40,11 +40,7 @@ import (
 	"github.com/erigontech/erigon/cl/transition/impl/eth2"
 )
 
-<<<<<<< HEAD
-const dumpSlotFrequency = 17
-=======
 const dumpSlotFrequency = 4
->>>>>>> v3.0.0-alpha1
 
 type syncCommittees struct {
 	currentSyncCommittee *solid.SyncCommittee

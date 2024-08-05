@@ -33,30 +33,6 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/common"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
-	"github.com/ledgerwatch/erigon-lib/common/length"
-	"github.com/ledgerwatch/erigon-lib/gointerfaces/sentinel"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon/cl/abstract"
-	"github.com/ledgerwatch/erigon/cl/beacon/beaconhttp"
-	"github.com/ledgerwatch/erigon/cl/clparams"
-	"github.com/ledgerwatch/erigon/cl/cltypes"
-	"github.com/ledgerwatch/erigon/cl/cltypes/solid"
-	"github.com/ledgerwatch/erigon/cl/gossip"
-	"github.com/ledgerwatch/erigon/cl/persistence/beacon_indicies"
-	"github.com/ledgerwatch/erigon/cl/phase1/core/state"
-	"github.com/ledgerwatch/erigon/cl/transition"
-	"github.com/ledgerwatch/erigon/cl/transition/impl/eth2"
-	"github.com/ledgerwatch/erigon/cl/transition/machine"
-	"github.com/ledgerwatch/erigon/cl/utils"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/turbo/engineapi/engine_types"
-	"github.com/ledgerwatch/log/v3"
-	"golang.org/x/exp/slices"
-=======
 	"golang.org/x/exp/slices"
 
 	"github.com/erigontech/erigon-lib/common"
@@ -81,7 +57,6 @@ import (
 	"github.com/erigontech/erigon/cl/utils"
 	"github.com/erigontech/erigon/core/types"
 	"github.com/erigontech/erigon/turbo/engineapi/engine_types"
->>>>>>> v3.0.0-alpha1
 )
 
 type BlockPublishingValidation string
@@ -170,8 +145,6 @@ func (a *ApiHandler) GetEthV3ValidatorBlock(
 			http.StatusBadRequest,
 			fmt.Errorf("invalid slot: %v", err),
 		)
-<<<<<<< HEAD
-=======
 	}
 
 	// builder boost factor controls block choice between local execution node or builder
@@ -185,7 +158,6 @@ func (a *ApiHandler) GetEthV3ValidatorBlock(
 				fmt.Errorf("invalid builder_boost_factor: %v", err),
 			)
 		}
->>>>>>> v3.0.0-alpha1
 	}
 
 	s := a.syncedData.HeadState()
@@ -229,55 +201,15 @@ func (a *ApiHandler) GetEthV3ValidatorBlock(
 	if err := transition.DefaultMachine.ProcessSlots(baseState, targetSlot); err != nil {
 		return nil, err
 	}
-<<<<<<< HEAD
-
-	beaconBody, executionValue, err := a.produceBeaconBody(
-		ctx,
-		3,
-		sourceBlock.Block,
-		baseState,
-		targetSlot,
-		randaoReveal,
-		graffiti,
-	)
-=======
 	block, err := a.produceBlock(ctx, builderBoostFactor, sourceBlock.Block, baseState, targetSlot, randaoReveal, graffiti)
->>>>>>> v3.0.0-alpha1
 	if err != nil {
 		log.Warn("Failed to produce block", "err", err, "slot", targetSlot)
 		return nil, err
 	}
 
-<<<<<<< HEAD
-	proposerIndex, err := baseState.GetBeaconProposerIndex()
-	if err != nil {
-		return nil, err
-	}
-
-	rewardsCollector := &eth2.BlockRewardsCollector{}
-	block := &cltypes.BeaconBlock{
-		Slot:          targetSlot,
-		ProposerIndex: proposerIndex,
-		ParentRoot:    baseBlockRoot,
-		Body:          beaconBody,
-	}
-	log.Info(
-		"BlockProduction: Computing HashSSZ block",
-		"slot",
-		targetSlot,
-		"execution_value",
-		executionValue,
-		"proposerIndex",
-		proposerIndex,
-	)
-
-	// compute the state root now
-	if err := machine.ProcessBlock(transition.DefaultMachine, baseState, &cltypes.SignedBeaconBlock{Block: block}); err != nil {
-=======
 	// do state transition
 	if err := machine.ProcessBlock(transition.DefaultMachine, baseState, block.ToGeneric()); err != nil {
 		log.Warn("Failed to process execution block", "err", err, "slot", targetSlot)
->>>>>>> v3.0.0-alpha1
 		return nil, err
 	}
 	block.StateRoot, err = baseState.HashSSZ()
@@ -298,10 +230,6 @@ func (a *ApiHandler) GetEthV3ValidatorBlock(
 	// todo: consensusValue
 	rewardsCollector := &eth2.BlockRewardsCollector{}
 	consensusValue := rewardsCollector.Attestations + rewardsCollector.ProposerSlashings + rewardsCollector.AttesterSlashings + rewardsCollector.SyncAggregate
-<<<<<<< HEAD
-	isSSZBlinded := false
-=======
->>>>>>> v3.0.0-alpha1
 	a.setupHeaderReponseForBlockProduction(
 		w,
 		block.Version(),
@@ -321,8 +249,6 @@ func (a *ApiHandler) GetEthV3ValidatorBlock(
 		With("consensus_block_value", strconv.FormatUint(consensusValue, 10)), nil
 }
 
-<<<<<<< HEAD
-=======
 func (a *ApiHandler) produceBlock(
 	ctx context.Context,
 	boostFactor uint64,
@@ -504,7 +430,6 @@ func (a *ApiHandler) getBuilderPayload(
 	return header, nil
 }
 
->>>>>>> v3.0.0-alpha1
 func (a *ApiHandler) produceBeaconBody(
 	ctx context.Context,
 	apiVersion int,
@@ -985,14 +910,8 @@ func (a *ApiHandler) parseBlockPublishingValidation(
 func (a *ApiHandler) parseRequestBeaconBlock(
 	version clparams.StateVersion,
 	r *http.Request,
-<<<<<<< HEAD
-) (*cltypes.SignedBeaconBlock, error) {
-	block := cltypes.NewSignedBeaconBlock(a.beaconChainCfg)
-	block.Block.Body.Version = version
-=======
 ) (*cltypes.DenebSignedBeaconBlock, error) {
 	block := cltypes.NewDenebSignedBeaconBlock(a.beaconChainCfg)
->>>>>>> v3.0.0-alpha1
 	// check content type
 	switch r.Header.Get("Content-Type") {
 	case "application/json":
