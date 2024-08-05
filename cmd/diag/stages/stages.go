@@ -17,21 +17,12 @@
 package stages
 
 import (
-<<<<<<< HEAD
-=======
 	"strconv"
 	"strings"
->>>>>>> v3.0.0-alpha1
 	"sync"
 	"time"
 
 	"github.com/jedib0t/go-pretty/v6/table"
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/diagnostics"
-	"github.com/ledgerwatch/erigon/cmd/diag/flags"
-	"github.com/ledgerwatch/erigon/cmd/diag/util"
-=======
->>>>>>> v3.0.0-alpha1
 	"github.com/urfave/cli/v2"
 
 	"github.com/erigontech/erigon-lib/diagnostics"
@@ -219,8 +210,6 @@ func createStageRowFromStage(stage diagnostics.SyncStage) table.Row {
 }
 
 func createSubStageRowFromSubstageStage(substage diagnostics.SyncSubStage) table.Row {
-<<<<<<< HEAD
-=======
 	progress := substage.Stats.Progress
 
 	if substage.State == diagnostics.Completed {
@@ -236,17 +225,11 @@ func createSubStageRowFromSubstageStage(substage diagnostics.SyncSubStage) table
 		}
 	}
 
->>>>>>> v3.0.0-alpha1
 	return table.Row{
 		"",
 		substage.ID,
 		substage.State.String(),
 		substage.Stats.TimeElapsed,
-<<<<<<< HEAD
-		substage.Stats.Progress,
-	}
-}
-=======
 		progress,
 	}
 }
@@ -256,4 +239,3 @@ func convertProgress(progress string) int {
 	progressInt, _ := strconv.Atoi(progress)
 	return progressInt
 }
->>>>>>> v3.0.0-alpha1

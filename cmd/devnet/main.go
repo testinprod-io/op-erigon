@@ -29,28 +29,6 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/chain/networkname"
-	"github.com/ledgerwatch/erigon-lib/common/metrics"
-	"github.com/ledgerwatch/erigon/cmd/devnet/accounts"
-	_ "github.com/ledgerwatch/erigon/cmd/devnet/accounts/steps"
-	_ "github.com/ledgerwatch/erigon/cmd/devnet/admin"
-	_ "github.com/ledgerwatch/erigon/cmd/devnet/contracts/steps"
-	"github.com/ledgerwatch/erigon/cmd/utils"
-
-	"github.com/ledgerwatch/erigon/cmd/devnet/devnet"
-	"github.com/ledgerwatch/erigon/cmd/devnet/devnetutils"
-	"github.com/ledgerwatch/erigon/cmd/devnet/networks"
-	"github.com/ledgerwatch/erigon/cmd/devnet/requests"
-	"github.com/ledgerwatch/erigon/cmd/devnet/scenarios"
-	"github.com/ledgerwatch/erigon/cmd/devnet/services"
-	"github.com/ledgerwatch/erigon/cmd/devnet/services/polygon"
-	"github.com/ledgerwatch/erigon/cmd/utils/flags"
-	"github.com/ledgerwatch/erigon/params"
-	erigon_app "github.com/ledgerwatch/erigon/turbo/app"
-	"github.com/ledgerwatch/erigon/turbo/debug"
-	"github.com/ledgerwatch/erigon/turbo/logging"
-=======
 	"github.com/erigontech/erigon-lib/log/v3"
 
 	"github.com/erigontech/erigon-lib/chain/networkname"
@@ -71,7 +49,6 @@ import (
 	erigon_app "github.com/erigontech/erigon/turbo/app"
 	"github.com/erigontech/erigon/turbo/debug"
 	"github.com/erigontech/erigon/turbo/logging"
->>>>>>> v3.0.0-alpha1
 )
 
 var (

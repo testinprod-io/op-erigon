@@ -29,34 +29,14 @@ import (
 	"strings"
 	"time"
 
-<<<<<<< HEAD
-	_ "github.com/ledgerwatch/erigon/core/snaptype"        //hack
-	_ "github.com/ledgerwatch/erigon/polygon/bor/snaptype" //hack
-=======
 	"github.com/erigontech/erigon-lib/common/dbg"
 	_ "github.com/erigontech/erigon/core/snaptype"        //hack
 	_ "github.com/erigontech/erigon/polygon/bor/snaptype" //hack
->>>>>>> v3.0.0-alpha1
 
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/c2h5oh/datasize"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/chain/networkname"
-	"github.com/ledgerwatch/erigon-lib/chain/snapcfg"
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/datadir"
-	"github.com/ledgerwatch/erigon-lib/common/dir"
-	"github.com/ledgerwatch/erigon-lib/downloader"
-	"github.com/ledgerwatch/erigon-lib/downloader/downloadercfg"
-	"github.com/ledgerwatch/erigon-lib/downloader/downloadergrpc"
-	proto_downloader "github.com/ledgerwatch/erigon-lib/gointerfaces/downloader"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon-lib/kv/mdbx"
-	"github.com/ledgerwatch/log/v3"
-=======
->>>>>>> v3.0.0-alpha1
 	"github.com/pelletier/go-toml/v2"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"

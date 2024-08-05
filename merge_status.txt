@@ -2293,22 +2293,6 @@ Unmerged paths:
 	both modified:   Makefile
 	both modified:   accounts/abi/bind/backends/simulated.go
 	both modified:   accounts/abi/bind/template.go
-	both modified:   cmd/devnet/main.go
-	both modified:   cmd/devnet/services/polygon/proofgenerator_test.go
-	both modified:   cmd/diag/db/db.go
-	both modified:   cmd/diag/downloader/diag_downloader.go
-	both modified:   cmd/diag/main.go
-	both added:      cmd/diag/readme.md
-	both modified:   cmd/diag/stages/stages.go
-	both added:      cmd/diag/ui/ui.go
-	both modified:   cmd/downloader/main.go
-	both modified:   cmd/integration/commands/stages.go
-	both modified:   cmd/integration/main.go
-	both modified:   cmd/rpcdaemon/main.go
-	both modified:   cmd/snapshots/manifest/manifest.go
-	both modified:   cmd/state/exec3/state.go
-	both modified:   cmd/state/exec3/state_recon.go
-	both modified:   cmd/utils/flags.go
 	both modified:   core/genesis_write.go
 	both modified:   core/rawdb/accessors_chain.go
 	both modified:   core/rawdb/accessors_metadata.go

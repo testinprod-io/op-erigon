@@ -41,28 +41,6 @@ import (
 
 	"github.com/erigontech/erigon-lib/log/v3"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon/cl/clparams"
-	"github.com/ledgerwatch/erigon/cmd/downloader/downloadernat"
-	"github.com/ledgerwatch/erigon/cmd/utils/flags"
-	common2 "github.com/ledgerwatch/erigon/common"
-	"github.com/ledgerwatch/erigon/common/paths"
-	"github.com/ledgerwatch/erigon/consensus/ethash/ethashcfg"
-	"github.com/ledgerwatch/erigon/core"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/crypto"
-	"github.com/ledgerwatch/erigon/eth/ethconfig"
-	"github.com/ledgerwatch/erigon/eth/gasprice/gaspricecfg"
-	"github.com/ledgerwatch/erigon/node/nodecfg"
-	"github.com/ledgerwatch/erigon/p2p"
-	"github.com/ledgerwatch/erigon/p2p/enode"
-	"github.com/ledgerwatch/erigon/p2p/nat"
-	"github.com/ledgerwatch/erigon/p2p/netutil"
-	"github.com/ledgerwatch/erigon/params"
-	borsnaptype "github.com/ledgerwatch/erigon/polygon/bor/snaptype"
-	"github.com/ledgerwatch/erigon/rpc/rpccfg"
-	"github.com/ledgerwatch/erigon/turbo/logging"
-=======
 	"github.com/erigontech/erigon-lib/chain/networkname"
 	"github.com/erigontech/erigon-lib/chain/snapcfg"
 	libcommon "github.com/erigontech/erigon-lib/common"
@@ -92,7 +70,6 @@ import (
 	borsnaptype "github.com/erigontech/erigon/polygon/bor/snaptype"
 	"github.com/erigontech/erigon/rpc/rpccfg"
 	"github.com/erigontech/erigon/turbo/logging"
->>>>>>> v3.0.0-alpha1
 )
 
 // These are all the command line flags we support.
@@ -1889,14 +1866,12 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 		cfg.NetworkID = params.NetworkIDByChainName(chain)
 	}
 
-<<<<<<< HEAD
+	// FIXME: V3_MERGE
 	cfg.Sync.UseSnapshots = ethconfig.UseSnapshotsByChainName(GetChainNameFromFlag(ctx))
 	if ctx.IsSet(SnapshotFlag.Name) { //force override default by cli
 		cfg.Sync.UseSnapshots = ctx.Bool(SnapshotFlag.Name)
 	}
 
-=======
->>>>>>> v3.0.0-alpha1
 	cfg.Dirs = nodeConfig.Dirs
 	cfg.Snapshot.KeepBlocks = ctx.Bool(SnapKeepBlocksFlag.Name)
 	cfg.Snapshot.ProduceE2 = !ctx.Bool(SnapStopFlag.Name)
@@ -1924,16 +1899,11 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 		if known, ok := snapcfg.KnownWebseeds[chain]; ok {
 			webseedsList = append(webseedsList, known...)
 		}
-<<<<<<< HEAD
-		cfg.Downloader, err = downloadercfg2.New(cfg.Dirs, version, lvl, downloadRate, uploadRate, ctx.Int(TorrentPortFlag.Name), ctx.Int(TorrentConnsPerFileFlag.Name), ctx.Int(TorrentDownloadSlotsFlag.Name), libcommon.CliString2Array(ctx.String(TorrentStaticPeersFlag.Name)), webseedsList, chain, true)
-
-=======
 		cfg.Downloader, err = downloadercfg2.New(cfg.Dirs, version, lvl, downloadRate, uploadRate,
 			ctx.Int(TorrentPortFlag.Name), ctx.Int(TorrentConnsPerFileFlag.Name), ctx.Int(TorrentDownloadSlotsFlag.Name),
 			libcommon.CliString2Array(ctx.String(TorrentStaticPeersFlag.Name)),
 			webseedsList, chain, true, ctx.Bool(DbWriteMapFlag.Name),
 		)
->>>>>>> v3.0.0-alpha1
 		if err != nil {
 			panic(err)
 		}
@@ -2044,7 +2014,7 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 		cfg.OverridePragueTime = flags.GlobalBig(ctx, OverridePragueFlag.Name)
 		cfg.TxPool.OverridePragueTime = cfg.OverridePragueTime
 	}
-<<<<<<< HEAD
+
 	if ctx.IsSet(OverrideShanghaiTime.Name) {
 		cfg.OverrideShanghaiTime = flags.GlobalBig(ctx, OverrideShanghaiTime.Name)
 		cfg.TxPool.OverrideShanghaiTime = cfg.OverrideShanghaiTime
@@ -2080,13 +2050,9 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 	if ctx.IsSet(OverrideOptimismFjordFlag.Name) {
 		cfg.OverrideOptimismFjordTime = flags.GlobalBig(ctx, OverrideOptimismFjordFlag.Name)
 	}
-	if ctx.IsSet(InternalConsensusFlag.Name) && clparams.EmbeddedSupported(cfg.NetworkID) {
-		cfg.InternalCL = ctx.Bool(InternalConsensusFlag.Name)
-=======
 
 	if clparams.EmbeddedSupported(cfg.NetworkID) {
 		cfg.InternalCL = !ctx.Bool(ExternalConsensusFlag.Name)
->>>>>>> v3.0.0-alpha1
 	}
 
 	if ctx.IsSet(TrustedSetupFile.Name) {

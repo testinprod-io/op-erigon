@@ -26,17 +26,6 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon/cmd/diag/db"
-	"github.com/ledgerwatch/erigon/cmd/diag/downloader"
-	"github.com/ledgerwatch/erigon/cmd/diag/stages"
-	"github.com/ledgerwatch/erigon/cmd/diag/ui"
-	"github.com/ledgerwatch/erigon/cmd/snapshots/sync"
-	"github.com/ledgerwatch/erigon/cmd/utils"
-	"github.com/ledgerwatch/erigon/params"
-	"github.com/ledgerwatch/erigon/turbo/logging"
-	"github.com/ledgerwatch/log/v3"
-=======
 	"github.com/erigontech/erigon-lib/log/v3"
 
 	"github.com/erigontech/erigon/cmd/diag/db"
@@ -47,7 +36,6 @@ import (
 	"github.com/erigontech/erigon/cmd/utils"
 	"github.com/erigontech/erigon/params"
 	"github.com/erigontech/erigon/turbo/logging"
->>>>>>> v3.0.0-alpha1
 )
 
 func main() {

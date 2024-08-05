@@ -23,19 +23,9 @@ import (
 	"sync"
 
 	"github.com/RoaringBitmap/roaring/roaring64"
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/chain"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/length"
-	"github.com/ledgerwatch/erigon-lib/etl"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	libstate "github.com/ledgerwatch/erigon-lib/state"
-	"github.com/ledgerwatch/log/v3"
-=======
 
 	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/erigontech/erigon/eth/consensuschain"
->>>>>>> v3.0.0-alpha1
 
 	"github.com/erigontech/erigon-lib/chain"
 	libcommon "github.com/erigontech/erigon-lib/common"

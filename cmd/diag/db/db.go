@@ -22,12 +22,6 @@ import (
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon/cmd/diag/flags"
-	"github.com/ledgerwatch/erigon/cmd/diag/util"
-=======
->>>>>>> v3.0.0-alpha1
 	"github.com/urfave/cli/v2"
 
 	"github.com/erigontech/erigon-lib/common"

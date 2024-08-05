@@ -24,19 +24,6 @@ import (
 
 	"github.com/erigontech/erigon-lib/log/v3"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon/cmd/state/exec22"
-	"github.com/ledgerwatch/erigon/consensus"
-	"github.com/ledgerwatch/erigon/core"
-	"github.com/ledgerwatch/erigon/core/rawdb"
-	"github.com/ledgerwatch/erigon/core/state"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/core/vm"
-	"github.com/ledgerwatch/erigon/core/vm/evmtypes"
-	"github.com/ledgerwatch/erigon/rlp"
-	"github.com/ledgerwatch/erigon/turbo/services"
-	"github.com/ledgerwatch/log/v3"
-=======
 	"github.com/erigontech/erigon-lib/common/datadir"
 	"github.com/erigontech/erigon/eth/consensuschain"
 
@@ -52,7 +39,6 @@ import (
 	"github.com/erigontech/erigon/core/vm/evmtypes"
 	"github.com/erigontech/erigon/turbo/services"
 	"github.com/erigontech/erigon/turbo/shards"
->>>>>>> v3.0.0-alpha1
 )
 
 type Worker struct {
