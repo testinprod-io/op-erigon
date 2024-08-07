@@ -75,6 +75,7 @@ type Config struct {
 	// Delta: the Delta upgrade does not affect the execution-layer, and is thus not configurable in the chain config.
 	EcotoneTime *big.Int `json:"ecotoneTime,omitempty"` // Ecotone switch time (nil = no fork, 0 = already on optimism ecotone)
 	FjordTime   *big.Int `json:"fjordTime,omitempty"`   // Fjord switch time (nil = no fork, 0 = already on optimism fjord)
+	GraniteTime *big.Int `json:"graniteTime,omitempty"` // Granite switch time (nil = no fork, 0 = already on optimism granite)
 
 	// Optional EIP-4844 parameters
 	MinBlobGasPrice            *uint64 `json:"minBlobGasPrice,omitempty"`
@@ -149,12 +150,13 @@ func (c *Config) String() string {
 		c.NoPruneContracts,
 	)
 	if c.IsOptimism() {
-		configString += fmt.Sprintf("{Bedrock: %v, Regolith: %v, Canyon: %v, Ecotone: %v, Fjord: %v}",
+		configString += fmt.Sprintf("{Bedrock: %v, Regolith: %v, Canyon: %v, Ecotone: %v, Fjord: %v, Granite: %v}",
 			c.BedrockBlock,
 			c.RegolithTime,
 			c.CanyonTime,
 			c.EcotoneTime,
 			c.FjordTime,
+			c.GraniteTime,
 		)
 	}
 	return configString
@@ -336,6 +338,10 @@ func (c *Config) IsFjord(time uint64) bool {
 	return isForked(c.FjordTime, time)
 }
 
+func (c *Config) IsGranite(time uint64) bool {
+	return isForked(c.GraniteTime, time)
+}
+
 // IsOptimism returns whether the node is an optimism node or not.
 func (c *Config) IsOptimism() bool {
 	return c.Optimism != nil
@@ -360,6 +366,10 @@ func (c *Config) IsOptimismEcotone(time uint64) bool {
 
 func (c *Config) IsOptimismFjord(time uint64) bool {
 	return c.IsOptimism() && c.IsFjord(time)
+}
+
+func (c *Config) IsOptimismGranite(time uint64) bool {
+	return c.IsOptimism() && c.IsGranite(time)
 }
 
 // IsOptimismPreBedrock returns true iff this is an optimism node & bedrock is not yet active
@@ -615,6 +625,7 @@ type Rules struct {
 	IsAura                                               bool
 	IsOptimismBedrock, IsOptimismRegolith                bool
 	IsOptimismCanyon, IsOptimismEcotone, IsOptimismFjord bool
+	IsOptimismGranite                                    bool
 }
 
 // Rules ensures c's ChainID is not nil and returns a new Rules instance
@@ -646,6 +657,7 @@ func (c *Config) Rules(num uint64, time uint64) *Rules {
 		IsOptimismCanyon:   c.IsOptimismCanyon(time),
 		IsOptimismEcotone:  c.IsOptimismEcotone(time),
 		IsOptimismFjord:    c.IsOptimismFjord(time),
+		IsOptimismGranite:  c.IsOptimismGranite(time),
 	}
 }
 
