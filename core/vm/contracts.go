@@ -131,6 +131,22 @@ var PrecompiledContractsFjord = map[libcommon.Address]PrecompiledContract{
 	libcommon.BytesToAddress([]byte{0x01, 0x00}): &p256Verify{},
 }
 
+// PrecompiledContractsGranite contains the default set of pre-compiled Ethereum
+// contracts used in the Granite release.
+var PrecompiledContractsGranite = map[libcommon.Address]PrecompiledContract{
+	libcommon.BytesToAddress([]byte{1}):          &ecrecover{},
+	libcommon.BytesToAddress([]byte{2}):          &sha256hash{},
+	libcommon.BytesToAddress([]byte{3}):          &ripemd160hash{},
+	libcommon.BytesToAddress([]byte{4}):          &dataCopy{},
+	libcommon.BytesToAddress([]byte{5}):          &bigModExp{eip2565: true},
+	libcommon.BytesToAddress([]byte{6}):          &bn256AddIstanbul{},
+	libcommon.BytesToAddress([]byte{7}):          &bn256ScalarMulIstanbul{},
+	libcommon.BytesToAddress([]byte{8}):          &bn256PairingGranite{},
+	libcommon.BytesToAddress([]byte{9}):          &blake2F{},
+	libcommon.BytesToAddress([]byte{0x0a}):       &pointEvaluation{},
+	libcommon.BytesToAddress([]byte{0x01, 0x00}): &p256Verify{},
+}
+
 var PrecompiledContractsNapoli = map[libcommon.Address]PrecompiledContract{
 	libcommon.BytesToAddress([]byte{0x01}):       &ecrecover{},
 	libcommon.BytesToAddress([]byte{0x02}):       &sha256hash{},
@@ -167,6 +183,7 @@ var PrecompiledContractsPrague = map[libcommon.Address]PrecompiledContract{
 }
 
 var (
+	PrecompiledAddressesGranite   []libcommon.Address
 	PrecompiledAddressesFjord     []libcommon.Address
 	PrecompiledAddressesPrague    []libcommon.Address
 	PrecompiledAddressesNapoli    []libcommon.Address
@@ -196,6 +213,9 @@ func init() {
 	for k := range PrecompiledContractsFjord {
 		PrecompiledAddressesFjord = append(PrecompiledAddressesFjord, k)
 	}
+	for k := range PrecompiledContractsGranite {
+		PrecompiledAddressesGranite = append(PrecompiledAddressesGranite, k)
+	}
 	for k := range PrecompiledContractsNapoli {
 		PrecompiledAddressesNapoli = append(PrecompiledAddressesNapoli, k)
 	}
@@ -207,6 +227,8 @@ func init() {
 // ActivePrecompiles returns the precompiles enabled with the current configuration.
 func ActivePrecompiles(rules *chain.Rules) []libcommon.Address {
 	switch {
+	case rules.IsOptimismGranite:
+		return PrecompiledAddressesGranite
 	case rules.IsOptimismFjord:
 		return PrecompiledAddressesFjord
 	case rules.IsPrague:
@@ -595,6 +617,9 @@ var (
 
 	// errBadPairingInput is returned if the bn256 pairing input is invalid.
 	errBadPairingInput = errors.New("bad elliptic curve pairing size")
+
+	// errBadPairingInputSize is returned if the bn256 pairing input size is invalid.
+	errBadPairingInputSize = errors.New("bad elliptic curve pairing input size")
 )
 
 // runBn256Pairing implements the Bn256Pairing precompile, referenced by both
@@ -626,6 +651,22 @@ func runBn256Pairing(input []byte) ([]byte, error) {
 		return true32Byte, nil
 	}
 	return false32Byte, nil
+}
+
+// bn256PairingGranite implements a pairing pre-compile for the bn256 curve
+// conforming to Granite consensus rules.
+type bn256PairingGranite struct{}
+
+// RequiredGas returns the gas required to execute the pre-compiled contract.
+func (c *bn256PairingGranite) RequiredGas(input []byte) uint64 {
+	return new(bn256PairingIstanbul).RequiredGas(input)
+}
+
+func (c *bn256PairingGranite) Run(input []byte) ([]byte, error) {
+	if len(input) > int(params.Bn256PairingMaxInputSizeGranite) {
+		return nil, errBadPairingInputSize
+	}
+	return runBn256Pairing(input)
 }
 
 // bn256PairingIstanbul implements a pairing pre-compile for the bn256 curve
