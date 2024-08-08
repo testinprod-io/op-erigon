@@ -36,7 +36,7 @@ var (
 	chaosnetRegolithTime = big.NewInt(1692156862)
 )
 
-var OPStackSupport = ProtocolVersionV0{Build: [8]byte{}, Major: 7, Minor: 0, Patch: 0, PreRelease: 0}.Encode()
+var OPStackSupport = ProtocolVersionV0{Build: [8]byte{}, Major: 8, Minor: 0, Patch: 0, PreRelease: 1}.Encode()
 
 // OPStackChainConfigByName loads chain config corresponding to the chain name from superchain registry.
 // This implementation is based on optimism monorepo(https://github.com/ethereum-optimism/optimism/blob/op-node/v1.4.1/op-node/chaincfg/chains.go#L59)
@@ -114,6 +114,7 @@ func LoadSuperChainConfig(opStackChainCfg *superchain.ChainConfig) *chain.Config
 		CanyonTime:                    nil,
 		EcotoneTime:                   nil,
 		FjordTime:                     nil,
+		GraniteTime:                   nil,
 		TerminalTotalDifficulty:       common.Big0,
 		TerminalTotalDifficultyPassed: true,
 		Ethash:                        nil,
@@ -135,6 +136,9 @@ func LoadSuperChainConfig(opStackChainCfg *superchain.ChainConfig) *chain.Config
 	}
 	if chConfig.FjordTime != nil {
 		out.FjordTime = new(big.Int).SetUint64(*chConfig.FjordTime)
+	}
+	if chConfig.GraniteTime != nil {
+		out.GraniteTime = new(big.Int).SetUint64(*chConfig.GraniteTime)
 	}
 
 	// special overrides for OP-Stack chains with pre-Regolith upgrade history
