@@ -2299,10 +2299,6 @@ Unmerged paths:
 	both modified:   node/node.go
 	both modified:   node/nodecfg/defaults.go
 	both modified:   p2p/sentry/sentry_multi_client/sentry_multi_client.go
-	both added:      polygon/bor/bordb/prune.go
-	both modified:   polygon/bor/finality/whitelist/milestone.go
-	both modified:   polygon/bor/snaptype/types.go
-	both modified:   polygon/sync/execution_client.go
 	both modified:   rpc/http.go
 	both modified:   tests/erigon-ext-test/go.mod.template
 	

@@ -75,11 +75,7 @@ func (e *executionClient) InsertBlocks(ctx context.Context, blocks []*types.Bloc
 	}
 }
 
-<<<<<<< HEAD
-func (e *executionClient) UpdateForkChoice(_ context.Context, _ *types.Header, _ *types.Header) error {
-=======
 func (e *executionClient) UpdateForkChoice(ctx context.Context, tip *types.Header, finalizedHeader *types.Header) error {
->>>>>>> v3.0.0-alpha1
 	// TODO - not ready for execution - missing state sync event and span data - uncomment once ready
 	if runtime.GOOS != "TODO" {
 		return nil
