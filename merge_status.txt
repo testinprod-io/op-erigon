@@ -2278,24 +2278,7 @@ Changes to be committed:
 
 Unmerged paths:
   (use "git add/rm <file>..." as appropriate to mark resolution)
-	both modified:   .github/workflows/ci.yml
-	deleted by them: .github/workflows/download-page.yml
-	deleted by us:   .github/workflows/hive-nightly.yml
-	both modified:   .github/workflows/qa-clean-exit-block-downloading.yml
-	both modified:   .github/workflows/qa-clean-exit-snapshot-downloading.yml
-	both modified:   .github/workflows/qa-snap-download.yml
-	both modified:   .github/workflows/qa-tip-tracking.yml
-	both modified:   .github/workflows/release.yml
-	both modified:   .github/workflows/test-integration.yml
-	both modified:   .goreleaser.yml
-	both modified:   Dockerfile
-	both modified:   Dockerfile.debian
-	both modified:   Makefile
-	both modified:   diagnostics/setup.go
-	both modified:   go.mod
-	both modified:   go.sum
-	both modified:   migrations/prohibit_new_downloads2.go
-	both modified:   tests/erigon-ext-test/go.mod.template
+
 	
 Changes not staged for commit:
   (use "git add <file>..." to update what will be committed)

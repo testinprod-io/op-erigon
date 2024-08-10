@@ -1,28 +1,13 @@
 name: QA - Tip tracking
 
 on:
-<<<<<<< HEAD
-  push:
-    branches:
-      - 'release/2.*'
-  pull_request:
-    branches:
-      - 'release/2.*'
-    types:
-      - ready_for_review
-=======
   schedule:
     - cron: '0 0 * * 1-6'  # Run every day at 00:00 AM UTC except Sunday
->>>>>>> v3.0.0-alpha1
   workflow_dispatch:     # Run manually
 
 jobs:
   tip-tracking-test:
-<<<<<<< HEAD
-    runs-on: [self-hosted, Erigon2]
-=======
     runs-on: [self-hosted, Erigon3]
->>>>>>> v3.0.0-alpha1
     timeout-minutes: 600
     env:
       ERIGON_REFERENCE_DATA_DIR: /opt/erigon-versions/reference-version/datadir
@@ -61,12 +46,8 @@ jobs:
         # 1. Launch the testbed Erigon instance
         # 2. Allow time for the Erigon to achieve synchronization
         # 3. Begin timing the duration that Erigon maintains synchronization
-<<<<<<< HEAD
-        python3 $ERIGON_QA_PATH/test_system/qa-tests/tip-tracking/run_and_check_tip_tracking.py ${{ github.workspace }}/build/bin $ERIGON_TESTBED_DATA_DIR $TRACKING_TIME_SECONDS $TOTAL_TIME_SECONDS Erigon2 $CHAIN
-=======
         python3 $ERIGON_QA_PATH/test_system/qa-tests/tip-tracking/run_and_check_tip_tracking.py \
           ${{ github.workspace }}/build/bin $ERIGON_TESTBED_DATA_DIR $TRACKING_TIME_SECONDS $TOTAL_TIME_SECONDS Erigon3 $CHAIN
->>>>>>> v3.0.0-alpha1
   
         # Capture monitoring script exit status
         test_exit_status=$?
@@ -108,10 +89,6 @@ jobs:
         if [ -z "$db_version" ]; then
           db_version="no-version"
         fi
-<<<<<<< HEAD
-      
-        python3 $ERIGON_QA_PATH/test_system/qa-tests/uploads/upload_test_results.py --repo erigon --commit $(git rev-parse HEAD) --branch ${{ github.ref_name }} --test_name tip-tracking --chain $CHAIN --runner ${{ runner.name }} --db_version $db_version --outcome $TEST_RESULT --result_file ${{ github.workspace }}/result-$CHAIN.json
-=======
         
         python3 $ERIGON_QA_PATH/test_system/qa-tests/uploads/upload_test_results.py \
           --repo erigon \
@@ -123,7 +100,6 @@ jobs:
           --db_version $db_version \
           --outcome $TEST_RESULT \
           --result_file ${{ github.workspace }}/result-$CHAIN.json
->>>>>>> v3.0.0-alpha1
 
     - name: Upload test results
       if: steps.test_step.outputs.test_executed == 'true'

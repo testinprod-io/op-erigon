@@ -2,8 +2,6 @@ module github.com/erigontech/erigon
 
 go 1.21.5
 
-toolchain go1.21.0
-
 require (
 	github.com/erigontech/erigonwatch v0.0.0-20240718131902-b6576bde1116
 	github.com/erigontech/mdbx-go v0.38.4
@@ -36,13 +34,9 @@ require (
 	github.com/docker/docker v26.1.0+incompatible
 	github.com/dop251/goja v0.0.0-20220405120441-9037c2b61cbf
 	github.com/edsrzf/mmap-go v1.1.0
-<<<<<<< HEAD
-	github.com/emicklei/dot v1.6.1
-	github.com/ethereum-optimism/superchain-registry/superchain v0.0.0-20240603085035-9c8f6081266e
-=======
 	github.com/emicklei/dot v1.6.2
 	github.com/erigontech/erigon-lib v0.0.0-00010101000000-000000000000
->>>>>>> v3.0.0-alpha1
+	github.com/ethereum-optimism/superchain-registry/superchain v0.0.0-20240603085035-9c8f6081266e
 	github.com/fjl/gencodec v0.0.0-20220412091415-8bb9e558978c
 	github.com/gballet/go-verkle v0.0.0-20221121182333-31427a1f2d35
 	github.com/gfx-labs/sse v0.0.0-20231226060816-f747e26a9baa
@@ -68,15 +62,8 @@ require (
 	github.com/jedib0t/go-pretty/v6 v6.5.9
 	github.com/json-iterator/go v1.1.12
 	github.com/julienschmidt/httprouter v1.3.0
-<<<<<<< HEAD
-	github.com/klauspost/compress v1.17.3
-	github.com/ledgerwatch/erigon-lib v1.0.0
-	github.com/ledgerwatch/erigonwatch v0.1.2
-	github.com/libp2p/go-libp2p v0.31.0
-=======
 	github.com/klauspost/compress v1.17.8
 	github.com/libp2p/go-libp2p v0.34.0
->>>>>>> v3.0.0-alpha1
 	github.com/libp2p/go-libp2p-mplex v0.9.0
 	github.com/libp2p/go-libp2p-pubsub v0.11.0
 	github.com/maticnetwork/crand v1.0.2
@@ -203,10 +190,6 @@ require (
 	github.com/koron/go-ssdp v0.0.4 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
-<<<<<<< HEAD
-	github.com/ledgerwatch/erigon-snapshot v1.3.1-0.20240619030755-1e16b374e6cb // indirect
-=======
->>>>>>> v3.0.0-alpha1
 	github.com/libp2p/go-buffer-pool v0.1.0 // indirect
 	github.com/libp2p/go-flow-metrics v0.1.0 // indirect
 	github.com/libp2p/go-libp2p-asn-util v0.4.1 // indirect
@@ -221,11 +204,7 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
-<<<<<<< HEAD
-	github.com/miekg/dns v1.1.55 // indirect
-=======
 	github.com/miekg/dns v1.1.58 // indirect
->>>>>>> v3.0.0-alpha1
 	github.com/mikioh/tcpinfo v0.0.0-20190314235526-30a79bb1804b // indirect
 	github.com/mikioh/tcpopt v0.0.0-20190314235656-172688c1accc // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect
@@ -275,21 +254,13 @@ require (
 	github.com/quic-go/webtransport-go v0.8.0 // indirect
 	github.com/raulk/go-watchdog v1.3.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
-<<<<<<< HEAD
-	github.com/rivo/uniseg v0.2.0 // indirect
-=======
 	github.com/rivo/uniseg v0.4.7 // indirect
->>>>>>> v3.0.0-alpha1
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/rs/dnscache v0.0.0-20211102005908-e0241e321417 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/shirou/gopsutil/v3 v3.24.4 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/shopspring/decimal v1.2.0 // indirect
-<<<<<<< HEAD
-	github.com/showwin/speedtest-go v1.7.7 // indirect
-=======
->>>>>>> v3.0.0-alpha1
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/sosodev/duration v1.3.1 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
@@ -320,11 +291,7 @@ require (
 	zombiezen.com/go/sqlite v0.13.1 // indirect
 )
 
-<<<<<<< HEAD
-replace github.com/anacrolix/torrent => github.com/erigontech/torrent v1.54.2-alpha-8
-=======
 replace (
 	github.com/anacrolix/torrent => github.com/erigontech/torrent v1.54.2-alpha-32
 	github.com/holiman/bloomfilter/v2 => github.com/AskAlexSharov/bloomfilter/v2 v2.0.8
 )
->>>>>>> v3.0.0-alpha1

@@ -2,13 +2,8 @@ name: Integration tests
 on:
   push:
     branches:
-<<<<<<< HEAD
-      - devel
-      - alpha
-      - op-erigon
-=======
       - main
->>>>>>> v3.0.0-alpha1
+      - op-erigon
       - 'release/**'
   pull_request:
     branches:

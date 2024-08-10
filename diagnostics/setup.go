@@ -39,11 +39,8 @@ var (
 	pprofPortFlag           = "pprof.port"
 	pprofAddrFlag           = "pprof.addr"
 	diagnoticsSpeedTestFlag = "diagnostics.speedtest"
-<<<<<<< HEAD
-=======
 	webSeedsFlag            = "webseed"
 	chainFlag               = "chain"
->>>>>>> v3.0.0-alpha1
 )
 
 func Setup(ctx *cli.Context, node *node.ErigonNode, metricsMux *http.ServeMux, pprofMux *http.ServeMux) {
@@ -72,10 +69,6 @@ func Setup(ctx *cli.Context, node *node.ErigonNode, metricsMux *http.ServeMux, p
 		diagMux = SetupDiagnosticsEndpoint(nil, diagAddress)
 	}
 
-<<<<<<< HEAD
-	speedTest := ctx.Bool(diagnoticsSpeedTestFlag)
-	diagnostic, err := diaglib.NewDiagnosticClient(ctx.Context, diagMux, node.Backend().DataDir(), speedTest)
-=======
 	chain := ctx.String(chainFlag)
 	webseedsList := libcommon.CliString2Array(ctx.String(webSeedsFlag))
 	if known, ok := snapcfg.KnownWebseeds[chain]; ok {
@@ -84,7 +77,6 @@ func Setup(ctx *cli.Context, node *node.ErigonNode, metricsMux *http.ServeMux, p
 
 	speedTest := ctx.Bool(diagnoticsSpeedTestFlag)
 	diagnostic, err := diaglib.NewDiagnosticClient(ctx.Context, diagMux, node.Backend().DataDir(), speedTest, webseedsList)
->>>>>>> v3.0.0-alpha1
 	if err == nil {
 		diagnostic.Setup()
 		SetupEndpoints(ctx, node, diagMux, diagnostic)

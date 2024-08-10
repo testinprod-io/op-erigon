@@ -65,13 +65,10 @@ var ProhibitNewDownloadsLock2 = Migration{
 				locked = append(locked, t.Name())
 			}
 
-<<<<<<< HEAD
-=======
 			for _, t := range coresnaptype.E3StateTypes {
 				locked = append(locked, t.Name())
 			}
 
->>>>>>> v3.0.0-alpha1
 			for _, t := range borsnaptype.BorSnapshotTypes() {
 				locked = append(locked, t.Name())
 			}
