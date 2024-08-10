@@ -339,14 +339,9 @@ func (st *StateTransition) preCheck(gasBailout bool) error {
 		}
 		maxFeePerBlobGas := st.msg.MaxFeePerBlobGas()
 		if !st.evm.Config().NoBaseFee && blobGasPrice.Cmp(maxFeePerBlobGas) > 0 {
-<<<<<<< HEAD
 			return fmt.Errorf("%w: address %v, maxFeePerBlobGas: %v blobGasPrice: %v, excessBlobGas: %v",
 				ErrMaxFeePerBlobGas,
 				st.msg.From().Hex(), st.msg.MaxFeePerBlobGas(), blobGasPrice, st.evm.Context.ExcessBlobGas)
-=======
-			return fmt.Errorf("%w: address %v, maxFeePerBlobGas: %v < blobGasPrice: %v",
-				ErrMaxFeePerBlobGas, st.msg.From().Hex(), st.msg.MaxFeePerBlobGas(), blobGasPrice)
->>>>>>> v3.0.0-alpha1
 		}
 	}
 
@@ -366,8 +361,7 @@ func (st *StateTransition) preCheck(gasBailout bool) error {
 //
 // However if any consensus issue encountered, return the error directly with
 // nil evm execution result.
-<<<<<<< HEAD
-func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*ExecutionResult, error) {
+func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*evmtypes.ExecutionResult, error) {
 	if mint := st.msg.Mint(); mint != nil {
 		st.state.AddBalance(st.msg.From(), mint)
 	}
@@ -399,22 +393,12 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*Executi
 
 }
 
-func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*ExecutionResult, error) {
-	coinbase := st.evm.Context.Coinbase
-	var input1 *uint256.Int
-	var input2 *uint256.Int
-	if st.isBor {
-		input1 = st.state.GetBalance(st.msg.From()).Clone()
-		input2 = st.state.GetBalance(coinbase).Clone()
-	}
-=======
-func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*evmtypes.ExecutionResult, error) {
+func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*evmtypes.ExecutionResult, error) {
 	coinbase := st.evm.Context.Coinbase
 
 	senderInitBalance := st.state.GetBalance(st.msg.From()).Clone()
 	coinbaseInitBalance := st.state.GetBalance(coinbase).Clone()
 
->>>>>>> v3.0.0-alpha1
 	// First check this message satisfies all consensus rules before
 	// applying the message. The rules include these clauses
 	//

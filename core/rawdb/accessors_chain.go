@@ -29,21 +29,10 @@ import (
 	"math/big"
 	"time"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/chain"
-	"github.com/ledgerwatch/erigon-lib/kv/dbutils"
-
-=======
->>>>>>> v3.0.0-alpha1
 	"github.com/gballet/go-verkle"
 
 	"github.com/erigontech/erigon-lib/log/v3"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/ethdb/cbor"
-	"github.com/ledgerwatch/erigon/rlp"
-=======
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/dbg"
 	"github.com/erigontech/erigon-lib/common/hexutility"
@@ -55,7 +44,6 @@ import (
 	"github.com/erigontech/erigon/core/types"
 	"github.com/erigontech/erigon/ethdb/cbor"
 	"github.com/erigontech/erigon/rlp"
->>>>>>> v3.0.0-alpha1
 )
 
 // ReadCanonicalHash retrieves the hash assigned to a canonical block number.
@@ -1055,11 +1043,7 @@ func PruneBlocks(tx kv.RwTx, blockTo uint64, blocksDeleteLimit int) (deleted int
 		deleted++
 	}
 
-<<<<<<< HEAD
-	return nil
-=======
 	return deleted, nil
->>>>>>> v3.0.0-alpha1
 }
 
 func TruncateCanonicalChain(ctx context.Context, db kv.RwTx, from uint64) error {

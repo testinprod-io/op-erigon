@@ -469,23 +469,6 @@ func TestDeriveFields(t *testing.T) {
 	hash := libcommon.BytesToHash([]byte{0x03, 0x14})
 	time := uint64(0)
 
-<<<<<<< HEAD
-	clearComputedFieldsOnReceipts(t, receipts)
-	if err := receipts.DeriveFields(params.TestChainConfig, hash, number.Uint64(), time, txs, []libcommon.Address{libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0})}); err != nil {
-		t.Fatalf("DeriveFields(...) = %v, want <nil>", err)
-	}
-	// Iterate over all the computed fields and check that they're correct
-	signer := MakeSigner(params.TestChainConfig, number.Uint64(), 0)
-
-	diffDerivedFields(t, receipts, txs, hash, number)
-	for i := range receipts {
-		from, _ := txs[i].Sender(*signer)
-		contractAddress := crypto.CreateAddress(from, nonces[i])
-		if txs[i].GetTo() == nil && receipts[i].ContractAddress != contractAddress {
-			t.Errorf("receipts[%d].ContractAddress = %s, want %s", i, receipts[i].ContractAddress.String(), contractAddress.String())
-		}
-	}
-=======
 	t.Run("DeriveV1", func(t *testing.T) {
 		clearComputedFieldsOnReceipts(t, receipts)
 		if err := receipts.DeriveFields(hash, number.Uint64(), txs, []libcommon.Address{libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0})}); err != nil {
@@ -609,7 +592,6 @@ func TestDeriveFields(t *testing.T) {
 		}
 	})
 
->>>>>>> v3.0.0-alpha1
 }
 
 // TestTypedReceiptEncodingDecoding reproduces a flaw that existed in the receipt

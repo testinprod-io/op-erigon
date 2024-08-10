@@ -512,16 +512,39 @@ func (tx *DynamicFeeTransaction) unmarshalJson(dec txJSON) error {
 	return nil
 }
 
-<<<<<<< HEAD
-func (tx *DepositTx) UnmarshalJSON(input []byte) error {
-=======
 func (tx *DynamicFeeTransaction) UnmarshalJSON(input []byte) error {
->>>>>>> v3.0.0-alpha1
 	var dec txJSON
 	if err := json.Unmarshal(input, &dec); err != nil {
 		return err
 	}
-<<<<<<< HEAD
+	return tx.unmarshalJson(dec)
+}
+
+func (tx *SetCodeTransaction) UnmarshalJSON(input []byte) error {
+	var dec txJSON
+	if err := json.Unmarshal(input, &dec); err != nil {
+		return err
+	}
+
+	dTx := DynamicFeeTransaction{}
+	if err := dTx.unmarshalJson(dec); err != nil {
+		return err
+	}
+
+	tx.DynamicFeeTransaction = dTx
+	tx.Authorizations = make([]Authorization, len(*dec.Authorizations))
+	for i, auth := range *dec.Authorizations {
+		tx.Authorizations[i] = auth.ToAuthorization()
+	}
+
+	return nil
+}
+
+func (tx *DepositTx) UnmarshalJSON(input []byte) error {
+	var dec txJSON
+	if err := json.Unmarshal(input, &dec); err != nil {
+		return err
+	}
 	if dec.AccessList != nil || dec.FeeCap != nil || dec.Tip != nil {
 		return errors.New("unexpected field(s) in deposit transaction")
 	}
@@ -567,28 +590,6 @@ func (tx *DynamicFeeTransaction) UnmarshalJSON(input []byte) error {
 		tx.IsSystemTransaction = *dec.IsSystemTx
 	}
 	// nonce is not checked becaues depositTx has no nonce field.
-=======
-
-	return tx.unmarshalJson(dec)
-}
-
-func (tx *SetCodeTransaction) UnmarshalJSON(input []byte) error {
-	var dec txJSON
-	if err := json.Unmarshal(input, &dec); err != nil {
-		return err
-	}
-
-	dTx := DynamicFeeTransaction{}
-	if err := dTx.unmarshalJson(dec); err != nil {
-		return err
-	}
-
-	tx.DynamicFeeTransaction = dTx
-	tx.Authorizations = make([]Authorization, len(*dec.Authorizations))
-	for i, auth := range *dec.Authorizations {
-		tx.Authorizations[i] = auth.ToAuthorization()
-	}
->>>>>>> v3.0.0-alpha1
 	return nil
 }
 

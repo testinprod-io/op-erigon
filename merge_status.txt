@@ -2293,21 +2293,6 @@ Unmerged paths:
 	both modified:   Makefile
 	both modified:   accounts/abi/bind/backends/simulated.go
 	both modified:   accounts/abi/bind/template.go
-	both modified:   core/genesis_write.go
-	both modified:   core/rawdb/accessors_chain.go
-	both modified:   core/rawdb/accessors_metadata.go
-	both modified:   core/rawdb/blockio/block_writer.go
-	both modified:   core/state_processor.go
-	both modified:   core/state_transition.go
-	both modified:   core/types/gen_receipt_json.go
-	both modified:   core/types/genesis.go
-	both modified:   core/types/receipt.go
-	deleted by them: core/types/receipt_codecgen_gen.go
-	both modified:   core/types/receipt_test.go
-	both modified:   core/types/transaction.go
-	both modified:   core/types/transaction_marshalling.go
-	both modified:   core/types/transaction_signing.go
-	both modified:   core/vm/evmtypes/evmtypes.go
 	both modified:   diagnostics/setup.go
 	deleted by them: erigon-lib/.github/workflows/ci.yml
 	both modified:   erigon-lib/chain/chain_config.go

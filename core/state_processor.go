@@ -20,14 +20,8 @@
 package core
 
 import (
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/chain"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/opstack"
-=======
 	"github.com/erigontech/erigon-lib/chain"
 	libcommon "github.com/erigontech/erigon-lib/common"
->>>>>>> v3.0.0-alpha1
 
 	"github.com/erigontech/erigon/consensus"
 	"github.com/erigontech/erigon/core/state"
@@ -112,11 +106,7 @@ func applyTransaction(config *chain.Config, engine consensus.EngineReader, gp *G
 
 		// if the transaction created a contract, store the creation address in the receipt.
 		if msg.To() == nil {
-<<<<<<< HEAD
-			receipt.ContractAddress = crypto.CreateAddress(evm.Origin, nonce)
-=======
 			receipt.ContractAddress = crypto.CreateAddress(evm.Origin, txn.GetNonce())
->>>>>>> v3.0.0-alpha1
 		}
 		// Set the receipt logs and create a bloom for filtering
 		receipt.Logs = ibs.GetLogs(txn.Hash())
@@ -142,12 +132,9 @@ func ApplyTransaction(config *chain.Config, blockHashFunc func(n uint64) libcomm
 	// about the transaction and calling mechanisms.
 	cfg.SkipAnalysis = SkipAnalysis(config, header.Number.Uint64())
 
-<<<<<<< HEAD
-	blockContext := NewEVMBlockContext(header, blockHashFunc, engine, author)
-	blockContext.L1CostFunc = opstack.NewL1CostFunc(config, ibs)
-=======
 	blockContext := NewEVMBlockContext(header, blockHashFunc, engine, author, config)
->>>>>>> v3.0.0-alpha1
+	blockContext.L1CostFunc = opstack.NewL1CostFunc(config, ibs)
+
 	vmenv := vm.NewEVM(blockContext, evmtypes.TxContext{}, ibs, config, cfg)
 
 	return applyTransaction(config, engine, gp, ibs, stateWriter, header, txn, usedGas, usedBlobGas, vmenv, cfg)

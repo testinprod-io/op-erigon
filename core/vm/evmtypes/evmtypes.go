@@ -21,16 +21,9 @@ import (
 
 	"github.com/holiman/uint256"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/chain"
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/opstack"
-	types2 "github.com/ledgerwatch/erigon-lib/types"
-=======
 	"github.com/erigontech/erigon-lib/chain"
 	"github.com/erigontech/erigon-lib/common"
 	types2 "github.com/erigontech/erigon-lib/types"
->>>>>>> v3.0.0-alpha1
 
 	"github.com/erigontech/erigon/core/tracing"
 	"github.com/erigontech/erigon/core/types"
@@ -49,20 +42,6 @@ type BlockContext struct {
 	PostApplyMessage PostApplyMessageFunc
 
 	// Block information
-<<<<<<< HEAD
-	Coinbase      common.Address // Provides information for COINBASE
-	GasLimit      uint64         // Provides information for GASLIMIT
-	MaxGasLimit   bool           // Use GasLimit override for 2^256-1 (to be compatible with OpenEthereum's trace_call)
-	BlockNumber   uint64         // Provides information for NUMBER
-	Time          uint64         // Provides information for TIME
-	Difficulty    *big.Int       // Provides information for DIFFICULTY
-	BaseFee       *uint256.Int   // Provides information for BASEFEE
-	PrevRanDao    *common.Hash   // Provides information for PREVRANDAO
-	ExcessBlobGas *uint64        // Provides information for handling data blobs
-
-	// L1CostFunc returns the L1 cost of the rollup message, the function may be nil, or return nil
-	L1CostFunc opstack.L1CostFunc
-=======
 	Coinbase    common.Address // Provides information for COINBASE
 	GasLimit    uint64         // Provides information for GASLIMIT
 	MaxGasLimit bool           // Use GasLimit override for 2^256-1 (to be compatible with OpenEthereum's trace_call)
@@ -72,7 +51,9 @@ type BlockContext struct {
 	BaseFee     *uint256.Int   // Provides information for BASEFEE
 	PrevRanDao  *common.Hash   // Provides information for PREVRANDAO
 	BlobBaseFee *uint256.Int   // Provides information for BLOBBASEFEE
->>>>>>> v3.0.0-alpha1
+
+	// L1CostFunc returns the L1 cost of the rollup message, the function may be nil, or return nil
+	L1CostFunc opstack.L1CostFunc
 }
 
 // TxContext provides the EVM with information about a transaction.

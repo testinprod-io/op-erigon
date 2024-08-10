@@ -26,11 +26,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
-<<<<<<< HEAD
-	"reflect"
-=======
 	"os"
->>>>>>> v3.0.0-alpha1
 	"slices"
 
 	"github.com/c2h5oh/datasize"
@@ -100,15 +96,11 @@ func CommitGenesisBlockWithOverride(db kv.RwDB, genesis *types.Genesis, override
 	return c, b, nil
 }
 
-<<<<<<< HEAD
 func WriteGenesisBlock(tx kv.RwTx, genesis *types.Genesis, overrideCancunTime, overrideShanghaiTime, overrideOptimismCanyonTime, overrideOptimismEcotoneTime, overrideOptimismFjordTime, overridePragueTime *big.Int, tmpDir string, logger log.Logger) (*chain.Config, *types.Block, error) {
-=======
-func WriteGenesisBlock(tx kv.RwTx, genesis *types.Genesis, overridePragueTime *big.Int, tmpDir string, logger log.Logger) (*chain.Config, *types.Block, error) {
 	if err := rawdb.WriteGenesis(tx, genesis); err != nil {
 		return nil, nil, err
 	}
 
->>>>>>> v3.0.0-alpha1
 	var storedBlock *types.Block
 	if genesis != nil && genesis.Config == nil {
 		return params.AllProtocolChanges, nil, types.ErrGenesisNoConfig

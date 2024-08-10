@@ -30,15 +30,7 @@ import (
 	"github.com/holiman/uint256"
 	"github.com/protolambda/ztyp/codec"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/chain"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/fixedgas"
-	fastlz "github.com/ledgerwatch/erigon-lib/fastlz"
-	types2 "github.com/ledgerwatch/erigon-lib/types"
-=======
 	"github.com/erigontech/erigon-lib/log/v3"
->>>>>>> v3.0.0-alpha1
 
 	"github.com/erigontech/erigon-lib/chain"
 	libcommon "github.com/erigontech/erigon-lib/common"
@@ -63,11 +55,8 @@ const (
 	AccessListTxType
 	DynamicFeeTxType
 	BlobTxType
-<<<<<<< HEAD
-	DepositTxType = 0x7E
-=======
 	SetCodeTxType
->>>>>>> v3.0.0-alpha1
+	DepositTxType = 0x7E
 )
 
 // Transaction is an Ethereum transaction.
@@ -109,12 +98,8 @@ type Transaction interface {
 	GetSender() (libcommon.Address, bool)
 	SetSender(libcommon.Address)
 	IsContractDeploy() bool
-<<<<<<< HEAD
 	RollupCostData() types2.RollupCostData
-	Unwrap() Transaction // If this is a network wrapper, returns the unwrapped tx. Otherwiwes returns itself.
-=======
 	Unwrap() Transaction // If this is a network wrapper, returns the unwrapped txn. Otherwise returns itself.
->>>>>>> v3.0.0-alpha1
 }
 
 // TransactionMisc is collection of miscellaneous fields for transaction that is supposed to be embedded into concrete
@@ -255,22 +240,9 @@ func UnmarshalTransactionFromBinary(data []byte, blobTxnsAreWrappedWithBlobs boo
 	case AccessListTxType:
 		t = &AccessListTx{}
 	case DynamicFeeTxType:
-<<<<<<< HEAD
-		t := &DynamicFeeTransaction{}
-		if err := t.DecodeRLP(s); err != nil {
-			return nil, err
-		}
-		return t, nil
-	case DepositTxType:
-		s := rlp.NewStream(bytes.NewReader(data[1:]), uint64(len(data)-1))
-		t := &DepositTx{}
-		if err := t.DecodeRLP(s); err != nil {
-			return nil, err
-		}
-		return t, nil
-=======
 		t = &DynamicFeeTransaction{}
->>>>>>> v3.0.0-alpha1
+	case DepositTxType:
+		t = &DepositTx{}
 	case BlobTxType:
 		if blobTxnsAreWrappedWithBlobs {
 			t = &BlobTxWrapper{}
@@ -493,16 +465,15 @@ type Message struct {
 	checkNonce       bool
 	isFree           bool
 	blobHashes       []libcommon.Hash
-<<<<<<< HEAD
-	isFake           bool
+
+	isFake bool
 
 	isSystemTx  bool
 	isDepositTx bool
 	mint        *uint256.Int
 	l1CostGas   types2.RollupCostData
-=======
-	authorizations   []Authorization
->>>>>>> v3.0.0-alpha1
+
+	authorizations []Authorization
 }
 
 func NewMessage(from libcommon.Address, to *libcommon.Address, nonce uint64, amount *uint256.Int, gasLimit uint64,
