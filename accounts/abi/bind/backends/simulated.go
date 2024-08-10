@@ -38,26 +38,6 @@ import (
 	state2 "github.com/erigontech/erigon-lib/state"
 	types2 "github.com/erigontech/erigon-lib/types"
 
-<<<<<<< HEAD
-	ethereum "github.com/ledgerwatch/erigon"
-	"github.com/ledgerwatch/erigon-lib/opstack"
-	"github.com/ledgerwatch/erigon/accounts/abi"
-	"github.com/ledgerwatch/erigon/accounts/abi/bind"
-	"github.com/ledgerwatch/erigon/common/math"
-	"github.com/ledgerwatch/erigon/common/u256"
-	"github.com/ledgerwatch/erigon/consensus"
-	"github.com/ledgerwatch/erigon/consensus/ethash"
-	"github.com/ledgerwatch/erigon/consensus/misc"
-	"github.com/ledgerwatch/erigon/core"
-	"github.com/ledgerwatch/erigon/core/rawdb"
-	"github.com/ledgerwatch/erigon/core/state"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/core/vm"
-	"github.com/ledgerwatch/erigon/event"
-	"github.com/ledgerwatch/erigon/params"
-	"github.com/ledgerwatch/erigon/turbo/services"
-	"github.com/ledgerwatch/erigon/turbo/stages/mock"
-=======
 	ethereum "github.com/erigontech/erigon"
 	"github.com/erigontech/erigon/accounts/abi"
 	"github.com/erigontech/erigon/accounts/abi/bind"
@@ -77,7 +57,6 @@ import (
 	"github.com/erigontech/erigon/params"
 	"github.com/erigontech/erigon/turbo/services"
 	"github.com/erigontech/erigon/turbo/stages/mock"
->>>>>>> v3.0.0-alpha1
 )
 
 // This nil assignment ensures at compile time that SimulatedBackend implements bind.ContractBackend.
@@ -748,12 +727,8 @@ func (b *SimulatedBackend) callContract(_ context.Context, call ethereum.CallMsg
 
 	txContext := core.NewEVMTxContext(msg)
 	header := block.Header()
-<<<<<<< HEAD
-	evmContext := core.NewEVMBlockContext(header, core.GetHashFn(header, b.getHeader), b.m.Engine, nil)
-	evmContext.L1CostFunc = opstack.NewL1CostFunc(b.m.ChainConfig, statedb)
-=======
 	evmContext := core.NewEVMBlockContext(header, core.GetHashFn(header, b.getHeader), b.m.Engine, nil, b.m.ChainConfig)
->>>>>>> v3.0.0-alpha1
+	evmContext.L1CostFunc = opstack.NewL1CostFunc(b.m.ChainConfig, statedb)
 	// Create a new environment which holds all relevant information
 	// about the transaction and calling mechanisms.
 	vmEnv := vm.NewEVM(evmContext, txContext, statedb, b.m.ChainConfig, vm.Config{})
@@ -867,17 +842,13 @@ func (m callMsg) Gas() uint64                           { return m.CallMsg.Gas }
 func (m callMsg) Value() *uint256.Int                   { return m.CallMsg.Value }
 func (m callMsg) Data() []byte                          { return m.CallMsg.Data }
 func (m callMsg) AccessList() types2.AccessList         { return m.CallMsg.AccessList }
-<<<<<<< HEAD
 func (m callMsg) IsFree() bool                          { return false }
+func (m callMsg) Authorizations() []types.Authorization { return m.CallMsg.Authorizations }
 func (m callMsg) IsFake() bool                          { return true }
 func (m callMsg) Mint() *uint256.Int                    { return nil }
 func (m callMsg) RollupCostData() types2.RollupCostData { return types2.RollupCostData{} }
 func (m callMsg) IsDepositTx() bool                     { return false }
 func (m callMsg) IsSystemTx() bool                      { return false }
-=======
-func (m callMsg) Authorizations() []types.Authorization { return m.CallMsg.Authorizations }
-func (m callMsg) IsFree() bool                          { return false }
->>>>>>> v3.0.0-alpha1
 
 func (m callMsg) BlobGas() uint64                { return misc.GetBlobGasUsed(len(m.CallMsg.BlobHashes)) }
 func (m callMsg) MaxFeePerBlobGas() *uint256.Int { return m.CallMsg.MaxFeePerBlobGas }

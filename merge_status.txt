@@ -2291,8 +2291,6 @@ Unmerged paths:
 	both modified:   Dockerfile
 	both modified:   Dockerfile.debian
 	both modified:   Makefile
-	both modified:   accounts/abi/bind/backends/simulated.go
-	both modified:   accounts/abi/bind/template.go
 	both modified:   diagnostics/setup.go
 	deleted by them: erigon-lib/.github/workflows/ci.yml
 	both modified:   erigon-lib/chain/chain_config.go
