@@ -20,12 +20,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-<<<<<<< HEAD
-	"time"
-
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/log/v3"
-=======
 	"io"
 	"time"
 
@@ -38,12 +32,6 @@ var (
 	SnapshotDownloadStatisticsKey = []byte("diagSnapshotDownloadStatistics")
 	SnapshotIndexingStatisticsKey = []byte("diagSnapshotIndexingStatistics")
 	SnapshotFillDBStatisticsKey   = []byte("diagSnapshotFillDBStatistics")
->>>>>>> v3.0.0-alpha1
-)
-
-var (
-	SnapshotDownloadStatisticsKey = []byte("diagSnapshotDownloadStatistics")
-	SnapshotIndexingStatisticsKey = []byte("diagSnapshotIndexingStatistics")
 )
 
 func (d *DiagnosticClient) setupSnapshotDiagnostics(rootCtx context.Context) {
@@ -53,10 +41,7 @@ func (d *DiagnosticClient) setupSnapshotDiagnostics(rootCtx context.Context) {
 	d.runSegmentIndexingFinishedListener(rootCtx)
 	d.runSnapshotFilesListListener(rootCtx)
 	d.runFileDownloadedListener(rootCtx)
-<<<<<<< HEAD
-=======
 	d.runFillDBListener(rootCtx)
->>>>>>> v3.0.0-alpha1
 }
 
 func (d *DiagnosticClient) runSnapshotListener(rootCtx context.Context) {
@@ -86,20 +71,12 @@ func (d *DiagnosticClient) runSnapshotListener(rootCtx context.Context) {
 				d.syncStats.SnapshotDownload.TorrentMetadataReady = info.TorrentMetadataReady
 				d.mu.Unlock()
 
-<<<<<<< HEAD
-				downloadedPercent := getPercentDownloaded(info.Downloaded, info.Total)
-=======
 				downloadedPercent := GetShanpshotsPercentDownloaded(info.Downloaded, info.Total, info.TorrentMetadataReady, info.Files)
->>>>>>> v3.0.0-alpha1
 				remainingBytes := info.Total - info.Downloaded
 				downloadTimeLeft := CalculateTime(remainingBytes, info.DownloadRate)
 				totalDownloadTimeString := time.Duration(info.TotalTime) * time.Second
 
-<<<<<<< HEAD
-				d.updateSnapshotStageStats(SyncStageStats{
-=======
 				d.UpdateSnapshotStageStats(SyncStageStats{
->>>>>>> v3.0.0-alpha1
 					TimeElapsed: totalDownloadTimeString.String(),
 					TimeLeft:    downloadTimeLeft,
 					Progress:    downloadedPercent,
@@ -114,15 +91,11 @@ func (d *DiagnosticClient) runSnapshotListener(rootCtx context.Context) {
 	}()
 }
 
-<<<<<<< HEAD
-func getPercentDownloaded(downloaded, total uint64) string {
-=======
 func GetShanpshotsPercentDownloaded(downloaded uint64, total uint64, torrentMetadataReady int32, files int32) string {
 	if torrentMetadataReady < files {
 		return "calculating..."
 	}
 
->>>>>>> v3.0.0-alpha1
 	percent := float32(downloaded) / float32(total/100)
 
 	if percent > 100 {
@@ -132,11 +105,6 @@ func GetShanpshotsPercentDownloaded(downloaded uint64, total uint64, torrentMeta
 	return fmt.Sprintf("%.2f%%", percent)
 }
 
-<<<<<<< HEAD
-func (d *DiagnosticClient) updateSnapshotStageStats(stats SyncStageStats, subStageInfo string) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-=======
 func (d *DiagnosticClient) UpdateSnapshotStageStats(stats SyncStageStats, subStageInfo string) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -144,7 +112,6 @@ func (d *DiagnosticClient) UpdateSnapshotStageStats(stats SyncStageStats, subSta
 }
 
 func (d *DiagnosticClient) updateSnapshotStageStats(stats SyncStageStats, subStageInfo string) {
->>>>>>> v3.0.0-alpha1
 	idxs := d.getCurrentSyncIdxs()
 	if idxs.Stage == -1 || idxs.SubStage == -1 {
 		log.Debug("[Diagnostics] Can't find running stage or substage while updating Snapshots stage stats.", "stages:", d.syncStages, "stats:", stats, "subStageInfo:", subStageInfo)
@@ -153,14 +120,10 @@ func (d *DiagnosticClient) updateSnapshotStageStats(stats SyncStageStats, subSta
 
 	d.syncStages[idxs.Stage].SubStages[idxs.SubStage].Stats = stats
 }
-<<<<<<< HEAD
-=======
 func (d *DiagnosticClient) saveSnapshotStageStatsToDB() {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	err := d.db.Update(d.ctx, func(tx kv.RwTx) error {
-		err := SnapshotFillDBUpdater(d.syncStats.SnapshotFillDB)(tx)
-		if err != nil {
 			return err
 		}
 
@@ -175,13 +138,11 @@ func (d *DiagnosticClient) saveSnapshotStageStatsToDB() {
 		log.Debug("[Diagnostics] Failed to update snapshot download info", "err", err)
 	}
 }
->>>>>>> v3.0.0-alpha1
 
 func (d *DiagnosticClient) runSegmentDownloadingListener(rootCtx context.Context) {
 	go func() {
 		ctx, ch, closeChannel := Context[SegmentDownloadStatistics](rootCtx, 1)
 		defer closeChannel()
-
 		StartProviders(ctx, TypeOf(SegmentDownloadStatistics{}), log.Root())
 		for {
 			select {
@@ -221,14 +182,8 @@ func (d *DiagnosticClient) runSegmentIndexingListener(rootCtx context.Context) {
 				return
 			case info := <-ch:
 				d.addOrUpdateSegmentIndexingState(info)
-<<<<<<< HEAD
-				d.updateIndexingStatus()
-
-				if d.syncStats.SnapshotIndexing.IndexingFinished {
-=======
 				indexingFinished := d.UpdateIndexingStatus()
 				if indexingFinished {
->>>>>>> v3.0.0-alpha1
 					d.SaveData()
 					return
 				}
@@ -268,26 +223,17 @@ func (d *DiagnosticClient) runSegmentIndexingFinishedListener(rootCtx context.Co
 
 				d.mu.Unlock()
 
-<<<<<<< HEAD
-				d.updateIndexingStatus()
-=======
 				d.UpdateIndexingStatus()
->>>>>>> v3.0.0-alpha1
 			}
 		}
 	}()
 }
 
-<<<<<<< HEAD
-func (d *DiagnosticClient) updateIndexingStatus() {
-	totalProgressPercent := 0
-=======
 func (d *DiagnosticClient) UpdateIndexingStatus() (indexingFinished bool) {
 	totalProgressPercent := 0
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
->>>>>>> v3.0.0-alpha1
 	for _, seg := range d.syncStats.SnapshotIndexing.Segments {
 		totalProgressPercent += seg.Percent
 	}
@@ -303,10 +249,7 @@ func (d *DiagnosticClient) UpdateIndexingStatus() (indexingFinished bool) {
 	if totalProgress >= 100 {
 		d.syncStats.SnapshotIndexing.IndexingFinished = true
 	}
-<<<<<<< HEAD
-=======
 	return d.syncStats.SnapshotIndexing.IndexingFinished
->>>>>>> v3.0.0-alpha1
 }
 
 func (d *DiagnosticClient) addOrUpdateSegmentIndexingState(upd SnapshotIndexingStatistics) {
@@ -404,11 +347,8 @@ func (d *DiagnosticClient) runFileDownloadedListener(rootCtx context.Context) {
 }
 
 func (d *DiagnosticClient) UpdateFileDownloadedStatistics(downloadedInfo *FileDownloadedStatisticsUpdate, downloadingInfo *SegmentDownloadStatistics) {
-<<<<<<< HEAD
-=======
 	d.mu.Lock()
 	defer d.mu.Unlock()
->>>>>>> v3.0.0-alpha1
 	if d.syncStats.SnapshotDownload.SegmentsDownloading == nil {
 		d.syncStats.SnapshotDownload.SegmentsDownloading = map[string]SegmentDownloadStatistics{}
 	}
@@ -446,8 +386,6 @@ func (d *DiagnosticClient) UpdateFileDownloadedStatistics(downloadedInfo *FileDo
 	}
 }
 
-<<<<<<< HEAD
-=======
 func (d *DiagnosticClient) runFillDBListener(rootCtx context.Context) {
 	go func() {
 		ctx, ch, closeChannel := Context[SnapshotFillDBStageUpdate](rootCtx, 1)
@@ -492,7 +430,6 @@ func (d *DiagnosticClient) SetFillDBInfo(info SnapshotFillDBStage) {
 }
 
 // Deprecated - it's not thread-safe and used only in tests. Need introduce another method or add special methods for Tests.
->>>>>>> v3.0.0-alpha1
 func (d *DiagnosticClient) SyncStatistics() SyncStatistics {
 	return d.syncStats
 }

@@ -28,16 +28,14 @@ const (
 	GnosisChainName         = "gnosis"
 	BorE2ETestChain2ValName = "bor-e2e-test-2Val"
 	ChiadoChainName         = "chiado"
-<<<<<<< HEAD
+
+	Test = "test"
 
 	OPDevnetChainName  = "op-devnet"
 	OPMainnetChainName = "op-mainnet"
 
 	LegacyOPDevnetChainName  = "optimism-devnet"
 	LegacyOPMainnetChainName = "optimism-mainnet"
-=======
-	Test                    = "test"
->>>>>>> v3.0.0-alpha1
 )
 
 var All = []string{
@@ -50,7 +48,7 @@ var All = []string{
 	BorDevnetChainName,
 	GnosisChainName,
 	ChiadoChainName,
-<<<<<<< HEAD
+	Test,
 	OPDevnetChainName,
 }
 
@@ -63,7 +61,4 @@ func HandleLegacyName(name string) string {
 	default:
 		return name
 	}
-=======
-	Test,
->>>>>>> v3.0.0-alpha1
 }

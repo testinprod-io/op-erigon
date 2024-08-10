@@ -30,16 +30,6 @@ import (
 	"github.com/holiman/uint256"
 	"golang.org/x/crypto/sha3"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/fixedgas"
-	"github.com/ledgerwatch/erigon-lib/common/length"
-	"github.com/ledgerwatch/erigon-lib/common/u256"
-	"github.com/ledgerwatch/erigon-lib/crypto"
-	"github.com/ledgerwatch/erigon-lib/fastlz"
-	"github.com/ledgerwatch/erigon-lib/gointerfaces/types"
-	"github.com/ledgerwatch/erigon-lib/rlp"
-=======
 	"github.com/erigontech/secp256k1"
 
 	"github.com/erigontech/erigon-lib/common"
@@ -49,7 +39,6 @@ import (
 	"github.com/erigontech/erigon-lib/crypto"
 	types "github.com/erigontech/erigon-lib/gointerfaces/typesproto"
 	"github.com/erigontech/erigon-lib/rlp"
->>>>>>> v3.0.0-alpha1
 )
 
 type TxParseConfig struct {
@@ -121,12 +110,10 @@ type TxSlot struct {
 	Commitments []gokzg4844.KZGCommitment
 	Proofs      []gokzg4844.KZGProof
 
-<<<<<<< HEAD
-	RollupCostData RollupCostData
-=======
 	// EIP-7702: set code tx
 	AuthorizationLen int
->>>>>>> v3.0.0-alpha1
+
+	RollupCostData RollupCostData
 }
 
 const (
@@ -134,11 +121,8 @@ const (
 	AccessListTxType byte = 1 // EIP-2930
 	DynamicFeeTxType byte = 2 // EIP-1559
 	BlobTxType       byte = 3 // EIP-4844
-<<<<<<< HEAD
-	DepositTxType    byte = 126
-=======
 	SetCodeTxType    byte = 4 // EIP-7702
->>>>>>> v3.0.0-alpha1
+	DepositTxType    byte = 126
 )
 
 var ErrParseTxn = fmt.Errorf("%w transaction", rlp.ErrParse)
@@ -209,11 +193,7 @@ func (ctx *TxParseContext) ParseTransaction(payload []byte, pos int, slot *TxSlo
 	// If it is non-legacy transaction, the transaction type follows, and then the list
 	if !legacy {
 		slot.Type = payload[p]
-<<<<<<< HEAD
-		if slot.Type > BlobTxType && slot.Type != DepositTxType {
-=======
-		if slot.Type > SetCodeTxType {
->>>>>>> v3.0.0-alpha1
+		if slot.Type > SetCodeTxType && slot.Type != DepositTxType {
 			return 0, fmt.Errorf("%w: unknown transaction type: %d", ErrParseTxn, slot.Type)
 		}
 		p++
@@ -1122,7 +1102,6 @@ func (al AccessList) StorageKeys() int {
 	return sum
 }
 
-<<<<<<< HEAD
 // RollupCostData is a transaction structure that caches data for quickly computing the data
 // availability costs for the transaction.
 type RollupCostData struct {
@@ -1132,7 +1111,6 @@ type RollupCostData struct {
 
 type L1CostFn func(tx *TxSlot) *uint256.Int
 
-=======
 func (al AccessList) HasAddr(addr common.Address) bool {
 	for _, tuple := range al {
 		if tuple.Address == addr {
@@ -1142,7 +1120,6 @@ func (al AccessList) HasAddr(addr common.Address) bool {
 	return false
 }
 
->>>>>>> v3.0.0-alpha1
 // Removes everything but the payload body from blob tx and prepends 0x3 at the beginning - no copy
 // Doesn't change non-blob tx
 func UnwrapTxPlayloadRlp(blobTxRlp []byte) ([]byte, error) {

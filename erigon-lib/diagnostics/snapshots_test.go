@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 // Copyright 2024 The Erigon Authors
 // This file is part of Erigon.
 //
@@ -16,17 +14,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with Erigon. If not, see <http://www.gnu.org/licenses/>.
 
->>>>>>> v3.0.0-alpha1
 package diagnostics_test
 
 import (
 	"testing"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/diagnostics"
-=======
 	"github.com/erigontech/erigon-lib/diagnostics"
->>>>>>> v3.0.0-alpha1
 	"github.com/stretchr/testify/require"
 )
 
@@ -78,8 +71,6 @@ var (
 		DownloadedStats: diagnostics.FileDownloadedStatistics{},
 	}
 )
-<<<<<<< HEAD
-=======
 
 func TestPercentDiownloaded(t *testing.T) {
 	downloaded := uint64(10)
@@ -117,4 +108,3 @@ func TestFillDBFromSnapshots(t *testing.T) {
 	require.NotEmpty(t, stats.SnapshotFillDB.Stages)
 	require.Equal(t, stats.SnapshotFillDB.Stages[0], diagnostics.SnapshotFillDBStage{StageName: "Headers", Current: 1, Total: 10})
 }
->>>>>>> v3.0.0-alpha1

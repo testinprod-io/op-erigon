@@ -351,11 +351,7 @@ func New(ctx context.Context, cfg *downloadercfg.Cfg, logger log.Logger, verbosi
 	d.ctx, d.stopMainLoop = context.WithCancel(ctx)
 
 	if cfg.AddTorrentsFromDisk {
-<<<<<<< HEAD
-		for _, download := range lock.Downloads {
-=======
 		for _, download := range snapLock.Downloads {
->>>>>>> v3.0.0-alpha1
 			if info, err := d.torrentInfo(download.Name); err == nil {
 				if info.Completed != nil {
 					if hash := hex.EncodeToString(info.Hash); download.Hash != hash {
@@ -380,26 +376,16 @@ func New(ctx context.Context, cfg *downloadercfg.Cfg, logger log.Logger, verbosi
 						fileHash := hex.EncodeToString(fileHashBytes)
 
 						if fileHash != download.Hash && fileHash != hash {
-<<<<<<< HEAD
-							d.logger.Debug("[snapshots] download db mismatch", "file", download.Name, "lock", download.Hash, "db", hash, "disk", fileHash, "downloaded", *info.Completed)
-						} else {
-							d.logger.Debug("[snapshots] lock hash does not match completed download", "file", download.Name, "lock", hash, "download", download.Hash, "downloaded", *info.Completed)
-=======
 							d.logger.Debug("[snapshots] download db mismatch", "file", download.Name, "snapshotLock", download.Hash, "db", hash, "disk", fileHash, "downloaded", *info.Completed)
 						} else {
 							d.logger.Debug("[snapshots] snapshotLock hash does not match completed download", "file", download.Name, "snapshotLock", hash, "download", download.Hash, "downloaded", *info.Completed)
->>>>>>> v3.0.0-alpha1
 						}
 					}
 				}
 			}
 		}
 
-<<<<<<< HEAD
-		if err := d.BuildTorrentFilesIfNeed(d.ctx, lock.Chain, lock.Downloads); err != nil {
-=======
 		if err := d.BuildTorrentFilesIfNeed(d.ctx, snapLock.Chain, snapLock.Downloads); err != nil {
->>>>>>> v3.0.0-alpha1
 			return nil, err
 		}
 
@@ -854,10 +840,7 @@ func (d *Downloader) mainLoop(silent bool) error {
 						if ok && err == nil {
 							_, _, err = addTorrentFile(d.ctx, ts, d.torrentClient, d.db, d.webseeds)
 							if err != nil {
-<<<<<<< HEAD
-=======
 								d.logger.Warn("[snapshots] addTorrentFile from webseed", "err", err)
->>>>>>> v3.0.0-alpha1
 								continue
 							}
 						}
@@ -2798,9 +2781,6 @@ func openClient(ctx context.Context, dbDir, snapDir string, cfg *torrent.ClientC
 	dnsResolver := &downloadercfg.DnsCacheResolver{RefreshTimeout: 24 * time.Hour}
 	cfg.TrackerDialContext = dnsResolver.DialContext
 
-<<<<<<< HEAD
-	torrentClient, err = torrent.NewClient(cfg)
-=======
 	err = func() (err error) {
 		defer func() {
 			if e := recover(); e != nil {
@@ -2815,7 +2795,6 @@ func openClient(ctx context.Context, dbDir, snapDir string, cfg *torrent.ClientC
 		return err
 	}()
 
->>>>>>> v3.0.0-alpha1
 	if err != nil {
 		return nil, nil, nil, nil, fmt.Errorf("torrentcfg.openClient: %w", err)
 	}

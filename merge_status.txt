@@ -2292,34 +2292,6 @@ Unmerged paths:
 	both modified:   Dockerfile.debian
 	both modified:   Makefile
 	both modified:   diagnostics/setup.go
-	deleted by them: erigon-lib/.github/workflows/ci.yml
-	both modified:   erigon-lib/chain/chain_config.go
-	both modified:   erigon-lib/chain/networkname/network_name.go
-	both modified:   erigon-lib/diagnostics/block_execution.go
-	both modified:   erigon-lib/diagnostics/client.go
-	both modified:   erigon-lib/diagnostics/entities.go
-	both modified:   erigon-lib/diagnostics/resources_usage.go
-	both modified:   erigon-lib/diagnostics/snapshots.go
-	both added:      erigon-lib/diagnostics/snapshots_test.go
-	both modified:   erigon-lib/diagnostics/speedtest.go
-	both modified:   erigon-lib/diagnostics/stages.go
-	both added:      erigon-lib/diagnostics/stages_test.go
-	both modified:   erigon-lib/diagnostics/sys_info.go
-	both added:      erigon-lib/diagnostics/utils.go
-	both modified:   erigon-lib/downloader/downloader.go
-	both added:      erigon-lib/downloader/downloadercfg/dns_cache_resolver.go
-	both modified:   erigon-lib/go.mod
-	both modified:   erigon-lib/go.sum
-	both modified:   erigon-lib/gointerfaces/executionproto/execution.pb.go
-	both modified:   erigon-lib/kv/kv_interface.go
-	both modified:   erigon-lib/kv/remotedb/kv_remote.go
-	both modified:   erigon-lib/kv/tables.go
-	both modified:   erigon-lib/txpool/pool.go
-	both modified:   erigon-lib/txpool/pool_fuzz_test.go
-	both modified:   erigon-lib/txpool/pool_test.go
-	both modified:   erigon-lib/txpool/txpoolcfg/txpoolcfg.go
-	both modified:   erigon-lib/txpool/txpoolutil/all_components.go
-	both modified:   erigon-lib/types/txn.go
 	both modified:   ethdb/cbor/pool.go
 	both modified:   go.mod
 	both modified:   go.sum

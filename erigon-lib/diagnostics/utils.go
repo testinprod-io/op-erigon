@@ -1,30 +1,3 @@
-<<<<<<< HEAD
-package diagnostics
-
-import (
-	"context"
-	"encoding/json"
-	"fmt"
-
-	"github.com/ledgerwatch/erigon-lib/kv"
-)
-
-func ReadDataFromTable(db kv.RoDB, table string, key []byte) (data []byte) {
-	if err := db.View(context.Background(), func(tx kv.Tx) error {
-		bytes, err := tx.GetOne(table, key)
-
-		if err != nil {
-			return err
-		}
-
-		data = bytes
-
-		return nil
-	}); err != nil {
-		return []byte{}
-	}
-	return data
-=======
 // Copyright 2024 The Erigon Authors
 // This file is part of Erigon.
 //
@@ -60,7 +33,6 @@ func ReadDataFromTable(tx kv.Tx, table string, key []byte) ([]byte, error) {
 	}
 
 	return bytes, nil
->>>>>>> v3.0.0-alpha1
 }
 
 func PutDataToTable(table string, key []byte, info any) func(tx kv.RwTx) error {
@@ -127,8 +99,6 @@ func SecondsToHHMMString(seconds uint64) string {
 
 	return fmt.Sprintf("%dhrs:%dm", hours, minutes)
 }
-<<<<<<< HEAD
-=======
 
 func ParseData(data []byte, v interface{}) {
 	if len(data) == 0 {
@@ -140,4 +110,3 @@ func ParseData(data []byte, v interface{}) {
 		log.Warn("[Diagnostics] Failed to parse data", "data", string(data), "type", reflect.TypeOf(v))
 	}
 }
->>>>>>> v3.0.0-alpha1

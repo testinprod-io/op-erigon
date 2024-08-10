@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 // Copyright 2024 The Erigon Authors
 // This file is part of Erigon.
 //
@@ -16,17 +14,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with Erigon. If not, see <http://www.gnu.org/licenses/>.
 
->>>>>>> v3.0.0-alpha1
 package diagnostics_test
 
 import (
 	"testing"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/diagnostics"
-=======
 	"github.com/erigontech/erigon-lib/diagnostics"
->>>>>>> v3.0.0-alpha1
 	"github.com/stretchr/testify/require"
 )
 
@@ -54,19 +47,6 @@ func TestSetCurrentSyncStage(t *testing.T) {
 	subStages := diagnostics.InitSubStagesFromList(snapshotsSubStages)
 	d.SetSubStagesList("Snapshots", subStages)
 
-<<<<<<< HEAD
-	d.SetCurrentSyncStage(diagnostics.CurrentSyncStage{Stage: "Snapshots"})
-	require.Equal(t, d.GetSyncStages()[0].State, diagnostics.Running)
-
-	d.SetCurrentSyncStage(diagnostics.CurrentSyncStage{Stage: "BlockHashes"})
-	require.Equal(t, d.GetSyncStages()[0].State, diagnostics.Completed)
-	require.Equal(t, d.GetSyncStages()[1].State, diagnostics.Running)
-
-	d.SetCurrentSyncStage(diagnostics.CurrentSyncStage{Stage: "Snapshots"})
-	require.Equal(t, d.GetSyncStages()[0].State, diagnostics.Running)
-	require.Equal(t, d.GetSyncStages()[1].State, diagnostics.Queued)
-	require.Equal(t, d.GetSyncStages()[2].State, diagnostics.Queued)
-=======
 	err = d.SetCurrentSyncStage(diagnostics.CurrentSyncStage{Stage: "Snapshots"})
 	require.NoError(t, err)
 	require.Equal(t, d.GetSyncStages()[0].State, diagnostics.Running)
@@ -86,7 +66,6 @@ func TestSetCurrentSyncStage(t *testing.T) {
 	err = d.SetCurrentSyncStage(diagnostics.CurrentSyncStage{Stage: "NotExistedStage"})
 	require.Error(t, err)
 
->>>>>>> v3.0.0-alpha1
 }
 
 func TestSetCurrentSyncSubStage(t *testing.T) {
@@ -98,12 +77,8 @@ func TestSetCurrentSyncSubStage(t *testing.T) {
 	subStages := diagnostics.InitSubStagesFromList(snapshotsSubStages)
 	d.SetSubStagesList("Snapshots", subStages)
 
-<<<<<<< HEAD
-	d.SetCurrentSyncStage(diagnostics.CurrentSyncStage{Stage: "Snapshots"})
-=======
 	err = d.SetCurrentSyncStage(diagnostics.CurrentSyncStage{Stage: "Snapshots"})
 	require.NoError(t, err)
->>>>>>> v3.0.0-alpha1
 	d.SetCurrentSyncSubStage(diagnostics.CurrentSyncSubStage{SubStage: "Download header-chain"})
 	require.Equal(t, d.GetSyncStages()[0].SubStages[0].State, diagnostics.Running)
 
@@ -117,8 +92,6 @@ func TestSetCurrentSyncSubStage(t *testing.T) {
 	require.Equal(t, d.GetSyncStages()[0].SubStages[2].State, diagnostics.Queued)
 }
 
-<<<<<<< HEAD
-=======
 func TestGetStageState(t *testing.T) {
 	d, err := NewTestDiagnosticClient()
 	require.NoError(t, err)
@@ -179,7 +152,6 @@ func TestStagesState(t *testing.T) {
 	require.Equal(t, diagnostics.StageState(2).String(), "Completed")
 }
 
->>>>>>> v3.0.0-alpha1
 var (
 	nodeStages         = []string{"Snapshots", "BlockHashes", "Senders"}
 	snapshotsSubStages = []string{"Download header-chain", "Download snapshots", "Indexing", "Fill DB"}

@@ -90,11 +90,7 @@ type PeerStatisticMsgUpdate struct {
 type SyncStatistics struct {
 	SnapshotDownload SnapshotDownloadStatistics `json:"snapshotDownload"`
 	SnapshotIndexing SnapshotIndexingStatistics `json:"snapshotIndexing"`
-<<<<<<< HEAD
-	BlockExecution   BlockExecutionStatistics   `json:"blockExecution"`
-=======
 	SnapshotFillDB   SnapshotFillDBStatistics   `json:"snapshotFillDB"`
->>>>>>> v3.0.0-alpha1
 	SyncFinished     bool                       `json:"syncFinished"`
 }
 
@@ -156,20 +152,6 @@ type SnapshotSegmentIndexingFinishedUpdate struct {
 	SegmentName string `json:"segmentName"`
 }
 
-<<<<<<< HEAD
-type BlockExecutionStatistics struct {
-	From        uint64  `json:"from"`
-	To          uint64  `json:"to"`
-	BlockNumber uint64  `json:"blockNumber"`
-	BlkPerSec   float64 `json:"blkPerSec"`
-	TxPerSec    float64 `json:"txPerSec"`
-	MgasPerSec  float64 `json:"mgasPerSec"`
-	GasState    float64 `json:"gasState"`
-	Batch       uint64  `json:"batch"`
-	Alloc       uint64  `json:"alloc"`
-	Sys         uint64  `json:"sys"`
-	TimeElapsed float64 `json:"timeElapsed"`
-=======
 type SnapshotFillDBStatistics struct {
 	Stages []SnapshotFillDBStage `json:"stages"`
 }
@@ -183,7 +165,6 @@ type SnapshotFillDBStage struct {
 type SnapshotFillDBStageUpdate struct {
 	Stage       SnapshotFillDBStage `json:"stage"`
 	TimeElapsed float64             `json:"timeElapsed"`
->>>>>>> v3.0.0-alpha1
 }
 
 type SnapshoFilesList struct {

@@ -8,18 +8,10 @@ replace github.com/ledgerwatch/interfaces v0.0.0-20240320062914-b57f05746087 => 
 //replace github.com/ledgerwatch/interfaces v0.0.0-20240105174738-fe57049f198c => ../erigon-interfaces
 
 require (
-<<<<<<< HEAD
-	github.com/erigontech/mdbx-go v0.27.24
-	github.com/ledgerwatch/erigon-snapshot v1.3.1-0.20240619030755-1e16b374e6cb
-	github.com/ledgerwatch/interfaces v0.0.0-20240320062914-b57f05746087
-	github.com/ledgerwatch/log/v3 v3.9.0
-	github.com/ledgerwatch/secp256k1 v1.0.0
-=======
 	github.com/erigontech/erigon-snapshot v1.3.1-0.20240720122906-e073fcdeca33
 	github.com/erigontech/interfaces v0.0.0-20240716134413-fc4152088ee6
 	github.com/erigontech/mdbx-go v0.38.4
 	github.com/erigontech/secp256k1 v1.1.0
->>>>>>> v3.0.0-alpha1
 	github.com/rs/dnscache v0.0.0-20211102005908-e0241e321417
 )
 
@@ -144,13 +136,8 @@ require (
 	github.com/prometheus/common v0.48.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
-<<<<<<< HEAD
-	github.com/shoenig/go-m1cpu v0.1.6 // indirect
-	github.com/showwin/speedtest-go v1.7.7
-=======
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
->>>>>>> v3.0.0-alpha1
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/tklauser/go-sysconf v0.3.14 // indirect
 	github.com/tklauser/numcpus v0.8.0 // indirect
@@ -158,27 +145,17 @@ require (
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.opentelemetry.io/otel v1.8.0 // indirect
 	go.opentelemetry.io/otel/trace v1.8.0 // indirect
-<<<<<<< HEAD
-	golang.org/x/net v0.24.0
-	golang.org/x/text v0.14.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240227224415-6ceb2ff114de // indirect
-=======
 	go.uber.org/goleak v1.3.0 // indirect
 	golang.org/x/net v0.27.0
 	golang.org/x/text v0.16.0 // indirect
->>>>>>> v3.0.0-alpha1
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	rsc.io/tmplfunc v0.0.3 // indirect
 	zombiezen.com/go/sqlite v0.13.1 // indirect
 )
 
-<<<<<<< HEAD
-replace github.com/anacrolix/torrent => github.com/erigontech/torrent v1.54.2-alpha-8
-=======
 replace (
 	github.com/anacrolix/torrent => github.com/erigontech/torrent v1.54.2-alpha-32
 	github.com/holiman/bloomfilter/v2 => github.com/AskAlexSharov/bloomfilter/v2 v2.0.8
 	github.com/tidwall/btree => github.com/AskAlexSharov/btree v1.6.2
 )
->>>>>>> v3.0.0-alpha1

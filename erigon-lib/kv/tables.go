@@ -737,10 +737,7 @@ var ChaindataDeprecatedTables = []string{
 	TransitionBlockKey,
 }
 
-<<<<<<< HEAD
-=======
 // Diagnostics tables
->>>>>>> v3.0.0-alpha1
 var DiagnosticsTables = []string{
 	DiagSystemInfo,
 	DiagSyncStages,
