@@ -35,17 +35,10 @@ var (
 // Version is the version of upstream erigon
 // see https://calver.org
 const (
-<<<<<<< HEAD
-	VersionMajor       = 2  // Major version component of the current release
-	VersionMinor       = 60 // Minor version component of the current release
-	VersionMicro       = 4  // Patch version component of the current release
-	VersionModifier    = "" // Modifier component of the current release
-=======
 	VersionMajor       = 3        // Major version component of the current release
 	VersionMinor       = 0        // Minor version component of the current release
 	VersionMicro       = 0        // Patch version component of the current release
 	VersionModifier    = "alpha1" // Modifier component of the current release
->>>>>>> v3.0.0-alpha1
 	VersionKeyCreated  = "ErigonVersionCreated"
 	VersionKeyFinished = "ErigonVersionFinished"
 )

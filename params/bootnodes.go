@@ -20,14 +20,8 @@
 package params
 
 import (
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/chain/networkname"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"strings"
-=======
 	"github.com/erigontech/erigon-lib/chain/networkname"
 	libcommon "github.com/erigontech/erigon-lib/common"
->>>>>>> v3.0.0-alpha1
 )
 
 // MainnetBootnodes are the enode URLs of the P2P bootstrap nodes running on

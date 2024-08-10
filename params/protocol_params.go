@@ -22,13 +22,7 @@ package params
 import (
 	"math/big"
 
-<<<<<<< HEAD
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-
-	"github.com/ledgerwatch/erigon-lib/common"
-=======
 	"github.com/erigontech/erigon-lib/common"
->>>>>>> v3.0.0-alpha1
 )
 
 var (

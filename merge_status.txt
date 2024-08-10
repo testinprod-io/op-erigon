@@ -2329,11 +2329,6 @@ Unmerged paths:
 	both modified:   node/node.go
 	both modified:   node/nodecfg/defaults.go
 	both modified:   p2p/sentry/sentry_multi_client/sentry_multi_client.go
-	both modified:   params/bootnodes.go
-	both modified:   params/config.go
-	both modified:   params/network_params.go
-	both modified:   params/protocol_params.go
-	both modified:   params/version.go
 	both added:      polygon/bor/bordb/prune.go
 	both modified:   polygon/bor/finality/whitelist/milestone.go
 	both modified:   polygon/bor/snaptype/types.go

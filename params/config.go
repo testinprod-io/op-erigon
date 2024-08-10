@@ -74,25 +74,17 @@ var (
 	BorDevnetGenesisHash  = libcommon.HexToHash("0x5a06b25b0c6530708ea0b98a3409290e39dce6be7f558493aeb6e4b99a172a87")
 	GnosisGenesisHash     = libcommon.HexToHash("0x4f1dd23188aab3a76b463e4af801b52b1248ef073c648cbdc4c9333d3da79756")
 	ChiadoGenesisHash     = libcommon.HexToHash("0xada44fd8d2ecab8b08f256af07ad3e777f17fb434f8f8e678b312f576212ba9a")
-<<<<<<< HEAD
+
+	TestGenesisHash = libcommon.HexToHash("0x6116de25352c93149542e950162c7305f207bbc17b0eb725136b78c80aed79cc")
 
 	OPMainnetGenesisHash = libcommon.HexToHash("0x7ca38a1916c42007829c55e69d3e9a73265554b586a499015373241b8a3fa48b")
 	OPDevnetGenesisHash  = libcommon.HexToHash("0x1c16b5a055ff0197544b96f1375bf6be35ec478e23a95093cfe01902d821c22a")
 )
 
 var (
-	GnosisGenesisStateRoot   = libcommon.HexToHash("0x40cf4430ecaa733787d1a65154a3b9efb560c95d9e324a23b97f0609b539133b")
-	ChiadoGenesisStateRoot   = libcommon.HexToHash("0x9ec3eaf4e6188dfbdd6ade76eaa88289b57c63c9a2cde8d35291d5a29e143d31")
-	OptimismMainnetStateRoot = libcommon.HexToHash("0xeddb4c1786789419153a27c4c80ff44a2226b6eda04f7e22ce5bae892ea568eb")
-=======
-	TestGenesisHash       = libcommon.HexToHash("0x6116de25352c93149542e950162c7305f207bbc17b0eb725136b78c80aed79cc")
-)
-
-var (
 	GnosisGenesisStateRoot = libcommon.HexToHash("0x40cf4430ecaa733787d1a65154a3b9efb560c95d9e324a23b97f0609b539133b")
 	ChiadoGenesisStateRoot = libcommon.HexToHash("0x9ec3eaf4e6188dfbdd6ade76eaa88289b57c63c9a2cde8d35291d5a29e143d31")
 	TestGenesisStateRoot   = libcommon.HexToHash("0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421")
->>>>>>> v3.0.0-alpha1
 )
 
 var (
@@ -287,14 +279,11 @@ func GenesisHashByChainName(chain string) *libcommon.Hash {
 		return &GnosisGenesisHash
 	case networkname.ChiadoChainName:
 		return &ChiadoGenesisHash
-<<<<<<< HEAD
+	case networkname.Test:
+		return &TestGenesisHash
 	case networkname.OPMainnetChainName:
 		// cannot use genesis has from superchain registry because of pre-bedrock blocks
 		return &OPMainnetGenesisHash
-=======
-	case networkname.Test:
-		return &TestGenesisHash
->>>>>>> v3.0.0-alpha1
 	default:
 		if opStackChainCfg := OPStackChainConfigByName(chain); opStackChainCfg != nil {
 			genesisHash := libcommon.Hash(opStackChainCfg.Genesis.L2.Hash)
