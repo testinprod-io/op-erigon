@@ -39,35 +39,6 @@ import (
 	"github.com/anacrolix/torrent"
 	"golang.org/x/sync/errgroup"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/chain"
-	"github.com/ledgerwatch/erigon-lib/chain/snapcfg"
-	"github.com/ledgerwatch/erigon-lib/common/datadir"
-	"github.com/ledgerwatch/erigon-lib/common/dbg"
-	"github.com/ledgerwatch/erigon-lib/common/dir"
-	"github.com/ledgerwatch/erigon-lib/diagnostics"
-	"github.com/ledgerwatch/erigon-lib/downloader"
-	"github.com/ledgerwatch/erigon-lib/downloader/snaptype"
-	"github.com/ledgerwatch/erigon-lib/etl"
-	protodownloader "github.com/ledgerwatch/erigon-lib/gointerfaces/downloader"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon-lib/kv/kvcfg"
-	"github.com/ledgerwatch/erigon-lib/kv/rawdbv3"
-	"github.com/ledgerwatch/erigon-lib/state"
-	"github.com/ledgerwatch/erigon/core/rawdb"
-	coresnaptype "github.com/ledgerwatch/erigon/core/snaptype"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/eth/ethconfig"
-	"github.com/ledgerwatch/erigon/eth/ethconfig/estimate"
-	"github.com/ledgerwatch/erigon/eth/stagedsync/stages"
-	borsnaptype "github.com/ledgerwatch/erigon/polygon/bor/snaptype"
-	"github.com/ledgerwatch/erigon/rpc"
-	"github.com/ledgerwatch/erigon/turbo/services"
-	"github.com/ledgerwatch/erigon/turbo/shards"
-	"github.com/ledgerwatch/erigon/turbo/silkworm"
-	"github.com/ledgerwatch/erigon/turbo/snapshotsync"
-	"github.com/ledgerwatch/erigon/turbo/snapshotsync/freezeblocks"
-=======
 	"github.com/erigontech/erigon-lib/log/v3"
 
 	"github.com/erigontech/erigon-lib/diagnostics"
@@ -99,7 +70,6 @@ import (
 	"github.com/erigontech/erigon/turbo/silkworm"
 	"github.com/erigontech/erigon/turbo/snapshotsync"
 	"github.com/erigontech/erigon/turbo/snapshotsync/freezeblocks"
->>>>>>> v3.0.0-alpha1
 )
 
 type SnapshotsCfg struct {
@@ -234,25 +204,7 @@ func SpawnStageSnapshots(
 	return nil
 }
 
-<<<<<<< HEAD
 func DownloadAndIndexSnapshotsIfNeed(s *StageState, ctx context.Context, tx kv.RwTx, cfg SnapshotsCfg, initialCycle bool, logger log.Logger) error {
-	if !initialCycle {
-		return nil
-	}
-	if !cfg.blockReader.FreezingCfg().Enabled {
-		return nil
-	}
-
-	diagnostics.Send(diagnostics.CurrentSyncStage{Stage: string(stages.Snapshots)})
-
-	cstate := snapshotsync.NoCaplin
-	if cfg.caplin { //TODO(Giulio2002): uncomment
-		cstate = snapshotsync.AlsoCaplin
-	}
-
-=======
-func DownloadAndIndexSnapshotsIfNeed(s *StageState, ctx context.Context, tx kv.RwTx, cfg SnapshotsCfg, logger log.Logger) error {
->>>>>>> v3.0.0-alpha1
 	if cfg.snapshotUploader != nil {
 		subStages := diagnostics.InitSubStagesFromList([]string{"Indexing", "Fill DB"})
 		diagnostics.Send(diagnostics.SetSyncSubStageList{
@@ -293,22 +245,6 @@ func DownloadAndIndexSnapshotsIfNeed(s *StageState, ctx context.Context, tx kv.R
 				return err
 			}
 		}
-<<<<<<< HEAD
-		if cfg.notifier.Events != nil { // can notify right here, even that write txn is not commit
-			cfg.notifier.Events.OnNewSnapshot()
-		}
-	} else {
-		subStages := diagnostics.InitSubStagesFromList([]string{"Download snapshots", "Indexing", "Fill DB"})
-		diagnostics.Send(diagnostics.SetSyncSubStageList{
-			Stage: string(stages.Snapshots),
-			List:  subStages,
-		})
-
-		diagnostics.Send(diagnostics.CurrentSyncSubStage{SubStage: "Download snapshots"})
-		if err := snapshotsync.WaitForDownloader(ctx, s.LogPrefix(), cfg.historyV3, cfg.blobs, cstate, cfg.agg, tx, cfg.blockReader, &cfg.chainConfig, cfg.snapshotDownloader, s.state.StagesIdsList()); err != nil {
-			return err
-		}
-=======
 	}
 
 	if !s.CurrentSyncCycle.IsFirstCycle {
@@ -343,7 +279,6 @@ func DownloadAndIndexSnapshotsIfNeed(s *StageState, ctx context.Context, tx kv.R
 	diagnostics.Send(diagnostics.CurrentSyncSubStage{SubStage: "Download snapshots"})
 	if err := snapshotsync.WaitForDownloader(ctx, s.LogPrefix() /*headerChain=*/, false, cfg.blobs, cfg.prune, cstate, cfg.agg, tx, cfg.blockReader, &cfg.chainConfig, cfg.snapshotDownloader, s.state.StagesIdsList()); err != nil {
 		return err
->>>>>>> v3.0.0-alpha1
 	}
 
 	// It's ok to notify before tx.Commit(), because RPCDaemon does read list of files by gRPC (not by reading from db)
@@ -351,17 +286,7 @@ func DownloadAndIndexSnapshotsIfNeed(s *StageState, ctx context.Context, tx kv.R
 		cfg.notifier.Events.OnNewSnapshot()
 	}
 
-<<<<<<< HEAD
-	cfg.blockReader.Snapshots().LogStat("download")
-	cfg.agg.LogStats(tx, func(endTxNumMinimax uint64) uint64 {
-		_, histBlockNumProgress, _ := rawdbv3.TxNums.FindBlockNum(tx, endTxNumMinimax)
-		return histBlockNumProgress
-	})
-
-	diagnostics.Send(diagnostics.CurrentSyncSubStage{SubStage: "Indexing"})
-=======
 	diagnostics.Send(diagnostics.CurrentSyncSubStage{SubStage: "E2 Indexing"})
->>>>>>> v3.0.0-alpha1
 	if err := cfg.blockRetire.BuildMissedIndicesIfNeed(ctx, s.LogPrefix(), cfg.notifier.Events, &cfg.chainConfig); err != nil {
 		return err
 	}

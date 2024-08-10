@@ -264,15 +264,12 @@ type Config struct {
 
 	OverridePragueTime *big.Int `toml:",omitempty"`
 
-<<<<<<< HEAD
 	RollupSequencerHTTP        string
 	RollupHistoricalRPC        string
 	RollupHistoricalRPCTimeout time.Duration
 
 	ForcePartialCommit bool
 
-=======
->>>>>>> v3.0.0-alpha1
 	// Embedded Silkworm support
 	SilkwormExecution            bool
 	SilkwormRpcDaemon            bool

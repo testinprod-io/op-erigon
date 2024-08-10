@@ -110,12 +110,6 @@ func (s *Sync) NextStage() {
 		return
 	}
 	s.currentStage++
-<<<<<<< HEAD
-	if s.currentStage < uint(len(s.stages)) {
-		diagnostics.Send(diagnostics.CurrentSyncStage{Stage: string(s.stages[s.currentStage].ID)})
-	}
-=======
->>>>>>> v3.0.0-alpha1
 }
 
 // IsBefore returns true if stage1 goes before stage2 in staged sync
@@ -206,11 +200,6 @@ func (s *Sync) SetCurrentStage(id stages.SyncStage) error {
 	for i, stage := range s.stages {
 		if stage.ID == id {
 			s.currentStage = uint(i)
-<<<<<<< HEAD
-
-			diagnostics.Send(diagnostics.CurrentSyncStage{Stage: string(id)})
-=======
->>>>>>> v3.0.0-alpha1
 
 			return nil
 		}

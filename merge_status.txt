@@ -2337,22 +2337,6 @@ Unmerged paths:
 	both modified:   erigon-lib/txpool/txpoolcfg/txpoolcfg.go
 	both modified:   erigon-lib/txpool/txpoolutil/all_components.go
 	both modified:   erigon-lib/types/txn.go
-	both modified:   eth/backend.go
-	both modified:   eth/ethconfig/config.go
-	both modified:   eth/gasprice/gasprice.go
-	both modified:   eth/protocols/eth/handlers.go
-	both modified:   eth/stagedsync/bor_heimdall_shared.go
-	both modified:   eth/stagedsync/default_stages.go
-	both modified:   eth/stagedsync/exec3.go
-	both modified:   eth/stagedsync/stage_bor_heimdall.go
-	both modified:   eth/stagedsync/stage_mining_create_block.go
-	both modified:   eth/stagedsync/stage_mining_exec.go
-	both modified:   eth/stagedsync/stage_snapshots.go
-	both modified:   eth/stagedsync/stagebuilder.go
-	both modified:   eth/stagedsync/sync.go
-	deleted by them: eth/tracers/api.go
-	both modified:   eth/tracers/internal/tracetest/calltrace_test.go
-	both modified:   eth/tracers/internal/tracetest/prestate_test.go
 	both modified:   ethdb/cbor/pool.go
 	both modified:   go.mod
 	both modified:   go.sum

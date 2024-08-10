@@ -50,12 +50,10 @@ type MiningBlock struct {
 	Receipts         types.Receipts
 	Withdrawals      []*types.Withdrawal
 	PreparedTxs      types.TransactionsStream
-<<<<<<< HEAD
+
+	Requests types.Requests
 
 	ForceTxs types.TransactionsStream
-=======
-	Requests         types.Requests
->>>>>>> v3.0.0-alpha1
 }
 
 type MiningState struct {

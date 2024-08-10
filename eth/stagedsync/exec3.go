@@ -649,11 +649,8 @@ Loop:
 			}
 		}
 		inputBlockNum.Store(blockNum)
-<<<<<<< HEAD
-=======
 		doms.SetBlockNum(blockNum)
 
->>>>>>> v3.0.0-alpha1
 		b, err = blockWithSenders(ctx, chainDb, applyTx, blockReader, blockNum)
 		if err != nil {
 			return err
@@ -1011,8 +1008,6 @@ Loop:
 
 	return nil
 }
-<<<<<<< HEAD
-=======
 
 // nolint
 func dumpPlainStateDebug(tx kv.RwTx, doms *state2.SharedDomains) {
@@ -1141,7 +1136,6 @@ func flushAndCheckCommitmentV3(ctx context.Context, header *types.Header, applyT
 	return false, nil
 }
 
->>>>>>> v3.0.0-alpha1
 func blockWithSenders(ctx context.Context, db kv.RoDB, tx kv.Tx, blockReader services.BlockReader, blockNum uint64) (b *types.Block, err error) {
 	if tx == nil {
 		tx, err = db.BeginRo(ctx)
@@ -1150,9 +1144,6 @@ func blockWithSenders(ctx context.Context, db kv.RoDB, tx kv.Tx, blockReader ser
 		}
 		defer tx.Rollback()
 	}
-<<<<<<< HEAD
-	return blockReader.BlockByNumber(ctx, tx, blockNum)
-=======
 	b, err = blockReader.BlockByNumber(ctx, tx, blockNum)
 	if err != nil {
 		return nil, err
@@ -1164,7 +1155,6 @@ func blockWithSenders(ctx context.Context, db kv.RoDB, tx kv.Tx, blockReader ser
 		_ = txn.Hash()
 	}
 	return b, err
->>>>>>> v3.0.0-alpha1
 }
 
 func processResultQueue(ctx context.Context, in *state.QueueWithRetry, rws *state.ResultsQueue, outputTxNumIn uint64, rs *state.StateV3, agg *state2.Aggregator, applyTx kv.Tx, backPressure chan struct{}, applyWorker *exec3.Worker, canRetry, forceStopAtBlockEnd bool) (outputTxNum uint64, conflicts, triggers int, processedBlockNum uint64, stopedAtBlockEnd bool, err error) {

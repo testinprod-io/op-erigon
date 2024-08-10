@@ -371,15 +371,11 @@ func fetchRequiredHeimdallStateSyncEventsIfNeeded(
 	ctx context.Context,
 	header *types.Header,
 	tx kv.RwTx,
-<<<<<<< HEAD
-	cfg BorHeimdallCfg, //nolint:gocritic
-=======
 	borConfig *borcfg.BorConfig,
 	blockReader services.FullBlockReader,
 	heimdallClient heimdall.HeimdallClient,
 	chainID string,
 	stateReceiverABI abi.ABI,
->>>>>>> v3.0.0-alpha1
 	logPrefix string,
 	logger log.Logger,
 	lastStateSyncEventID uint64,
@@ -411,15 +407,11 @@ func fetchAndWriteHeimdallStateSyncEvents(
 	header *types.Header,
 	lastStateSyncEventID uint64,
 	tx kv.RwTx,
-<<<<<<< HEAD
-	cfg BorHeimdallCfg, //nolint:gocritic
-=======
 	config *borcfg.BorConfig,
 	blockReader services.FullBlockReader,
 	heimdallClient heimdall.HeimdallClient,
 	chainID string,
 	stateReceiverABI abi.ABI,
->>>>>>> v3.0.0-alpha1
 	logPrefix string,
 	logger log.Logger,
 ) (uint64, int, time.Duration, error) {

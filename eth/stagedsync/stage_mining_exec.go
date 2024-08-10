@@ -136,17 +136,11 @@ func SpawnMiningExecStage(s *StageState, txc wrap.TxContainer, cfg MiningExecCfg
 	// But if we disable empty precommit already, ignore it. Since
 	// empty block is necessary to keep the liveness of the network.
 	if noempty {
-<<<<<<< HEAD
 		if !forceTxs.Empty() {
 			// forceTxs is sent by Optimism consensus client, and all force txs must be included in the payload.
 			// Therefore, interrupts to block building must not be handled while force txs are being processed.
 			// So do not pass cfg.interrupt
 			logs, _, err := addTransactionsToMiningBlock(logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, cfg.engine, forceTxs, cfg.miningState.MiningConfig.Etherbase, ibs, quit, nil, cfg.payloadId, true, logger)
-=======
-
-		if txs != nil && !txs.Empty() {
-			logs, _, err := addTransactionsToMiningBlock(logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, cfg.engine, txs, cfg.miningState.MiningConfig.Etherbase, ibs, ctx, cfg.interrupt, cfg.payloadId, logger)
->>>>>>> v3.0.0-alpha1
 			if err != nil {
 				return err
 			}
@@ -186,11 +180,7 @@ func SpawnMiningExecStage(s *StageState, txc wrap.TxContainer, cfg MiningExecCfg
 				}
 
 				if !txs.Empty() {
-<<<<<<< HEAD
-					logs, stop, err := addTransactionsToMiningBlock(logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, cfg.engine, txs, cfg.miningState.MiningConfig.Etherbase, ibs, quit, cfg.interrupt, cfg.payloadId, false, logger)
-=======
-					logs, stop, err := addTransactionsToMiningBlock(logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, cfg.engine, txs, cfg.miningState.MiningConfig.Etherbase, ibs, ctx, cfg.interrupt, cfg.payloadId, logger)
->>>>>>> v3.0.0-alpha1
+					logs, stop, err := addTransactionsToMiningBlock(logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, cfg.engine, txs, cfg.miningState.MiningConfig.Etherbase, ibs, ctx, cfg.interrupt, cfg.payloadId, false, logger)
 					if err != nil {
 						return err
 					}
@@ -463,13 +453,8 @@ func filterBadTransactions(transactions []types.Transaction, config chain.Config
 }
 
 func addTransactionsToMiningBlock(logPrefix string, current *MiningBlock, chainConfig chain.Config, vmConfig *vm.Config, getHeader func(hash libcommon.Hash, number uint64) *types.Header,
-<<<<<<< HEAD
-	engine consensus.Engine, txs types.TransactionsStream, coinbase libcommon.Address, ibs *state.IntraBlockState, quit <-chan struct{},
-	interrupt *int32, payloadId uint64, allowDeposits bool, logger log.Logger) (types.Logs, bool, error) {
-=======
 	engine consensus.Engine, txs types.TransactionsStream, coinbase libcommon.Address, ibs *state.IntraBlockState, ctx context.Context,
-	interrupt *int32, payloadId uint64, logger log.Logger) (types.Logs, bool, error) {
->>>>>>> v3.0.0-alpha1
+	interrupt *int32, payloadId uint64, allowDeposits bool, logger log.Logger) (types.Logs, bool, error) {
 	header := current.Header
 	tcount := 0
 	gasPool := new(core.GasPool).AddGas(header.GasLimit - header.GasUsed)

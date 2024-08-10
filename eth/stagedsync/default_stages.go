@@ -629,14 +629,6 @@ var PipelinePruneOrder = PruneOrder{
 	stages.Snapshots,
 }
 
-<<<<<<< HEAD
-var MiningUnwindOrder = UnwindOrder{
-	stages.HashState,
-	stages.IntermediateHashes,
-	stages.MiningExecution,
-}
-var MiningPruneOrder = PruneOrder{} // nothing to unwind in mining - because mining does not commit db changes
-=======
 var PolygonSyncPruneOrder = PruneOrder{
 	stages.Finish,
 	stages.TxLookup,
@@ -648,4 +640,3 @@ var PolygonSyncPruneOrder = PruneOrder{
 
 var MiningUnwindOrder = UnwindOrder{} // nothing to unwind in mining - because mining does not commit db changes
 var MiningPruneOrder = PruneOrder{}   // nothing to unwind in mining - because mining does not commit db changes
->>>>>>> v3.0.0-alpha1

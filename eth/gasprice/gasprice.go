@@ -26,14 +26,6 @@ import (
 	"math/big"
 
 	"github.com/holiman/uint256"
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/chain"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon/eth/gasprice/gaspricecfg"
-	"github.com/ledgerwatch/erigon/params"
-	"github.com/ledgerwatch/log/v3"
-=======
->>>>>>> v3.0.0-alpha1
 
 	"github.com/erigontech/erigon-lib/chain"
 	libcommon "github.com/erigontech/erigon-lib/common"
@@ -76,11 +68,9 @@ type Oracle struct {
 	percentile                        int
 	maxHeaderHistory, maxBlockHistory int
 
-<<<<<<< HEAD
-	minSuggestedPriorityFee *big.Int // for Optimism fee suggestion
-=======
 	log log.Logger
->>>>>>> v3.0.0-alpha1
+
+	minSuggestedPriorityFee *big.Int // for Optimism fee suggestion
 }
 
 // NewOracle returns a new gasprice oracle which can recommend suitable
@@ -111,15 +101,9 @@ func NewOracle(backend OracleBackend, params gaspricecfg.Config, cache Cache, lo
 		log.Warn("Sanitizing invalid gasprice oracle ignore price", "provided", params.IgnorePrice, "updated", ignorePrice)
 	}
 
-<<<<<<< HEAD
-	setBorDefaultGpoIgnorePrice(backend.ChainConfig(), params)
-
-	r := &Oracle{
-=======
 	setBorDefaultGpoIgnorePrice(backend.ChainConfig(), params, log)
 
-	return &Oracle{
->>>>>>> v3.0.0-alpha1
+	r := &Oracle{
 		backend:          backend,
 		lastPrice:        params.Default,
 		maxPrice:         maxPrice,
@@ -326,7 +310,6 @@ func (s *sortingHeap) Pop() interface{} {
 	return x
 }
 
-<<<<<<< HEAD
 type bigIntArray []*big.Int
 
 func (s bigIntArray) Len() int           { return len(s) }
@@ -335,12 +318,7 @@ func (s bigIntArray) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 
 // setBorDefaultGpoIgnorePrice enforces gpo IgnorePrice to be equal to BorDefaultGpoIgnorePrice (25gwei by default)
 // only for polygon amoy network.
-func setBorDefaultGpoIgnorePrice(chainConfig *chain.Config, gasPriceConfig gaspricecfg.Config) {
-=======
-// setBorDefaultGpoIgnorePrice enforces gpo IgnorePrice to be equal to BorDefaultGpoIgnorePrice (25gwei by default)
-// only for polygon amoy network.
 func setBorDefaultGpoIgnorePrice(chainConfig *chain.Config, gasPriceConfig gaspricecfg.Config, log log.Logger) {
->>>>>>> v3.0.0-alpha1
 	if chainConfig.Bor != nil && chainConfig.ChainID.Cmp(params.AmoyChainConfig.ChainID) == 0 && gasPriceConfig.IgnorePrice != gaspricecfg.BorDefaultGpoIgnorePrice {
 		log.Warn("Sanitizing invalid bor gasprice oracle ignore price", "provided", gasPriceConfig.IgnorePrice, "updated", gaspricecfg.BorDefaultGpoIgnorePrice)
 		gasPriceConfig.IgnorePrice = gaspricecfg.BorDefaultGpoIgnorePrice

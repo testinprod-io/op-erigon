@@ -22,18 +22,6 @@ package eth
 import (
 	"context"
 	"fmt"
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/chain"
-
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon/common"
-	"github.com/ledgerwatch/erigon/core/rawdb"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/rlp"
-	"github.com/ledgerwatch/erigon/turbo/services"
-	"github.com/ledgerwatch/log/v3"
-=======
 	"github.com/erigontech/erigon-lib/chain"
 	libcommon "github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/kv"
@@ -43,7 +31,6 @@ import (
 	"github.com/erigontech/erigon/core/types"
 	"github.com/erigontech/erigon/rlp"
 	"github.com/erigontech/erigon/turbo/services"
->>>>>>> v3.0.0-alpha1
 )
 
 func AnswerGetBlockHeadersQuery(db kv.Tx, query *GetBlockHeadersPacket, blockReader services.HeaderAndCanonicalReader) ([]*types.Header, error) {
@@ -172,15 +159,11 @@ func AnswerGetBlockBodiesQuery(db kv.Tx, query GetBlockBodiesPacket, blockReader
 	return bodies
 }
 
-<<<<<<< HEAD
-func AnswerGetReceiptsQuery(chainCfg *chain.Config, br services.FullBlockReader, db kv.Tx, query GetReceiptsPacket) ([]rlp.RawValue, error) { //nolint:unparam
-=======
 type ReceiptsGetter interface {
 	GetReceipts(ctx context.Context, cfg *chain.Config, tx kv.Tx, block *types.Block, senders []libcommon.Address) (types.Receipts, error)
 }
 
 func AnswerGetReceiptsQuery(ctx context.Context, cfg *chain.Config, receiptsGetter ReceiptsGetter, br services.FullBlockReader, db kv.Tx, query GetReceiptsPacket) ([]rlp.RawValue, error) { //nolint:unparam
->>>>>>> v3.0.0-alpha1
 	// Gather state data until the fetch or network limits is reached
 	var (
 		bytes    int
@@ -204,16 +187,12 @@ func AnswerGetReceiptsQuery(ctx context.Context, cfg *chain.Config, receiptsGett
 		if b == nil {
 			return nil, nil
 		}
-<<<<<<< HEAD
-		results := rawdb.ReadReceipts(chainCfg, db, b, s)
-=======
 
 		results, err := receiptsGetter.GetReceipts(ctx, cfg, db, b, s)
 		if err != nil {
 			return nil, err
 		}
 
->>>>>>> v3.0.0-alpha1
 		if results == nil {
 			header, err := rawdb.ReadHeaderByHash(db, hash)
 			if err != nil {

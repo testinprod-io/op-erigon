@@ -30,28 +30,6 @@ import (
 	lru "github.com/hashicorp/golang-lru/arc/v2"
 	"golang.org/x/sync/errgroup"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/chain"
-	"github.com/ledgerwatch/erigon-lib/chain/networkname"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon/accounts/abi"
-	"github.com/ledgerwatch/erigon/common/math"
-	"github.com/ledgerwatch/erigon/consensus"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/dataflow"
-	"github.com/ledgerwatch/erigon/eth/ethconfig/estimate"
-	"github.com/ledgerwatch/erigon/eth/stagedsync/stages"
-	"github.com/ledgerwatch/erigon/polygon/bor"
-	"github.com/ledgerwatch/erigon/polygon/bor/borcfg"
-	"github.com/ledgerwatch/erigon/polygon/bor/finality"
-	"github.com/ledgerwatch/erigon/polygon/bor/finality/whitelist"
-	borsnaptype "github.com/ledgerwatch/erigon/polygon/bor/snaptype"
-	"github.com/ledgerwatch/erigon/polygon/bor/valset"
-	"github.com/ledgerwatch/erigon/polygon/heimdall"
-	"github.com/ledgerwatch/erigon/turbo/services"
-	"github.com/ledgerwatch/erigon/turbo/stages/headerdownload"
-=======
 	"github.com/erigontech/erigon-lib/log/v3"
 
 	"github.com/erigontech/erigon-lib/chain"
@@ -75,7 +53,6 @@ import (
 	"github.com/erigontech/erigon/polygon/sync"
 	"github.com/erigontech/erigon/turbo/services"
 	"github.com/erigontech/erigon/turbo/stages/headerdownload"
->>>>>>> v3.0.0-alpha1
 )
 
 const (
@@ -866,13 +843,9 @@ func checkBorHeaderExtraData(chr consensus.ChainHeaderReader, header *types.Head
 	return nil
 }
 
-<<<<<<< HEAD
 func BorHeimdallUnwind(u *UnwindState, ctx context.Context, _ *StageState, tx kv.RwTx, cfg BorHeimdallCfg) (err error) { //nolint:gocritic
-=======
-func BorHeimdallUnwind(u *UnwindState, ctx context.Context, _ *StageState, tx kv.RwTx, cfg BorHeimdallCfg) (err error) {
 	u.UnwindPoint = max(u.UnwindPoint, cfg.blockReader.FrozenBorBlocks()) // protect from unwind behind files
 
->>>>>>> v3.0.0-alpha1
 	if cfg.borConfig == nil {
 		return
 	}
