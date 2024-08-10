@@ -18,12 +18,11 @@ package cbor
 
 import (
 	"io"
+	"log"
 	"math/big"
 	"reflect"
 
 	"github.com/ugorji/go/codec"
-
-	"github.com/erigontech/erigon-lib/log/v3"
 )
 
 var logger = log.New("package", "cbor")
@@ -49,27 +48,6 @@ func Decoder(r io.Reader) *codec.Decoder {
 	return d
 }
 
-<<<<<<< HEAD
-func DecoderBytes(r []byte) *codec.Decoder {
-	var d *codec.Decoder
-	select {
-	case d = <-decoderPool:
-		d.ResetBytes(r)
-	default:
-		{
-			var handle codec.CborHandle
-			handle.ReaderBufferSize = 64 * 1024
-			handle.ZeroCopy = true // if you need access to object outside of db transaction - please copy bytes before deserialization
-			handle.SetInterfaceExt(bigIntType, 1, BigIntExt{})
-			handle.SetInterfaceExt(bigFloatType, 2, BigFloatExt{})
-			d = codec.NewDecoderBytes(r, &handle)
-		}
-	}
-	return d
-}
-
-=======
->>>>>>> v3.0.0-alpha1
 func returnDecoderToPool(d *codec.Decoder) {
 	select {
 	case decoderPool <- d:
@@ -102,47 +80,11 @@ func Encoder(w io.Writer) *codec.Encoder {
 	return e
 }
 
-<<<<<<< HEAD
-func EncoderBytes(w *[]byte) *codec.Encoder {
-	var e *codec.Encoder
-	select {
-	case e = <-encoderPool:
-		e.ResetBytes(w)
-	default:
-		{
-			var handle codec.CborHandle
-			handle.WriterBufferSize = 64 * 1024
-			handle.StructToArray = true
-			handle.OptimumSize = true
-			handle.StringToRaw = true
-			handle.SetInterfaceExt(bigIntType, 1, BigIntExt{})
-			handle.SetInterfaceExt(bigFloatType, 2, BigFloatExt{})
-
-			e = codec.NewEncoderBytes(w, &handle)
-		}
-	}
-	return e
-}
-
-=======
->>>>>>> v3.0.0-alpha1
 func returnEncoderToPool(e *codec.Encoder) {
 	select {
 	case encoderPool <- e:
 	default:
 		logger.Trace("Allowing encoder to be garbage collected, pool is full")
-	}
-}
-<<<<<<< HEAD
-
-func Return(d interface{}) {
-	switch toReturn := d.(type) {
-	case *codec.Decoder:
-		returnDecoderToPool(toReturn)
-	case *codec.Encoder:
-		returnEncoderToPool(toReturn)
-	default:
-		panic(fmt.Sprintf("unexpected type: %T", d))
 	}
 }
 
@@ -170,5 +112,3 @@ func (x BigFloatExt) UpdateExt(dest interface{}, v interface{}) {
 	d := dest.(*big.Float)
 	d.SetString(v.(string))
 }
-=======
->>>>>>> v3.0.0-alpha1

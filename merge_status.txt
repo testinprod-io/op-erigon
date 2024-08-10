@@ -2292,14 +2292,9 @@ Unmerged paths:
 	both modified:   Dockerfile.debian
 	both modified:   Makefile
 	both modified:   diagnostics/setup.go
-	both modified:   ethdb/cbor/pool.go
 	both modified:   go.mod
 	both modified:   go.sum
 	both modified:   migrations/prohibit_new_downloads2.go
-	both modified:   node/node.go
-	both modified:   node/nodecfg/defaults.go
-	both modified:   p2p/sentry/sentry_multi_client/sentry_multi_client.go
-	both modified:   rpc/http.go
 	both modified:   tests/erigon-ext-test/go.mod.template
 	
 Changes not staged for commit:

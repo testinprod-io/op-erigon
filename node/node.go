@@ -41,8 +41,6 @@ import (
 
 	"github.com/gofrs/flock"
 
-	"github.com/erigontech/erigon-lib/log/v3"
-
 	"github.com/erigontech/erigon-lib/kv"
 	"github.com/erigontech/erigon-lib/kv/mdbx"
 	"github.com/erigontech/erigon-lib/kv/memdb"
@@ -352,11 +350,7 @@ func OpenDatabase(ctx context.Context, config *nodecfg.Config, label kv.Label, n
 			if config.MdbxGrowthStep > 0 {
 				opts = opts.GrowthStep(config.MdbxGrowthStep)
 			}
-<<<<<<< HEAD
-			opts = opts.DirtySpace(uint64(512 * datasize.MB))
-=======
 			opts = opts.DirtySpace(uint64(1024 * datasize.MB))
->>>>>>> v3.0.0-alpha1
 		case kv.ConsensusDB:
 			if config.MdbxPageSize.Bytes() > 0 {
 				opts = opts.PageSize(config.MdbxPageSize.Bytes())

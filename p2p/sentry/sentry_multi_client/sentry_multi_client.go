@@ -44,8 +44,6 @@ import (
 	proto_sentry "github.com/erigontech/erigon-lib/gointerfaces/sentryproto"
 	proto_types "github.com/erigontech/erigon-lib/gointerfaces/typesproto"
 	"github.com/erigontech/erigon-lib/kv"
-	"github.com/erigontech/erigon-lib/log/v3"
-
 	"github.com/erigontech/erigon/consensus"
 	"github.com/erigontech/erigon/core/types"
 	"github.com/erigontech/erigon/eth/ethconfig"
@@ -730,12 +728,8 @@ func (cs *MultiClient) getReceipts66(ctx context.Context, inreq *proto_sentry.In
 		return err
 	}
 	defer tx.Rollback()
-<<<<<<< HEAD
-	receipts, err := eth.AnswerGetReceiptsQuery(cs.ChainConfig, cs.blockReader, tx, query.GetReceiptsPacket)
-=======
 
 	receiptsList, err := eth.AnswerGetReceiptsQuery(ctx, cs.ChainConfig, cs.ethApiWrapper, cs.blockReader, tx, query.GetReceiptsPacket)
->>>>>>> v3.0.0-alpha1
 	if err != nil {
 		return err
 	}
