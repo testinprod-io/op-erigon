@@ -20,9 +20,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/ledgerwatch/erigon/eth/stagedsync/stages"
 	"math/big"
 	"time"
+
+	"github.com/erigontech/erigon/eth/stagedsync/stages"
 
 	mapset "github.com/deckarep/golang-set/v2"
 

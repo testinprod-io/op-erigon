@@ -8,7 +8,7 @@ import (
 	"github.com/erigontech/erigon-lib/common/hexutil"
 	"math/big"
 
-	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/hexutility"
 )
 

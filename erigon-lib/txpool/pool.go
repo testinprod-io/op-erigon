@@ -33,7 +33,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ledgerwatch/erigon-lib/rlp"
+	"github.com/erigontech/erigon-lib/opstack"
+	"github.com/erigontech/erigon-lib/rlp"
 
 	gokzg4844 "github.com/crate-crypto/go-kzg-4844"
 	mapset "github.com/deckarep/golang-set/v2"

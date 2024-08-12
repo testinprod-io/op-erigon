@@ -23,6 +23,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/erigontech/erigon-lib/chain"
 	"io"
 	"math/big"
 
@@ -31,6 +32,8 @@ import (
 	"github.com/erigontech/erigon-lib/common/hexutility"
 	"github.com/erigontech/erigon/crypto"
 	"github.com/erigontech/erigon/rlp"
+
+	"github.com/erigontech/erigon-lib/opstack"
 )
 
 // go:generate gencodec -type Receipt -field-override receiptMarshaling -out gen_receipt_json.go

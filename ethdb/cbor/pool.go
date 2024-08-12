@@ -17,12 +17,11 @@
 package cbor
 
 import (
+	"github.com/erigontech/erigon-lib/log/v3"
+	"github.com/ugorji/go/codec"
 	"io"
-	"log"
 	"math/big"
 	"reflect"
-
-	"github.com/ugorji/go/codec"
 )
 
 var logger = log.New("package", "cbor")
