@@ -483,7 +483,7 @@ func NewRPCTransaction(txn types.Transaction, blockHash common.Hash, blockNumber
 
 		if txn.Type() == types.AccessListTxType {
 			result.GasPrice = (*hexutil.Big)(txn.GetPrice().ToBig())
-		} else txn.Type() != types.DepositTxType {
+		} else if txn.Type() != types.DepositTxType {
 			result.GasPrice = computeGasPrice(txn, blockHash, baseFee)
 			result.Tip = (*hexutil.Big)(txn.GetTip().ToBig())
 			result.FeeCap = (*hexutil.Big)(txn.GetFeeCap().ToBig())
@@ -504,13 +504,14 @@ func NewRPCTransaction(txn types.Transaction, blockHash common.Hash, blockNumber
 		}
 
 		if txn.Type() == types.DepositTxType {
-			if t.Mint != nil {
-				result.Mint = (*hexutil.Big)(t.Mint.ToBig())
+			depositTx := txn.(*types.DepositTx)
+			if depositTx.Mint != nil {
+				result.Mint = (*hexutil.Big)(depositTx.Mint.ToBig())
 			}
 			result.ChainID = nil
-			result.SourceHash = &t.SourceHash
-			if t.IsSystemTransaction {
-				result.IsSystemTx = &t.IsSystemTransaction
+			result.SourceHash = &depositTx.SourceHash
+			if depositTx.IsSystemTransaction {
+				result.IsSystemTx = &depositTx.IsSystemTransaction
 			}
 			if receipt != nil && receipt.DepositNonce != nil {
 				result.Nonce = hexutil.Uint64(*receipt.DepositNonce)
