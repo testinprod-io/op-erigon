@@ -341,7 +341,7 @@ func (st *StateTransition) preCheck(gasBailout bool) error {
 		if !st.evm.Config().NoBaseFee && blobGasPrice.Cmp(maxFeePerBlobGas) > 0 {
 			return fmt.Errorf("%w: address %v, maxFeePerBlobGas: %v blobGasPrice: %v, excessBlobGas: %v",
 				ErrMaxFeePerBlobGas,
-				st.msg.From().Hex(), st.msg.MaxFeePerBlobGas(), blobGasPrice, st.evm.Context.ExcessBlobGas)
+				st.msg.From().Hex(), st.msg.MaxFeePerBlobGas(), blobGasPrice, st.evm.Context.BlobBaseFee)
 		}
 	}
 
@@ -363,7 +363,7 @@ func (st *StateTransition) preCheck(gasBailout bool) error {
 // nil evm execution result.
 func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*evmtypes.ExecutionResult, error) {
 	if mint := st.msg.Mint(); mint != nil {
-		st.state.AddBalance(st.msg.From(), mint)
+		st.state.AddBalance(st.msg.From(), mint, tracing.BalanceChangeUnspecified)
 	}
 	snap := st.state.Snapshot()
 
@@ -382,7 +382,8 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*evmtype
 		if st.msg.IsSystemTx() && !st.evm.ChainConfig().IsRegolith(st.evm.Context.Time) {
 			gasUsed = 0
 		}
-		result = &ExecutionResult{
+
+		result = &evmtypes.ExecutionResult{
 			UsedGas:    gasUsed,
 			Err:        fmt.Errorf("failed deposit: %w", err),
 			ReturnData: nil,
@@ -537,7 +538,7 @@ func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*ev
 		if st.msg.IsSystemTx() {
 			gasUsed = 0
 		}
-		return &ExecutionResult{
+		return &evmtypes.ExecutionResult{
 			UsedGas:    gasUsed,
 			Err:        vmerr,
 			ReturnData: ret,
@@ -557,7 +558,7 @@ func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*ev
 	}
 	if st.msg.IsDepositTx() && rules.IsOptimismRegolith {
 		// Skip coinbase payments for deposit tx in Regolith
-		return &ExecutionResult{
+		return &evmtypes.ExecutionResult{
 			UsedGas:    st.gasUsed(),
 			Err:        vmerr,
 			ReturnData: ret,
@@ -592,12 +593,12 @@ func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*ev
 		FeeTipped:           amount,
 	}
 	if optimismConfig := st.evm.ChainConfig().Optimism; optimismConfig != nil {
-		st.state.AddBalance(params.OptimismBaseFeeRecipient, new(uint256.Int).Mul(uint256.NewInt(st.gasUsed()), st.evm.Context.BaseFee))
+		st.state.AddBalance(params.OptimismBaseFeeRecipient, new(uint256.Int).Mul(uint256.NewInt(st.gasUsed()), st.evm.Context.BaseFee), tracing.BalanceChangeUnspecified)
 		if st.evm.Context.L1CostFunc == nil { // Erigon EVM context is used in many unexpected/hacky ways, let's panic if it's misconfigured
 			panic("missing L1 cost func in block context, please configure l1 cost when using optimism config to run EVM")
 		}
 		if cost := st.evm.Context.L1CostFunc(st.msg.RollupCostData(), st.evm.Context.Time); cost != nil {
-			st.state.AddBalance(params.OptimismL1FeeRecipient, cost)
+			st.state.AddBalance(params.OptimismL1FeeRecipient, cost, tracing.BalanceIncreaseOptimismL1Cost)
 		}
 	}
 

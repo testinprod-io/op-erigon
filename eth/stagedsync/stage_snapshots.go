@@ -204,7 +204,7 @@ func SpawnStageSnapshots(
 	return nil
 }
 
-func DownloadAndIndexSnapshotsIfNeed(s *StageState, ctx context.Context, tx kv.RwTx, cfg SnapshotsCfg, initialCycle bool, logger log.Logger) error {
+func DownloadAndIndexSnapshotsIfNeed(s *StageState, ctx context.Context, tx kv.RwTx, cfg SnapshotsCfg, logger log.Logger) error {
 	if cfg.snapshotUploader != nil {
 		subStages := diagnostics.InitSubStagesFromList([]string{"Indexing", "Fill DB"})
 		diagnostics.Send(diagnostics.SetSyncSubStageList{

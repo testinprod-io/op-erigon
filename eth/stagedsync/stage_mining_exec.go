@@ -140,14 +140,14 @@ func SpawnMiningExecStage(s *StageState, txc wrap.TxContainer, cfg MiningExecCfg
 			// forceTxs is sent by Optimism consensus client, and all force txs must be included in the payload.
 			// Therefore, interrupts to block building must not be handled while force txs are being processed.
 			// So do not pass cfg.interrupt
-			logs, _, err := addTransactionsToMiningBlock(logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, cfg.engine, forceTxs, cfg.miningState.MiningConfig.Etherbase, ibs, quit, nil, cfg.payloadId, true, logger)
+			logs, _, err := addTransactionsToMiningBlock(logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, cfg.engine, forceTxs, cfg.miningState.MiningConfig.Etherbase, ibs, ctx, nil, cfg.payloadId, true, logger)
 			if err != nil {
 				return err
 			}
 			NotifyPendingLogs(logPrefix, cfg.notifier, logs, logger)
 		}
 		if txs != nil && !txs.Empty() {
-			logs, _, err := addTransactionsToMiningBlock(logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, cfg.engine, txs, cfg.miningState.MiningConfig.Etherbase, ibs, quit, cfg.interrupt, cfg.payloadId, false, logger)
+			logs, _, err := addTransactionsToMiningBlock(logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, cfg.engine, txs, cfg.miningState.MiningConfig.Etherbase, ibs, ctx, cfg.interrupt, cfg.payloadId, false, logger)
 			if err != nil {
 				return err
 			}
@@ -651,7 +651,8 @@ func unwindMiningExecutionStage(u *UnwindState, s *StageState, tx kv.RwTx, ctx c
 				}
 
 				// Fetch the code hash
-				recoverCodeHashPlain(&acc, tx, k)
+				// FIXME: V3_MERGE
+				//recoverCodeHashPlain(&acc, tx, k)
 				var address libcommon.Address
 				copy(address[:], k)
 
