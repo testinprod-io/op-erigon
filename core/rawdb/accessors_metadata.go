@@ -22,6 +22,7 @@ package rawdb
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/erigontech/erigon-lib/chain/networkname"
 
 	"github.com/erigontech/erigon/core/types"
 	"github.com/erigontech/erigon/polygon/bor/borcfg"

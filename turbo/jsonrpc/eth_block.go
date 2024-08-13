@@ -19,6 +19,7 @@ package jsonrpc
 import (
 	"context"
 	"fmt"
+	"github.com/erigontech/erigon-lib/opstack"
 	"math/big"
 	"time"
 

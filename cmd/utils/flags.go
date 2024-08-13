@@ -24,6 +24,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
+	"github.com/erigontech/erigon/core/types"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -1868,9 +1869,9 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 
 	// FIXME: V3_MERGE
 	cfg.Sync.UseSnapshots = ethconfig.UseSnapshotsByChainName(GetChainNameFromFlag(ctx))
-	if ctx.IsSet(SnapshotFlag.Name) { //force override default by cli
-		cfg.Sync.UseSnapshots = ctx.Bool(SnapshotFlag.Name)
-	}
+	//if ctx.IsSet(SnapshotFlag.Name) { //force override default by cli
+	//	cfg.Sync.UseSnapshots = ctx.Bool(SnapshotFlag.Name)
+	//}
 
 	cfg.Dirs = nodeConfig.Dirs
 	cfg.Snapshot.KeepBlocks = ctx.Bool(SnapKeepBlocksFlag.Name)

@@ -20,7 +20,9 @@
 package nodecfg
 
 import (
+	"github.com/c2h5oh/datasize"
 	"github.com/erigontech/erigon-lib/direct"
+	"github.com/erigontech/erigon-lib/kv"
 
 	"github.com/erigontech/erigon/p2p"
 	"github.com/erigontech/erigon/p2p/nat"

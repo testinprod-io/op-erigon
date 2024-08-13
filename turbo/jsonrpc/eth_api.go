@@ -146,7 +146,7 @@ type BaseAPI struct {
 
 	// Optimism specific field
 	seqRPCService        *rpc.Client
-	historicalRPCService *rpc.Client	
+	historicalRPCService *rpc.Client
 }
 
 func NewBaseApi(f *rpchelper.Filters, stateCache kvcache.Cache, blockReader services.FullBlockReader, singleNodeMode bool, evmCallTimeout time.Duration, engine consensus.EngineReader, dirs datadir.Dirs, seqRPCService *rpc.Client, historicalRPCService *rpc.Client) *BaseAPI {
@@ -171,16 +171,16 @@ func NewBaseApi(f *rpchelper.Filters, stateCache kvcache.Cache, blockReader serv
 	receiptsGenerator := receipts.NewGenerator(receiptsCache, blockReader, engine)
 
 	return &BaseAPI{
-		filters:           f,
-		stateCache:        stateCache,
-		blocksLRU:         blocksLRU,
-		receiptsCache:     receiptsCache,
-		_blockReader:      blockReader,
-		_txnReader:        blockReader,
-		evmCallTimeout:    evmCallTimeout,
-		_engine:           engine,
-		receiptsGenerator: receiptsGenerator,
-		dirs:              dirs,
+		filters:              f,
+		stateCache:           stateCache,
+		blocksLRU:            blocksLRU,
+		receiptsCache:        receiptsCache,
+		_blockReader:         blockReader,
+		_txnReader:           blockReader,
+		evmCallTimeout:       evmCallTimeout,
+		_engine:              engine,
+		receiptsGenerator:    receiptsGenerator,
+		dirs:                 dirs,
 		seqRPCService:        seqRPCService,
 		historicalRPCService: historicalRPCService,
 	}
@@ -581,7 +581,7 @@ func newRPCPendingTransaction(txn types.Transaction, current *types.Header, conf
 	if current != nil {
 		baseFee = misc.CalcBaseFee(config, current, current.Time+1)
 	}
-	
+
 	return NewRPCTransaction(txn, common.Hash{}, 0, 0, baseFee, nil)
 }
 

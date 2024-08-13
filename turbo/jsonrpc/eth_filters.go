@@ -18,6 +18,7 @@ package jsonrpc
 
 import (
 	"context"
+	"github.com/erigontech/erigon-lib/common"
 	"strings"
 
 	"github.com/erigontech/erigon-lib/log/v3"
@@ -288,7 +289,7 @@ func (api *APIImpl) Logs(ctx context.Context, crit filters.FilterCriteria) (*rpc
 				if h != nil {
 					// avoid null json array for topics
 					if h.Topics == nil {
-						h.Topics = []libcommon.Hash{}
+						h.Topics = []common.Hash{}
 					}
 					err := notifier.Notify(rpcSub.ID, h)
 					if err != nil {

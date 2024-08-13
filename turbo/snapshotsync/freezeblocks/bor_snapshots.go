@@ -159,7 +159,7 @@ func (s *BorRoSnapshots) Ranges() []Range {
 
 // this is one off code to fix an issue in 2.49.x->2.52.x which missed
 // removal of intermediate segments after a merge operation
-func removeBorOverlapsAfterMerge(dir string, active []snaptype.FileInfo, max uint64) {
+func removeBorOverlaps(dir string, active []snaptype.FileInfo, max uint64) {
 	list, err := snaptype.Segments(dir)
 
 	if err != nil {

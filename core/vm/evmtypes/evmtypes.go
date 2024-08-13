@@ -17,6 +17,7 @@
 package evmtypes
 
 import (
+	"github.com/erigontech/erigon-lib/opstack"
 	"math/big"
 
 	"github.com/holiman/uint256"

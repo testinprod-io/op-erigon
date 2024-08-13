@@ -25,6 +25,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"github.com/erigontech/erigon-lib/chain"
 	"math"
 	"math/big"
 	"time"

@@ -28,14 +28,6 @@ import (
 	"time"
 
 	"github.com/c2h5oh/datasize"
-	lru "github.com/hashicorp/golang-lru/v2"
-	"golang.org/x/sync/semaphore"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/backoff"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/keepalive"
-	"google.golang.org/protobuf/types/known/emptypb"
-
 	"github.com/erigontech/erigon-lib/chain"
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/dbg"
@@ -44,6 +36,7 @@ import (
 	proto_sentry "github.com/erigontech/erigon-lib/gointerfaces/sentryproto"
 	proto_types "github.com/erigontech/erigon-lib/gointerfaces/typesproto"
 	"github.com/erigontech/erigon-lib/kv"
+	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/erigontech/erigon/consensus"
 	"github.com/erigontech/erigon/core/types"
 	"github.com/erigontech/erigon/eth/ethconfig"
@@ -54,6 +47,13 @@ import (
 	"github.com/erigontech/erigon/turbo/services"
 	"github.com/erigontech/erigon/turbo/stages/bodydownload"
 	"github.com/erigontech/erigon/turbo/stages/headerdownload"
+	lru "github.com/hashicorp/golang-lru/v2"
+	"golang.org/x/sync/semaphore"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/backoff"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/keepalive"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type (

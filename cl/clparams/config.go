@@ -18,7 +18,6 @@ package clparams
 
 import (
 	"crypto/rand"
-	"encoding/binary"
 	"fmt"
 	"math"
 	"math/big"

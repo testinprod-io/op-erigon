@@ -235,6 +235,10 @@ const (
 	// account within the same txn (captured at end of tx).
 	// Note it doesn't account for a self-destruct which appoints itself as recipient.
 	BalanceDecreaseSelfdestructBurn BalanceChangeReason = 14
+
+	// FIXME: V3_MERGE
+	// Optimism
+	BalanceIncreaseOptimismL1Cost BalanceChangeReason = 100
 )
 
 // GasChangeReason is used to indicate the reason for a gas change, useful

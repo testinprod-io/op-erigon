@@ -282,6 +282,7 @@ github.com/erigontech/speedtest v0.0.2 h1:W9Cvky/8AMUtUONwkLA/dZjeQ2XfkBdYfJzvhM
 github.com/erigontech/speedtest v0.0.2/go.mod h1:vulsRNiM51BmSTbVtch4FWxKxx53pS2D35lZTtao0bw=
 github.com/erigontech/torrent v1.54.2-alpha-32 h1:Ly8W2JvD7r1o5TklXxKEV9D9Tr664tSrgj5OPpOrlWg=
 github.com/erigontech/torrent v1.54.2-alpha-32/go.mod h1:QtK2WLdEz1Iy1Dh/325UltdHU0nA1xujh2rN6aov6y0=
+github.com/ethereum-optimism/superchain-registry/superchain v0.0.0-20240603085035-9c8f6081266e h1:PJWaF/45dMhO7xdzSwuZmwIIBwnqnPr84oFNmmnpGNs=
 github.com/ethereum-optimism/superchain-registry/superchain v0.0.0-20240603085035-9c8f6081266e/go.mod h1:7xh2awFQqsiZxFrHKTgEd+InVfDRrkKVUIuK8SAFHp0=
 github.com/fatih/color v1.16.0 h1:zmkK9Ngbjj+K0yRhTVONQh1p/HknKYSlNT+vZCzyokM=
 github.com/fatih/color v1.16.0/go.mod h1:fL2Sau1YI5c0pdGEVCbKQbLXB6edEj1ZgiY4NijnWvE=

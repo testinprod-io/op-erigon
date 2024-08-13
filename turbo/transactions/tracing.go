@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/erigontech/erigon-lib/opstack"
 	"time"
 
 	jsoniter "github.com/json-iterator/go"

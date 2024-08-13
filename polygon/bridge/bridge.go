@@ -208,6 +208,7 @@ func (b *Bridge) GetEvents(ctx context.Context, blockNum uint64) ([]*types.Messa
 			nil, nil,
 			event, nil, false,
 			true,
+			true,
 			nil,
 		)
 

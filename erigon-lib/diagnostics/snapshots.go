@@ -124,6 +124,8 @@ func (d *DiagnosticClient) saveSnapshotStageStatsToDB() {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	err := d.db.Update(d.ctx, func(tx kv.RwTx) error {
+		err := SnapshotFillDBUpdater(d.syncStats.SnapshotFillDB)(tx)
+		if err != nil {
 			return err
 		}
 
@@ -487,46 +489,4 @@ func SnapshotIndexingUpdater(info SnapshotIndexingStatistics) func(tx kv.RwTx) e
 
 func SnapshotFillDBUpdater(info SnapshotFillDBStatistics) func(tx kv.RwTx) error {
 	return PutDataToTable(kv.DiagSyncStages, SnapshotFillDBStatisticsKey, info)
-}
-
-func ReadSnapshotDownloadInfo(db kv.RoDB) (info SnapshotDownloadStatistics) {
-	data := ReadDataFromTable(db, kv.DiagSyncStages, SnapshotDownloadStatisticsKey)
-
-	if len(data) == 0 {
-		return SnapshotDownloadStatistics{}
-	}
-
-	err := json.Unmarshal(data, &info)
-
-	if err != nil {
-		log.Error("[Diagnostics] Failed to read snapshot download info", "err", err)
-		return SnapshotDownloadStatistics{}
-	} else {
-		return info
-	}
-}
-
-func ReadSnapshotIndexingInfo(db kv.RoDB) (info SnapshotIndexingStatistics) {
-	data := ReadDataFromTable(db, kv.DiagSyncStages, SnapshotIndexingStatisticsKey)
-
-	if len(data) == 0 {
-		return SnapshotIndexingStatistics{}
-	}
-
-	err := json.Unmarshal(data, &info)
-
-	if err != nil {
-		log.Error("[Diagnostics] Failed to read snapshot indexing info", "err", err)
-		return SnapshotIndexingStatistics{}
-	} else {
-		return info
-	}
-}
-
-func SnapshotDownloadUpdater(info SnapshotDownloadStatistics) func(tx kv.RwTx) error {
-	return PutDataToTable(kv.DiagSyncStages, SnapshotDownloadStatisticsKey, info)
-}
-
-func SnapshotIndexingUpdater(info SnapshotIndexingStatistics) func(tx kv.RwTx) error {
-	return PutDataToTable(kv.DiagSyncStages, SnapshotIndexingStatisticsKey, info)
 }

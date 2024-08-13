@@ -18,6 +18,8 @@ package jsonrpc
 
 import (
 	"context"
+	"fmt"
+	"github.com/erigontech/erigon/core/rawdb"
 	"slices"
 
 	"github.com/erigontech/erigon-lib/common"

@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/erigontech/erigon-lib/opstack"
 	"math/big"
 
 	"github.com/holiman/uint256"

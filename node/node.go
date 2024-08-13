@@ -30,9 +30,9 @@ import (
 	"time"
 
 	"github.com/c2h5oh/datasize"
-	"golang.org/x/sync/semaphore"
-
 	"github.com/erigontech/erigon-lib/common/datadir"
+	"github.com/erigontech/erigon-lib/log/v3"
+	"golang.org/x/sync/semaphore"
 
 	"github.com/erigontech/erigon/cmd/utils"
 	"github.com/erigontech/erigon/node/nodecfg"

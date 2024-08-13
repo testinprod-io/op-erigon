@@ -18,7 +18,9 @@ package jsonrpc
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/erigontech/erigon/eth/tracers"
 	"math/big"
 
 	"github.com/holiman/uint256"
@@ -331,7 +333,7 @@ func (api *OtterscanAPIImpl) runTracer(ctx context.Context, tx kv.Tx, hash commo
 			}
 			returnData = []byte{}
 		}
-		result := &core.ExecutionResult{
+		result := &evmtypes.ExecutionResult{
 			UsedGas:    usedGas,
 			Err:        errors.New(treeResult.Error),
 			ReturnData: returnData,

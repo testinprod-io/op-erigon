@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/erigontech/erigon-lib/opstack"
 	"time"
 
 	"github.com/holiman/uint256"

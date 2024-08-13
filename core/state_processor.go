@@ -22,6 +22,7 @@ package core
 import (
 	"github.com/erigontech/erigon-lib/chain"
 	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/opstack"
 
 	"github.com/erigontech/erigon/consensus"
 	"github.com/erigontech/erigon/core/state"
@@ -61,7 +62,7 @@ func applyTransaction(config *chain.Config, engine consensus.EngineReader, gp *G
 	// Update the evm with the new transaction context.
 	evm.Reset(txContext, ibs)
 
-	nonce := tx.GetNonce()
+	nonce := txn.GetNonce()
 	if msg.IsDepositTx() && config.IsOptimismRegolith(evm.Context.Time) {
 		nonce = ibs.GetNonce(msg.From())
 	}

@@ -21,6 +21,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/erigontech/erigon/eth/ethconfig"
+	"github.com/erigontech/erigon/params"
 	"math/big"
 	"sync"
 	"time"

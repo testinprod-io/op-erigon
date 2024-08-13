@@ -144,42 +144,6 @@ func (d *DiagnosticClient) runStopNodeListener(rootCtx context.Context) {
 func (d *DiagnosticClient) runSaveProcess(rootCtx context.Context) {
 	ticker := time.NewTicker(5 * time.Minute)
 	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				d.SaveData()
-			case <-rootCtx.Done():
-				ticker.Stop()
-				return
-			}
-		}
-	}()
-}
-
-func (d *DiagnosticClient) SaveData() {
-	var funcs []func(tx kv.RwTx) error
-	funcs = append(funcs, SnapshotDownloadUpdater(d.syncStats.SnapshotDownload), StagesListUpdater(d.syncStages), SnapshotIndexingUpdater(d.syncStats.SnapshotIndexing))
-
-	err := d.db.Update(d.ctx, func(tx kv.RwTx) error {
-		for _, updater := range funcs {
-			updErr := updater(tx)
-			if updErr != nil {
-				return updErr
-			}
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		log.Warn("Failed to save diagnostics data", "err", err)
-	}
-}
-
-// Save diagnostic data by time interval to reduce save events
-func (d *DiagnosticClient) runSaveProcess(rootCtx context.Context) {
-	ticker := time.NewTicker(5 * time.Minute)
-	go func() {
 		defer ticker.Stop()
 		for {
 			select {

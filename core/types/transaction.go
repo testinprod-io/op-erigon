@@ -23,6 +23,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/erigontech/erigon-lib/fastlz"
 	"io"
 	"math/big"
 	"sync/atomic"

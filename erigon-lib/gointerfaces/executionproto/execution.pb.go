@@ -1106,6 +1106,11 @@ type AssembleBlockRequest struct {
 	SuggestedFeeRecipient *typesproto.H160         `protobuf:"bytes,4,opt,name=suggested_fee_recipient,json=suggestedFeeRecipient,proto3" json:"suggested_fee_recipient,omitempty"`
 	Withdrawals           []*typesproto.Withdrawal `protobuf:"bytes,5,rep,name=withdrawals,proto3" json:"withdrawals,omitempty"`                                                            // added in Shapella (EIP-4895)
 	ParentBeaconBlockRoot *typesproto.H256         `protobuf:"bytes,6,opt,name=parent_beacon_block_root,json=parentBeaconBlockRoot,proto3,oneof" json:"parent_beacon_block_root,omitempty"` // added in Dencun (EIP-4788)
+
+	// optimism
+	Transactions [][]byte `protobuf:"bytes,7,rep,name=transactions,proto3" json:"transactions,omitempty"`
+	NoTxPool     bool     `protobuf:"varint,8,opt,name=no_tx_pool,json=noTxPool,proto3" json:"no_tx_pool,omitempty"`
+	GasLimit     *uint64  `protobuf:"varint,9,opt,name=gas_limit,json=gasLimit,proto3,oneof" json:"gas_limit,omitempty"`
 }
 
 func (x *AssembleBlockRequest) Reset() {
@@ -1292,6 +1297,9 @@ type AssembledBlockData struct {
 	ExecutionPayload *typesproto.ExecutionPayload `protobuf:"bytes,1,opt,name=execution_payload,json=executionPayload,proto3" json:"execution_payload,omitempty"`
 	BlockValue       *typesproto.H256             `protobuf:"bytes,2,opt,name=block_value,json=blockValue,proto3" json:"block_value,omitempty"`
 	BlobsBundle      *typesproto.BlobsBundleV1    `protobuf:"bytes,3,opt,name=blobs_bundle,json=blobsBundle,proto3" json:"blobs_bundle,omitempty"`
+
+	//Optimism
+	ParentBeaconBlockRoot *typesproto.H256             `protobuf:"bytes,4,opt,name=parent_beacon_block_root,json=parentBeaconBlockRoot,proto3,oneof" json:"parent_beacon_block_root,omitempty"`
 }
 
 func (x *AssembledBlockData) Reset() {

@@ -39,7 +39,7 @@ func (g *Generator) GetReceipts(ctx context.Context, cfg *chain.Config, tx kv.Tx
 		return receipts, nil
 	}
 
-	if receipts := rawdb.ReadReceipts(tx, block, senders); receipts != nil {
+	if receipts := rawdb.ReadReceipts(cfg, tx, block, senders); receipts != nil {
 		g.receiptsCache.Add(block.Hash(), receipts)
 		return receipts, nil
 	}

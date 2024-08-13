@@ -19,6 +19,7 @@ package jsonrpc
 import (
 	"context"
 	"fmt"
+	"github.com/erigontech/erigon-lib/opstack"
 
 	"github.com/erigontech/erigon-lib/log/v3"
 

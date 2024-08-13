@@ -87,7 +87,3 @@ func writeHardwareInfo(w http.ResponseWriter, diag *diaglib.DiagnosticClient) {
 func writeSyncStages(w http.ResponseWriter, diag *diaglib.DiagnosticClient) {
 	diag.SyncStagesJson(w)
 }
-
-func writeSyncStages(w http.ResponseWriter, diag *diaglib.DiagnosticClient) {
-	json.NewEncoder(w).Encode(diag.GetSyncStages())
-}
