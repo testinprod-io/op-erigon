@@ -541,8 +541,6 @@ github.com/kylelemons/godebug v0.0.0-20170224010052-a616ab194758 h1:0D5M2HQSGD3P
 github.com/kylelemons/godebug v0.0.0-20170224010052-a616ab194758/go.mod h1:B69LEHPfb2qLo0BaaOLcbitczOKLWTsrBG9LczfCD4k=
 github.com/leanovate/gopter v0.2.9 h1:fQjYxZaynp97ozCzfOyOuAGOU4aU/z37zf/tOujFk7c=
 github.com/leanovate/gopter v0.2.9/go.mod h1:U2L/78B+KVFIx2VmW6onHJQzXtFb+p5y3y2Sh+Jxxv8=
-github.com/ledgerwatch/erigon-snapshot v1.3.1-0.20240717084354-f9b3622c55ba h1:pG3hPilkaYxng8eldvsLtMAixdRN04Lu49jH6LQNvnM=
-github.com/ledgerwatch/erigon-snapshot v1.3.1-0.20240717084354-f9b3622c55ba/go.mod h1:3AuPxZc85jkehh/HA9h8gabv5MSi3kb/ddtzBsTVJFo=
 github.com/ledgerwatch/erigonwatch v0.1.2 h1:/jq0r3oFh61pYk65Rw10aeCJj2Mzs1E2AG6TXG668og=
 github.com/ledgerwatch/erigonwatch v0.1.2/go.mod h1:5K2cWaom0/rURye4dUUEQg2UyCH2A5zHVp86TDDMaA4=
 github.com/ledgerwatch/log/v3 v3.9.0 h1:iDwrXe0PVwBC68Dd94YSsHbMgQ3ufsgjzXtFNFVZFRk=
@@ -899,8 +897,8 @@ github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8
 github.com/supranational/blst v0.3.11 h1:LyU6FolezeWAhvQk0k6O/d49jqgO52MSDDfYgbeoEm4=
 github.com/supranational/blst v0.3.11/go.mod h1:jZJtfjgudtNl4en1tzwPIV3KjUnQUvG3/j+w+fVonLw=
 github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07/go.mod h1:kDXzergiv9cbyO7IOYJZWg1U88JhDg3PB6klq9Hg2pA=
-github.com/testinprod-io/erigon-snapshot v1.1.1-0.20240812030926-59ccf96878a0 h1:NfjZf1tRLh7vpjpsbGDPPXeIGDSa5u5ao1P5P+HM7+s=
-github.com/testinprod-io/erigon-snapshot v1.1.1-0.20240812030926-59ccf96878a0/go.mod h1:2lZzp1f//gjYJiWwePaw6Urs1Wxhc8lMdiwJE9XLZP4=
+github.com/testinprod-io/erigon-snapshot v1.1.1-0.20240814134307-abd9ce4d3243 h1:lPF9GZSj+MSHmPFYgjC0mua9ENRkmssRCwIzjRsr9Vo=
+github.com/testinprod-io/erigon-snapshot v1.1.1-0.20240814134307-abd9ce4d3243/go.mod h1:2lZzp1f//gjYJiWwePaw6Urs1Wxhc8lMdiwJE9XLZP4=
 github.com/thomaso-mirodin/intmath v0.0.0-20160323211736-5dc6d854e46e h1:cR8/SYRgyQCt5cNCMniB/ZScMkhI9nk8U5C7SbISXjo=
 github.com/thomaso-mirodin/intmath v0.0.0-20160323211736-5dc6d854e46e/go.mod h1:Tu4lItkATkonrYuvtVjG0/rhy15qrNGNTjPdaphtZ/8=
 github.com/tidwall/btree v1.6.0 h1:LDZfKfQIBHGHWSwckhXI0RPSXzlo+KYdjK7FWSqOzzg=
