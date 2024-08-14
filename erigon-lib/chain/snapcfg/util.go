@@ -27,6 +27,7 @@ var (
 	BorMainnet = fromToml(snapshothashes.BorMainnet)
 	Gnosis     = fromToml(snapshothashes.Gnosis)
 	Chiado     = fromToml(snapshothashes.Chiado)
+	OpSepolia  = fromToml(snapshothashes.OpSepolia)
 )
 
 type PreverifiedItem struct {
@@ -335,6 +336,7 @@ var knownPreverified = map[string]Preverified{
 	networkname.BorMainnetChainName: BorMainnet,
 	networkname.GnosisChainName:     Gnosis,
 	networkname.ChiadoChainName:     Chiado,
+	networkname.OpSepoliaChainName:  OpSepolia,
 }
 
 func RegisterKnownTypes(networkName string, types []snaptype.Type) {

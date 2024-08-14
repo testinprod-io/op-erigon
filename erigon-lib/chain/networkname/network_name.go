@@ -16,6 +16,7 @@ const (
 
 	OPDevnetChainName  = "op-devnet"
 	OPMainnetChainName = "op-mainnet"
+	OpSepoliaChainName = "op-sepolia"
 
 	LegacyOPDevnetChainName  = "optimism-devnet"
 	LegacyOPMainnetChainName = "optimism-mainnet"
@@ -33,6 +34,7 @@ var All = []string{
 	GnosisChainName,
 	ChiadoChainName,
 	OPDevnetChainName,
+	OpSepoliaChainName,
 }
 
 func HandleLegacyName(name string) string {
