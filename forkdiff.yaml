@@ -1,6 +1,6 @@
 title: "op-erigon"  # Define the HTML page title
 footer: |  # define the footer with markdown
-  Fork-diff overview of [op-erigon](https://github.com/testinprod-io/op-erigon), a fork of [erigon](https://github.com/ledgerwatch/erigon). and execution-engine of the [OP Stack](https://github.com/ethereum-optimism/optimism).
+  Fork-diff overview of [op-erigon](https://github.com/testinprod-io/op-erigon), a fork of [erigon](https://github.com/erigontech/erigon). and execution-engine of the [OP Stack](https://github.com/ethereum-optimism/optimism).
 base:
   name: erigontech/erigon
   url: https://github.com/erigontech/erigon
@@ -12,11 +12,10 @@ fork:
 def:
   title: "op-erigon"
   description: | # description in markdown
-    This is an overview of the changes in [op-erigon](https://github.com/testinprod-io/op-erigon), a fork of [erigon](https://github.com/ledgerwatch/erigon), part of the OP Stack.
+    This is an overview of the changes in [op-erigon](https://github.com/testinprod-io/op-erigon), a fork of [erigon](https://github.com/erigontech/erigon), part of the OP Stack.
     
     There are two more forks of erigon dependencies:
     
-    - [op-erigon-lib](./erigon-lib.html)
     - [op-erigon-interfaces](./erigon-interfaces.html)
   sub:
     - title: "Core modifications"
@@ -109,10 +108,11 @@ def:
           description: |
             Genesis generation and superchain registry
           globs: 
-            - "core/allocs/optimism_devnet.json"
             - "core/genesis_write.go"
             - "core/genesis_test.go"
             - "core/types/genesis.go"
+          ignore: 
+            - "core/allocs/optimism_devnet.json"
         - title: "Optimism Hardforks"
           sub:
             - title: "Fjord"
