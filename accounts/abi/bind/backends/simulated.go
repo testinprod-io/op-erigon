@@ -23,6 +23,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/erigontech/erigon-lib/opstack"
 	"math/big"
 	"sync"
 	"testing"

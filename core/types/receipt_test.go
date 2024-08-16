@@ -472,7 +472,7 @@ func TestDeriveFields(t *testing.T) {
 
 	t.Run("DeriveV1", func(t *testing.T) {
 		clearComputedFieldsOnReceipts(t, receipts)
-		if err := receipts.DeriveFields(hash, number.Uint64(), txs, []libcommon.Address{libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0})}); err != nil {
+		if err := receipts.DeriveFields(params.TestChainConfig, hash, number.Uint64(), time, txs, []libcommon.Address{libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0})}); err != nil {
 			t.Fatalf("DeriveFields(...) = %v, want <nil>", err)
 		}
 		// Iterate over all the computed fields and check that they're correct
@@ -502,8 +502,8 @@ func TestDeriveFields(t *testing.T) {
 				t.Errorf("receipts[%d].ContractAddress = %s, want %s", i, r.ContractAddress.String(), (libcommon.Address{}).String())
 			}
 			from, _ := txs[i].Sender(*signer)
-			contractAddress := crypto.CreateAddress(from, txs[i].GetNonce())
-			if txs[i].GetTo() == nil && r.ContractAddress != contractAddress {
+			contractAddress := crypto.CreateAddress(from, nonces[i])
+			if txs[i].GetTo() == nil && receipts[i].ContractAddress != contractAddress {
 				t.Errorf("receipts[%d].ContractAddress = %s, want %s", i, r.ContractAddress.String(), contractAddress.String())
 			}
 			for j := range r.Logs {

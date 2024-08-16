@@ -18,6 +18,8 @@ package stagedsync
 
 import (
 	"fmt"
+	"github.com/erigontech/erigon-lib/kv"
+	"github.com/stretchr/testify/assert"
 	"math/big"
 	"testing"
 
@@ -35,6 +37,37 @@ const (
 )
 
 type testGenHook func(n, from, numberOfBlocks uint64)
+
+func compareCurrentState(
+	t *testing.T,
+	db1 kv.Tx,
+	db2 kv.Tx,
+	buckets ...string,
+) {
+	for _, bucket := range buckets {
+		compareBucket(t, db1, db2, bucket)
+	}
+}
+
+func compareBucket(t *testing.T, db1, db2 kv.Tx, bucketName string) {
+	var err error
+
+	bucket1 := make(map[string][]byte)
+	err = db1.ForEach(bucketName, nil, func(k, v []byte) error {
+		bucket1[string(k)] = v
+		return nil
+	})
+	assert.NoError(t, err)
+
+	bucket2 := make(map[string][]byte)
+	err = db2.ForEach(bucketName, nil, func(k, v []byte) error {
+		bucket2[string(k)] = v
+		return nil
+	})
+	assert.NoError(t, err)
+
+	assert.Equalf(t, bucket1 /*expected*/, bucket2 /*actual*/, "bucket %q", bucketName)
+}
 
 func generateBlocks2(t *testing.T, from uint64, numberOfBlocks uint64, blockWriter state.StateWriter, beforeBlock, afterBlock testGenHook, difficulty int) {
 	acc1 := accounts.NewAccount()

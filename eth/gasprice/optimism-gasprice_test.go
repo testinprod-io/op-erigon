@@ -115,7 +115,7 @@ func newOpTestBackend(t *testing.T, txs []testTxData) *opTestBackend {
 		nonce++
 	}
 	// hasher := trie.NewStackTrie(nil)
-	b := types.NewBlock(&header, ts, nil, nil, nil)
+	b := types.NewBlock(&header, ts, nil, rs, nil, nil)
 	return &opTestBackend{block: b, receipts: rs}
 }
 
@@ -148,7 +148,7 @@ func TestSuggestOptimismPriorityFee(t *testing.T) {
 	}
 	for i, c := range cases {
 		backend := newOpTestBackend(t, c.txdata)
-		oracle := NewOracle(backend, gaspricecfg.Config{MinSuggestedPriorityFee: minSuggestion}, &testCache{})
+		oracle := NewOracle(backend, gaspricecfg.Config{MinSuggestedPriorityFee: minSuggestion}, &testCache{}, nil)
 		got := oracle.SuggestOptimismPriorityFee(context.Background(), backend.block.Header(), backend.block.Hash())
 		if got.Cmp(c.want) != 0 {
 			t.Errorf("Gas price mismatch for test case %d: want %d, got %d", i, c.want, got)

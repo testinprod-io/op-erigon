@@ -19,8 +19,10 @@ func TestMiningExec(t *testing.T) {
 	t.Run("UnwindMiningExecutionStagePlainStatic", func(t *testing.T) {
 		require, tx1, tx2 := require.New(t), memdb.BeginRw(t, db1), memdb.BeginRw(t, db2)
 
-		generateBlocks(t, 1, 25, plainWriterGen(tx1), staticCodeStaticIncarnations)
-		generateBlocks(t, 1, 50, plainWriterGen(tx2), staticCodeStaticIncarnations)
+		before, after, writer := apply(tx1, logger)
+		generateBlocks2(t, 1, 25, writer, before, after, staticCodeStaticIncarnations)
+		before2, after2, writer2 := apply(tx2, logger)
+		generateBlocks2(t, 1, 50, writer2, before2, after2, staticCodeStaticIncarnations)
 
 		err := stages.SaveStageProgress(tx2, stages.MiningExecution, 50)
 		require.NoError(err)
@@ -30,13 +32,15 @@ func TestMiningExec(t *testing.T) {
 		err = UnwindMiningExecutionStage(u, s, tx2, ctx, cfg, logger)
 		require.NoError(err)
 
-		compareCurrentState(t, newAgg(t, logger), tx1, tx2, kv.PlainState, kv.PlainContractCode, kv.ContractTEVMCode)
+		compareCurrentState(t, tx1, tx2, kv.PlainState, kv.PlainContractCode, kv.ContractTEVMCode)
 	})
 	t.Run("UnwindMiningExecutionStagePlainWithIncarnationChanges", func(t *testing.T) {
 		require, tx1, tx2 := require.New(t), memdb.BeginRw(t, db1), memdb.BeginRw(t, db2)
 
-		generateBlocks(t, 1, 25, plainWriterGen(tx1), changeCodeWithIncarnations)
-		generateBlocks(t, 1, 50, plainWriterGen(tx2), changeCodeWithIncarnations)
+		before1, after1, writer1 := apply(tx1, logger)
+		before2, after2, writer2 := apply(tx2, logger)
+		generateBlocks2(t, 1, 25, writer1, before1, after1, changeCodeWithIncarnations)
+		generateBlocks2(t, 1, 50, writer2, before2, after2, changeCodeWithIncarnations)
 
 		err := stages.SaveStageProgress(tx2, stages.MiningExecution, 50)
 		require.NoError(err)
@@ -46,14 +50,16 @@ func TestMiningExec(t *testing.T) {
 		err = UnwindMiningExecutionStage(u, s, tx2, ctx, cfg, logger)
 		require.NoError(err)
 
-		compareCurrentState(t, newAgg(t, logger), tx1, tx2, kv.PlainState, kv.PlainContractCode)
+		compareCurrentState(t, tx1, tx2, kv.PlainState, kv.PlainContractCode)
 	})
 	t.Run("UnwindMiningExecutionStagePlainWithCodeChanges", func(t *testing.T) {
 		t.Skip("not supported yet, to be restored")
 		require, tx1, tx2 := require.New(t), memdb.BeginRw(t, db1), memdb.BeginRw(t, db2)
 
-		generateBlocks(t, 1, 25, plainWriterGen(tx1), changeCodeIndepenentlyOfIncarnations)
-		generateBlocks(t, 1, 50, plainWriterGen(tx2), changeCodeIndepenentlyOfIncarnations)
+		before1, after1, writer1 := apply(tx1, logger)
+		before2, after2, writer2 := apply(tx2, logger)
+		generateBlocks2(t, 1, 25, writer1, before1, after1, changeCodeIndepenentlyOfIncarnations)
+		generateBlocks2(t, 1, 50, writer2, before2, after2, changeCodeIndepenentlyOfIncarnations)
 
 		err := stages.SaveStageProgress(tx2, stages.MiningExecution, 50)
 		if err != nil {
@@ -64,6 +70,6 @@ func TestMiningExec(t *testing.T) {
 		err = UnwindMiningExecutionStage(u, s, tx2, ctx, cfg, logger)
 		require.NoError(err)
 
-		compareCurrentState(t, newAgg(t, logger), tx1, tx2, kv.PlainState, kv.PlainContractCode)
+		compareCurrentState(t, tx1, tx2, kv.PlainState, kv.PlainContractCode)
 	})
 }

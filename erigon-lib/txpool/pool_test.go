@@ -976,7 +976,7 @@ func TestDepositTxValidateTx(t *testing.T) {
 
 	shanghaiTime := big.NewInt(0)
 	cache := &kvcache.DummyCache{}
-	pool, err := New(ch, coreDB, cfg, cache, *u256.N1, shanghaiTime, big.NewInt(0), nil, nil, nil, nil, nil, fixedgas.DefaultMaxBlobsPerBlock, nil, logger)
+	pool, err := New(ch, coreDB, cfg, cache, *u256.N1, shanghaiTime, big.NewInt(0), nil, nil, nil, nil, nil, nil, fixedgas.DefaultMaxBlobsPerBlock, nil, logger)
 	asrt.NoError(err)
 	ctx := context.Background()
 	tx, err := coreDB.BeginRw(ctx)

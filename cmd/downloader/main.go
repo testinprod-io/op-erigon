@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/erigontech/erigon-lib/chain/networkname"
 	"io/fs"
 	"net"
 	"net/url"

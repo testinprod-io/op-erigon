@@ -48,24 +48,6 @@ var (
 	}
 )
 
-var (
-	FileFilterFlag = cli.StringFlag{
-		Name:     "downloader.file.filter",
-		Aliases:  []string{"dff"},
-		Usage:    "Filter files list [all|active|inactive|downloaded|queued], dafault value is all",
-		Required: false,
-		Value:    "all",
-	}
-
-	FileNameFlag = cli.StringFlag{
-		Name:     "downloader.file.name",
-		Aliases:  []string{"dfn"},
-		Usage:    "File name to print details about.",
-		Required: false,
-		Value:    "",
-	}
-)
-
 var Command = cli.Command{
 	Action:    printDownloadStatus,
 	Name:      "downloader",
