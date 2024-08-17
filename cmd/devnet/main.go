@@ -18,6 +18,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/erigontech/erigon/cmd/utils"
 	"os"
 	"os/signal"
 	"path/filepath"
