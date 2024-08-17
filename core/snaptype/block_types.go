@@ -33,6 +33,9 @@ func init() {
 	snapcfg.RegisterKnownTypes(networkname.GoerliChainName, ethereumTypes)
 	snapcfg.RegisterKnownTypes(networkname.GnosisChainName, ethereumTypes)
 	snapcfg.RegisterKnownTypes(networkname.ChiadoChainName, ethereumTypes)
+
+	opStackTypes := BlockSnapshotTypes
+	snapcfg.RegisterKnownTypes(networkname.OpSepoliaChainName, opStackTypes)
 }
 
 var Enums = struct {
