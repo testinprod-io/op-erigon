@@ -2210,6 +2210,7 @@ type View struct {
 	closed      bool
 }
 
+// ViewSingleFile - RLock files of all types
 func (s *RoSnapshots) View() *View {
 	v := &View{s: s, baseSegType: coresnaptype.Headers}
 	s.segments.Scan(func(segtype snaptype.Enum, value *segments) bool {

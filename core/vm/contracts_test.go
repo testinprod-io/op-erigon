@@ -28,8 +28,8 @@ import (
 	"time"
 
 	libcommon "github.com/erigontech/erigon-lib/common"
-
 	"github.com/erigontech/erigon/common"
+	"github.com/erigontech/erigon/params"
 )
 
 // precompiledTest defines the input/output pairs for precompiled contract tests.
@@ -59,7 +59,7 @@ var allPrecompiles = map[libcommon.Address]PrecompiledContract{
 	libcommon.BytesToAddress([]byte{0xf5}):       &bigModExp{eip2565: true},
 	libcommon.BytesToAddress([]byte{6}):          &bn256AddIstanbul{},
 	libcommon.BytesToAddress([]byte{7}):          &bn256ScalarMulIstanbul{},
-	libcommon.BytesToAddress([]byte{8}):          &bn256PairingIstanbul{},
+	libcommon.BytesToAddress([]byte{8}):          &bn256PairingGranite{},
 	libcommon.BytesToAddress([]byte{9}):          &blake2F{},
 	libcommon.BytesToAddress([]byte{10}):         &bls12381G1Add{},
 	libcommon.BytesToAddress([]byte{11}):         &bls12381G1Mul{},
@@ -447,4 +447,13 @@ func TestPrecompiledP256Verify(t *testing.T) {
 	testJson("p256Verify", "100", t)
 	// test case from OP Stack Fjord geth
 	testJson("p256Verify2", "100", t)
+}
+
+func TestPrecompileBn256PairingTooLargeInput(t *testing.T) {
+	big := make([]byte, params.Bn256PairingMaxInputSizeGranite+1)
+	testPrecompiledFailure("08", precompiledFailureTest{
+		Input:         common.Bytes2Hex(big),
+		ExpectedError: "bad elliptic curve pairing input size",
+		Name:          "bn256Pairing_input_too_big",
+	}, t)
 }

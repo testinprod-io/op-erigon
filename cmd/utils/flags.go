@@ -24,7 +24,6 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
-	"github.com/erigontech/erigon/core/types"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -32,6 +31,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/erigontech/erigon/core/types"
 
 	"golang.org/x/exp/slices"
 
@@ -144,7 +145,11 @@ var (
 	}
 	OverrideOptimismFjordFlag = flags.BigFlag{
 		Name:  "override.fjord",
-		Usage: "Manually specify the Optimism Ecotone fork time, overriding the bundled setting",
+		Usage: "Manually specify the Optimism Fjord fork time, overriding the bundled setting",
+	}
+	OverrideOptimismGraniteFlag = flags.BigFlag{
+		Name:  "override.granite",
+		Usage: "Manually specify the Optimism Granite fork time, overriding the bundled setting",
 	}
 	// Ethash settings
 	EthashCachesInMemoryFlag = cli.IntFlag{
@@ -1418,9 +1423,7 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config, nodeName, datadir string, l
 		cfg.NoDiscovery = true
 	}
 
-	if ctx.IsSet(DiscoveryV5Flag.Name) {
-		cfg.DiscoveryV5 = ctx.Bool(DiscoveryV5Flag.Name)
-	}
+	cfg.DiscoveryV5 = ctx.Bool(DiscoveryV5Flag.Name)
 
 	if ctx.IsSet(MetricsEnabledFlag.Name) {
 		cfg.MetricsEnabled = ctx.Bool(MetricsEnabledFlag.Name)
@@ -2050,6 +2053,10 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 	}
 	if ctx.IsSet(OverrideOptimismFjordFlag.Name) {
 		cfg.OverrideOptimismFjordTime = flags.GlobalBig(ctx, OverrideOptimismFjordFlag.Name)
+	}
+
+	if ctx.IsSet(OverrideOptimismGraniteFlag.Name) {
+		cfg.OverrideOptimismGraniteTime = flags.GlobalBig(ctx, OverrideOptimismGraniteFlag.Name)
 	}
 
 	if clparams.EmbeddedSupported(cfg.NetworkID) {

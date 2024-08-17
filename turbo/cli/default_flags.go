@@ -183,6 +183,7 @@ var DefaultFlags = []cli.Flag{
 	&utils.OverrideOptimismCanyonFlag,
 	&utils.OverrideOptimismEcotoneFlag,
 	&utils.OverrideOptimismFjordFlag,
+	&utils.OverrideOptimismGraniteFlag,
 	&utils.RollupSequencerHTTPFlag,
 	&utils.RollupHistoricalRPCFlag,
 	&utils.RollupHistoricalRPCTimeoutFlag,

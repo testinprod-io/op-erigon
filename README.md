@@ -153,8 +153,24 @@ $ op-node \
     --l2.jwt-secret=$JWT_SECRET_FILE \
     --network=op-mainnet \
     --rpc.addr=0.0.0.0 \
-    --rpc.port=9545
+    --rpc.port=9545 \
+    --l2.enginekind=erigon
 ```
+
+#### Execution Layer Syncing
+By default, op-node and op-erigon work together to derive every L2 block from the chain. However, this can take a while if the chain is large.
+
+Instead, you can use `execution-layer` syncmode on op-node to download L2 blocks from the peers in the network. 
+This will allow op-erigon to download and execute large number of blocks at once, resulting in a shorter sync time. 
+
+Refer to [Optimism's guide for execution layer syncing here](https://docs.optimism.io/builders/node-operators/management/snap-sync#enabling-execution-layer-sync-for-alternative-clients).
+
+To enable execution layer syncing, set the following flags on op-node
+```bash
+    --syncmode=execution-layer \ 
+    --l2.enginekind=erigon
+```
+
 For more information for op-node, refer the [Optimism's node operator guide](https://community.optimism.io/docs/developers/bedrock/node-operator-guide/#configuring-op-node).
 
 ## Need any help?
