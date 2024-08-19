@@ -15,6 +15,7 @@ import (
 
 const (
 	OPMainnetChainID   = 10
+	OPSepoliaChainID   = 11155420
 	BaseMainnetChainID = 8453
 	baseSepoliaChainID = 84532
 	pgnSepoliaChainID  = 58008
@@ -37,6 +38,23 @@ var (
 )
 
 var OPStackSupport = ProtocolVersionV0{Build: [8]byte{}, Major: 8, Minor: 0, Patch: 0, PreRelease: 1}.Encode()
+
+// GetErigonChainName returns the erigon format chain name corresponding to the chain id.
+func GetErigonChainName(chainId uint64) string {
+	switch chainId {
+	case OPMainnetChainID:
+		return networkname.OPMainnetChainName
+	case OPSepoliaChainID:
+		return networkname.OpSepoliaChainName
+	case BaseMainnetChainID:
+		return networkname.BaseMainnetChainName
+	case baseSepoliaChainID:
+		return networkname.BaseSepoliaChainName
+	case devnetChainID:
+		return networkname.OPDevnetChainName
+	}
+	return ""
+}
 
 // OPStackChainConfigByName loads chain config corresponding to the chain name from superchain registry.
 // This implementation is based on optimism monorepo(https://github.com/ethereum-optimism/optimism/blob/op-node/v1.4.1/op-node/chaincfg/chains.go#L59)
@@ -124,6 +142,11 @@ func LoadSuperChainConfig(opStackChainCfg *superchain.ChainConfig) *chain.Config
 			EIP1559Denominator:       50,
 			EIP1559DenominatorCanyon: 250,
 		},
+	}
+
+	// override erigon chain name
+	if chainName := GetErigonChainName(opStackChainCfg.ChainID); chainName != "" {
+		out.ChainName = chainName
 	}
 
 	if chConfig.CanyonTime != nil {

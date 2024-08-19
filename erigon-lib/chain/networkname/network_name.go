@@ -14,9 +14,12 @@ const (
 	BorE2ETestChain2ValName = "bor-e2e-test-2Val"
 	ChiadoChainName         = "chiado"
 
-	OPDevnetChainName  = "op-devnet"
-	OPMainnetChainName = "op-mainnet"
-	OpSepoliaChainName = "op-sepolia"
+	// op stack chains
+	OPDevnetChainName    = "op-devnet"
+	OPMainnetChainName   = "op-mainnet"
+	OpSepoliaChainName   = "op-sepolia"
+	BaseMainnetChainName = "base-mainnet"
+	BaseSepoliaChainName = "base-sepolia"
 
 	LegacyOPDevnetChainName  = "optimism-devnet"
 	LegacyOPMainnetChainName = "optimism-mainnet"
@@ -34,7 +37,10 @@ var All = []string{
 	GnosisChainName,
 	ChiadoChainName,
 	OPDevnetChainName,
+	OPMainnetChainName,
 	OpSepoliaChainName,
+	BaseMainnetChainName,
+	BaseSepoliaChainName,
 }
 
 func HandleLegacyName(name string) string {
