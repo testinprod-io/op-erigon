@@ -21,6 +21,7 @@ import (
 	"github.com/erigontech/erigon-lib/chain"
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/kv"
+	"github.com/erigontech/erigon-lib/opstack"
 
 	"github.com/erigontech/erigon/consensus"
 	"github.com/erigontech/erigon/core"
@@ -115,6 +116,9 @@ func (e *TraceWorker) ExecTxn(txNum uint64, txIndex int, txn types.Transaction) 
 			return core.SysCallContract(contract, data, e.chainConfig, e.ibs, e.header, e.engine, true /* constCall */)
 		}
 		msg.SetIsFree(e.engine.IsServiceTransaction(msg.From(), syscall))
+	}
+	if e.chainConfig.Optimism != nil {
+		e.evm.Context.L1CostFunc = opstack.NewL1CostFunc(e.chainConfig, e.ibs)
 	}
 	res, err := core.ApplyMessage(e.evm, msg, gp, true /* refunds */, false /* gasBailout */)
 	if err != nil {

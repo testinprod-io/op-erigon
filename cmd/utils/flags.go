@@ -1870,12 +1870,6 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 		cfg.NetworkID = params.NetworkIDByChainName(chain)
 	}
 
-	// FIXME: V3_MERGE
-	cfg.Sync.UseSnapshots = ethconfig.UseSnapshotsByChainName(GetChainNameFromFlag(ctx))
-	//if ctx.IsSet(SnapshotFlag.Name) { //force override default by cli
-	//	cfg.Sync.UseSnapshots = ctx.Bool(SnapshotFlag.Name)
-	//}
-
 	cfg.Dirs = nodeConfig.Dirs
 	cfg.Snapshot.KeepBlocks = ctx.Bool(SnapKeepBlocksFlag.Name)
 	cfg.Snapshot.ProduceE2 = !ctx.Bool(SnapStopFlag.Name)

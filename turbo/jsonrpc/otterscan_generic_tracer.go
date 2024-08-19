@@ -22,7 +22,6 @@ import (
 	"github.com/erigontech/erigon-lib/kv"
 	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/erigontech/erigon/cmd/state/exec3"
-
 	"github.com/erigontech/erigon/core/types"
 	"github.com/erigontech/erigon/core/vm"
 )
@@ -57,36 +56,6 @@ func (api *OtterscanAPIImpl) genericTracer(dbtx kv.Tx, ctx context.Context, bloc
 		return nil
 	}
 
-	// FIXME: V3_MERGE
-	//header := block.Header()
-	//rules := chainConfig.Rules(header.Number.Uint64(), header.Time)
-	//signer := types.MakeSigner(chainConfig, blockNum, header.Time)
-	//for idx, tx := range block.Transactions() {
-	//	select {
-	//	case <-ctx.Done():
-	//		return ctx.Err()
-	//	default:
-	//	}
-	//
-	//	ibs.SetTxContext(tx.Hash(), block.Hash(), idx)
-	//
-	//	msg, _ := tx.AsMessage(*signer, header.BaseFee, rules)
-	//
-	//	BlockContext := core.NewEVMBlockContext(header, core.GetHashFn(header, getHeader), engine, nil)
-	//	BlockContext.L1CostFunc = opstack.NewL1CostFunc(chainConfig, ibs)
-	//	TxContext := core.NewEVMTxContext(msg)
-	//
-	//	vmenv := vm.NewEVM(BlockContext, TxContext, ibs, chainConfig, vm.Config{Debug: true, Tracer: tracer})
-	//	if _, err := core.ApplyMessage(vmenv, msg, new(core.GasPool).AddGas(tx.GetGas()).AddBlobGas(tx.GetBlobGas()), true /* refunds */, false /* gasBailout */); err != nil {
-	//		return err
-	//	}
-	//	_ = ibs.FinalizeTx(rules, cachedWriter)
-	//
-	//	if tracer.Found() {
-	//		tracer.SetTransaction(tx)
-	//		return nil
-	//	}
-	//}
 	_, err = executor.ExecTxn(txnID, txIndex, txn)
 	if err != nil {
 		return err
