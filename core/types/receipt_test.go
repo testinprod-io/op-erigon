@@ -469,71 +469,72 @@ func TestDeriveFields(t *testing.T) {
 	time := uint64(0)
 
 	t.Run("DeriveV1", func(t *testing.T) {
-	derivedReceipts := clearComputedFieldsOnReceipts(t, receipts)
-	if err := derivedReceipts.DeriveFields(params.TestChainConfig, hash, number.Uint64(), time, txs, []libcommon.Address{libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0})}); err != nil {
-		t.Fatalf("DeriveFields(...) = %v, want <nil>", err)
-	}
-	// Iterate over all the computed fields and check that they're correct
-	signer := MakeSigner(params.TestChainConfig, number.Uint64(), 0)
-
-	diffDerivedFields(t, receipts, derivedReceipts)
-	for i := range receipts {
-		from, _ := txs[i].Sender(*signer)
-		contractAddress := crypto.CreateAddress(from, nonces[i])
-		if txs[i].GetTo() == nil && receipts[i].ContractAddress != contractAddress {
-			t.Errorf("receipts[%d].ContractAddress = %s, want %s", i, receipts[i].ContractAddress.String(), contractAddress.String())
+		derivedReceipts := clearComputedFieldsOnReceipts(t, receipts)
+		if err := derivedReceipts.DeriveFields(params.TestChainConfig, hash, number.Uint64(), time, txs, []libcommon.Address{libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0})}); err != nil {
+			t.Fatalf("DeriveFields(...) = %v, want <nil>", err)
 		}
 		// Iterate over all the computed fields and check that they're correct
 		signer := MakeSigner(params.TestChainConfig, number.Uint64(), 0)
 
-		logIndex := uint(0)
-		for i, r := range receipts {
-			if r.Type != txs[i].Type() {
-				t.Errorf("receipts[%d].Type = %d, want %d", i, r.Type, txs[i].Type())
-			}
-			if r.TxHash != txs[i].Hash() {
-				t.Errorf("receipts[%d].TxHash = %s, want %s", i, r.TxHash.String(), txs[i].Hash().String())
-			}
-			if r.BlockHash != hash {
-				t.Errorf("receipts[%d].BlockHash = %s, want %s", i, r.BlockHash.String(), hash.String())
-			}
-			if r.BlockNumber.Cmp(number) != 0 {
-				t.Errorf("receipts[%c].BlockNumber = %s, want %s", i, r.BlockNumber.String(), number.String())
-			}
-			if r.TransactionIndex != uint(i) {
-				t.Errorf("receipts[%d].TransactionIndex = %d, want %d", i, r.TransactionIndex, i)
-			}
-			if r.GasUsed != txs[i].GetGas() {
-				t.Errorf("receipts[%d].GasUsed = %d, want %d", i, r.GasUsed, txs[i].GetGas())
-			}
-			if txs[i].GetTo() != nil && r.ContractAddress != (libcommon.Address{}) {
-				t.Errorf("receipts[%d].ContractAddress = %s, want %s", i, r.ContractAddress.String(), (libcommon.Address{}).String())
-			}
+		diffDerivedFields(t, receipts, derivedReceipts)
+		for i := range receipts {
 			from, _ := txs[i].Sender(*signer)
 			contractAddress := crypto.CreateAddress(from, nonces[i])
 			if txs[i].GetTo() == nil && receipts[i].ContractAddress != contractAddress {
-				t.Errorf("receipts[%d].ContractAddress = %s, want %s", i, r.ContractAddress.String(), contractAddress.String())
+				t.Errorf("receipts[%d].ContractAddress = %s, want %s", i, receipts[i].ContractAddress.String(), contractAddress.String())
 			}
-			for j := range r.Logs {
-				if r.Logs[j].BlockNumber != number.Uint64() {
-					t.Errorf("receipts[%d].Logs[%d].BlockNumber = %d, want %d", i, j, r.Logs[j].BlockNumber, number.Uint64())
+			// Iterate over all the computed fields and check that they're correct
+			signer := MakeSigner(params.TestChainConfig, number.Uint64(), 0)
+
+			logIndex := uint(0)
+			for i, r := range receipts {
+				if r.Type != txs[i].Type() {
+					t.Errorf("receipts[%d].Type = %d, want %d", i, r.Type, txs[i].Type())
 				}
-				if r.Logs[j].BlockHash != hash {
-					t.Errorf("receipts[%d].Logs[%d].BlockHash = %s, want %s", i, j, r.Logs[j].BlockHash.String(), hash.String())
+				if r.TxHash != txs[i].Hash() {
+					t.Errorf("receipts[%d].TxHash = %s, want %s", i, r.TxHash.String(), txs[i].Hash().String())
 				}
-				if r.Logs[j].TxHash != txs[i].Hash() {
-					t.Errorf("receipts[%d].Logs[%d].TxHash = %s, want %s", i, j, r.Logs[j].TxHash.String(), txs[i].Hash().String())
+				if r.BlockHash != hash {
+					t.Errorf("receipts[%d].BlockHash = %s, want %s", i, r.BlockHash.String(), hash.String())
 				}
-				if r.Logs[j].TxHash != txs[i].Hash() {
-					t.Errorf("receipts[%d].Logs[%d].TxHash = %s, want %s", i, j, r.Logs[j].TxHash.String(), txs[i].Hash().String())
+				if r.BlockNumber.Cmp(number) != 0 {
+					t.Errorf("receipts[%c].BlockNumber = %s, want %s", i, r.BlockNumber.String(), number.String())
 				}
-				if r.Logs[j].TxIndex != uint(i) {
-					t.Errorf("receipts[%d].Logs[%d].TransactionIndex = %d, want %d", i, j, r.Logs[j].TxIndex, i)
+				if r.TransactionIndex != uint(i) {
+					t.Errorf("receipts[%d].TransactionIndex = %d, want %d", i, r.TransactionIndex, i)
 				}
-				if r.Logs[j].Index != logIndex {
-					t.Errorf("receipts[%d].Logs[%d].Index = %d, want %d", i, j, r.Logs[j].Index, logIndex)
+				if r.GasUsed != txs[i].GetGas() {
+					t.Errorf("receipts[%d].GasUsed = %d, want %d", i, r.GasUsed, txs[i].GetGas())
 				}
-				logIndex++
+				if txs[i].GetTo() != nil && r.ContractAddress != (libcommon.Address{}) {
+					t.Errorf("receipts[%d].ContractAddress = %s, want %s", i, r.ContractAddress.String(), (libcommon.Address{}).String())
+				}
+				from, _ := txs[i].Sender(*signer)
+				contractAddress := crypto.CreateAddress(from, nonces[i])
+				if txs[i].GetTo() == nil && receipts[i].ContractAddress != contractAddress {
+					t.Errorf("receipts[%d].ContractAddress = %s, want %s", i, r.ContractAddress.String(), contractAddress.String())
+				}
+				for j := range r.Logs {
+					if r.Logs[j].BlockNumber != number.Uint64() {
+						t.Errorf("receipts[%d].Logs[%d].BlockNumber = %d, want %d", i, j, r.Logs[j].BlockNumber, number.Uint64())
+					}
+					if r.Logs[j].BlockHash != hash {
+						t.Errorf("receipts[%d].Logs[%d].BlockHash = %s, want %s", i, j, r.Logs[j].BlockHash.String(), hash.String())
+					}
+					if r.Logs[j].TxHash != txs[i].Hash() {
+						t.Errorf("receipts[%d].Logs[%d].TxHash = %s, want %s", i, j, r.Logs[j].TxHash.String(), txs[i].Hash().String())
+					}
+					if r.Logs[j].TxHash != txs[i].Hash() {
+						t.Errorf("receipts[%d].Logs[%d].TxHash = %s, want %s", i, j, r.Logs[j].TxHash.String(), txs[i].Hash().String())
+					}
+					if r.Logs[j].TxIndex != uint(i) {
+						t.Errorf("receipts[%d].Logs[%d].TransactionIndex = %d, want %d", i, j, r.Logs[j].TxIndex, i)
+					}
+					if r.Logs[j].Index != logIndex {
+						t.Errorf("receipts[%d].Logs[%d].Index = %d, want %d", i, j, r.Logs[j].Index, logIndex)
+					}
+					logIndex++
+				}
 			}
 		}
 	})
@@ -827,6 +828,7 @@ func TestRoundTripReceiptForStorage(t *testing.T) {
 			require.Equal(t, test.rcpt.Status, d.Status)
 			require.Equal(t, test.rcpt.CumulativeGasUsed, d.CumulativeGasUsed)
 			require.Equal(t, test.rcpt.Logs, d.Logs)
+			require.Equal(t, test.rcpt.FirstLogIndex, d.FirstLogIndex)
 			require.Equal(t, test.rcpt.DepositNonce, d.DepositNonce)
 			require.Equal(t, test.rcpt.DepositReceiptVersion, d.DepositReceiptVersion)
 		})

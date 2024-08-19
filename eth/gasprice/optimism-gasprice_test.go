@@ -18,11 +18,9 @@ package gasprice
 
 import (
 	"context"
-	"math/big"
-	"testing"
-
 	"github.com/erigontech/erigon-lib/chain"
 	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/erigontech/erigon/core"
 	"github.com/erigontech/erigon/core/types"
 	"github.com/erigontech/erigon/crypto"
@@ -31,6 +29,8 @@ import (
 	"github.com/erigontech/erigon/params"
 	"github.com/erigontech/erigon/rpc"
 	"github.com/holiman/uint256"
+	"math/big"
+	"testing"
 )
 
 const (
@@ -148,7 +148,7 @@ func TestSuggestOptimismPriorityFee(t *testing.T) {
 	}
 	for i, c := range cases {
 		backend := newOpTestBackend(t, c.txdata)
-		oracle := NewOracle(backend, gaspricecfg.Config{MinSuggestedPriorityFee: minSuggestion}, &testCache{}, nil)
+		oracle := NewOracle(backend, gaspricecfg.Config{MinSuggestedPriorityFee: minSuggestion}, &testCache{}, log.New())
 		got := oracle.SuggestOptimismPriorityFee(context.Background(), backend.block.Header(), backend.block.Hash())
 		if got.Cmp(c.want) != 0 {
 			t.Errorf("Gas price mismatch for test case %d: want %d, got %d", i, c.want, got)

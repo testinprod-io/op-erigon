@@ -58,7 +58,7 @@ type DepositTx struct {
 }
 
 func (tx *DepositTx) GetChainID() *uint256.Int {
-	panic("deposits are not signed and do not have a chain-ID")
+	return new(uint256.Int)
 }
 
 func (tx *DepositTx) GetNonce() uint64 {
@@ -98,7 +98,7 @@ func (tx *DepositTx) SetSender(addr libcommon.Address) {
 }
 
 func (tx *DepositTx) RawSignatureValues() (*uint256.Int, *uint256.Int, *uint256.Int) {
-	panic("deposit tx does not have a signature")
+	return uint256.NewInt(0), uint256.NewInt(0), uint256.NewInt(0)
 }
 
 func (tx *DepositTx) SigningHash(chainID *big.Int) libcommon.Hash {

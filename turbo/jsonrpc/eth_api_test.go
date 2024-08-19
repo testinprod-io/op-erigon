@@ -31,7 +31,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/erigontech/erigon-lib/common"
-	
+
 	"github.com/erigontech/erigon-lib/kv/kvcache"
 	"github.com/erigontech/erigon/core"
 	"github.com/erigontech/erigon/core/types"
@@ -271,9 +271,9 @@ func TestNewRPCTransactionDepositTx(t *testing.T) {
 	got := NewRPCTransaction(tx, common.Hash{}, uint64(12), uint64(1), big.NewInt(0), receipt)
 	// Should provide zero values for unused fields that are required in other transactions
 	require.Equal(t, got.GasPrice, (*hexutil.Big)(big.NewInt(0)), "NewRPCTransaction().GasPrice = %v, want 0x0", got.GasPrice)
-	require.Equal(t, got.V, (*hexutil.Big)(big.NewInt(0)), "NewRPCTransaction().V = %v, want 0x0", got.V)
-	require.Equal(t, got.R, (*hexutil.Big)(big.NewInt(0)), "NewRPCTransaction().R = %v, want 0x0", got.R)
-	require.Equal(t, got.S, (*hexutil.Big)(big.NewInt(0)), "NewRPCTransaction().S = %v, want 0x0", got.S)
+	require.Equal(t, got.V.Uint64(), uint64(0), "NewRPCTransaction().V = %v, want 0x0", got.V)
+	require.Equal(t, got.R.Uint64(), uint64(0), "NewRPCTransaction().R = %v, want 0x0", got.R)
+	require.Equal(t, got.S.Uint64(), uint64(0), "NewRPCTransaction().S = %v, want 0x0", got.S)
 
 	// Should include deposit tx specific fields
 	require.Equal(t, got.SourceHash, &tx.SourceHash, "NewRPCTransaction().SourceHash = %v, want %v", got.SourceHash, tx.SourceHash)
@@ -299,9 +299,9 @@ func TestNewRPCTransactionDepositTxWithVersion(t *testing.T) {
 	got := NewRPCTransaction(tx, libcommon.Hash{}, uint64(12), uint64(1), big.NewInt(0), receipt)
 	// Should provide zero values for unused fields that are required in other transactions
 	require.Equal(t, got.GasPrice, (*hexutil.Big)(big.NewInt(0)), "NewRPCTransaction().GasPrice = %v, want 0x0", got.GasPrice)
-	require.Equal(t, got.V, (*hexutil.Big)(big.NewInt(0)), "NewRPCTransaction().V = %v, want 0x0", got.V)
-	require.Equal(t, got.R, (*hexutil.Big)(big.NewInt(0)), "NewRPCTransaction().R = %v, want 0x0", got.R)
-	require.Equal(t, got.S, (*hexutil.Big)(big.NewInt(0)), "NewRPCTransaction().S = %v, want 0x0", got.S)
+	require.Equal(t, got.V.Uint64(), uint64(0), "NewRPCTransaction().V = %v, want 0x0", got.V)
+	require.Equal(t, got.R.Uint64(), uint64(0), "NewRPCTransaction().R = %v, want 0x0", got.R)
+	require.Equal(t, got.S.Uint64(), uint64(0), "NewRPCTransaction().S = %v, want 0x0", got.S)
 
 	// Should include versioned deposit tx specific fields
 	require.Equal(t, got.SourceHash, &tx.SourceHash, "NewRPCTransaction().SourceHash = %v, want %v", got.SourceHash, tx.SourceHash)

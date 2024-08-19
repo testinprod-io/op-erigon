@@ -18,6 +18,7 @@ package exec3
 
 import (
 	"context"
+	"github.com/erigontech/erigon-lib/opstack"
 	"sync"
 
 	"golang.org/x/sync/errgroup"
@@ -256,6 +257,9 @@ func (rw *Worker) RunTxTaskNoLock(txTask *state.TxTask) {
 		}
 
 		// MA applytx
+		if rw.chainConfig.Optimism != nil {
+			rw.evm.Context.L1CostFunc = opstack.NewL1CostFunc(rw.chainConfig, rw.ibs)
+		}
 		applyRes, err := core.ApplyMessage(rw.evm, msg, rw.taskGasPool, true /* refunds */, false /* gasBailout */)
 		if err != nil {
 			txTask.Error = err

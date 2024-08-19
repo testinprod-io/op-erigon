@@ -183,14 +183,15 @@ func (api *OtterscanAPIImpl) GetContractCreator(ctx context.Context, addr common
 	// Trace block, find txn and contract creator
 	tracer := NewCreateTracer(ctx, addr)
 
+	if err := api.genericTracer(tx, ctx, bn, creationTxnID, txIndex, chainConfig, tracer); err != nil {
+		return nil, err
+	}
+
 	// TODO: check if precompiled contract
 	if !tracer.Found() {
 		return nil, nil
 	}
 
-	if err := api.genericTracer(tx, ctx, bn, creationTxnID, txIndex, chainConfig, tracer); err != nil {
-		return nil, err
-	}
 	return &ContractCreatorData{
 		Tx:      tracer.Tx.Hash(),
 		Creator: tracer.Creator,
