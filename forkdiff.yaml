@@ -43,7 +43,6 @@ def:
                 Transactions must pay an additional L1 cost based on the amount of rollup-data-gas they consume, estimated based on gas-price-oracle information and encoded tx size.
               globs:
                 - "erigon-lib/opstack/rollup_cost.go"
-                - "erigon-lib/opstack/rollup_cost_test.go"
                 - "core/types/rollup_l1_cost.go"
                 - "core/types/transaction.go"
                 - "core/vm/evmtypes/evmtypes.go"
@@ -53,7 +52,6 @@ def:
                 - "turbo/transactions/call.go"
                 - "turbo/transactions/tracing.go"
                 - "turbo/jsonrpc/eth_callMany.go"
-                - "turbo/jsonrpc/eth_callMany_test.go"
             - title: "Transaction processing"
               description: |
                 Deposit transactions have special processing rules: gas is pre-paid on L1, and deposits with EVM-failure are included with rolled back changes (except mint). For regular transactions, at the end of the transition, the 1559 burn and L1 cost are routed to vaults.
@@ -64,7 +62,6 @@ def:
                 Deposit transactions have special processing rules: gas is pre-paid on L1, and deposits with EVM-failure are included with rolled back changes (except mint). For regular transactions, at the end of the transition, the 1559 burn and L1 cost are routed to vaults.
               globs:
                 - "consensus/misc/eip1559.go"
-                - "consensus/misc/eip1559_test.go"
             - title: "Regolith upgrade"
               globs:
                 - "core/state_processor.go"
@@ -90,7 +87,6 @@ def:
             - "core/block_builder_parameters.go"
             - "params/mining.go"
             - "core/chain_makers.go"
-            - "eth/stagedsync/stage_mining_exec_test.go"
             - "turbo/stages/stageloop.go"
             - "turbo/execution/eth1/block_building.go"
         - title: "Tx-pool tx cost updates"
@@ -99,8 +95,6 @@ def:
           globs:
             - "cmd/txpool/main.go"
             - "erigon-lib/txpool/pool.go"
-            - "erigon-lib/txpool/pool_test.go"
-            - "erigon-lib/txpool/pool_fuzz_test.go"
             - "erigon-lib/txpool/txpooluitl/all_components.go"
             - "erigon-lib/txpool/txpoolcfg/txpoolcfg.go"
             - "erigon-lib/txpool/txpool_grpc_server.go"
@@ -109,10 +103,7 @@ def:
             Genesis generation and superchain registry
           globs: 
             - "core/genesis_write.go"
-            - "core/genesis_test.go"
             - "core/types/genesis.go"
-          ignore: 
-            - "core/allocs/optimism_devnet.json"
         - title: "Optimism Hardforks"
           sub:
             - title: "Fjord"
@@ -135,7 +126,6 @@ def:
             Superchain configuration for Optimism
           globs: 
             - "params/superchain.go"
-            - "params/superchain_test.go"
     - title: "Node modifications"
       description: |
         Changes to the node configuration and services.
@@ -184,13 +174,9 @@ def:
           globs:
             - "core/types/receipt.go"
             - "core/types/gen_receipt_json.go"
-            - "core/types/receipt_test.go"
             - "turbo/jsonrpc/eth_receipts.go"
-            - "turbo/jsonrpc/eth_receipts_test.go"
-            - "turbo/jsonrpc/erigon_receipts_test.go"
             - "accounts/abi/bind/backends/simulated.go"
             - "core/rawdb/accessors_chain.go"
-            - "core/rawdb/accessors_chain_test.go"
             - "core/rawdb/accessors_indexes.go"
             - "ethdb/cbor/pool.go"
             
@@ -204,38 +190,30 @@ def:
             - "cmd/erigon-el/backend/backend.go"
             - "eth/backend.go"
             - "turbo/jsonrpc/eth_call.go"
-            - "turbo/jsonrpc/eth_call_test.go"
             - "turbo/jsonrpc/send_transaction.go"
             - "rpc/errors.go"
             - "turbo/jsonrpc/daemon.go"
             - "turbo/jsonrpc/eth_accounts.go"
-            - "turbo/jsonrpc/eth_accounts_test.go"
             - "turbo/jsonrpc/debug_api.go"
-            - "turbo/jsonrpc/debug_api_test.go"
         - title: "Transaction & Block response"
           description: |
             Format deposit and L1-cost data in transaction responses.
           globs:
             - "turbo/adapter/ethapi/api.go"
-            - "turbo/adapter/ethapi/api_test.go"
             - "turbo/adapter/ethapi/internal.go"
             - "turbo/jsonrpc/erigon_block.go"
             - "turbo/jsonrpc/eth_txs.go"
             - "turbo/jsonrpc/eth_uncles.go"
             - "turbo/jsonrpc/eth_block.go"
             - "turbo/jsonrpc/eth_api.go"
-            - "turbo/jsonrpc/eth_api_test.go"
-            - "turbo/jsonrpc/eth_block_test.go"
         - title: "ETH Gasprice Suggestions"
           description: |
             Gasprice suggestion adjustments to accommodate faster L2 blocks and lower fees.
           globs: 
             - "eth/gasprice/feehistory.go"
             - "eth/gasprice/gasprice.go"
-            - "eth/gasprice/gasprice_test.go"
             - "eth/gasprice/gaspricecfg/gaspricecfg.go"
             - "eth/gasprice/optimism-gasprice.go"
-            - "eth/gasprice/optimism-gasprice_test.go"
         - title: "Otterscan API"
           globs:
             - "turbo/jsonrpc/otterscan_api.go"
@@ -268,3 +246,4 @@ ignore:
   - "Dockerfile.debian"
   - "core/vm/testdata/precompiles/p256Verify2.json"
   - "cmd/rpcdaemon/rpcdaemontest/test_util.go"
+  - "core/allocs/optimism_devnet.json"
