@@ -1,10 +1,10 @@
 title: "op-erigon"  # Define the HTML page title
 footer: |  # define the footer with markdown
-  Fork-diff overview of [op-erigon](https://github.com/testinprod-io/op-erigon), a fork of [erigon](https://github.com/ledgerwatch/erigon). and execution-engine of the [OP Stack](https://github.com/ethereum-optimism/optimism).
+  Fork-diff overview of [op-erigon](https://github.com/testinprod-io/op-erigon), a fork of [erigon](https://github.com/erigontech/erigon). and execution-engine of the [OP Stack](https://github.com/ethereum-optimism/optimism).
 base:
-  name: ledgerwatch/erigon
-  url: https://github.com/ledgerwatch/erigon
-  ref: refs/tags/v2.43.0
+  name: erigontech/erigon
+  url: https://github.com/erigontech/erigon
+  ref: refs/tags/v2.60.5
 fork:
   name: testinprod-io/erigon
   url: https://github.com/testinprod-io/op-erigon
@@ -12,11 +12,10 @@ fork:
 def:
   title: "op-erigon"
   description: | # description in markdown
-    This is an overview of the changes in [op-erigon](https://github.com/testinprod-io/op-erigon), a fork of [erigon](https://github.com/ledgerwatch/erigon), part of the OP Stack.
+    This is an overview of the changes in [op-erigon](https://github.com/testinprod-io/op-erigon), a fork of [erigon](https://github.com/erigontech/erigon), part of the OP Stack.
     
     There are two more forks of erigon dependencies:
     
-    - [op-erigon-lib](./erigon-lib.html)
     - [op-erigon-interfaces](./erigon-interfaces.html)
   sub:
     - title: "Core modifications"
@@ -30,6 +29,8 @@ def:
                 - "core/types/deposit_tx.go"
                 - "core/types/transaction_marshalling.go"
                 - "core/types/transaction_signing.go"
+                - "erigon-lib/types/txn.go"
+                - "eth/ethutils/receipt.go"
             - title: "Transaction properties"
               description: |
                 The Transaction type now exposes the deposit-transaction and L1-cost properties required for the rollup.
@@ -41,14 +42,16 @@ def:
               description: |
                 Transactions must pay an additional L1 cost based on the amount of rollup-data-gas they consume, estimated based on gas-price-oracle information and encoded tx size.
               globs:
+                - "erigon-lib/opstack/rollup_cost.go"
                 - "core/types/rollup_l1_cost.go"
                 - "core/types/transaction.go"
                 - "core/vm/evmtypes/evmtypes.go"
-                - "cmd/rpcdaemon/commands/trace_adhoc.go"
-                - "cmd/rpcdaemon/commands/trace_filtering.go"
-                - "cmd/rpcdaemon/commands/tracing.go"
+                - "turbo/jsonrpc/trace_adhoc.go"
+                - "turbo/jsonrpc/trace_filtering.go"
+                - "turbo/jsonrpc/tracing.go"
                 - "turbo/transactions/call.go"
                 - "turbo/transactions/tracing.go"
+                - "turbo/jsonrpc/eth_callMany.go"
             - title: "Transaction processing"
               description: |
                 Deposit transactions have special processing rules: gas is pre-paid on L1, and deposits with EVM-failure are included with rolled back changes (except mint). For regular transactions, at the end of the transition, the 1559 burn and L1 cost are routed to vaults.
@@ -62,17 +65,15 @@ def:
             - title: "Regolith upgrade"
               globs:
                 - "core/state_processor.go"
-        - title: "Chain config"
-          description: |
-            The rollup functionality is enabled with the optimism field in the chain config. The EIP-1559 parameters are configurable to adjust for faster more frequent and smaller blocks. The parameters can be overriden for testing.
-          globs:
-            - "params/protocol_params.go"
         - title: "Engine API modifications"
           description: |
             The Engine API is extended to insert transactions into the block and optionally exclude the tx-pool, to reproduce the exact block of the sequencer from just the inputs, as derived from L1 by the rollup-node. See [L2 execution engine specs](https://github.com/ethereum-optimism/optimism/blob/develop/specs/exec-engine.md).
           globs:
-            - "cmd/rpcdaemon/commands/engine_api.go"
+            - "turbo/engineapi/engine_server.go"
+            - "turbo/engineapi/engine_types/jsonrpc.go"
             - "ethdb/privateapi/ethbackend.go"
+            - "turbo/execution/eth1/forkchoice.go"
+            - "turbo/execution/eth1/eth1_chain_reader.go/chain_reader.go"
         - title: "Block-building modifications"
           description: |
             The block-building code (in the “mining” stages because of Proof-Of-Work legacy of ethereum) implements the changes to support the transaction-inclusion, tx-pool toggle and gaslimit parameters of the Engine API.
@@ -86,13 +87,45 @@ def:
             - "core/block_builder_parameters.go"
             - "params/mining.go"
             - "core/chain_makers.go"
-            - "eth/stagedsync/stage_mining_exec_test.go"
+            - "turbo/stages/stageloop.go"
+            - "turbo/execution/eth1/block_building.go"
         - title: "Tx-pool tx cost updates"
           description: |
             Transaction queueing and inclusion needs to account for the L1 cost component.
           globs:
             - "cmd/txpool/main.go"
-
+            - "erigon-lib/txpool/pool.go"
+            - "erigon-lib/txpool/txpooluitl/all_components.go"
+            - "erigon-lib/txpool/txpoolcfg/txpoolcfg.go"
+            - "erigon-lib/txpool/txpool_grpc_server.go"
+        - title: "Genesis"
+          description: |
+            Genesis generation and superchain registry
+          globs: 
+            - "core/genesis_write.go"
+            - "core/types/genesis.go"
+        - title: "Optimism Hardforks"
+          sub:
+            - title: "Fjord"
+              globs: 
+                - "core/vm/evm.go"
+                - "core/vm/contracts.go"
+                - "erigon-lib/fastlz/fastlz.go"
+    - title: "Chain Configuration"
+      sub: 
+        - title: "Chain Config"
+          description: |
+            The rollup functionality is enabled with the optimism field in the chain config. The EIP-1559 parameters are configurable to adjust for faster more frequent and smaller blocks. The parameters can be overriden for testing.
+          globs:
+            - "params/protocol_params.go"
+            - "erigon-lib/chain/chain_config.go"
+            - "erigon-lib/chain/networkname/network_name.go"
+            - "params/chainspecs/op-devnet.json"
+        - title: "Superchain Config"
+          description: | 
+            Superchain configuration for Optimism
+          globs: 
+            - "params/superchain.go"
     - title: "Node modifications"
       description: |
         Changes to the node configuration and services.
@@ -101,10 +134,11 @@ def:
           sub:
             - title: "Flags"
               description: |
-                Flag changes: - Transactions can be forwarded to an RPC for sequencing. - Historical calls can be forwarded to a legacy node. - The tx pool propagation can be enabled/disabled. - The Optimism bedrock fork activation can be changed for testing.
+                Flag changes: - Transactions can be forwarded to an RPC for sequencing. - Historical calls can be forwarded to a legacy node. - The tx pool propagation can be enabled/disabled. - The Optimism bedrock fork activation can be changed for testing. - Discv5 is used as a default peer discovery protocol. 
               globs:
                 - "cmd/utils/flags.go"
                 - "turbo/cli/default_flags.go"
+                - "turbo/cli/flags.go"
             - title: "Versioning"
               description: |
                 List the op-geth and upstream go-ethereum versions.
@@ -119,6 +153,17 @@ def:
             - "params/config.go"
             - "core/genesis.go"
             - "params/networkname/network_name.go"
+        - title: "Discv5 Peer Discovery"
+          description: |
+            Optimism uses discv5 as an active source for node-discovery.
+          globs: 
+            - "params/bootnodes.go"
+            - "p2p/server.go"
+        - title: "Optional Engine API Extensions"
+          description: |
+            Extension for Engine API for Superchain
+          globs: 
+            - "turbo/engineapi/interface.go"
     - title: "User API enhancements"
       description: |
         Encode the Deposit Tx properties, the L1 costs, and daisy-chain RPC-calls for pre-Bedrock historical data
@@ -128,54 +173,77 @@ def:
             Pre-Bedrock L1-cost receipt data is loaded from the database if available, and post-Bedrock the L1-cost metadata is hydrated on-the-fly based on the L1 fee information in the corresponding block.
           globs:
             - "core/types/receipt.go"
-            - "core/types/receipt_test.go"
-            - "cmd/rpcdaemon/commands/eth_receipts.go"
-            - "cmd/rpcdaemon/commands/erigon_receipts_test.go"
+            - "core/types/gen_receipt_json.go"
+            - "turbo/jsonrpc/eth_receipts.go"
             - "accounts/abi/bind/backends/simulated.go"
             - "core/rawdb/accessors_chain.go"
-            - "core/rawdb/accessors_chain_test.go"
             - "core/rawdb/accessors_indexes.go"
             - "ethdb/cbor/pool.go"
+            
         - title: "API Backend"
           description: |
             Forward transactions to the sequencer or historical node if configured.
           globs:
+            - "cmd/rpcdaemon/main.go"
+            - "cmd/rpcdaemon/cli/config.go"
+            - "cmd/rpcdaemon/cli/httpcfg/http_cfg.go"
             - "cmd/erigon-el/backend/backend.go"
-            - "cmd/rpcdaemon/commands/daemon.go"
             - "eth/backend.go"
-            - "cmd/rpcdaemon/commands/eth_accounts.go"
-            - "cmd/rpcdaemon/commands/eth_call.go"
-            - "cmd/rpcdaemon/commands/send_transaction.go"
+            - "turbo/jsonrpc/eth_call.go"
+            - "turbo/jsonrpc/send_transaction.go"
             - "rpc/errors.go"
+            - "turbo/jsonrpc/daemon.go"
+            - "turbo/jsonrpc/eth_accounts.go"
+            - "turbo/jsonrpc/debug_api.go"
         - title: "Transaction & Block response"
           description: |
             Format deposit and L1-cost data in transaction responses.
           globs:
-            - "cmd/rpcdaemon/commands/eth_api.go"
             - "turbo/adapter/ethapi/api.go"
             - "turbo/adapter/ethapi/internal.go"
-            - "cmd/rpcdaemon/commands/erigon_block.go"
-            - "cmd/rpcdaemon/commands/eth_block.go"
-            - "cmd/rpcdaemon/commands/eth_txs.go"
-            - "cmd/rpcdaemon/commands/eth_uncles.go"
+            - "turbo/jsonrpc/erigon_block.go"
+            - "turbo/jsonrpc/eth_txs.go"
+            - "turbo/jsonrpc/eth_uncles.go"
+            - "turbo/jsonrpc/eth_block.go"
+            - "turbo/jsonrpc/eth_api.go"
+        - title: "ETH Gasprice Suggestions"
+          description: |
+            Gasprice suggestion adjustments to accommodate faster L2 blocks and lower fees.
+          globs: 
+            - "eth/gasprice/feehistory.go"
+            - "eth/gasprice/gasprice.go"
+            - "eth/gasprice/gaspricecfg/gaspricecfg.go"
+            - "eth/gasprice/optimism-gasprice.go"
         - title: "Otterscan API"
           globs:
-            - "cmd/rpcdaemon/commands/otterscan_api.go"
-            - "cmd/rpcdaemon/commands/otterscan_block_details.go"
-            - "cmd/rpcdaemon/commands/otterscan_contract_creator.go"
-            - "cmd/rpcdaemon/commands/otterscan_generic_tracer.go"
-            - "cmd/rpcdaemon/commands/otterscan_search_trace.go"
+            - "turbo/jsonrpc/otterscan_api.go"
+            - "turbo/jsonrpc/otterscan_block_details.go"
+            - "turbo/jsonrpc/otterscan_contract_creator.go"
+            - "turbo/jsonrpc/otterscan_generic_tracer.go"
+            - "turbo/jsonrpc/otterscan_search_trace.go"
     - title: "Generated files"
       globs:
         - "core/types/receipt_codecgen_gen.go"
-# files can be ignored globally, these will be listed in a separate grayed-out section,
-# and do not count towards the total line count.
+        - "erigon-lib/gointerfaces/**/*"
+    - title: "Testing"
+      description: |
+        Additional or modified tests, not already captured by the above diff
+      ignore: 
+        - "**/*_test.go"
+
 ignore:
-  - "*.sum"
+  - "**/*.mod"
+  - "**/*.sum"
   - ".gitignore"
-  - ".github/**/*"
+  - "**/.github/**/*"
   - "Dockerfile"
-  - "cmd/downloader/recompress.sh"
   - "cmd/downloader/torrent_hashes_update.sh"
   - "README.md"
   - "Makefile"
+  - "forkdiff.yaml"
+  - ".golangci.yml"
+  - ".goreleaser.yml"
+  - "Dockerfile.debian"
+  - "core/vm/testdata/precompiles/p256Verify2.json"
+  - "cmd/rpcdaemon/rpcdaemontest/test_util.go"
+  - "core/allocs/optimism_devnet.json"
