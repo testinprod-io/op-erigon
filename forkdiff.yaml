@@ -14,7 +14,7 @@ def:
   description: | # description in markdown
     This is an overview of the changes in [op-erigon](https://github.com/testinprod-io/op-erigon), a fork of [erigon](https://github.com/erigontech/erigon), part of the OP Stack.
     
-    There are two more forks of erigon dependencies:
+    There are one more fork of erigon dependencies:
     
     - [op-erigon-interfaces](./erigon-interfaces.html)
   sub:
