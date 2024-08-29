@@ -180,9 +180,9 @@ func New(dirs datadir.Dirs, version string, verbosity lg.Level, downloadRate, up
 
 		if strings.HasPrefix(webseed, "v1:") {
 			withoutVerisonPrefix := webseed[3:]
-			if !strings.HasPrefix(withoutVerisonPrefix, "https:") {
-				continue
-			}
+			// if !strings.HasPrefix(withoutVerisonPrefix, "https:") {
+			// 	continue
+			// }
 			uri, err := url.ParseRequestURI(withoutVerisonPrefix)
 			if err != nil {
 				log.Warn("[webseed] can't parse url", "err", err, "url", withoutVerisonPrefix)
