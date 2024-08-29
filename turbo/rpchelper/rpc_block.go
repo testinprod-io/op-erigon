@@ -41,8 +41,12 @@ func GetFinalizedBlockNumber(tx kv.Tx) (uint64, error) {
 			return *forkchoiceFinalizedNum, nil
 		}
 	}
+	blockNum, err := stages.GetStageProgress(tx, stages.Execution)
+	if err != nil {
+		return 0, fmt.Errorf("getting finalized block number: %w", err)
+	}
 
-	return 0, UnknownBlockError
+	return blockNum, nil
 }
 
 func GetSafeBlockNumber(tx kv.Tx) (uint64, error) {
@@ -53,7 +57,11 @@ func GetSafeBlockNumber(tx kv.Tx) (uint64, error) {
 			return *forkchoiceSafeNum, nil
 		}
 	}
-	return 0, UnknownBlockError
+	blockNum, err := stages.GetStageProgress(tx, stages.Execution)
+	if err != nil {
+		return 0, fmt.Errorf("getting safe block number: %w", err)
+	}
+	return blockNum, nil
 }
 
 func GetLatestExecutedBlockNumber(tx kv.Tx) (uint64, error) {

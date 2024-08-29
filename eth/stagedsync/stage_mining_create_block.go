@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/ledgerwatch/erigon/eth/stagedsync/stages"
 	"math/big"
 	"time"
+
+	"github.com/ledgerwatch/erigon/eth/stagedsync/stages"
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/ledgerwatch/log/v3"
@@ -110,7 +111,14 @@ func SpawnMiningCreateBlockStage(s *StageState, tx kv.RwTx, cfg MiningCreateBloc
 	}
 	parent := rawdb.ReadHeaderByNumber(tx, executionAt)
 	if parent == nil { // todo: how to return error and don't stop Erigon?
-		return fmt.Errorf("empty block %d", executionAt)
+		if cfg.chainConfig.IsOptimism() {
+			parent, err = cfg.blockReader.HeaderByNumber(context.Background(), tx, executionAt)
+			if err != nil {
+				return err
+			}
+		} else {
+			return fmt.Errorf("empty block %d", executionAt)
+		}
 	}
 
 	if cfg.blockBuilderParameters != nil && cfg.blockBuilderParameters.ParentHash != parent.Hash() {

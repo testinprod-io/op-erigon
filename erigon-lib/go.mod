@@ -13,7 +13,7 @@ require (
 	github.com/ledgerwatch/log/v3 v3.9.0
 	github.com/ledgerwatch/secp256k1 v1.0.0
 	github.com/rs/dnscache v0.0.0-20211102005908-e0241e321417
-	github.com/testinprod-io/erigon-snapshot v1.1.1-0.20240814134307-abd9ce4d3243
+	github.com/testinprod-io/erigon-snapshot v1.1.1-0.20240825091413-56a604862fcb
 )
 
 require (

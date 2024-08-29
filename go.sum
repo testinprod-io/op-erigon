@@ -897,8 +897,8 @@ github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8
 github.com/supranational/blst v0.3.11 h1:LyU6FolezeWAhvQk0k6O/d49jqgO52MSDDfYgbeoEm4=
 github.com/supranational/blst v0.3.11/go.mod h1:jZJtfjgudtNl4en1tzwPIV3KjUnQUvG3/j+w+fVonLw=
 github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07/go.mod h1:kDXzergiv9cbyO7IOYJZWg1U88JhDg3PB6klq9Hg2pA=
-github.com/testinprod-io/erigon-snapshot v1.1.1-0.20240814134307-abd9ce4d3243 h1:lPF9GZSj+MSHmPFYgjC0mua9ENRkmssRCwIzjRsr9Vo=
-github.com/testinprod-io/erigon-snapshot v1.1.1-0.20240814134307-abd9ce4d3243/go.mod h1:2lZzp1f//gjYJiWwePaw6Urs1Wxhc8lMdiwJE9XLZP4=
+github.com/testinprod-io/erigon-snapshot v1.1.1-0.20240825091413-56a604862fcb h1:ve5yET6qpf4qe+OFdbB864KOrP+JCOejtsfLMj77ktE=
+github.com/testinprod-io/erigon-snapshot v1.1.1-0.20240825091413-56a604862fcb/go.mod h1:2lZzp1f//gjYJiWwePaw6Urs1Wxhc8lMdiwJE9XLZP4=
 github.com/thomaso-mirodin/intmath v0.0.0-20160323211736-5dc6d854e46e h1:cR8/SYRgyQCt5cNCMniB/ZScMkhI9nk8U5C7SbISXjo=
 github.com/thomaso-mirodin/intmath v0.0.0-20160323211736-5dc6d854e46e/go.mod h1:Tu4lItkATkonrYuvtVjG0/rhy15qrNGNTjPdaphtZ/8=
 github.com/tidwall/btree v1.6.0 h1:LDZfKfQIBHGHWSwckhXI0RPSXzlo+KYdjK7FWSqOzzg=

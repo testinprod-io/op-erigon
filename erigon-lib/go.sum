@@ -444,10 +444,10 @@ github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsT
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 github.com/testinprod-io/erigon-interfaces v0.0.0-20240508235853-43d64c4b6ccf h1:cOemofd+ZVzKjESOIzXfHjorwKtncZDbgLebFYJaXYs=
 github.com/testinprod-io/erigon-interfaces v0.0.0-20240508235853-43d64c4b6ccf/go.mod h1:ugQv1QllJzBny3cKZKxUrSnykkjkBgm27eQM6dnGAcc=
-github.com/testinprod-io/erigon-snapshot v1.1.1-0.20240812030926-59ccf96878a0 h1:NfjZf1tRLh7vpjpsbGDPPXeIGDSa5u5ao1P5P+HM7+s=
-github.com/testinprod-io/erigon-snapshot v1.1.1-0.20240812030926-59ccf96878a0/go.mod h1:2lZzp1f//gjYJiWwePaw6Urs1Wxhc8lMdiwJE9XLZP4=
 github.com/testinprod-io/erigon-snapshot v1.1.1-0.20240814134307-abd9ce4d3243 h1:lPF9GZSj+MSHmPFYgjC0mua9ENRkmssRCwIzjRsr9Vo=
 github.com/testinprod-io/erigon-snapshot v1.1.1-0.20240814134307-abd9ce4d3243/go.mod h1:2lZzp1f//gjYJiWwePaw6Urs1Wxhc8lMdiwJE9XLZP4=
+github.com/testinprod-io/erigon-snapshot v1.1.1-0.20240825091413-56a604862fcb h1:ve5yET6qpf4qe+OFdbB864KOrP+JCOejtsfLMj77ktE=
+github.com/testinprod-io/erigon-snapshot v1.1.1-0.20240825091413-56a604862fcb/go.mod h1:2lZzp1f//gjYJiWwePaw6Urs1Wxhc8lMdiwJE9XLZP4=
 github.com/tidwall/btree v1.6.0 h1:LDZfKfQIBHGHWSwckhXI0RPSXzlo+KYdjK7FWSqOzzg=
 github.com/tidwall/btree v1.6.0/go.mod h1:twD9XRA5jj9VUQGELzDO4HPQTNJsoWWfYEL+EUQ2cKY=
 github.com/tinylib/msgp v1.0.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=

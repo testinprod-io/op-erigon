@@ -271,7 +271,7 @@ require (
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/stoewer/go-strcase v1.2.0 // indirect
 	github.com/supranational/blst v0.3.11 // indirect
-	github.com/testinprod-io/erigon-snapshot v1.1.1-0.20240814134307-abd9ce4d3243 // indirect
+	github.com/testinprod-io/erigon-snapshot v1.1.1-0.20240825091413-56a604862fcb // indirect
 	github.com/xrash/smetrics v0.0.0-20240312152122-5f08fbb34913 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.opentelemetry.io/otel v1.8.0 // indirect
