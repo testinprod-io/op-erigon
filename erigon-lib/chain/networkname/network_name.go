@@ -21,7 +21,6 @@ const (
 	HoleskyChainName        = "holesky"
 	SepoliaChainName        = "sepolia"
 	DevChainName            = "dev"
-	MumbaiChainName         = "mumbai"
 	AmoyChainName           = "amoy"
 	BorMainnetChainName     = "bor-mainnet"
 	BorDevnetChainName      = "bor-devnet"
@@ -42,7 +41,6 @@ var All = []string{
 	MainnetChainName,
 	HoleskyChainName,
 	SepoliaChainName,
-	MumbaiChainName,
 	AmoyChainName,
 	BorMainnetChainName,
 	BorDevnetChainName,

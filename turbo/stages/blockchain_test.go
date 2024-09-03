@@ -56,7 +56,6 @@ import (
 	"github.com/erigontech/erigon/crypto"
 	"github.com/erigontech/erigon/ethdb/prune"
 	"github.com/erigontech/erigon/params"
-	"github.com/erigontech/erigon/turbo/services"
 	"github.com/erigontech/erigon/turbo/stages/mock"
 )
 
@@ -546,7 +545,11 @@ func TestChainTxReorgs(t *testing.T) {
 		if bn, _ := rawdb.ReadTxLookupEntry(tx, txn.Hash()); bn != nil {
 			t.Errorf("drop %d: tx %v found while shouldn't have been", i, txn)
 		}
+<<<<<<< HEAD
 		if rcpt, _, _, _, _ := readReceipt(m.ChainConfig, tx, txn.Hash(), m.BlockReader); rcpt != nil {
+=======
+		if rcpt, _, _, _, _ := readReceipt(tx, txn.Hash(), m); rcpt != nil {
+>>>>>>> v3.0.0-alpha2
 			t.Errorf("drop %d: receipt %v found while shouldn't have been", i, rcpt)
 		}
 	}
@@ -558,12 +561,17 @@ func TestChainTxReorgs(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, found)
 
+<<<<<<< HEAD
 		if m.HistoryV3 {
 			// m.HistoryV3 doesn't store
 		} else {
 			if rcpt, _, _, _, _ := readReceipt(m.ChainConfig, tx, txn.Hash(), m.BlockReader); rcpt == nil {
 				t.Errorf("add %d: expected receipt to be found", i)
 			}
+=======
+		if rcpt, _, _, _, _ := readReceipt(tx, txn.Hash(), m); rcpt == nil {
+			t.Errorf("add %d: expected receipt to be found", i)
+>>>>>>> v3.0.0-alpha2
 		}
 	}
 	// shared tx
@@ -572,17 +580,27 @@ func TestChainTxReorgs(t *testing.T) {
 		if bn, _ := rawdb.ReadTxLookupEntry(tx, txn.Hash()); bn == nil {
 			t.Errorf("drop %d: tx %v found while shouldn't have been", i, txn)
 		}
+<<<<<<< HEAD
 		if m.HistoryV3 {
 			// m.HistoryV3 doesn't store
 		} else {
 			if rcpt, _, _, _, _ := readReceipt(m.ChainConfig, tx, txn.Hash(), m.BlockReader); rcpt == nil {
 				t.Errorf("share %d: expected receipt to be found", i)
 			}
+=======
+
+		if rcpt, _, _, _, _ := readReceipt(tx, txn.Hash(), m); rcpt == nil {
+			t.Errorf("share %d: expected receipt to be found", i)
+>>>>>>> v3.0.0-alpha2
 		}
 	}
 }
 
+<<<<<<< HEAD
 func readReceipt(chainConfig *libchain.Config, db kv.Tx, txHash libcommon.Hash, br services.FullBlockReader) (*types.Receipt, libcommon.Hash, uint64, uint64, error) {
+=======
+func readReceipt(db kv.Tx, txHash libcommon.Hash, m *mock.MockSentry) (*types.Receipt, libcommon.Hash, uint64, uint64, error) {
+>>>>>>> v3.0.0-alpha2
 	// Retrieve the context of the receipt based on the transaction hash
 	blockNumber, err := rawdb.ReadTxLookupEntry(db, txHash)
 	if err != nil {
@@ -591,19 +609,27 @@ func readReceipt(chainConfig *libchain.Config, db kv.Tx, txHash libcommon.Hash, 
 	if blockNumber == nil {
 		return nil, libcommon.Hash{}, 0, 0, nil
 	}
-	blockHash, err := br.CanonicalHash(context.Background(), db, *blockNumber)
+	blockHash, err := m.BlockReader.CanonicalHash(context.Background(), db, *blockNumber)
 	if err != nil {
 		return nil, libcommon.Hash{}, 0, 0, err
 	}
 	if blockHash == (libcommon.Hash{}) {
 		return nil, libcommon.Hash{}, 0, 0, nil
 	}
-	b, senders, err := br.BlockWithSenders(context.Background(), db, blockHash, *blockNumber)
+	b, _, err := m.BlockReader.BlockWithSenders(context.Background(), db, blockHash, *blockNumber)
 	if err != nil {
 		return nil, libcommon.Hash{}, 0, 0, err
 	}
+
 	// Read all the receipts from the block and return the one with the matching hash
+<<<<<<< HEAD
 	receipts := rawdb.ReadReceipts(chainConfig, db, b, senders)
+=======
+	receipts, err := m.ReceiptsReader.GetReceipts(context.Background(), m.ChainConfig, db, b)
+	if err != nil {
+		return nil, libcommon.Hash{}, 0, 0, err
+	}
+>>>>>>> v3.0.0-alpha2
 	for receiptIndex, receipt := range receipts {
 		if receipt.TxHash == txHash {
 			return receipt, blockHash, *blockNumber, uint64(receiptIndex), nil

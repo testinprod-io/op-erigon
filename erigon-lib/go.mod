@@ -8,8 +8,8 @@ replace github.com/ledgerwatch/interfaces v0.0.0-20240320062914-b57f05746087 => 
 //replace github.com/ledgerwatch/interfaces v0.0.0-20240105174738-fe57049f198c => ../erigon-interfaces
 
 require (
-	github.com/erigontech/erigon-snapshot v1.3.1-0.20240720122906-e073fcdeca33
-	github.com/erigontech/interfaces v0.0.0-20240716134413-fc4152088ee6
+	github.com/erigontech/erigon-snapshot v1.3.1-0.20240801141542-7a7b08ebd406
+	github.com/erigontech/interfaces v0.0.0-20240723225543-c6b574058f8c
 	github.com/erigontech/mdbx-go v0.38.4
 	github.com/erigontech/secp256k1 v1.1.0
 	github.com/rs/dnscache v0.0.0-20211102005908-e0241e321417
@@ -155,7 +155,7 @@ require (
 )
 
 replace (
-	github.com/anacrolix/torrent => github.com/erigontech/torrent v1.54.2-alpha-32
+	github.com/anacrolix/torrent => github.com/erigontech/torrent v1.54.2-alpha-33
 	github.com/holiman/bloomfilter/v2 => github.com/AskAlexSharov/bloomfilter/v2 v2.0.8
 	github.com/tidwall/btree => github.com/AskAlexSharov/btree v1.6.2
 )

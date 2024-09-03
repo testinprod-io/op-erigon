@@ -102,6 +102,7 @@ func NewSimulatedBackendWithConfig(t *testing.T, alloc types.GenesisAlloc, confi
 	engine := ethash.NewFaker()
 	checkStateRoot := true
 	m := mock.MockWithGenesisEngine(t, &genesis, engine, false, checkStateRoot)
+
 	backend := &SimulatedBackend{
 		m:            m,
 		prependBlock: m.Genesis,
@@ -268,6 +269,7 @@ func (b *SimulatedBackend) TransactionReceipt(ctx context.Context, txHash libcom
 		return nil, err
 	}
 	defer tx.Rollback()
+
 	// Retrieve the context of the receipt based on the transaction hash
 	blockNumber, err := rawdb.ReadTxLookupEntry(tx, txHash)
 	if err != nil {
@@ -280,8 +282,16 @@ func (b *SimulatedBackend) TransactionReceipt(ctx context.Context, txHash libcom
 	if err != nil {
 		return nil, err
 	}
+
 	// Read all the receipts from the block and return the one with the matching hash
+<<<<<<< HEAD
 	receipts := rawdb.ReadReceipts(b.chainCfg, tx, block, nil)
+=======
+	receipts, err := b.m.ReceiptsReader.GetReceipts(ctx, b.m.ChainConfig, tx, block)
+	if err != nil {
+		panic(err)
+	}
+>>>>>>> v3.0.0-alpha2
 	for _, receipt := range receipts {
 		if receipt.TxHash == txHash {
 			return receipt, nil

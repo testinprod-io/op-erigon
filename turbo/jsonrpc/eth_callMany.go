@@ -19,6 +19,7 @@ package jsonrpc
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math/big"
 	"time"
@@ -110,7 +111,7 @@ func (api *APIImpl) CallMany(ctx context.Context, bundles []Bundle, simulateCont
 		return nil, err
 	}
 	if len(bundles) == 0 {
-		return nil, fmt.Errorf("empty bundles")
+		return nil, errors.New("empty bundles")
 	}
 	empty := true
 	for _, bundle := range bundles {
@@ -120,7 +121,7 @@ func (api *APIImpl) CallMany(ctx context.Context, bundles []Bundle, simulateCont
 	}
 
 	if empty {
-		return nil, fmt.Errorf("empty bundles")
+		return nil, errors.New("empty bundles")
 	}
 
 	defer func(start time.Time) { log.Trace("Executing EVM callMany finished", "runtime", time.Since(start)) }(time.Now())

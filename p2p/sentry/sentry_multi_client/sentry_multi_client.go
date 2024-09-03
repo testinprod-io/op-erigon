@@ -28,8 +28,17 @@ import (
 	"time"
 
 	"github.com/c2h5oh/datasize"
+<<<<<<< HEAD
+=======
+	"golang.org/x/sync/semaphore"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/backoff"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/keepalive"
+	"google.golang.org/protobuf/types/known/emptypb"
+
+>>>>>>> v3.0.0-alpha2
 	"github.com/erigontech/erigon-lib/chain"
-	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/dbg"
 	"github.com/erigontech/erigon-lib/direct"
 	"github.com/erigontech/erigon-lib/gointerfaces/grpcutil"
@@ -348,14 +357,6 @@ func NewMultiClient(
 		bd = &bodydownload.BodyDownload{}
 	}
 
-	receiptsCacheLimit := 32
-	receiptsCache, err := lru.New[common.Hash, []*types.Receipt](receiptsCacheLimit)
-	if err != nil {
-		return nil, err
-	}
-
-	receiptsGenerator := receipts.NewGenerator(receiptsCache, blockReader, engine)
-
 	cs := &MultiClient{
 		Hd:                                hd,
 		Bd:                                bd,
@@ -371,7 +372,7 @@ func NewMultiClient(
 		disableBlockDownload:              disableBlockDownload,
 		logger:                            logger,
 		getReceiptsActiveGoroutineNumber:  semaphore.NewWeighted(1),
-		ethApiWrapper:                     receiptsGenerator,
+		ethApiWrapper:                     receipts.NewGenerator(32, blockReader, engine),
 	}
 
 	return cs, nil

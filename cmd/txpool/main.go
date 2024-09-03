@@ -77,8 +77,12 @@ var (
 	optimism   bool
 	noTxGossip bool
 
+<<<<<<< HEAD
 	// For legacy --txpool.disabletxpoolgossip flag
 	noTxGossipLegacy bool
+=======
+	mdbxWriteMap bool
+>>>>>>> v3.0.0-alpha2
 
 	commitEvery time.Duration
 )
@@ -109,6 +113,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&optimism, "txpool.optimism", txpoolcfg.DefaultConfig.Optimism, "Enable Optimism Bedrock to make txpool account for L1 cost of transactions")
 	rootCmd.PersistentFlags().BoolVar(&noTxGossipLegacy, "txpool.disabletxpoolgossip", utils.TxPoolGossipDisableFlag.Value, "[Deprecated] Disable transaction pool gossip")
 	rootCmd.PersistentFlags().BoolVar(&noTxGossip, utils.TxPoolGossipDisableFlag.Name, utils.TxPoolGossipDisableFlag.Value, utils.TxPoolGossipDisableFlag.Usage)
+	rootCmd.PersistentFlags().BoolVar(&mdbxWriteMap, utils.DbWriteMapFlag.Name, utils.DbWriteMapFlag.Value, utils.DbWriteMapFlag.Usage)
 	rootCmd.Flags().StringSliceVar(&traceSenders, utils.TxPoolTraceSendersFlag.Name, []string{}, utils.TxPoolTraceSendersFlag.Usage)
 }
 
@@ -177,6 +182,7 @@ func doTxpool(ctx context.Context, logger log.Logger) error {
 	cfg.PriceBump = priceBump
 	cfg.BlobPriceBump = blobPriceBump
 	cfg.NoGossip = noTxGossip
+	cfg.MdbxWriteMap = mdbxWriteMap
 
 	if noTxGossipLegacy && !noTxGossip {
 		logger.Warn("--txpool.disabletxpoolgossip flag is deprecated. use --txpool.gossip.disable")

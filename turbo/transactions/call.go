@@ -18,6 +18,7 @@ package transactions
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -90,7 +91,7 @@ func DoCall(
 		var overflow bool
 		baseFee, overflow = uint256.FromBig(header.BaseFee)
 		if overflow {
-			return nil, fmt.Errorf("header.BaseFee uint256 overflow")
+			return nil, errors.New("header.BaseFee uint256 overflow")
 		}
 	}
 	msg, err := args.ToMessage(gasCap, baseFee)
@@ -223,7 +224,7 @@ func NewReusableCaller(
 		var overflow bool
 		baseFee, overflow = uint256.FromBig(header.BaseFee)
 		if overflow {
-			return nil, fmt.Errorf("header.BaseFee uint256 overflow")
+			return nil, errors.New("header.BaseFee uint256 overflow")
 		}
 	}
 

@@ -37,13 +37,13 @@ var (
 func (d *DiagnosticClient) setupSnapshotDiagnostics(rootCtx context.Context) {
 	d.runSnapshotListener(rootCtx)
 	d.runSegmentDownloadingListener(rootCtx)
-	d.runSegmentIndexingListener(rootCtx)
-	d.runSegmentIndexingFinishedListener(rootCtx)
 	d.runSnapshotFilesListListener(rootCtx)
+	d.runSegmentIndexingListener(rootCtx)
 	d.runFileDownloadedListener(rootCtx)
 	d.runFillDBListener(rootCtx)
 }
 
+<<<<<<< HEAD
 func (d *DiagnosticClient) runSnapshotListener(rootCtx context.Context) {
 	go func() {
 		ctx, ch, closeChannel := Context[SnapshotDownloadStatistics](rootCtx, 1)
@@ -388,6 +388,8 @@ func (d *DiagnosticClient) UpdateFileDownloadedStatistics(downloadedInfo *FileDo
 	}
 }
 
+=======
+>>>>>>> v3.0.0-alpha2
 func (d *DiagnosticClient) runFillDBListener(rootCtx context.Context) {
 	go func() {
 		ctx, ch, closeChannel := Context[SnapshotFillDBStageUpdate](rootCtx, 1)
@@ -408,7 +410,7 @@ func (d *DiagnosticClient) runFillDBListener(rootCtx context.Context) {
 					TimeLeft:    "unknown",
 					Progress:    fmt.Sprintf("%d%%", (info.Stage.Current*100)/info.Stage.Total),
 				}, "Fill DB from snapshots")
-				d.saveSnapshotStageStatsToDB()
+				d.SaveSnapshotStageStatsToDB()
 			}
 		}
 	}()
@@ -418,6 +420,10 @@ func (d *DiagnosticClient) SetFillDBInfo(info SnapshotFillDBStage) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
+	d.setFillDBInfo(info)
+}
+
+func (d *DiagnosticClient) setFillDBInfo(info SnapshotFillDBStage) {
 	if d.syncStats.SnapshotFillDB.Stages == nil {
 		d.syncStats.SnapshotFillDB.Stages = []SnapshotFillDBStage{info}
 	} else {
@@ -431,9 +437,43 @@ func (d *DiagnosticClient) SetFillDBInfo(info SnapshotFillDBStage) {
 	}
 }
 
+func (d *DiagnosticClient) SaveSnapshotStageStatsToDB() {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.saveSnapshotStageStatsToDB()
+}
+
+func (d *DiagnosticClient) saveSnapshotStageStatsToDB() {
+	err := d.db.Update(d.ctx, func(tx kv.RwTx) error {
+		err := SnapshotFillDBUpdater(d.syncStats.SnapshotFillDB)(tx)
+		if err != nil {
+			return err
+		}
+
+		err = StagesListUpdater(d.syncStages)(tx)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		log.Debug("[Diagnostics] Failed to update snapshot download info", "err", err)
+	}
+}
+
 // Deprecated - it's not thread-safe and used only in tests. Need introduce another method or add special methods for Tests.
 func (d *DiagnosticClient) SyncStatistics() SyncStatistics {
-	return d.syncStats
+	var newStats SyncStatistics
+	statsBytes, err := json.Marshal(d.syncStats)
+	if err != nil {
+		return SyncStatistics{}
+	}
+	err = json.Unmarshal(statsBytes, &newStats)
+	if err != nil {
+		return SyncStatistics{}
+	}
+	return newStats
 }
 
 func (d *DiagnosticClient) SyncStatsJson(w io.Writer) {

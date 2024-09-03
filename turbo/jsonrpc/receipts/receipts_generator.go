@@ -11,7 +11,6 @@ import (
 	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/erigontech/erigon/consensus"
 	"github.com/erigontech/erigon/core"
-	"github.com/erigontech/erigon/core/rawdb"
 	"github.com/erigontech/erigon/core/state"
 	"github.com/erigontech/erigon/core/types"
 	"github.com/erigontech/erigon/core/vm"
@@ -25,8 +24,13 @@ type Generator struct {
 	engine        consensus.EngineReader
 }
 
-func NewGenerator(receiptsCache *lru.Cache[common.Hash, []*types.Receipt], blockReader services.FullBlockReader,
+func NewGenerator(cacheSize int, blockReader services.FullBlockReader,
 	engine consensus.EngineReader) *Generator {
+	receiptsCache, err := lru.New[common.Hash, []*types.Receipt](cacheSize)
+	if err != nil {
+		panic(err)
+	}
+
 	return &Generator{
 		receiptsCache: receiptsCache,
 		blockReader:   blockReader,
@@ -34,16 +38,19 @@ func NewGenerator(receiptsCache *lru.Cache[common.Hash, []*types.Receipt], block
 	}
 }
 
-func (g *Generator) GetReceipts(ctx context.Context, cfg *chain.Config, tx kv.Tx, block *types.Block, senders []common.Address) (types.Receipts, error) {
+func (g *Generator) GetReceipts(ctx context.Context, cfg *chain.Config, tx kv.Tx, block *types.Block) (types.Receipts, error) {
 	if receipts, ok := g.receiptsCache.Get(block.Hash()); ok {
 		return receipts, nil
 	}
 
+<<<<<<< HEAD
 	if receipts := rawdb.ReadReceipts(cfg, tx, block, senders); receipts != nil {
 		g.receiptsCache.Add(block.Hash(), receipts)
 		return receipts, nil
 	}
 
+=======
+>>>>>>> v3.0.0-alpha2
 	engine := g.engine
 
 	_, _, _, ibs, _, err := transactions.ComputeTxEnv(ctx, engine, block, cfg, g.blockReader, tx, 0)

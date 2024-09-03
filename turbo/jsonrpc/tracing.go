@@ -18,7 +18,10 @@ package jsonrpc
 
 import (
 	"context"
+<<<<<<< HEAD
 	"encoding/json"
+=======
+>>>>>>> v3.0.0-alpha2
 	"errors"
 	"fmt"
 	"github.com/erigontech/erigon-lib/opstack"
@@ -412,7 +415,7 @@ func (api *PrivateDebugAPIImpl) TraceCall(ctx context.Context, args ethapi.CallA
 		var overflow bool
 		baseFee, overflow = uint256.FromBig(header.BaseFee)
 		if overflow {
-			return fmt.Errorf("header.BaseFee uint256 overflow")
+			return errors.New("header.BaseFee uint256 overflow")
 		}
 	}
 	msg, err := args.ToMessage(api.GasCap, baseFee)
@@ -455,7 +458,7 @@ func (api *PrivateDebugAPIImpl) TraceCallMany(ctx context.Context, bundles []Bun
 	}
 	if len(bundles) == 0 {
 		stream.WriteNil()
-		return fmt.Errorf("empty bundles")
+		return errors.New("empty bundles")
 	}
 	empty := true
 	for _, bundle := range bundles {
@@ -466,7 +469,7 @@ func (api *PrivateDebugAPIImpl) TraceCallMany(ctx context.Context, bundles []Bun
 
 	if empty {
 		stream.WriteNil()
-		return fmt.Errorf("empty bundles")
+		return errors.New("empty bundles")
 	}
 
 	defer func(start time.Time) { log.Trace("Tracing CallMany finished", "runtime", time.Since(start)) }(time.Now())
