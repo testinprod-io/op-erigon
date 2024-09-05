@@ -18,10 +18,7 @@ package jsonrpc
 
 import (
 	"context"
-<<<<<<< HEAD
 	"encoding/json"
-=======
->>>>>>> v3.0.0-alpha2
 	"errors"
 	"fmt"
 	"github.com/erigontech/erigon-lib/opstack"

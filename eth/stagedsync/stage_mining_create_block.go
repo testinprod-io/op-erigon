@@ -142,7 +142,7 @@ func SpawnMiningCreateBlockStage(s *StageState, tx kv.RwTx, cfg MiningCreateBloc
 				return err
 			}
 			expectedExecutionAt := exectedParent.Number.Uint64()
-			hashStateProgress, err := stages.GetStageProgress(tx, stages.HashState)
+			hashStateProgress, err := stages.GetStageProgress(tx, stages.Execution)
 			if err != nil {
 				return err
 			}

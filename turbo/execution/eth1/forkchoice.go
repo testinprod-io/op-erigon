@@ -254,22 +254,13 @@ func (e *EthereumExecutionModule) updateForkChoice(ctx context.Context, original
 				}, false)
 				return
 			}
-<<<<<<< HEAD
-
 			if !unwindingToCanonical {
 				sendForkchoiceReceiptWithoutWaiting(outcomeCh, &execution.ForkChoiceReceipt{
 					LatestValidHash: gointerfaces.ConvertHashToH256(blockHash),
 					Status:          execution.ExecutionStatus_Success,
-				})
+				}, false)
 				return
 			}
-=======
-			sendForkchoiceReceiptWithoutWaiting(outcomeCh, &execution.ForkChoiceReceipt{
-				LatestValidHash: gointerfaces.ConvertHashToH256(blockHash),
-				Status:          execution.ExecutionStatus_Success,
-			}, false)
-			return
->>>>>>> v3.0.0-alpha2
 		}
 
 		// If we don't have it, too bad
@@ -325,18 +316,13 @@ func (e *EthereumExecutionModule) updateForkChoice(ctx context.Context, original
 			}
 		}
 
-<<<<<<< HEAD
 		unwindToNumber := currentParentNumber
 		if unwindingToCanonical {
 			unwindToNumber = fcuHeader.Number.Uint64()
 		}
 
 		if err := e.executionPipeline.UnwindTo(unwindToNumber, stagedsync.ForkChoice, tx); err != nil {
-			sendForkchoiceErrorWithoutWaiting(outcomeCh, err)
-=======
-		if err := e.executionPipeline.UnwindTo(currentParentNumber, stagedsync.ForkChoice, tx); err != nil {
 			sendForkchoiceErrorWithoutWaiting(e.logger, outcomeCh, err, false)
->>>>>>> v3.0.0-alpha2
 			return
 		}
 		if e.hook != nil {
@@ -353,13 +339,8 @@ func (e *EthereumExecutionModule) updateForkChoice(ctx context.Context, original
 			return
 		}
 
-<<<<<<< HEAD
 		if err := rawdbv3.TxNums.Truncate(tx, unwindToNumber+1); err != nil {
-			sendForkchoiceErrorWithoutWaiting(outcomeCh, err)
-=======
-		if err := rawdbv3.TxNums.Truncate(tx, currentParentNumber+1); err != nil {
 			sendForkchoiceErrorWithoutWaiting(e.logger, outcomeCh, err, false)
->>>>>>> v3.0.0-alpha2
 			return
 		}
 		// Mark all new canonicals as canonicals

@@ -1545,13 +1545,8 @@ func file_types_types_proto_rawDescGZIP() []byte {
 	return file_types_types_proto_rawDescData
 }
 
-<<<<<<< HEAD
-var file_types_types_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
-var file_types_types_proto_goTypes = []interface{}{
-=======
 var file_types_types_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
-var file_types_types_proto_goTypes = []any{
->>>>>>> v3.0.0-alpha2
+var file_types_types_proto_goTypes = []interface{}{
 	(*H128)(nil),                     // 0: types.H128
 	(*H160)(nil),                     // 1: types.H160
 	(*H256)(nil),                     // 2: types.H256
@@ -1735,13 +1730,8 @@ func file_types_types_proto_init() {
 				return nil
 			}
 		}
-<<<<<<< HEAD
 		file_types_types_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Withdrawal); i {
-=======
-		file_types_types_proto_msgTypes[10].Exporter = func(v any, i int) any {
 			switch v := v.(*ConsolidationRequest); i {
->>>>>>> v3.0.0-alpha2
 			case 0:
 				return &v.state
 			case 1:
@@ -1752,13 +1742,8 @@ func file_types_types_proto_init() {
 				return nil
 			}
 		}
-<<<<<<< HEAD
 		file_types_types_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BlobsBundleV1); i {
-=======
-		file_types_types_proto_msgTypes[11].Exporter = func(v any, i int) any {
 			switch v := v.(*Withdrawal); i {
->>>>>>> v3.0.0-alpha2
 			case 0:
 				return &v.state
 			case 1:
@@ -1769,13 +1754,8 @@ func file_types_types_proto_init() {
 				return nil
 			}
 		}
-<<<<<<< HEAD
 		file_types_types_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NodeInfoPorts); i {
-=======
-		file_types_types_proto_msgTypes[12].Exporter = func(v any, i int) any {
 			switch v := v.(*BlobsBundleV1); i {
->>>>>>> v3.0.0-alpha2
 			case 0:
 				return &v.state
 			case 1:
@@ -1786,13 +1766,8 @@ func file_types_types_proto_init() {
 				return nil
 			}
 		}
-<<<<<<< HEAD
 		file_types_types_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NodeInfoReply); i {
-=======
-		file_types_types_proto_msgTypes[13].Exporter = func(v any, i int) any {
 			switch v := v.(*NodeInfoPorts); i {
->>>>>>> v3.0.0-alpha2
 			case 0:
 				return &v.state
 			case 1:
@@ -1803,13 +1778,8 @@ func file_types_types_proto_init() {
 				return nil
 			}
 		}
-<<<<<<< HEAD
 		file_types_types_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PeerInfo); i {
-=======
-		file_types_types_proto_msgTypes[14].Exporter = func(v any, i int) any {
 			switch v := v.(*NodeInfoReply); i {
->>>>>>> v3.0.0-alpha2
 			case 0:
 				return &v.state
 			case 1:
@@ -1820,10 +1790,7 @@ func file_types_types_proto_init() {
 				return nil
 			}
 		}
-<<<<<<< HEAD
 		file_types_types_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
-=======
-		file_types_types_proto_msgTypes[15].Exporter = func(v any, i int) any {
 			switch v := v.(*PeerInfo); i {
 			case 0:
 				return &v.state
@@ -1835,8 +1802,7 @@ func file_types_types_proto_init() {
 				return nil
 			}
 		}
-		file_types_types_proto_msgTypes[16].Exporter = func(v any, i int) any {
->>>>>>> v3.0.0-alpha2
+		file_types_types_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ExecutionPayloadBodyV1); i {
 			case 0:
 				return &v.state

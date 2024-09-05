@@ -21,6 +21,9 @@ package gasprice_test
 
 import (
 	"context"
+	"github.com/erigontech/erigon-lib/chain"
+	"github.com/erigontech/erigon/core/rawdb"
+	"github.com/erigontech/erigon/rpc"
 	"math"
 	"math/big"
 	"testing"
@@ -43,8 +46,36 @@ import (
 )
 
 func newTestBackend(t *testing.T) *mock.MockSentry {
+	var (
+		key, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
+		addr   = crypto.PubkeyToAddress(key.PublicKey)
+		gspec  = &types.Genesis{
+			Config: params.TestChainConfig,
+			Alloc:  types.GenesisAlloc{addr: {Balance: big.NewInt(math.MaxInt64)}},
+		}
+		signer = types.LatestSigner(gspec.Config)
+	)
+	m := mock.MockWithGenesis(t, gspec, key, false)
 
-<<<<<<< HEAD
+	// Generate testing blocks
+	chain, err := core.GenerateChain(m.ChainConfig, m.Genesis, m.Engine, m.DB, 32, func(i int, b *core.BlockGen) {
+		b.SetCoinbase(libcommon.Address{1})
+		tx, txErr := types.SignTx(types.NewTransaction(b.TxNonce(addr), libcommon.HexToAddress("deadbeef"), uint256.NewInt(100), 21000, uint256.NewInt(uint64(int64(i+1)*params.GWei)), nil), *signer, key)
+		if txErr != nil {
+			t.Fatalf("failed to create tx: %v", txErr)
+		}
+		b.AddTx(tx)
+	})
+	if err != nil {
+		t.Error(err)
+	}
+	// Construct testing chain
+	if err = m.InsertChain(chain); err != nil {
+		t.Error(err)
+	}
+	return m
+}
+
 func (b *testBackend) GetReceipts(ctx context.Context, block *types.Block) (types.Receipts, error) {
 	tx, err := b.db.BeginRo(context.Background())
 	if err != nil {
@@ -90,39 +121,6 @@ func (b *testBackend) BlockByNumber(ctx context.Context, number rpc.BlockNumber)
 
 func (b *testBackend) ChainConfig() *chain.Config {
 	return b.cfg
-}
-
-func newTestBackend(t *testing.T) *testBackend {
-=======
->>>>>>> v3.0.0-alpha2
-	var (
-		key, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
-		addr   = crypto.PubkeyToAddress(key.PublicKey)
-		gspec  = &types.Genesis{
-			Config: params.TestChainConfig,
-			Alloc:  types.GenesisAlloc{addr: {Balance: big.NewInt(math.MaxInt64)}},
-		}
-		signer = types.LatestSigner(gspec.Config)
-	)
-	m := mock.MockWithGenesis(t, gspec, key, false)
-
-	// Generate testing blocks
-	chain, err := core.GenerateChain(m.ChainConfig, m.Genesis, m.Engine, m.DB, 32, func(i int, b *core.BlockGen) {
-		b.SetCoinbase(libcommon.Address{1})
-		tx, txErr := types.SignTx(types.NewTransaction(b.TxNonce(addr), libcommon.HexToAddress("deadbeef"), uint256.NewInt(100), 21000, uint256.NewInt(uint64(int64(i+1)*params.GWei)), nil), *signer, key)
-		if txErr != nil {
-			t.Fatalf("failed to create tx: %v", txErr)
-		}
-		b.AddTx(tx)
-	})
-	if err != nil {
-		t.Error(err)
-	}
-	// Construct testing chain
-	if err = m.InsertChain(chain); err != nil {
-		t.Error(err)
-	}
-	return m
 }
 
 func TestSuggestPrice(t *testing.T) {

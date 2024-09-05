@@ -284,14 +284,10 @@ func (b *SimulatedBackend) TransactionReceipt(ctx context.Context, txHash libcom
 	}
 
 	// Read all the receipts from the block and return the one with the matching hash
-<<<<<<< HEAD
-	receipts := rawdb.ReadReceipts(b.chainCfg, tx, block, nil)
-=======
 	receipts, err := b.m.ReceiptsReader.GetReceipts(ctx, b.m.ChainConfig, tx, block)
 	if err != nil {
 		panic(err)
 	}
->>>>>>> v3.0.0-alpha2
 	for _, receipt := range receipts {
 		if receipt.TxHash == txHash {
 			return receipt, nil

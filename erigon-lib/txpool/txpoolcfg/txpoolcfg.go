@@ -85,14 +85,10 @@ var DefaultConfig = Config{
 	PriceBump:          10,  // Price bump percentage to replace an already existing transaction
 	BlobPriceBump:      100,
 
-<<<<<<< HEAD
 	Optimism: false,
 
-	NoGossip: false,
-=======
 	NoGossip:     false,
 	MdbxWriteMap: false,
->>>>>>> v3.0.0-alpha2
 }
 
 type DiscardReason uint8

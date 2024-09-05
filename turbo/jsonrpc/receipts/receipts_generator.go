@@ -43,14 +43,6 @@ func (g *Generator) GetReceipts(ctx context.Context, cfg *chain.Config, tx kv.Tx
 		return receipts, nil
 	}
 
-<<<<<<< HEAD
-	if receipts := rawdb.ReadReceipts(cfg, tx, block, senders); receipts != nil {
-		g.receiptsCache.Add(block.Hash(), receipts)
-		return receipts, nil
-	}
-
-=======
->>>>>>> v3.0.0-alpha2
 	engine := g.engine
 
 	_, _, _, ibs, _, err := transactions.ComputeTxEnv(ctx, engine, block, cfg, g.blockReader, tx, 0)

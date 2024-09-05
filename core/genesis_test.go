@@ -55,11 +55,7 @@ func TestGenesisBlockHashes(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer tx.Rollback()
-<<<<<<< HEAD
-		_, block, err := core.WriteGenesisBlock(tx, genesis, nil, nil, nil, nil, nil, nil, nil, "", logger)
-=======
-		_, block, err := core.WriteGenesisBlock(tx, genesis, nil, datadir.New(t.TempDir()), logger)
->>>>>>> v3.0.0-alpha2
+		_, block, err := core.WriteGenesisBlock(tx, genesis, nil, nil, nil, nil, nil, nil, nil, datadir.New(t.TempDir()), logger)
 		require.NoError(t, err)
 		expect := params.GenesisHashByChainName(network)
 		require.NotNil(t, expect, network)
@@ -117,21 +113,13 @@ func TestCommitGenesisIdempotency(t *testing.T) {
 	defer tx.Rollback()
 
 	genesis := core.GenesisBlockByChainName(networkname.MainnetChainName)
-<<<<<<< HEAD
-	_, _, err = core.WriteGenesisBlock(tx, genesis, nil, nil, nil, nil, nil, nil, nil, "", logger)
-=======
-	_, _, err = core.WriteGenesisBlock(tx, genesis, nil, datadir.New(t.TempDir()), logger)
->>>>>>> v3.0.0-alpha2
+	_, _, err = core.WriteGenesisBlock(tx, genesis, nil, nil, nil, nil, nil, nil, nil, datadir.New(t.TempDir()), logger)
 	require.NoError(t, err)
 	seq, err := tx.ReadSequence(kv.EthTx)
 	require.NoError(t, err)
 	require.Equal(t, uint64(2), seq)
 
-<<<<<<< HEAD
-	_, _, err = core.WriteGenesisBlock(tx, genesis, nil, nil, nil, nil, nil, nil, nil, "", logger)
-=======
-	_, _, err = core.WriteGenesisBlock(tx, genesis, nil, datadir.New(t.TempDir()), logger)
->>>>>>> v3.0.0-alpha2
+	_, _, err = core.WriteGenesisBlock(tx, genesis, nil, nil, nil, nil, nil, nil, nil, datadir.New(t.TempDir()), logger)
 	require.NoError(t, err)
 	seq, err = tx.ReadSequence(kv.EthTx)
 	require.NoError(t, err)

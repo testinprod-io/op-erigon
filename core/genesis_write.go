@@ -27,11 +27,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-<<<<<<< HEAD
-	"os"
 	"reflect"
-=======
->>>>>>> v3.0.0-alpha2
 	"slices"
 
 	"github.com/c2h5oh/datasize"
@@ -80,29 +76,17 @@ var allocs embed.FS
 // error is a *params.ConfigCompatError and the new, unwritten config is returned.
 //
 // The returned chain configuration is never nil.
-<<<<<<< HEAD
-func CommitGenesisBlock(db kv.RwDB, genesis *types.Genesis, tmpDir string, logger log.Logger) (*chain.Config, *types.Block, error) {
-	return CommitGenesisBlockWithOverride(db, genesis, nil, nil, nil, nil, nil, nil, nil, tmpDir, logger)
-}
-
-func CommitGenesisBlockWithOverride(db kv.RwDB, genesis *types.Genesis, overrideCancunTime, overrideShanghaiTime, overrideOptimismCanyonTime, overrideOptimismEcotoneTime, overrideOptimismFjordTime, overrideOptimismGraniteTime, overridePragueTime *big.Int, tmpDir string, logger log.Logger) (*chain.Config, *types.Block, error) {
-=======
 func CommitGenesisBlock(db kv.RwDB, genesis *types.Genesis, dirs datadir.Dirs, logger log.Logger) (*chain.Config, *types.Block, error) {
-	return CommitGenesisBlockWithOverride(db, genesis, nil, dirs, logger)
+	return CommitGenesisBlockWithOverride(db, genesis, nil, nil, nil, nil, nil, nil, nil, dirs, logger)
 }
 
-func CommitGenesisBlockWithOverride(db kv.RwDB, genesis *types.Genesis, overridePragueTime *big.Int, dirs datadir.Dirs, logger log.Logger) (*chain.Config, *types.Block, error) {
->>>>>>> v3.0.0-alpha2
+func CommitGenesisBlockWithOverride(db kv.RwDB, genesis *types.Genesis, overrideCancunTime, overrideShanghaiTime, overrideOptimismCanyonTime, overrideOptimismEcotoneTime, overrideOptimismFjordTime, overrideOptimismGraniteTime, overridePragueTime *big.Int, dirs datadir.Dirs, logger log.Logger) (*chain.Config, *types.Block, error) {
 	tx, err := db.BeginRw(context.Background())
 	if err != nil {
 		return nil, nil, err
 	}
 	defer tx.Rollback()
-<<<<<<< HEAD
-	c, b, err := WriteGenesisBlock(tx, genesis, overrideCancunTime, overrideShanghaiTime, overrideOptimismCanyonTime, overrideOptimismEcotoneTime, overrideOptimismFjordTime, overrideOptimismGraniteTime, overridePragueTime, tmpDir, logger)
-=======
-	c, b, err := WriteGenesisBlock(tx, genesis, overridePragueTime, dirs, logger)
->>>>>>> v3.0.0-alpha2
+	c, b, err := WriteGenesisBlock(tx, genesis, overrideCancunTime, overrideShanghaiTime, overrideOptimismCanyonTime, overrideOptimismEcotoneTime, overrideOptimismFjordTime, overrideOptimismGraniteTime, overridePragueTime, dirs, logger)
 	if err != nil {
 		return c, b, err
 	}
@@ -113,11 +97,7 @@ func CommitGenesisBlockWithOverride(db kv.RwDB, genesis *types.Genesis, override
 	return c, b, nil
 }
 
-<<<<<<< HEAD
-func WriteGenesisBlock(tx kv.RwTx, genesis *types.Genesis, overrideCancunTime, overrideShanghaiTime, overrideOptimismCanyonTime, overrideOptimismEcotoneTime, overrideOptimismFjordTime, overrideOptimismGraniteTime, overridePragueTime *big.Int, tmpDir string, logger log.Logger) (*chain.Config, *types.Block, error) {
-=======
-func WriteGenesisBlock(tx kv.RwTx, genesis *types.Genesis, overridePragueTime *big.Int, dirs datadir.Dirs, logger log.Logger) (*chain.Config, *types.Block, error) {
->>>>>>> v3.0.0-alpha2
+func WriteGenesisBlock(tx kv.RwTx, genesis *types.Genesis, overrideCancunTime, overrideShanghaiTime, overrideOptimismCanyonTime, overrideOptimismEcotoneTime, overrideOptimismFjordTime, overrideOptimismGraniteTime, overridePragueTime *big.Int, dirs datadir.Dirs, logger log.Logger) (*chain.Config, *types.Block, error) {
 	if err := rawdb.WriteGenesis(tx, genesis); err != nil {
 		return nil, nil, err
 	}
@@ -841,7 +821,7 @@ func loadOPStackGenesisByChainName(name string) (*types.Genesis, error) {
 		genesis.StateHash = (*libcommon.Hash)(gen.StateHash)
 	}
 
-	genesisBlock, _, err := GenesisToBlock(genesis, "", log.Root())
+	genesisBlock, _, err := GenesisToBlock(genesis, datadir.New(""), log.Root())
 	if err != nil {
 		return nil, fmt.Errorf("failed to build genesis block: %w", err)
 	}

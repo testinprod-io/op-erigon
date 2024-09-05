@@ -66,6 +66,7 @@ func (c Config) MarshalTOML() (interface{}, error) {
 		OverrideOptimismCanyonTime              *big.Int `toml:",omitempty"`
 		OverrideOptimismEcotoneTime             *big.Int `toml:",omitempty"`
 		OverrideOptimismFjordTime               *big.Int `toml:",omitempty"`
+		OverrideOptimismGraniteTime             *big.Int `toml:",omitempty"`
 		OverridePragueTime                      *big.Int `toml:",omitempty"`
 		RollupSequencerHTTP                     string
 		RollupHistoricalRPC                     string
@@ -129,6 +130,7 @@ func (c Config) MarshalTOML() (interface{}, error) {
 	enc.OverrideOptimismCanyonTime = c.OverrideOptimismCanyonTime
 	enc.OverrideOptimismEcotoneTime = c.OverrideOptimismEcotoneTime
 	enc.OverrideOptimismFjordTime = c.OverrideOptimismFjordTime
+	enc.OverrideOptimismGraniteTime = c.OverrideOptimismGraniteTime
 	enc.OverridePragueTime = c.OverridePragueTime
 	enc.RollupSequencerHTTP = c.RollupSequencerHTTP
 	enc.RollupHistoricalRPC = c.RollupHistoricalRPC
@@ -196,6 +198,7 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 		OverrideOptimismCanyonTime              *big.Int `toml:",omitempty"`
 		OverrideOptimismEcotoneTime             *big.Int `toml:",omitempty"`
 		OverrideOptimismFjordTime               *big.Int `toml:",omitempty"`
+		OverrideOptimismGraniteTime             *big.Int `toml:",omitempty"`
 		OverridePragueTime                      *big.Int `toml:",omitempty"`
 		RollupSequencerHTTP                     *string
 		RollupHistoricalRPC                     *string
@@ -345,6 +348,9 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	}
 	if dec.OverrideOptimismFjordTime != nil {
 		c.OverrideOptimismFjordTime = dec.OverrideOptimismFjordTime
+	}
+	if dec.OverrideOptimismGraniteTime != nil {
+		c.OverrideOptimismGraniteTime = dec.OverrideOptimismGraniteTime
 	}
 	if dec.OverridePragueTime != nil {
 		c.OverridePragueTime = dec.OverridePragueTime

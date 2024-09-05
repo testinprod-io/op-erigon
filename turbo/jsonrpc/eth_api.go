@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"math/big"
 	"sync"
 	"sync/atomic"
@@ -164,30 +165,17 @@ func NewBaseApi(f *rpchelper.Filters, stateCache kvcache.Cache, blockReader serv
 	}
 
 	return &BaseAPI{
-<<<<<<< HEAD
 		filters:              f,
 		stateCache:           stateCache,
 		blocksLRU:            blocksLRU,
-		receiptsCache:        receiptsCache,
 		_blockReader:         blockReader,
 		_txnReader:           blockReader,
 		evmCallTimeout:       evmCallTimeout,
 		_engine:              engine,
-		receiptsGenerator:    receiptsGenerator,
+		receiptsGenerator:    receipts.NewGenerator(receiptsCacheLimit, blockReader, engine),
 		dirs:                 dirs,
 		seqRPCService:        seqRPCService,
 		historicalRPCService: historicalRPCService,
-=======
-		filters:           f,
-		stateCache:        stateCache,
-		blocksLRU:         blocksLRU,
-		_blockReader:      blockReader,
-		_txnReader:        blockReader,
-		evmCallTimeout:    evmCallTimeout,
-		_engine:           engine,
-		receiptsGenerator: receipts.NewGenerator(receiptsCacheLimit, blockReader, engine),
-		dirs:              dirs,
->>>>>>> v3.0.0-alpha2
 	}
 }
 

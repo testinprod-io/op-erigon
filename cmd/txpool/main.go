@@ -77,12 +77,10 @@ var (
 	optimism   bool
 	noTxGossip bool
 
-<<<<<<< HEAD
+	mdbxWriteMap bool
+
 	// For legacy --txpool.disabletxpoolgossip flag
 	noTxGossipLegacy bool
-=======
-	mdbxWriteMap bool
->>>>>>> v3.0.0-alpha2
 
 	commitEvery time.Duration
 )
