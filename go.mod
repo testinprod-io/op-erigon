@@ -33,9 +33,9 @@ require (
 	github.com/deckarep/golang-set/v2 v2.3.1
 	github.com/dop251/goja v0.0.0-20220405120441-9037c2b61cbf
 	github.com/edsrzf/mmap-go v1.1.0
-	github.com/emicklei/dot v1.6.2
+	github.com/emicklei/dot v1.6.1
 	github.com/erigontech/erigon-lib v0.0.0-00010101000000-000000000000
-	github.com/ethereum-optimism/superchain-registry/superchain v0.0.0-20240803025447-c92ef420eec2
+	github.com/ethereum-optimism/superchain-registry/superchain v0.0.0-20240821192748-42bd03ba8313
 	github.com/fjl/gencodec v0.0.0-20220412091415-8bb9e558978c
 	github.com/gballet/go-verkle v0.0.0-20221121182333-31427a1f2d35
 	github.com/go-chi/chi/v5 v5.1.0
