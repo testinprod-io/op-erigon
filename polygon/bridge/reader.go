@@ -6,14 +6,13 @@ import (
 	"fmt"
 
 	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/kv"
 	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/erigontech/erigon/common/u256"
 	"github.com/erigontech/erigon/core"
 	"github.com/erigontech/erigon/core/state"
 	"github.com/erigontech/erigon/core/types"
 	"github.com/erigontech/erigon/polygon/bor/borcfg"
-
-	"github.com/erigontech/erigon-lib/kv"
 	"github.com/erigontech/erigon/polygon/polygoncommon"
 )
 
@@ -75,6 +74,7 @@ func (r *Reader) Events(ctx context.Context, blockNum uint64) ([]*types.Message,
 			nil, nil,
 			event, nil, false,
 			true,
+			false,
 			nil,
 		)
 

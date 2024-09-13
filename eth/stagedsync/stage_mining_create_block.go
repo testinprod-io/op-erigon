@@ -127,22 +127,22 @@ func SpawnMiningCreateBlockStage(s *StageState, txc wrap.TxContainer, cfg Mining
 		if cfg.chainConfig.IsOptimism() {
 			// In Optimism, self re-org via engine_forkchoiceUpdatedV1 is allowed
 			log.Warn("wrong head block", "current", parent.Hash(), "requested", cfg.blockBuilderParameters.ParentHash, "executionAt", executionAt)
-			exectedParent, err := rawdb.ReadHeaderByHash(tx, cfg.blockBuilderParameters.ParentHash)
+			exectedParent, err := rawdb.ReadHeaderByHash(txc.Tx, cfg.blockBuilderParameters.ParentHash)
 			if err != nil {
 				return err
 			}
 			expectedExecutionAt := exectedParent.Number.Uint64()
-			hashStateProgress, err := stages.GetStageProgress(tx, stages.Execution)
+			hashStateProgress, err := stages.GetStageProgress(txc.Tx, stages.Execution)
 			if err != nil {
 				return err
 			}
 			// Trigger unwinding to target block
 			if hashStateProgress > expectedExecutionAt {
 				// MiningExecution stage progress should be updated to trigger unwinding
-				if err = stages.SaveStageProgress(tx, stages.MiningExecution, executionAt); err != nil {
+				if err = stages.SaveStageProgress(txc.Tx, stages.MiningExecution, executionAt); err != nil {
 					return err
 				}
-				return s.state.UnwindTo(expectedExecutionAt, OPReorgToAncestor, tx)
+				return s.state.UnwindTo(expectedExecutionAt, OPReorgToAncestor, txc.Tx)
 			}
 			executionAt = expectedExecutionAt
 			parent = exectedParent

@@ -368,7 +368,7 @@ func (e *EthereumExecutionModule) updateForkChoice(ctx context.Context, original
 			return
 		}
 
-		if err := rawdbv3.TxNums.Truncate(tx, unwindToNumber+1); err != nil {
+		if err := rawdbv3.TxNums.Truncate(tx, unwindTarget+1); err != nil {
 			sendForkchoiceErrorWithoutWaiting(e.logger, outcomeCh, err, false)
 			return
 		}
