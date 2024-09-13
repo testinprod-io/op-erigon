@@ -935,17 +935,15 @@ var (
 		Usage: "Port for sentinel",
 		Value: 7777,
 	}
-<<<<<<< HEAD
 	GenesisPathFlag = cli.StringFlag{
 		Name:  "genesis.path",
 		Usage: "Genesis JSON file path",
 		Value: "/genesis.json",
-=======
+	}
 	SentinelBootnodes = cli.StringSliceFlag{
 		Name:  "sentinel.bootnodes",
 		Usage: "Comma separated enode URLs for P2P discovery bootstrap",
 		Value: cli.NewStringSlice(),
->>>>>>> 3.0.0-alpha3
 	}
 
 	OtsSearchMaxCapFlag = cli.Uint64Flag{
@@ -2049,7 +2047,6 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 		cfg.TxPool.OverridePragueTime = cfg.OverridePragueTime
 	}
 
-<<<<<<< HEAD
 	if ctx.IsSet(OverrideShanghaiTime.Name) {
 		cfg.OverrideShanghaiTime = flags.GlobalBig(ctx, OverrideShanghaiTime.Name)
 		cfg.TxPool.OverrideShanghaiTime = cfg.OverrideShanghaiTime
@@ -2090,10 +2087,7 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 		cfg.OverrideOptimismGraniteTime = flags.GlobalBig(ctx, OverrideOptimismGraniteFlag.Name)
 	}
 
-	if clparams.EmbeddedSupported(cfg.NetworkID) {
-=======
 	if clparams.EmbeddedSupported(cfg.NetworkID) || cfg.CaplinConfig.IsDevnet() {
->>>>>>> 3.0.0-alpha3
 		cfg.InternalCL = !ctx.Bool(ExternalConsensusFlag.Name)
 	}
 

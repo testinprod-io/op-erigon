@@ -40,11 +40,8 @@ import (
 	proto_types "github.com/erigontech/erigon-lib/gointerfaces/typesproto"
 	"github.com/erigontech/erigon-lib/kv"
 	"github.com/erigontech/erigon-lib/log/v3"
-<<<<<<< HEAD
-=======
 	libsentry "github.com/erigontech/erigon-lib/p2p/sentry"
 
->>>>>>> 3.0.0-alpha3
 	"github.com/erigontech/erigon/consensus"
 	"github.com/erigontech/erigon/core/types"
 	"github.com/erigontech/erigon/eth/ethconfig"

@@ -51,7 +51,6 @@ func main() {
 		defer db.Close()
 		defer engine.Close()
 
-<<<<<<< HEAD
 		var seqRPCService *rpc.Client
 		var historicalRPCService *rpc.Client
 
@@ -77,10 +76,7 @@ func main() {
 			historicalRPCService = client
 		}
 
-		apiList := jsonrpc.APIList(db, backend, txPool, mining, ff, stateCache, blockReader, cfg, engine, seqRPCService, historicalRPCService, logger)
-=======
-		apiList := jsonrpc.APIList(db, backend, txPool, mining, ff, stateCache, blockReader, cfg, engine, logger, nil)
->>>>>>> 3.0.0-alpha3
+		apiList := jsonrpc.APIList(db, backend, txPool, mining, ff, stateCache, blockReader, cfg, engine, nil, nil logger, nil)
 		rpc.PreAllocateRPCMetricLabels(apiList)
 		if err := cli.StartRpcServer(ctx, cfg, apiList, logger); err != nil {
 			logger.Error(err.Error())

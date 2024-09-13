@@ -19,11 +19,13 @@ package stagedsync
 import (
 	"errors"
 	"fmt"
-	"github.com/erigontech/erigon-lib/kv/rawdbv3"
 	"io"
 	"math/big"
 	"sync/atomic"
 	"time"
+
+	"github.com/erigontech/erigon-lib/kv/rawdbv3"
+	state2 "github.com/erigontech/erigon-lib/state"
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/holiman/uint256"
@@ -108,10 +110,6 @@ func SpawnMiningExecStage(s *StageState, txc wrap.TxContainer, cfg MiningExecCfg
 	txs := current.PreparedTxs
 	forceTxs := current.ForceTxs
 	noempty := true
-<<<<<<< HEAD
-	var domains *libstate.SharedDomains
-=======
->>>>>>> 3.0.0-alpha3
 	var (
 		stateReader state.StateReader
 	)
@@ -156,17 +154,10 @@ func SpawnMiningExecStage(s *StageState, txc wrap.TxContainer, cfg MiningExecCfg
 			yielded := mapset.NewSet[[32]byte]()
 			var simStateReader state.StateReader
 			var simStateWriter state.StateWriter
-<<<<<<< HEAD
-			m := membatchwithdb.NewMemoryBatch(txc.Tx, cfg.tmpdir, logger)
-			defer m.Rollback()
-			var err error
-			domains, err = libstate.NewSharedDomains(m, logger)
-=======
 
 			mb := membatchwithdb.NewMemoryBatch(txc.Tx, cfg.tmpdir, logger)
 			defer mb.Close()
 			sd, err := state2.NewSharedDomains(mb, logger)
->>>>>>> 3.0.0-alpha3
 			if err != nil {
 				return err
 			}

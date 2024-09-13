@@ -16,12 +16,9 @@
 build/_vendor/pkg
 /*.a
 docs/readthedocs/build
-<<<<<<< HEAD
 .dev
 
-=======
 /.VSCodeCounter
->>>>>>> 3.0.0-alpha3
 #*
 .#*
 *#

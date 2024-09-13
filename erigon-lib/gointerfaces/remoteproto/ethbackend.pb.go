@@ -2014,13 +2014,8 @@ func file_remote_ethbackend_proto_rawDescGZIP() []byte {
 }
 
 var file_remote_ethbackend_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-<<<<<<< HEAD
-var file_remote_ethbackend_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
-var file_remote_ethbackend_proto_goTypes = []interface{}{
-=======
 var file_remote_ethbackend_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
-var file_remote_ethbackend_proto_goTypes = []any{
->>>>>>> 3.0.0-alpha3
+var file_remote_ethbackend_proto_goTypes = []interface{}{
 	(Event)(0),                                     // 0: remote.Event
 	(*EtherbaseRequest)(nil),                       // 1: remote.EtherbaseRequest
 	(*EtherbaseReply)(nil),                         // 2: remote.EtherbaseReply
@@ -2250,13 +2245,8 @@ func file_remote_ethbackend_proto_init() {
 				return nil
 			}
 		}
-<<<<<<< HEAD
 		file_remote_ethbackend_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SubscribeRequest); i {
-=======
-		file_remote_ethbackend_proto_msgTypes[10].Exporter = func(v any, i int) any {
 			switch v := v.(*CanonicalHashRequest); i {
->>>>>>> 3.0.0-alpha3
 			case 0:
 				return &v.state
 			case 1:
@@ -2267,13 +2257,8 @@ func file_remote_ethbackend_proto_init() {
 				return nil
 			}
 		}
-<<<<<<< HEAD
 		file_remote_ethbackend_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SubscribeReply); i {
-=======
-		file_remote_ethbackend_proto_msgTypes[11].Exporter = func(v any, i int) any {
 			switch v := v.(*CanonicalHashReply); i {
->>>>>>> 3.0.0-alpha3
 			case 0:
 				return &v.state
 			case 1:
@@ -2284,13 +2269,8 @@ func file_remote_ethbackend_proto_init() {
 				return nil
 			}
 		}
-<<<<<<< HEAD
 		file_remote_ethbackend_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LogsFilterRequest); i {
-=======
-		file_remote_ethbackend_proto_msgTypes[12].Exporter = func(v any, i int) any {
 			switch v := v.(*HeaderNumberRequest); i {
->>>>>>> 3.0.0-alpha3
 			case 0:
 				return &v.state
 			case 1:
@@ -2301,13 +2281,8 @@ func file_remote_ethbackend_proto_init() {
 				return nil
 			}
 		}
-<<<<<<< HEAD
 		file_remote_ethbackend_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SubscribeLogsReply); i {
-=======
-		file_remote_ethbackend_proto_msgTypes[13].Exporter = func(v any, i int) any {
 			switch v := v.(*HeaderNumberReply); i {
->>>>>>> 3.0.0-alpha3
 			case 0:
 				return &v.state
 			case 1:
@@ -2318,13 +2293,8 @@ func file_remote_ethbackend_proto_init() {
 				return nil
 			}
 		}
-<<<<<<< HEAD
 		file_remote_ethbackend_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BlockRequest); i {
-=======
-		file_remote_ethbackend_proto_msgTypes[14].Exporter = func(v any, i int) any {
 			switch v := v.(*CanonicalBodyForStorageRequest); i {
->>>>>>> 3.0.0-alpha3
 			case 0:
 				return &v.state
 			case 1:
@@ -2335,13 +2305,8 @@ func file_remote_ethbackend_proto_init() {
 				return nil
 			}
 		}
-<<<<<<< HEAD
 		file_remote_ethbackend_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BlockReply); i {
-=======
-		file_remote_ethbackend_proto_msgTypes[15].Exporter = func(v any, i int) any {
 			switch v := v.(*CanonicalBodyForStorageReply); i {
->>>>>>> 3.0.0-alpha3
 			case 0:
 				return &v.state
 			case 1:
@@ -2352,13 +2317,8 @@ func file_remote_ethbackend_proto_init() {
 				return nil
 			}
 		}
-<<<<<<< HEAD
 		file_remote_ethbackend_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TxnLookupRequest); i {
-=======
-		file_remote_ethbackend_proto_msgTypes[16].Exporter = func(v any, i int) any {
 			switch v := v.(*SubscribeRequest); i {
->>>>>>> 3.0.0-alpha3
 			case 0:
 				return &v.state
 			case 1:
@@ -2369,13 +2329,8 @@ func file_remote_ethbackend_proto_init() {
 				return nil
 			}
 		}
-<<<<<<< HEAD
 		file_remote_ethbackend_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TxnLookupReply); i {
-=======
-		file_remote_ethbackend_proto_msgTypes[17].Exporter = func(v any, i int) any {
 			switch v := v.(*SubscribeReply); i {
->>>>>>> 3.0.0-alpha3
 			case 0:
 				return &v.state
 			case 1:
@@ -2386,13 +2341,8 @@ func file_remote_ethbackend_proto_init() {
 				return nil
 			}
 		}
-<<<<<<< HEAD
 		file_remote_ethbackend_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NodesInfoRequest); i {
-=======
-		file_remote_ethbackend_proto_msgTypes[18].Exporter = func(v any, i int) any {
 			switch v := v.(*LogsFilterRequest); i {
->>>>>>> 3.0.0-alpha3
 			case 0:
 				return &v.state
 			case 1:
@@ -2403,13 +2353,8 @@ func file_remote_ethbackend_proto_init() {
 				return nil
 			}
 		}
-<<<<<<< HEAD
 		file_remote_ethbackend_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AddPeerRequest); i {
-=======
-		file_remote_ethbackend_proto_msgTypes[19].Exporter = func(v any, i int) any {
 			switch v := v.(*SubscribeLogsReply); i {
->>>>>>> 3.0.0-alpha3
 			case 0:
 				return &v.state
 			case 1:
@@ -2420,13 +2365,8 @@ func file_remote_ethbackend_proto_init() {
 				return nil
 			}
 		}
-<<<<<<< HEAD
 		file_remote_ethbackend_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NodesInfoReply); i {
-=======
-		file_remote_ethbackend_proto_msgTypes[20].Exporter = func(v any, i int) any {
 			switch v := v.(*BlockRequest); i {
->>>>>>> 3.0.0-alpha3
 			case 0:
 				return &v.state
 			case 1:
@@ -2437,13 +2377,8 @@ func file_remote_ethbackend_proto_init() {
 				return nil
 			}
 		}
-<<<<<<< HEAD
 		file_remote_ethbackend_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PeersReply); i {
-=======
-		file_remote_ethbackend_proto_msgTypes[21].Exporter = func(v any, i int) any {
 			switch v := v.(*BlockReply); i {
->>>>>>> 3.0.0-alpha3
 			case 0:
 				return &v.state
 			case 1:
@@ -2454,13 +2389,8 @@ func file_remote_ethbackend_proto_init() {
 				return nil
 			}
 		}
-<<<<<<< HEAD
 		file_remote_ethbackend_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AddPeerReply); i {
-=======
-		file_remote_ethbackend_proto_msgTypes[22].Exporter = func(v any, i int) any {
 			switch v := v.(*TxnLookupRequest); i {
->>>>>>> 3.0.0-alpha3
 			case 0:
 				return &v.state
 			case 1:
@@ -2471,13 +2401,8 @@ func file_remote_ethbackend_proto_init() {
 				return nil
 			}
 		}
-<<<<<<< HEAD
 		file_remote_ethbackend_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PendingBlockReply); i {
-=======
-		file_remote_ethbackend_proto_msgTypes[23].Exporter = func(v any, i int) any {
 			switch v := v.(*TxnLookupReply); i {
->>>>>>> 3.0.0-alpha3
 			case 0:
 				return &v.state
 			case 1:
@@ -2488,13 +2413,8 @@ func file_remote_ethbackend_proto_init() {
 				return nil
 			}
 		}
-<<<<<<< HEAD
 		file_remote_ethbackend_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EngineGetPayloadBodiesByHashV1Request); i {
-=======
-		file_remote_ethbackend_proto_msgTypes[24].Exporter = func(v any, i int) any {
 			switch v := v.(*NodesInfoRequest); i {
->>>>>>> 3.0.0-alpha3
 			case 0:
 				return &v.state
 			case 1:
@@ -2505,13 +2425,8 @@ func file_remote_ethbackend_proto_init() {
 				return nil
 			}
 		}
-<<<<<<< HEAD
 		file_remote_ethbackend_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EngineGetPayloadBodiesByRangeV1Request); i {
-=======
-		file_remote_ethbackend_proto_msgTypes[25].Exporter = func(v any, i int) any {
 			switch v := v.(*AddPeerRequest); i {
->>>>>>> 3.0.0-alpha3
 			case 0:
 				return &v.state
 			case 1:
@@ -2522,13 +2437,8 @@ func file_remote_ethbackend_proto_init() {
 				return nil
 			}
 		}
-<<<<<<< HEAD
 		file_remote_ethbackend_proto_msgTypes[26].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BorEventRequest); i {
-=======
-		file_remote_ethbackend_proto_msgTypes[26].Exporter = func(v any, i int) any {
 			switch v := v.(*NodesInfoReply); i {
->>>>>>> 3.0.0-alpha3
 			case 0:
 				return &v.state
 			case 1:
@@ -2539,10 +2449,7 @@ func file_remote_ethbackend_proto_init() {
 				return nil
 			}
 		}
-<<<<<<< HEAD
 		file_remote_ethbackend_proto_msgTypes[27].Exporter = func(v interface{}, i int) interface{} {
-=======
-		file_remote_ethbackend_proto_msgTypes[27].Exporter = func(v any, i int) any {
 			switch v := v.(*PeersReply); i {
 			case 0:
 				return &v.state
@@ -2554,7 +2461,7 @@ func file_remote_ethbackend_proto_init() {
 				return nil
 			}
 		}
-		file_remote_ethbackend_proto_msgTypes[28].Exporter = func(v any, i int) any {
+		file_remote_ethbackend_proto_msgTypes[28].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*AddPeerReply); i {
 			case 0:
 				return &v.state
@@ -2566,7 +2473,7 @@ func file_remote_ethbackend_proto_init() {
 				return nil
 			}
 		}
-		file_remote_ethbackend_proto_msgTypes[29].Exporter = func(v any, i int) any {
+		file_remote_ethbackend_proto_msgTypes[29].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*PendingBlockReply); i {
 			case 0:
 				return &v.state
@@ -2578,7 +2485,7 @@ func file_remote_ethbackend_proto_init() {
 				return nil
 			}
 		}
-		file_remote_ethbackend_proto_msgTypes[30].Exporter = func(v any, i int) any {
+		file_remote_ethbackend_proto_msgTypes[30].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*EngineGetPayloadBodiesByHashV1Request); i {
 			case 0:
 				return &v.state
@@ -2590,7 +2497,7 @@ func file_remote_ethbackend_proto_init() {
 				return nil
 			}
 		}
-		file_remote_ethbackend_proto_msgTypes[31].Exporter = func(v any, i int) any {
+		file_remote_ethbackend_proto_msgTypes[31].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*EngineGetPayloadBodiesByRangeV1Request); i {
 			case 0:
 				return &v.state
@@ -2602,7 +2509,7 @@ func file_remote_ethbackend_proto_init() {
 				return nil
 			}
 		}
-		file_remote_ethbackend_proto_msgTypes[32].Exporter = func(v any, i int) any {
+		file_remote_ethbackend_proto_msgTypes[32].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*BorEventRequest); i {
 			case 0:
 				return &v.state
@@ -2614,8 +2521,7 @@ func file_remote_ethbackend_proto_init() {
 				return nil
 			}
 		}
-		file_remote_ethbackend_proto_msgTypes[33].Exporter = func(v any, i int) any {
->>>>>>> 3.0.0-alpha3
+		file_remote_ethbackend_proto_msgTypes[33].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*BorEventReply); i {
 			case 0:
 				return &v.state
@@ -2628,7 +2534,7 @@ func file_remote_ethbackend_proto_init() {
 			}
 		}
 	}
-	file_remote_ethbackend_proto_msgTypes[13].OneofWrappers = []any{}
+	file_remote_ethbackend_proto_msgTypes[13].OneofWrappers = []interface{}{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

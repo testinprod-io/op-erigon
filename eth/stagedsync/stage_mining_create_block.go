@@ -23,11 +23,8 @@ import (
 	"math/big"
 	"time"
 
-<<<<<<< HEAD
-	"github.com/erigontech/erigon/eth/stagedsync/stages"
-=======
 	"github.com/erigontech/erigon-lib/wrap"
->>>>>>> 3.0.0-alpha3
+	"github.com/erigontech/erigon/eth/stagedsync/stages"
 
 	mapset "github.com/deckarep/golang-set/v2"
 
@@ -164,20 +161,14 @@ func SpawnMiningCreateBlockStage(s *StageState, txc wrap.TxContainer, cfg Mining
 
 	blockNum := executionAt + 1
 
-<<<<<<< HEAD
 	// TODO: uncles should also be ignored in PoS, not just Optimism.
 	// There are no uncles after the Merge. Erigon miner bug?
 	var localUncles, remoteUncles map[libcommon.Hash]*types.Header
 	if cfg.chainConfig.Optimism == nil {
-		localUncles, remoteUncles, err = readNonCanonicalHeaders(tx, blockNum, cfg.engine, coinbase, txPoolLocals)
+		localUncles, remoteUncles, err = readNonCanonicalHeaders(txc.Tx, blockNum, cfg.engine, coinbase, txPoolLocals)
 		if err != nil {
 			return err
 		}
-=======
-	localUncles, remoteUncles, err := readNonCanonicalHeaders(txc.Tx, blockNum, cfg.engine, coinbase, txPoolLocals)
-	if err != nil {
-		return err
->>>>>>> 3.0.0-alpha3
 	}
 	chain := ChainReader{Cfg: cfg.chainConfig, Db: txc.Tx, BlockReader: cfg.blockReader, Logger: logger}
 	var GetBlocksFromHash = func(hash libcommon.Hash, n int) (blocks []*types.Block) {

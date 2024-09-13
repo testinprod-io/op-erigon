@@ -62,15 +62,11 @@ func applyTransaction(config *chain.Config, engine consensus.EngineReader, gp *G
 
 	// Update the evm with the new transaction context.
 	evm.Reset(txContext, ibs)
-<<<<<<< HEAD
 
 	nonce := txn.GetNonce()
 	if msg.IsDepositTx() && config.IsOptimismRegolith(evm.Context.Time) {
 		nonce = ibs.GetNonce(msg.From())
 	}
-
-=======
->>>>>>> 3.0.0-alpha3
 	result, err := ApplyMessage(evm, msg, gp, true /* refunds */, false /* gasBailout */)
 	if err != nil {
 		return nil, nil, err

@@ -120,25 +120,17 @@ func (c Config) MarshalTOML() (interface{}, error) {
 	enc.PolygonSyncStage = c.PolygonSyncStage
 	enc.Ethstats = c.Ethstats
 	enc.InternalCL = c.InternalCL
-<<<<<<< HEAD
-	enc.CaplinDiscoveryAddr = c.CaplinDiscoveryAddr
-	enc.CaplinDiscoveryPort = c.CaplinDiscoveryPort
-	enc.CaplinDiscoveryTCPPort = c.CaplinDiscoveryTCPPort
-	enc.SentinelAddr = c.SentinelAddr
-	enc.SentinelPort = c.SentinelPort
+	enc.CaplinConfig.CaplinDiscoveryAddr = c.CaplinConfig.CaplinDiscoveryAddr
+	enc.CaplinConfig.CaplinDiscoveryPort = c.CaplinConfig.CaplinDiscoveryPort
+	enc.CaplinConfig.CaplinDiscoveryTCPPort = c.CaplinConfig.CaplinDiscoveryTCPPort
+	enc.CaplinConfig.SentinelAddr = c.CaplinConfig.SentinelAddr
+	enc.CaplinConfig.SentinelPort = c.CaplinConfig.SentinelPort
 	enc.OverrideCancunTime = c.OverrideCancunTime
 	enc.OverrideShanghaiTime = c.OverrideShanghaiTime
 	enc.OverrideOptimismCanyonTime = c.OverrideOptimismCanyonTime
 	enc.OverrideOptimismEcotoneTime = c.OverrideOptimismEcotoneTime
 	enc.OverrideOptimismFjordTime = c.OverrideOptimismFjordTime
 	enc.OverrideOptimismGraniteTime = c.OverrideOptimismGraniteTime
-=======
-	enc.CaplinConfig.CaplinDiscoveryAddr = c.CaplinConfig.CaplinDiscoveryAddr
-	enc.CaplinConfig.CaplinDiscoveryPort = c.CaplinConfig.CaplinDiscoveryPort
-	enc.CaplinConfig.CaplinDiscoveryTCPPort = c.CaplinConfig.CaplinDiscoveryTCPPort
-	enc.CaplinConfig.SentinelAddr = c.CaplinConfig.SentinelAddr
-	enc.CaplinConfig.SentinelPort = c.CaplinConfig.SentinelPort
->>>>>>> 3.0.0-alpha3
 	enc.OverridePragueTime = c.OverridePragueTime
 	enc.RollupSequencerHTTP = c.RollupSequencerHTTP
 	enc.RollupHistoricalRPC = c.RollupHistoricalRPC

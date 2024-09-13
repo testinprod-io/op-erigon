@@ -146,15 +146,8 @@ github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymF
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1mIlRU8Am5FuJP05cCM98=
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
-<<<<<<< HEAD
-github.com/erigontech/erigon-snapshot v1.3.1-0.20240801141542-7a7b08ebd406 h1:IMB0zb/T0rLm/3jxmECxDG7pEgDi7j5+2hiBG855Srk=
-github.com/erigontech/erigon-snapshot v1.3.1-0.20240801141542-7a7b08ebd406/go.mod h1:ooHlCl+eEYzebiPu+FP6Q6SpPUeMADn8Jxabv3IKb9M=
-=======
 github.com/erigontech/erigon-snapshot v1.3.1-0.20240814160410-2ce37904b978 h1:7ECOf7Us3+/706WGZXIX84qQc6zmxQby8fGbFLiqFlU=
 github.com/erigontech/erigon-snapshot v1.3.1-0.20240814160410-2ce37904b978/go.mod h1:ooHlCl+eEYzebiPu+FP6Q6SpPUeMADn8Jxabv3IKb9M=
-github.com/erigontech/interfaces v0.0.0-20240819221809-43fdab2057da h1:ZayX+yo/IRJ1CGVsC8R32tqU2uUEvJr/L6L4RUAa/+s=
-github.com/erigontech/interfaces v0.0.0-20240819221809-43fdab2057da/go.mod h1:N7OUkhkcagp9+7yb4ycHsG2VWCOmuJ1ONBecJshxtLE=
->>>>>>> 3.0.0-alpha3
 github.com/erigontech/mdbx-go v0.38.4 h1:S9T7mTe9KPcFe4dOoOtVdI6gPzht9y7wMnYfUBgrQLo=
 github.com/erigontech/mdbx-go v0.38.4/go.mod h1:IcOLQDPw3VM/asP6T5JVPPN4FHHgJtY16XfYjzWKVNI=
 github.com/erigontech/secp256k1 v1.1.0 h1:mO3YJMUSoASE15Ya//SoHiisptUhdXExuMUN1M0X9qY=
@@ -462,8 +455,8 @@ github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
-github.com/testinprod-io/erigon-interfaces v0.0.0-20240905145926-8988872424a1 h1:lrgtGVIY70nYB5FMsMd17M+WSJiyBVt/Q6XTqhfsZqg=
-github.com/testinprod-io/erigon-interfaces v0.0.0-20240905145926-8988872424a1/go.mod h1:N7OUkhkcagp9+7yb4ycHsG2VWCOmuJ1ONBecJshxtLE=
+github.com/testinprod-io/erigon-interfaces v0.0.0-20240913031605-7f2dd63b0558 h1:hqmOAaMUeEU8myUUuqsfINu2ECg1S3iazxu/5H4TGW4=
+github.com/testinprod-io/erigon-interfaces v0.0.0-20240913031605-7f2dd63b0558/go.mod h1:N7OUkhkcagp9+7yb4ycHsG2VWCOmuJ1ONBecJshxtLE=
 github.com/tinylib/msgp v1.0.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tinylib/msgp v1.1.0/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tinylib/msgp v1.1.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=

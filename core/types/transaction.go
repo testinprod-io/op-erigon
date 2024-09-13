@@ -23,10 +23,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/erigontech/erigon-lib/fastlz"
 	"io"
 	"math/big"
 	"sync/atomic"
+
+	"github.com/erigontech/erigon-lib/fastlz"
 
 	"github.com/holiman/uint256"
 	"github.com/protolambda/ztyp/codec"
@@ -106,9 +107,8 @@ type Transaction interface {
 // implementations of different transaction types
 type TransactionMisc struct {
 	// caches
-<<<<<<< HEAD
-	hash atomic.Value //nolint:structcheck
-	from atomic.Value
+	hash atomic.Pointer[libcommon.Hash]
+	from atomic.Pointer[libcommon.Address]
 
 	// cache how much gas the tx takes on L1 for its share of rollup data
 	rollupGas atomic.Pointer[types2.RollupCostData]
@@ -156,10 +156,6 @@ func (tm *TransactionMisc) computeRollupGas(tx interface {
 	total := types2.RollupCostData{Zeroes: c.zeroes, Ones: c.ones, FastLzSize: c.fastLzSize}
 	tm.rollupGas.Store(&total)
 	return total
-=======
-	hash atomic.Pointer[libcommon.Hash]
-	from atomic.Pointer[libcommon.Address]
->>>>>>> 3.0.0-alpha3
 }
 
 // RLP-marshalled legacy transactions and binary-marshalled (not wrapped into an RLP string) typed (EIP-2718) transactions

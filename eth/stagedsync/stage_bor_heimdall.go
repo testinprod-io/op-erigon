@@ -857,14 +857,3 @@ func BorHeimdallUnwind(u *UnwindState, ctx context.Context, _ *StageState, tx kv
 
 	return
 }
-<<<<<<< HEAD
-
-func BorHeimdallPrune(_ *PruneState, _ context.Context, _ kv.RwTx, cfg BorHeimdallCfg) (err error) { //nolint:gocritic
-	if cfg.borConfig == nil {
-		return
-	}
-
-	return
-}
-=======
->>>>>>> 3.0.0-alpha3

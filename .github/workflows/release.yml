@@ -61,19 +61,14 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.checkout_ref }}
 
-<<<<<<< HEAD
       - name: dockerhub-login
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB }}
           password: ${{ secrets.DOCKERHUB_KEY }}
 
-      - name: Prepare
-        id: prepare
-=======
       - name: Check if tag ${{ inputs.release_version }} already exists in case perform_release is set.
         if: ${{ (inputs.perform_release) && (inputs.release_version != '') }}
->>>>>>> 3.0.0-alpha3
         run: |
           if git ls-remote --exit-code --quiet --tags origin '${{ inputs.release_version }}'; then
             echo "ERROR: tag ${{ inputs.release_version }} exists and workflow is performing release. Exit."

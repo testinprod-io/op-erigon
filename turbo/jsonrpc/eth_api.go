@@ -151,11 +151,7 @@ type BaseAPI struct {
 	historicalRPCService *rpc.Client
 }
 
-<<<<<<< HEAD
-func NewBaseApi(f *rpchelper.Filters, stateCache kvcache.Cache, blockReader services.FullBlockReader, singleNodeMode bool, evmCallTimeout time.Duration, engine consensus.EngineReader, dirs datadir.Dirs, seqRPCService *rpc.Client, historicalRPCService *rpc.Client) *BaseAPI {
-=======
-func NewBaseApi(f *rpchelper.Filters, stateCache kvcache.Cache, blockReader services.FullBlockReader, singleNodeMode bool, evmCallTimeout time.Duration, engine consensus.EngineReader, dirs datadir.Dirs, bridgeReader bridgeReader) *BaseAPI {
->>>>>>> 3.0.0-alpha3
+func NewBaseApi(f *rpchelper.Filters, stateCache kvcache.Cache, blockReader services.FullBlockReader, singleNodeMode bool, evmCallTimeout time.Duration, engine consensus.EngineReader, dirs datadir.Dirs, bridgeReader bridgeReader, seqRPCService *rpc.Client, historicalRPCService *rpc.Client) *BaseAPI {
 	var (
 		blocksLRUSize      = 128 // ~32Mb
 		receiptsCacheLimit = 32
@@ -171,7 +167,6 @@ func NewBaseApi(f *rpchelper.Filters, stateCache kvcache.Cache, blockReader serv
 	}
 
 	return &BaseAPI{
-<<<<<<< HEAD
 		filters:              f,
 		stateCache:           stateCache,
 		blocksLRU:            blocksLRU,
@@ -181,20 +176,9 @@ func NewBaseApi(f *rpchelper.Filters, stateCache kvcache.Cache, blockReader serv
 		_engine:              engine,
 		receiptsGenerator:    receipts.NewGenerator(receiptsCacheLimit, blockReader, engine),
 		dirs:                 dirs,
+		bridgeReader:         bridgeReader,
 		seqRPCService:        seqRPCService,
 		historicalRPCService: historicalRPCService,
-=======
-		filters:           f,
-		stateCache:        stateCache,
-		blocksLRU:         blocksLRU,
-		_blockReader:      blockReader,
-		_txnReader:        blockReader,
-		evmCallTimeout:    evmCallTimeout,
-		_engine:           engine,
-		receiptsGenerator: receipts.NewGenerator(receiptsCacheLimit, blockReader, engine),
-		dirs:              dirs,
-		bridgeReader:      bridgeReader,
->>>>>>> 3.0.0-alpha3
 	}
 }
 

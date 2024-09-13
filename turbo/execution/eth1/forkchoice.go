@@ -334,15 +334,12 @@ func (e *EthereumExecutionModule) updateForkChoice(ctx context.Context, original
 			}
 		}
 
-<<<<<<< HEAD
-		unwindToNumber := currentParentNumber
+		unwindTarget := currentParentNumber
+
 		if unwindingToCanonical {
-			unwindToNumber = fcuHeader.Number.Uint64()
+			unwindTarget = fcuHeader.Number.Uint64()
 		}
 
-		if err := e.executionPipeline.UnwindTo(unwindToNumber, stagedsync.ForkChoice, tx); err != nil {
-=======
-		unwindTarget := currentParentNumber
 		minUnwindableBlock, err := minUnwindableBlock(tx, unwindTarget)
 		if err != nil {
 			sendForkchoiceErrorWithoutWaiting(e.logger, outcomeCh, err, false)
@@ -354,7 +351,6 @@ func (e *EthereumExecutionModule) updateForkChoice(ctx context.Context, original
 		}
 		// if unwindTarget <
 		if err := e.executionPipeline.UnwindTo(unwindTarget, stagedsync.ForkChoice, tx); err != nil {
->>>>>>> 3.0.0-alpha3
 			sendForkchoiceErrorWithoutWaiting(e.logger, outcomeCh, err, false)
 			return
 		}

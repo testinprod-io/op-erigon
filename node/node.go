@@ -30,12 +30,10 @@ import (
 	"time"
 
 	"github.com/c2h5oh/datasize"
-<<<<<<< HEAD
-=======
+
 	"github.com/erigontech/erigon-lib/common/dbg"
 	"golang.org/x/sync/semaphore"
 
->>>>>>> 3.0.0-alpha3
 	"github.com/erigontech/erigon-lib/common/datadir"
 	"github.com/erigontech/erigon-lib/log/v3"
 	"golang.org/x/sync/semaphore"

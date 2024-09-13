@@ -1,10 +1,6 @@
-<<<<<<< HEAD
-project_name: op-erigon
-=======
 #version: 2
 
-project_name: erigon
->>>>>>> 3.0.0-alpha3
+project_name: op-erigon
 
 release:
   disable: true
@@ -630,18 +626,6 @@ builds:
       - -s -w -extldflags "-static"
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
-<<<<<<< HEAD
-#  - id: windows-amd64
-#    main: ./cmd/erigon
-#    binary: erigon
-#    goos: [ windows ]
-#    goarch: [ amd64 ]
-#    env:
-#      - CC=x86_64-w64-mingw32-gcc
-#      - CXX=x86_64-w64-mingw32-g++
-#    tags: [ nosqlite, noboltdb, nosilkworm ]
-#    ldflags: -s -w
-=======
   - id: linux-arm64-downloader
     main: ./cmd/downloader
     binary: downloader
@@ -1028,7 +1012,6 @@ builds:
       - -s -w -extldflags "-static"
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 ## Windows AMD64
->>>>>>> 3.0.0-alpha3
 
 
 ## Checksums
@@ -1042,7 +1025,6 @@ checksum:
     - darwin-arm64
     # - windows-amd64
 
-<<<<<<< HEAD
 dockers:
   - image_templates:
       - testinprod/{{ .ProjectName }}:{{ .Version }}-amd64
@@ -1084,7 +1066,6 @@ announce:
     enabled: false
     # The name of the channel that the user selected as a destination for webhook messages.
     channel: '#code-releases'
-=======
 
 archives:
   - id: linux-arm64
@@ -1166,4 +1147,3 @@ archives:
     name_template: "{{ .Env.APPLICATION }}_{{ .Env.BUILD_VERSION }}_{{ .Os }}_{{ .Arch }}"
     wrap_in_directory: true
     format: zip
->>>>>>> 3.0.0-alpha3

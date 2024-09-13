@@ -21,8 +21,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/erigontech/erigon-lib/opstack"
 	"time"
+
+	"github.com/erigontech/erigon-lib/opstack"
 
 	"github.com/holiman/uint256"
 	jsoniter "github.com/json-iterator/go"
@@ -388,15 +389,11 @@ func (api *PrivateDebugAPIImpl) TraceCall(ctx context.Context, args ethapi.CallA
 		return fmt.Errorf("get block number: %v", err)
 	}
 
-<<<<<<< HEAD
 	if chainConfig.IsOptimismPreBedrock(blockNumber) {
 		return errors.New("l2geth does not have a debug_traceCall method")
 	}
 
-	err = api.BaseAPI.checkPruneHistory(dbtx, blockNumber)
-=======
 	err = api.BaseAPI.checkPruneHistory(ctx, dbtx, blockNumber)
->>>>>>> 3.0.0-alpha3
 	if err != nil {
 		return err
 	}

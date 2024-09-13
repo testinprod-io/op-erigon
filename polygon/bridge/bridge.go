@@ -444,43 +444,6 @@ func (b *Bridge) waitFetchedEventsSignal(ctx context.Context) error {
 		}
 		return nil
 	}
-<<<<<<< HEAD
-
-	if end == 0 { // exception for tip processing
-		end = b.lastProcessedEventID.Load()
-	}
-
-	eventsRaw := make([]*types.Message, 0, end-start+1)
-
-	// get events from DB
-	events, err := b.store.GetEvents(ctx, start+1, end+1)
-	if err != nil {
-		return nil, err
-	}
-
-	b.log.Debug(bridgeLogPrefix(fmt.Sprintf("got %v events for block %v", len(events), blockNum)))
-
-	// convert to message
-	for _, event := range events {
-		msg := types.NewMessage(
-			state.SystemAddress,
-			&b.stateClientAddress,
-			0, u256.Num0,
-			core.SysCallGasLimit,
-			u256.Num0,
-			nil, nil,
-			event, nil, false,
-			true,
-			true,
-			nil,
-		)
-
-		eventsRaw = append(eventsRaw, &msg)
-	}
-
-	return eventsRaw, nil
-=======
->>>>>>> 3.0.0-alpha3
 }
 
 func (b *Bridge) signalProcessedBlocks() {
