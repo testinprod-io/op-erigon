@@ -92,6 +92,12 @@ var DefaultFlags = []cli.Flag{
 	&OverlayGetLogsFlag,
 	&OverlayReplayBlockFlag,
 
+	&RpcSubscriptionFiltersMaxLogsFlag,
+	&RpcSubscriptionFiltersMaxHeadersFlag,
+	&RpcSubscriptionFiltersMaxTxsFlag,
+	&RpcSubscriptionFiltersMaxAddressesFlag,
+	&RpcSubscriptionFiltersMaxTopicsFlag,
+
 	&utils.SnapKeepBlocksFlag,
 	&utils.SnapStopFlag,
 	&utils.DbPageSizeFlag,
