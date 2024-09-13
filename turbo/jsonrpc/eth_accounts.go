@@ -43,6 +43,7 @@ func (api *APIImpl) GetBalance(ctx context.Context, address libcommon.Address, b
 		return nil, fmt.Errorf("getBalance cannot open tx: %w", err1)
 	}
 	defer tx.Rollback()
+<<<<<<< HEAD
 
 	// Handle pre-bedrock blocks
 	blockNum, err := api.blockNumberFromBlockNumberOrHash(tx, &blockNrOrHash)
@@ -65,6 +66,9 @@ func (api *APIImpl) GetBalance(ctx context.Context, address libcommon.Address, b
 	}
 
 	reader, err := rpchelper.CreateStateReader(ctx, tx, blockNrOrHash, 0, api.filters, api.stateCache, "")
+=======
+	reader, err := rpchelper.CreateStateReader(ctx, tx, api._blockReader, blockNrOrHash, 0, api.filters, api.stateCache, "")
+>>>>>>> 3.0.0-alpha3
 	if err != nil {
 		return nil, err
 	}
@@ -100,6 +104,7 @@ func (api *APIImpl) GetTransactionCount(ctx context.Context, address libcommon.A
 		return nil, fmt.Errorf("getTransactionCount cannot open tx: %w", err1)
 	}
 	defer tx.Rollback()
+<<<<<<< HEAD
 
 	// Handle pre-bedrock blocks
 	blockNum, err := api.blockNumberFromBlockNumberOrHash(tx, &blockNrOrHash)
@@ -122,6 +127,9 @@ func (api *APIImpl) GetTransactionCount(ctx context.Context, address libcommon.A
 	}
 
 	reader, err := rpchelper.CreateStateReader(ctx, tx, blockNrOrHash, 0, api.filters, api.stateCache, "")
+=======
+	reader, err := rpchelper.CreateStateReader(ctx, tx, api._blockReader, blockNrOrHash, 0, api.filters, api.stateCache, "")
+>>>>>>> 3.0.0-alpha3
 	if err != nil {
 		return nil, err
 	}
@@ -150,6 +158,7 @@ func (api *APIImpl) GetCode(ctx context.Context, address libcommon.Address, bloc
 	if err != nil {
 		return nil, fmt.Errorf("read chain config: %v", err)
 	}
+<<<<<<< HEAD
 
 	if chainConfig.IsOptimismPreBedrock(blockNum) {
 		if api.historicalRPCService == nil {
@@ -163,6 +172,9 @@ func (api *APIImpl) GetCode(ctx context.Context, address libcommon.Address, bloc
 	}
 
 	reader, err := rpchelper.CreateStateReader(ctx, tx, blockNrOrHash, 0, api.filters, api.stateCache, chainConfig.ChainName)
+=======
+	reader, err := rpchelper.CreateStateReader(ctx, tx, api._blockReader, blockNrOrHash, 0, api.filters, api.stateCache, chainConfig.ChainName)
+>>>>>>> 3.0.0-alpha3
 	if err != nil {
 		return nil, err
 	}
@@ -188,6 +200,7 @@ func (api *APIImpl) GetStorageAt(ctx context.Context, address libcommon.Address,
 	}
 	defer tx.Rollback()
 
+<<<<<<< HEAD
 	// Handle pre-bedrock blocks
 	blockNum, err := api.blockNumberFromBlockNumberOrHash(tx, &blockNrOrHash)
 	if err != nil {
@@ -209,6 +222,9 @@ func (api *APIImpl) GetStorageAt(ctx context.Context, address libcommon.Address,
 	}
 
 	reader, err := rpchelper.CreateStateReader(ctx, tx, blockNrOrHash, 0, api.filters, api.stateCache, "")
+=======
+	reader, err := rpchelper.CreateStateReader(ctx, tx, api._blockReader, blockNrOrHash, 0, api.filters, api.stateCache, "")
+>>>>>>> 3.0.0-alpha3
 	if err != nil {
 		return hexutility.Encode(common.LeftPadBytes(empty, 32)), err
 	}
@@ -233,7 +249,7 @@ func (api *APIImpl) Exist(ctx context.Context, address libcommon.Address, blockN
 	}
 	defer tx.Rollback()
 
-	reader, err := rpchelper.CreateStateReader(ctx, tx, blockNrOrHash, 0, api.filters, api.stateCache, "")
+	reader, err := rpchelper.CreateStateReader(ctx, tx, api._blockReader, blockNrOrHash, 0, api.filters, api.stateCache, "")
 	if err != nil {
 		return false, err
 	}

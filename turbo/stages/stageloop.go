@@ -29,15 +29,14 @@ import (
 	libcommon "github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/datadir"
 	"github.com/erigontech/erigon-lib/common/dbg"
-	"github.com/erigontech/erigon-lib/direct"
 	proto_downloader "github.com/erigontech/erigon-lib/gointerfaces/downloaderproto"
+	"github.com/erigontech/erigon-lib/gointerfaces/sentryproto"
 	"github.com/erigontech/erigon-lib/kv"
 	"github.com/erigontech/erigon-lib/kv/membatchwithdb"
 	"github.com/erigontech/erigon-lib/kv/rawdbv3"
 	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/erigontech/erigon-lib/state"
 	"github.com/erigontech/erigon-lib/wrap"
-
 	"github.com/erigontech/erigon/consensus"
 	"github.com/erigontech/erigon/consensus/misc"
 	"github.com/erigontech/erigon/core/rawdb"
@@ -73,7 +72,7 @@ func StageLoop(
 ) {
 	defer close(waitForDone)
 
-	if err := ProcessFrozenBlocks(ctx, db, blockReader, sync); err != nil {
+	if err := ProcessFrozenBlocks(ctx, db, blockReader, sync, hook); err != nil {
 		if err != nil {
 			if errors.Is(err, libcommon.ErrStopped) || errors.Is(err, context.Canceled) {
 				return
@@ -133,14 +132,36 @@ func StageLoop(
 }
 
 // ProcessFrozenBlocks - withuot global rwtx
-func ProcessFrozenBlocks(ctx context.Context, db kv.RwDB, blockReader services.FullBlockReader, sync *stagedsync.Sync) error {
+func ProcessFrozenBlocks(ctx context.Context, db kv.RwDB, blockReader services.FullBlockReader, sync *stagedsync.Sync, hook *Hook) error {
 	sawZeroBlocksTimes := 0
 	initialCycle, firstCycle := true, true
 	for {
 		// run stages first time - it will download blocks
+		if hook != nil {
+			if err := db.View(ctx, func(tx kv.Tx) (err error) {
+				err = hook.BeforeRun(tx, false)
+				return err
+			}); err != nil {
+				return err
+			}
+		}
+
 		more, err := sync.Run(db, wrap.TxContainer{}, initialCycle, firstCycle)
 		if err != nil {
 			return err
+		}
+
+		if hook != nil {
+			if err := db.View(ctx, func(tx kv.Tx) (err error) {
+				finishProgressBefore, _, _, err := stagesHeadersAndFinish(db, tx)
+				if err != nil {
+					return err
+				}
+				err = hook.AfterRun(tx, finishProgressBefore)
+				return err
+			}); err != nil {
+				return err
+			}
 		}
 
 		if err := sync.RunPrune(db, nil, initialCycle); err != nil {
@@ -287,6 +308,12 @@ func stagesHeadersAndFinish(db kv.RoDB, tx kv.Tx) (head, bor, fin uint64, err er
 		if bor, err = stages.GetStageProgress(tx, stages.BorHeimdall); err != nil {
 			return head, bor, fin, err
 		}
+		var polygonSync uint64
+		if polygonSync, err = stages.GetStageProgress(tx, stages.PolygonSync); err != nil {
+			return head, bor, fin, err
+		}
+		// bor heimdall and polygon sync are mutually exclusive, bor heimdall will be removed soon
+		bor = max(bor, polygonSync)
 		return head, bor, fin, nil
 	}
 	if err := db.View(context.Background(), func(tx kv.Tx) error {
@@ -299,6 +326,12 @@ func stagesHeadersAndFinish(db kv.RoDB, tx kv.Tx) (head, bor, fin uint64, err er
 		if bor, err = stages.GetStageProgress(tx, stages.BorHeimdall); err != nil {
 			return err
 		}
+		var polygonSync uint64
+		if polygonSync, err = stages.GetStageProgress(tx, stages.PolygonSync); err != nil {
+			return err
+		}
+		// bor heimdall and polygon sync are mutually exclusive, bor heimdall will be removed soon
+		bor = max(bor, polygonSync)
 		return nil
 	}); err != nil {
 		return head, bor, fin, err
@@ -411,20 +444,16 @@ func MiningStep(ctx context.Context, db kv.RwDB, mining *stagedsync.Sync, tmpDir
 			err = fmt.Errorf("%+v, trace: %s", rec, dbg.Stack())
 		}
 	}() // avoid crash because Erigon's core does many things
-
 	tx, err := db.BeginRo(ctx)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	var miningBatch kv.RwTx
-
 	mb := membatchwithdb.NewMemoryBatch(tx, tmpDir, logger)
-	defer mb.Rollback()
-	miningBatch = mb
+	defer mb.Close()
 
-	txc := wrap.TxContainer{Tx: miningBatch}
+	txc := wrap.TxContainer{Tx: mb}
 	sd, err := state.NewSharedDomains(mb, logger)
 	if err != nil {
 		return err
@@ -435,7 +464,6 @@ func MiningStep(ctx context.Context, db kv.RwDB, mining *stagedsync.Sync, tmpDir
 	if _, err = mining.Run(nil, txc, false /* firstCycle */, false); err != nil {
 		return err
 	}
-	tx.Rollback()
 	return nil
 }
 
@@ -683,7 +711,7 @@ func NewPolygonSyncStages(
 	silkworm *silkworm.Silkworm,
 	forkValidator *engine_helpers.ForkValidator,
 	heimdallClient heimdall.HeimdallClient,
-	sentry direct.SentryClient,
+	sentry sentryproto.SentryClient,
 	maxPeers int,
 	statusDataProvider *sentry.StatusDataProvider,
 	stopNode func() error,
@@ -715,7 +743,6 @@ func NewPolygonSyncStages(
 			statusDataProvider,
 			blockReader,
 			stopNode,
-			bor.GenesisContractStateReceiverABI(),
 			config.LoopBlockLimit,
 		),
 		stagedsync.StageSendersCfg(db, chainConfig, config.Sync, false, config.Dirs.Tmp, config.Prune, blockReader, nil),

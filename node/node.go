@@ -30,6 +30,12 @@ import (
 	"time"
 
 	"github.com/c2h5oh/datasize"
+<<<<<<< HEAD
+=======
+	"github.com/erigontech/erigon-lib/common/dbg"
+	"golang.org/x/sync/semaphore"
+
+>>>>>>> 3.0.0-alpha3
 	"github.com/erigontech/erigon-lib/common/datadir"
 	"github.com/erigontech/erigon-lib/log/v3"
 	"golang.org/x/sync/semaphore"
@@ -373,6 +379,7 @@ func OpenDatabase(ctx context.Context, config *nodecfg.Config, label kv.Label, n
 	if err != nil {
 		return nil, err
 	}
+
 	migrator := migrations.NewMigrator(label)
 	if err := migrator.VerifyVersion(db, dbPath); err != nil {
 		return nil, err
@@ -382,7 +389,7 @@ func OpenDatabase(ctx context.Context, config *nodecfg.Config, label kv.Label, n
 	if err != nil {
 		return nil, err
 	}
-	if has {
+	if has && !dbg.OnlyCreateDB {
 		logger.Info("Re-Opening DB in exclusive mode to apply migrations")
 		db.Close()
 		db, err = openFunc(true)

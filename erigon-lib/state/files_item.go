@@ -123,12 +123,18 @@ func (i *filesItem) closeFilesAndRemove() {
 			if err := os.Remove(i.index.FilePath()); err != nil {
 				log.Trace("remove after close", "err", err, "file", i.index.FileName())
 			}
+			if err := os.Remove(i.index.FilePath() + ".torrent"); err != nil {
+				log.Trace("remove after close", "err", err, "file", i.index.FileName())
+			}
 		}
 		i.index = nil
 	}
 	if i.bindex != nil {
 		i.bindex.Close()
 		if err := os.Remove(i.bindex.FilePath()); err != nil {
+			log.Trace("remove after close", "err", err, "file", i.bindex.FileName())
+		}
+		if err := os.Remove(i.bindex.FilePath() + ".torrent"); err != nil {
 			log.Trace("remove after close", "err", err, "file", i.bindex.FileName())
 		}
 		i.bindex = nil
@@ -138,12 +144,18 @@ func (i *filesItem) closeFilesAndRemove() {
 		if err := os.Remove(i.bm.FilePath()); err != nil {
 			log.Trace("remove after close", "err", err, "file", i.bm.FileName())
 		}
+		if err := os.Remove(i.bm.FilePath() + ".torrent"); err != nil {
+			log.Trace("remove after close", "err", err, "file", i.bm.FileName())
+		}
 		i.bm = nil
 	}
 	if i.existence != nil {
 		i.existence.Close()
 		if err := os.Remove(i.existence.FilePath); err != nil {
 			log.Trace("remove after close", "err", err, "file", i.existence.FileName)
+		}
+		if err := os.Remove(i.existence.FilePath + ".torrent"); err != nil {
+			log.Trace("remove after close", "err", err, "file", i.existence.FilePath)
 		}
 		i.existence = nil
 	}
@@ -189,16 +201,22 @@ func (i *visibleFile) hasTS(ts uint64) bool           { return i.startTxNum <= t
 func (i *visibleFile) isSubSetOf(j *visibleFile) bool { return i.src.isSubsetOf(j.src) } //nolint
 func (i *visibleFile) isSubsetOf(j *visibleFile) bool { return i.src.isSubsetOf(j.src) } //nolint
 
-func calcVisibleFiles(files *btree2.BTreeG[*filesItem], l idxList, trace bool) (roItems []visibleFile) {
+func calcVisibleFiles(files *btree2.BTreeG[*filesItem], l idxList, trace bool, toTxNum uint64) (roItems []visibleFile) {
 	newVisibleFiles := make([]visibleFile, 0, files.Len())
 	if trace {
 		log.Warn("[dbg] calcVisibleFiles", "amount", files.Len())
 	}
 	files.Walk(func(items []*filesItem) bool {
 		for _, item := range items {
+			if item.endTxNum > toTxNum {
+				if trace {
+					log.Warn("[dbg] calcVisibleFiles: more than", "f", item.decompressor.FileName())
+				}
+				continue
+			}
 			if item.canDelete.Load() {
 				if trace {
-					log.Warn("[dbg] calcVisibleFiles0", "f", item.decompressor.FileName())
+					log.Warn("[dbg] calcVisibleFiles: canDelete=true", "f", item.decompressor.FileName())
 				}
 				continue
 			}

@@ -50,8 +50,6 @@ import (
 	state2 "github.com/erigontech/erigon-lib/state"
 
 	"github.com/erigontech/erigon/common"
-	"github.com/erigontech/erigon/consensus/ethash"
-	"github.com/erigontech/erigon/consensus/merge"
 	"github.com/erigontech/erigon/core/rawdb"
 	"github.com/erigontech/erigon/core/state"
 	"github.com/erigontech/erigon/core/tracing"
@@ -97,8 +95,13 @@ func CommitGenesisBlockWithOverride(db kv.RwDB, genesis *types.Genesis, override
 	return c, b, nil
 }
 
+<<<<<<< HEAD
 func WriteGenesisBlock(tx kv.RwTx, genesis *types.Genesis, overrideCancunTime, overrideShanghaiTime, overrideOptimismCanyonTime, overrideOptimismEcotoneTime, overrideOptimismFjordTime, overrideOptimismGraniteTime, overridePragueTime *big.Int, dirs datadir.Dirs, logger log.Logger) (*chain.Config, *types.Block, error) {
 	if err := rawdb.WriteGenesis(tx, genesis); err != nil {
+=======
+func WriteGenesisBlock(tx kv.RwTx, genesis *types.Genesis, overridePragueTime *big.Int, dirs datadir.Dirs, logger log.Logger) (*chain.Config, *types.Block, error) {
+	if err := rawdb.WriteGenesisIfNotExist(tx, genesis); err != nil {
+>>>>>>> 3.0.0-alpha3
 		return nil, nil, err
 	}
 
@@ -302,7 +305,7 @@ func write(tx kv.RwTx, g *types.Genesis, dirs datadir.Dirs, logger log.Logger) (
 	if err := rawdb.WriteTd(tx, block.Hash(), block.NumberU64(), g.Difficulty); err != nil {
 		return nil, nil, err
 	}
-	if err := rawdbv3.TxNums.WriteForGenesis(tx, uint64(block.Transactions().Len()+1)); err != nil {
+	if err := rawdbv3.TxNums.ForcedWrite(tx, 0, uint64(block.Transactions().Len()+1)); err != nil {
 		return nil, nil, err
 	}
 
@@ -318,26 +321,7 @@ func write(tx kv.RwTx, g *types.Genesis, dirs datadir.Dirs, logger log.Logger) (
 		return nil, nil, err
 	}
 
-	// We support ethash/merge for issuance (for now)
-	if g.Config.Consensus != chain.EtHashConsensus {
-		return block, statedb, nil
-	}
-	// Issuance is the sum of allocs
-	genesisIssuance := big.NewInt(0)
-	for _, account := range g.Alloc {
-		genesisIssuance.Add(genesisIssuance, account.Balance)
-	}
-
-	// BlockReward can be present at genesis
-	if block.Header().Difficulty.Cmp(merge.ProofOfStakeDifficulty) != 0 {
-		blockReward, _ := ethash.AccumulateRewards(g.Config, block.Header(), nil)
-		// Set BlockReward
-		genesisIssuance.Add(genesisIssuance, blockReward.ToBig())
-	}
-	if err := rawdb.WriteTotalIssued(tx, 0, genesisIssuance); err != nil {
-		return nil, nil, err
-	}
-	return block, statedb, rawdb.WriteTotalBurnt(tx, 0, libcommon.Big0)
+	return block, statedb, nil
 }
 
 // GenesisBlockForTesting creates and writes a block in which addr has the given wei balance.
@@ -595,7 +579,7 @@ func GenesisToBlock(g *types.Genesis, dirs datadir.Dirs, logger log.Logger) (*ty
 		genesisTmpDB := mdbx.NewMDBX(logger).InMem(dirs.DataDir).MapSize(2 * datasize.GB).GrowthStep(1 * datasize.MB).MustOpen()
 		defer genesisTmpDB.Close()
 
-		cr := rawdb.NewCanonicalReader()
+		cr := rawdb.NewCanonicalReader(rawdbv3.TxNums)
 		agg, err := state2.NewAggregator(context.Background(), dirs, config3.HistoryV3AggregationStep, genesisTmpDB, cr, logger)
 		if err != nil {
 			return err
@@ -621,7 +605,7 @@ func GenesisToBlock(g *types.Genesis, dirs datadir.Dirs, logger log.Logger) (*ty
 		defer sd.Close()
 
 		//r, w := state.NewDbStateReader(tx), state.NewDbStateWriter(tx, 0)
-		r, w := state.NewReaderV4(sd), state.NewWriterV4(sd)
+		r, w := state.NewReaderV3(sd), state.NewWriterV4(sd)
 		statedb = state.New(r)
 		statedb.SetTrace(false)
 

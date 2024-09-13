@@ -107,6 +107,14 @@ func (a *ApiHandler) GetEthV1ValidatorAttestationData(
 	if err != nil {
 		return nil, beaconhttp.NewEndpointError(http.StatusInternalServerError, err)
 	}
+	headBlockRoot, _, err := a.forkchoiceStore.GetHead()
+	if err != nil {
+		return nil, err
+	}
+	if headBlockRoot != (libcommon.Hash{}) {
+		attestationData.SetBeaconBlockRoot(headBlockRoot)
+	}
+
 	return newBeaconResponse(attestationData), nil
 }
 
@@ -1040,7 +1048,6 @@ func (a *ApiHandler) storeBlockAndBlobs(
 	if _, err := a.engine.ForkChoiceUpdate(ctx, a.forkchoiceStore.GetEth1Hash(finalizedBlockRoot), a.forkchoiceStore.GetEth1Hash(blockRoot), nil); err != nil {
 		return err
 	}
-	a.validatorsMonitor.OnNewBlock(block.Block)
 	return nil
 }
 
