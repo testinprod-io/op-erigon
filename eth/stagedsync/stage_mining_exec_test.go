@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/erigontech/erigon-lib/common/datadir"
 	"github.com/erigontech/erigon-lib/kv/temporal/temporaltest"
+	"github.com/erigontech/erigon-lib/wrap"
 	"testing"
 
 	"github.com/erigontech/erigon-lib/kv"
@@ -43,10 +44,11 @@ func TestMiningExec(t *testing.T) {
 
 		u := &UnwindState{ID: stages.MiningExecution, UnwindPoint: 25}
 		s := &StageState{ID: stages.MiningExecution, BlockNumber: 50}
-		err = UnwindMiningExecutionStage(u, s, tx2, ctx, cfg, logger)
+
+		err = UnwindMiningExecutionStage(u, s, wrap.TxContainer{Tx: tx2}, ctx, cfg, logger)
 		require.NoError(err)
 
-		compareCurrentState(t, tx1, tx2, kv.PlainState, kv.PlainContractCode, kv.ContractTEVMCode)
+		compareCurrentState(t, tx1, tx2, kv.PlainState, kv.PlainContractCode, kv.ContractCode)
 	})
 	t.Run("UnwindMiningExecutionStagePlainWithIncarnationChanges", func(t *testing.T) {
 		require := require.New(t)
@@ -67,7 +69,7 @@ func TestMiningExec(t *testing.T) {
 
 		u := &UnwindState{ID: stages.MiningExecution, UnwindPoint: 25}
 		s := &StageState{ID: stages.MiningExecution, BlockNumber: 50}
-		err = UnwindMiningExecutionStage(u, s, tx2, ctx, cfg, logger)
+		err = UnwindMiningExecutionStage(u, s, wrap.TxContainer{Tx: tx2}, ctx, cfg, logger)
 		require.NoError(err)
 
 		compareCurrentState(t, tx1, tx2, kv.PlainState, kv.PlainContractCode)
@@ -93,7 +95,7 @@ func TestMiningExec(t *testing.T) {
 		}
 		u := &UnwindState{ID: stages.MiningExecution, UnwindPoint: 25}
 		s := &StageState{ID: stages.MiningExecution, BlockNumber: 50}
-		err = UnwindMiningExecutionStage(u, s, tx2, ctx, cfg, logger)
+		err = UnwindMiningExecutionStage(u, s, wrap.TxContainer{Tx: tx2}, ctx, cfg, logger)
 		require.NoError(err)
 
 		compareCurrentState(t, tx1, tx2, kv.PlainState, kv.PlainContractCode)

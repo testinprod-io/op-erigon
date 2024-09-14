@@ -21,9 +21,6 @@ package gasprice_test
 
 import (
 	"context"
-	"github.com/erigontech/erigon-lib/chain"
-	"github.com/erigontech/erigon/core/rawdb"
-	"github.com/erigontech/erigon/rpc"
 	"math"
 	"math/big"
 	"testing"
@@ -77,53 +74,6 @@ func newTestBackend(t *testing.T) *mock.MockSentry {
 	return m
 }
 
-func (b *testBackend) GetReceipts(ctx context.Context, block *types.Block) (types.Receipts, error) {
-	tx, err := b.db.BeginRo(context.Background())
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-
-	receipts := rawdb.ReadReceipts(b.cfg, tx, block, nil)
-	return receipts, nil
-}
-
-func (b *testBackend) PendingBlockAndReceipts() (*types.Block, types.Receipts) {
-	return nil, nil
-	//if b.pending {
-	//	block := b.chain.GetBlockByNumber(testHead + 1)
-	//	return block, b.chain.GetReceiptsByHash(block.Hash())
-	//}
-}
-func (b *testBackend) HeaderByNumber(ctx context.Context, number rpc.BlockNumber) (*types.Header, error) {
-	tx, err := b.db.BeginRo(context.Background())
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-	if number == rpc.LatestBlockNumber {
-		return rawdb.ReadCurrentHeader(tx), nil
-	}
-	return b.blockReader.HeaderByNumber(ctx, tx, uint64(number))
-}
-
-func (b *testBackend) BlockByNumber(ctx context.Context, number rpc.BlockNumber) (*types.Block, error) {
-	tx, err := b.db.BeginRo(context.Background())
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-
-	if number == rpc.LatestBlockNumber {
-		return b.blockReader.CurrentBlock(tx)
-	}
-	return b.blockReader.BlockByNumber(ctx, tx, uint64(number))
-}
-
-func (b *testBackend) ChainConfig() *chain.Config {
-	return b.cfg
-}
-
 func TestSuggestPrice(t *testing.T) {
 	config := gaspricecfg.Config{
 		Blocks:     2,
@@ -132,7 +82,7 @@ func TestSuggestPrice(t *testing.T) {
 	}
 
 	m := newTestBackend(t) //, big.NewInt(16), c.pending)
-	baseApi := jsonrpc.NewBaseApi(nil, kvcache.NewDummy(), m.BlockReader, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs, nil)
+	baseApi := jsonrpc.NewBaseApi(nil, kvcache.NewDummy(), m.BlockReader, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs, nil, nil, nil)
 
 	tx, _ := m.DB.BeginRo(m.Ctx)
 	defer tx.Rollback()

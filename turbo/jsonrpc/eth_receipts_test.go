@@ -48,7 +48,7 @@ func TestGetReceipts(t *testing.T) {
 	require.NoError(t, err)
 	defer rTx.Rollback()
 
-	receipt, err := api.getReceipts(m.Ctx, rTx, block, []common.Address{})
+	receipt, err := api.getReceipts(m.Ctx, rTx, block)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(receipt))
 
@@ -107,7 +107,7 @@ func TestGetReceipts(t *testing.T) {
 	require.NoError(t, rawdb.WriteSenders(tx, header.Hash(), header.Number.Uint64(), body.SendersFromTxs()))
 
 	br := m.BlockReader
-	b, senders, err := br.BlockWithSenders(ctx, tx, header.Hash(), header.Number.Uint64())
+	b, _, err := br.BlockWithSenders(ctx, tx, header.Hash(), header.Number.Uint64())
 	require.NoError(t, err)
 
 	require.NoError(t, rawdb.WriteBlock(tx, b))
@@ -119,7 +119,7 @@ func TestGetReceipts(t *testing.T) {
 	require.NoError(t, err)
 	defer rTx.Rollback()
 
-	receipts, err = api.getReceipts(m.Ctx, rTx, b, senders)
+	receipts, err = api.getReceipts(m.Ctx, rTx, b)
 	require.NoError(t, err)
 	require.Equal(t, 2, len(receipts))
 

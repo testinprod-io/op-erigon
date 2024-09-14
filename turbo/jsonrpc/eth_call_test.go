@@ -120,7 +120,7 @@ func TestEstimateGasHistoricalRPC(t *testing.T) {
 				api.historicalRPCService = historicalRPCService
 				s.UpdatePayload(tt.payload)
 			}
-			val, err := api.EstimateGas(m.Ctx, &ethapi.CallArgs{}, nil)
+			val, err := api.EstimateGas(m.Ctx, &ethapi.CallArgs{}, nil, nil)
 			if tt.isError {
 				require.Error(t, err, tt.caseName)
 				require.Equal(t, tt.expected, fmt.Sprintf("%v", err), tt.caseName)
