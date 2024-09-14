@@ -86,111 +86,121 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf ## v3.2.0
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@988b5a0280414f521da01fcc63a27aeeb4b104db ## v3.6.1
-
-      - name: Build binaries with goreleaser
-        env:
-          BUILD_VERSION: ${{ inputs.release_version }}
-          DOCKER_URL: ${{ env.DOCKERHUB_REPOSITORY }}
+      - name: Run GoReleaser
         run: |
-          docker run --rm \
-            -w /${{ env.APPLICATION }}/ \
-            -e BUILD_VERSION=${{ env.BUILD_VERSION }} \
-            -e GIT_COMMIT=${{ steps.getCommitId.outputs.id }} \
-            -e GIT_BRANCH=${{ inputs.checkout_ref }} \
-            -e GIT_TAG=${{ inputs.release_version }} \
-            -e PACKAGE=${{ env.PACKAGE }} \
-            -e APPLICATION=${{ env.APPLICATION }} \
-            -v $(pwd):/${{ env.APPLICATION}} \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            ${{ env.BUILDER_IMAGE }} release --clean --skip=validate,announce,publish
-          echo "DEBUG: ls -lao in the working directory"
-          ls -lao
-          echo "DEBUG: content of the dist/ directory"
-          find dist/ -ls
-
-      - name: Build and push multi-platform docker images (${{ env.BUILD_VERSION }} and latest) in case perform_release is true
-        if: ${{ inputs.perform_release }}
+          make release
+          docker images
         env:
-          BUILD_VERSION: ${{ inputs.release_version }}
-          DOCKER_URL: ${{ env.DOCKERHUB_REPOSITORY }}
-          DOCKER_PUBLISH_LATEST_CONDITION: ${{ inputs.publish_latest_tag && format('--tag {0}:latest ',env.DOCKERHUB_REPOSITORY) || '' }}
-        run: |
-          docker buildx build \
-          --file ${{ env.DOCKERFILE_PATH }} \
-          --build-arg DOCKER_BASE_IMAGE=${{ env.DOCKER_BASE_IMAGE }} \
-          --build-arg VERSION=${{ env.BUILD_VERSION }} \
-          --build-arg APPLICATION=${{ env.APPLICATION }} \
-          --tag ${{ env.DOCKER_URL }}:${{ env.BUILD_VERSION }} \
-          ${{ env.DOCKER_PUBLISH_LATEST_CONDITION }} \
-          --label org.opencontainers.image.created=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
-          --label org.opencontainers.image.authors="https://github.com/testinprod-io/op-erigon/graphs/contributors" \
-          --label org.opencontainers.image.url="https://github.com/testinprod-io/op-erigon/blob/main/Dockerfile" \
-          --label org.opencontainers.image.documentation="https://github.com/testinprod-io/op-erigon/blob/main/Dockerfile" \
-          --label org.opencontainers.image.source="https://github.com/testinprod-io/op-erigon/blob/main/Dockerfile" \
-          --label org.opencontainers.image.version=${{ inputs.release_version }} \
-          --label org.opencontainers.image.revision=${{ steps.getCommitId.outputs.id }} \
-          --label org.opencontainers.image.vcs-ref-short=${{ steps.getCommitId.outputs.short_commit_id }} \
-          --label org.opencontainers.image.vendor="${{ github.repository_owner }}" \
-          --label org.opencontainers.image.description="${{ env.LABEL_DESCRIPTION }}" \
-          --label org.opencontainers.image.base.name="${{ env.DOCKER_BASE_IMAGE }}" \
-          --push \
-          --platform linux/amd64/v2,linux/arm64 .
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.prepare.outputs.tag_name }}
+          DOCKER_USERNAME: ${{ secrets.DOCKERHUB }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKERHUB_KEY }}
+          
+      # - name: Set up Docker Buildx
+      #   uses: docker/setup-buildx-action@988b5a0280414f521da01fcc63a27aeeb4b104db ## v3.6.1
 
-      - name: Upload artifact -- linux/arm64
-        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a  ## v4.3.6
-        with:
-          name: ${{ env.APPLICATION }}_${{ inputs.release_version }}_linux_arm64.tar.gz
-          path: ./dist/${{ env.APPLICATION }}_${{ inputs.release_version }}_linux_arm64.tar.gz
-          retention-days: 1
-          compression-level: 0
-          if-no-files-found: error
+      # - name: Build binaries with goreleaser
+      #   env:
+      #     BUILD_VERSION: ${{ inputs.release_version }}
+      #     DOCKER_URL: ${{ env.DOCKERHUB_REPOSITORY }}
+      #   run: |
+      #     docker run --rm \
+      #       -w /${{ env.APPLICATION }}/ \
+      #       -e BUILD_VERSION=${{ env.BUILD_VERSION }} \
+      #       -e GIT_COMMIT=${{ steps.getCommitId.outputs.id }} \
+      #       -e GIT_BRANCH=${{ inputs.checkout_ref }} \
+      #       -e GIT_TAG=${{ inputs.release_version }} \
+      #       -e PACKAGE=${{ env.PACKAGE }} \
+      #       -e APPLICATION=${{ env.APPLICATION }} \
+      #       -v $(pwd):/${{ env.APPLICATION}} \
+      #       -v /var/run/docker.sock:/var/run/docker.sock \
+      #       ${{ env.BUILDER_IMAGE }} release --clean --skip=validate,announce,publish
+      #     echo "DEBUG: ls -lao in the working directory"
+      #     ls -lao
+      #     echo "DEBUG: content of the dist/ directory"
+      #     find dist/ -ls
 
-      - name: Upload artifact -- linux/amd64
-        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a  ## v4.3.6
-        with:
-          name: ${{ env.APPLICATION }}_${{ inputs.release_version }}_linux_amd64.tar.gz
-          path: ./dist/${{ env.APPLICATION }}_${{ inputs.release_version }}_linux_amd64.tar.gz
-          retention-days: 1
-          compression-level: 0
-          if-no-files-found: error
+      # - name: Build and push multi-platform docker images (${{ env.BUILD_VERSION }} and latest) in case perform_release is true
+      #   if: ${{ inputs.perform_release }}
+      #   env:
+      #     BUILD_VERSION: ${{ inputs.release_version }}
+      #     DOCKER_URL: ${{ env.DOCKERHUB_REPOSITORY }}
+      #     DOCKER_PUBLISH_LATEST_CONDITION: ${{ inputs.publish_latest_tag && format('--tag {0}:latest ',env.DOCKERHUB_REPOSITORY) || '' }}
+      #   run: |
+      #     docker buildx build \
+      #     --file ${{ env.DOCKERFILE_PATH }} \
+      #     --build-arg DOCKER_BASE_IMAGE=${{ env.DOCKER_BASE_IMAGE }} \
+      #     --build-arg VERSION=${{ env.BUILD_VERSION }} \
+      #     --build-arg APPLICATION=${{ env.APPLICATION }} \
+      #     --tag ${{ env.DOCKER_URL }}:${{ env.BUILD_VERSION }} \
+      #     ${{ env.DOCKER_PUBLISH_LATEST_CONDITION }} \
+      #     --label org.opencontainers.image.created=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
+      #     --label org.opencontainers.image.authors="https://github.com/testinprod-io/op-erigon/graphs/contributors" \
+      #     --label org.opencontainers.image.url="https://github.com/testinprod-io/op-erigon/blob/main/Dockerfile" \
+      #     --label org.opencontainers.image.documentation="https://github.com/testinprod-io/op-erigon/blob/main/Dockerfile" \
+      #     --label org.opencontainers.image.source="https://github.com/testinprod-io/op-erigon/blob/main/Dockerfile" \
+      #     --label org.opencontainers.image.version=${{ inputs.release_version }} \
+      #     --label org.opencontainers.image.revision=${{ steps.getCommitId.outputs.id }} \
+      #     --label org.opencontainers.image.vcs-ref-short=${{ steps.getCommitId.outputs.short_commit_id }} \
+      #     --label org.opencontainers.image.vendor="${{ github.repository_owner }}" \
+      #     --label org.opencontainers.image.description="${{ env.LABEL_DESCRIPTION }}" \
+      #     --label org.opencontainers.image.base.name="${{ env.DOCKER_BASE_IMAGE }}" \
+      #     --push \
+      #     --platform linux/amd64/v2,linux/arm64 .
 
-      - name: Upload artifact -- darwin/arm64
-        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a  ## v4.3.6
-        with:
-          name: ${{ env.APPLICATION }}_${{ inputs.release_version }}_darwin_arm64.tar.gz
-          path: ./dist/${{ env.APPLICATION }}_${{ inputs.release_version }}_darwin_arm64.tar.gz
-          retention-days: 1
-          compression-level: 0
-          if-no-files-found: error
+      # - name: Upload artifact -- linux/arm64
+      #   uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a  ## v4.3.6
+      #   with:
+      #     name: ${{ env.APPLICATION }}_${{ inputs.release_version }}_linux_arm64.tar.gz
+      #     path: ./dist/${{ env.APPLICATION }}_${{ inputs.release_version }}_linux_arm64.tar.gz
+      #     retention-days: 1
+      #     compression-level: 0
+      #     if-no-files-found: error
 
-      - name: Upload artifact -- darwin/amd64
-        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a  ## v4.3.6
-        with:
-          name: ${{ env.APPLICATION }}_${{ inputs.release_version }}_darwin_amd64.tar.gz
-          path: ./dist/${{ env.APPLICATION }}_${{ inputs.release_version }}_darwin_amd64.tar.gz
-          retention-days: 1
-          compression-level: 0
-          if-no-files-found: error
+      # - name: Upload artifact -- linux/amd64
+      #   uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a  ## v4.3.6
+      #   with:
+      #     name: ${{ env.APPLICATION }}_${{ inputs.release_version }}_linux_amd64.tar.gz
+      #     path: ./dist/${{ env.APPLICATION }}_${{ inputs.release_version }}_linux_amd64.tar.gz
+      #     retention-days: 1
+      #     compression-level: 0
+      #     if-no-files-found: error
 
-      - name: Upload artifact -- windows/amd64
-        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a  ## v4.3.6
-        with:
-          name: ${{ env.APPLICATION }}_${{ inputs.release_version }}_windows_amd64.zip
-          path: ./dist/${{ env.APPLICATION }}_${{ inputs.release_version }}_windows_amd64.zip
-          retention-days: 1
-          compression-level: 0
-          if-no-files-found: error
+      # - name: Upload artifact -- darwin/arm64
+      #   uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a  ## v4.3.6
+      #   with:
+      #     name: ${{ env.APPLICATION }}_${{ inputs.release_version }}_darwin_arm64.tar.gz
+      #     path: ./dist/${{ env.APPLICATION }}_${{ inputs.release_version }}_darwin_arm64.tar.gz
+      #     retention-days: 1
+      #     compression-level: 0
+      #     if-no-files-found: error
 
-      - name: Upload artifact -- checksum
-        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a  ## v4.3.6
-        with:
-          name: ${{ env.APPLICATION }}_${{ inputs.release_version }}_checksums.txt
-          path: ./dist/${{ env.APPLICATION }}_${{ inputs.release_version }}_checksums.txt
-          retention-days: 1
-          compression-level: 0
-          if-no-files-found: error
+      # - name: Upload artifact -- darwin/amd64
+      #   uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a  ## v4.3.6
+      #   with:
+      #     name: ${{ env.APPLICATION }}_${{ inputs.release_version }}_darwin_amd64.tar.gz
+      #     path: ./dist/${{ env.APPLICATION }}_${{ inputs.release_version }}_darwin_amd64.tar.gz
+      #     retention-days: 1
+      #     compression-level: 0
+      #     if-no-files-found: error
+
+      # - name: Upload artifact -- windows/amd64
+      #   uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a  ## v4.3.6
+      #   with:
+      #     name: ${{ env.APPLICATION }}_${{ inputs.release_version }}_windows_amd64.zip
+      #     path: ./dist/${{ env.APPLICATION }}_${{ inputs.release_version }}_windows_amd64.zip
+      #     retention-days: 1
+      #     compression-level: 0
+      #     if-no-files-found: error
+
+      # - name: Upload artifact -- checksum
+      #   uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a  ## v4.3.6
+      #   with:
+      #     name: ${{ env.APPLICATION }}_${{ inputs.release_version }}_checksums.txt
+      #     path: ./dist/${{ env.APPLICATION }}_${{ inputs.release_version }}_checksums.txt
+      #     retention-days: 1
+      #     compression-level: 0
+      #     if-no-files-found: error
 
 ## not required for now -- commented:
 #      - name: Create and push a git tag for the released version in case perform_release is set
@@ -200,19 +210,19 @@ jobs:
 #          git config --global user.name "${{ env.GITHUB_AUTOMATION_NAME }}"
 #          git tag -a ${{ inputs.release_version }} -m "Release ${{ inputs.release_version }}"
 #          git push origin ${{ inputs.release_version }}
-
-      - name: Publish draft of the Release notes with assets (without windows .zip) in case perform_release is set
-        if: ${{ inputs.perform_release }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          DOCKER_TAGS: ${{ env.DOCKERHUB_REPOSITORY }}:${{ inputs.release_version }}
-          GITHUB_RELEASE_TARGET: ${{ inputs.checkout_ref }}
-        run: |
-          cd dist
-          gh release create ${{ inputs.release_version }} *.tar.gz *_checksums.txt \
-            --generate-notes \
-            --target ${GITHUB_RELEASE_TARGET} \
-            --draft=true \
-            --title "${{ inputs.release_version }}" \
-            --notes "**Improvements:**<br>- ...coming soon <br><br>**Bugfixes:**<br><br>- ...coming soon<br><br>**Docker images:**<br><br>Docker image released:<br> ${{ env.DOCKER_TAGS }}<br><br>... coming soon<br>"
+# 
+      # - name: Publish draft of the Release notes with assets (without windows .zip) in case perform_release is set
+      #   if: ${{ inputs.perform_release }}
+      #   env:
+      #     GH_TOKEN: ${{ github.token }}
+      #     GH_REPO: ${{ github.repository }}
+      #     DOCKER_TAGS: ${{ env.DOCKERHUB_REPOSITORY }}:${{ inputs.release_version }}
+      #     GITHUB_RELEASE_TARGET: ${{ inputs.checkout_ref }}
+      #   run: |
+      #     cd dist
+      #     gh release create ${{ inputs.release_version }} *.tar.gz *_checksums.txt \
+      #       --generate-notes \
+      #       --target ${GITHUB_RELEASE_TARGET} \
+      #       --draft=true \
+      #       --title "${{ inputs.release_version }}" \
+      #       --notes "**Improvements:**<br>- ...coming soon <br><br>**Bugfixes:**<br><br>- ...coming soon<br><br>**Docker images:**<br><br>Docker image released:<br> ${{ env.DOCKER_TAGS }}<br><br>... coming soon<br>"
