@@ -1,19 +1,36 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package migrations
 
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"path/filepath"
 
-	"github.com/ledgerwatch/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common"
 
-	"github.com/ledgerwatch/erigon-lib/common/datadir"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon/core/rawdb"
-	"github.com/ledgerwatch/erigon/eth/stagedsync/stages"
-	"github.com/ledgerwatch/log/v3"
-	"github.com/ugorji/go/codec"
+	"github.com/erigontech/erigon-lib/common/datadir"
+	"github.com/erigontech/erigon-lib/kv"
+	"github.com/erigontech/erigon-lib/log/v3"
+	"github.com/erigontech/erigon/core/rawdb"
+	"github.com/erigontech/erigon/eth/stagedsync/stages"
 )
 
 // migrations apply sequentially in order of this array, skips applied migrations
@@ -34,10 +51,11 @@ import (
 var migrations = map[kv.Label][]Migration{
 	kv.ChainDB: {
 		dbSchemaVersion5,
-		TxsBeginEnd,
-		TxsV3,
 		ProhibitNewDownloadsLock,
+		SqueezeCommitmentFiles,
+		RecompressCommitmentFiles,
 		ProhibitNewDownloadsLock2,
+		ClearBorTables,
 	},
 	kv.TxPoolDB: {},
 	kv.SentryDB: {},
@@ -50,9 +68,9 @@ type Migration struct {
 }
 
 var (
-	ErrMigrationNonUniqueName   = fmt.Errorf("please provide unique migration name")
-	ErrMigrationCommitNotCalled = fmt.Errorf("migration before-commit function was not called")
-	ErrMigrationETLFilesDeleted = fmt.Errorf(
+	ErrMigrationNonUniqueName   = errors.New("please provide unique migration name")
+	ErrMigrationCommitNotCalled = errors.New("migration before-commit function was not called")
+	ErrMigrationETLFilesDeleted = errors.New(
 		"db migration progress was interrupted after extraction step and ETL files was deleted, please contact development team for help or re-sync from scratch",
 	)
 )
@@ -124,7 +142,7 @@ func (m *Migrator) PendingMigrations(tx kv.Tx) ([]Migration, error) {
 	return pending, nil
 }
 
-func (m *Migrator) VerifyVersion(db kv.RwDB) error {
+func (m *Migrator) VerifyVersion(db kv.RwDB, chaindata string) error {
 	if err := db.View(context.Background(), func(tx kv.Tx) error {
 		major, minor, _, ok, err := rawdb.ReadDBSchemaVersion(tx)
 		if err != nil {
@@ -138,9 +156,8 @@ func (m *Migrator) VerifyVersion(db kv.RwDB) error {
 					return fmt.Errorf("cannot downgrade minor DB version from %d.%d to %d.%d", major, minor, kv.DBSchemaVersion.Major, kv.DBSchemaVersion.Major)
 				}
 			} else {
-				// major < kv.DBSchemaVersion.Major
-				if kv.DBSchemaVersion.Major-major > 1 {
-					return fmt.Errorf("cannot upgrade major DB version for more than 1 version from %d to %d, use integration tool if you know what you are doing", major, kv.DBSchemaVersion.Major)
+				if kv.DBSchemaVersion.Major != major {
+					return fmt.Errorf("cannot switch major DB version, db: %d, erigon: %d, try \"rm -rf %s\"", major, kv.DBSchemaVersion.Major, chaindata)
 				}
 			}
 		}
@@ -152,7 +169,7 @@ func (m *Migrator) VerifyVersion(db kv.RwDB) error {
 	return nil
 }
 
-func (m *Migrator) Apply(db kv.RwDB, dataDir string, logger log.Logger) error {
+func (m *Migrator) Apply(db kv.RwDB, dataDir, chaindata string, logger log.Logger) error {
 	if len(m.Migrations) == 0 {
 		return nil
 	}
@@ -169,7 +186,7 @@ func (m *Migrator) Apply(db kv.RwDB, dataDir string, logger log.Logger) error {
 	}); err != nil {
 		return err
 	}
-	if err := m.VerifyVersion(db); err != nil {
+	if err := m.VerifyVersion(db, chaindata); err != nil {
 		return fmt.Errorf("migrator.Apply: %w", err)
 	}
 
@@ -212,7 +229,7 @@ func (m *Migrator) Apply(db kv.RwDB, dataDir string, logger log.Logger) error {
 			}
 			callbackCalled = true
 
-			stagesProgress, err := MarshalMigrationPayload(tx)
+			stagesProgress, err := json.Marshal(tx)
 			if err != nil {
 				return err
 			}
@@ -236,9 +253,7 @@ func (m *Migrator) Apply(db kv.RwDB, dataDir string, logger log.Logger) error {
 		}
 		logger.Info("Applied migration", "name", v.Name)
 	}
-	if err := db.Update(context.Background(), func(tx kv.RwTx) error {
-		return rawdb.WriteDBSchemaVersion(tx)
-	}); err != nil {
+	if err := db.Update(context.Background(), rawdb.WriteDBSchemaVersion); err != nil {
 		return fmt.Errorf("migrator.Apply: %w", err)
 	}
 	logger.Info(
@@ -257,9 +272,6 @@ func (m *Migrator) Apply(db kv.RwDB, dataDir string, logger log.Logger) error {
 func MarshalMigrationPayload(db kv.Getter) ([]byte, error) {
 	s := map[string][]byte{}
 
-	buf := bytes.NewBuffer(nil)
-	encoder := codec.NewEncoder(buf, &codec.CborHandle{})
-
 	for _, stage := range stages.AllStages {
 		v, err := db.GetOne(kv.SyncStageProgress, []byte(stage))
 		if err != nil {
@@ -270,16 +282,17 @@ func MarshalMigrationPayload(db kv.Getter) ([]byte, error) {
 		}
 	}
 
-	if err := encoder.Encode(s); err != nil {
+	b, err := json.Marshal(s)
+	if err != nil {
 		return nil, err
 	}
-	return buf.Bytes(), nil
+	return b, nil
 }
 
 func UnmarshalMigrationPayload(data []byte) (map[string][]byte, error) {
 	s := map[string][]byte{}
 
-	if err := codec.NewDecoder(bytes.NewReader(data), &codec.CborHandle{}).Decode(&s); err != nil {
+	if err := json.Unmarshal(data, &s); err != nil {
 		return nil, err
 	}
 	return s, nil

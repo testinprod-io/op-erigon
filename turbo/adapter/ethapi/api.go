@@ -1,40 +1,43 @@
 // Copyright 2015 The go-ethereum Authors
-// This file is part of the go-ethereum library.
+// (original work)
+// Copyright 2024 The Erigon Authors
+// (modifications)
+// This file is part of Erigon.
 //
-// The go-ethereum library is free software: you can redistribute it and/or modify
+// Erigon is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The go-ethereum library is distributed in the hope that it will be useful,
+// Erigon is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
 
 package ethapi
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
 
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
-
 	"github.com/holiman/uint256"
-	"github.com/ledgerwatch/log/v3"
 
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/hexutility"
-	types2 "github.com/ledgerwatch/erigon-lib/types"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/hexutil"
+	"github.com/erigontech/erigon-lib/common/hexutility"
+	"github.com/erigontech/erigon-lib/log/v3"
+	types2 "github.com/erigontech/erigon-lib/types"
 
-	"github.com/ledgerwatch/erigon/accounts/abi"
-	"github.com/ledgerwatch/erigon/common/math"
-	"github.com/ledgerwatch/erigon/core"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/eth/tracers/logger"
+	"github.com/erigontech/erigon/accounts/abi"
+	"github.com/erigontech/erigon/common/math"
+	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/core/vm/evmtypes"
+	"github.com/erigontech/erigon/eth/tracers/logger"
 )
 
 // CallArgs represents the arguments for a call.
@@ -96,7 +99,7 @@ func (args *CallArgs) ToMessage(globalGasCap uint64, baseFee *uint256.Int) (type
 		if args.GasPrice != nil {
 			overflow := gasPrice.SetFromBig(args.GasPrice.ToInt())
 			if overflow {
-				return types.Message{}, fmt.Errorf("args.GasPrice higher than 2^256-1")
+				return types.Message{}, errors.New("args.GasPrice higher than 2^256-1")
 			}
 		}
 		gasFeeCap, gasTipCap = gasPrice, gasPrice
@@ -107,7 +110,7 @@ func (args *CallArgs) ToMessage(globalGasCap uint64, baseFee *uint256.Int) (type
 			gasPrice = new(uint256.Int)
 			overflow := gasPrice.SetFromBig(args.GasPrice.ToInt())
 			if overflow {
-				return types.Message{}, fmt.Errorf("args.GasPrice higher than 2^256-1")
+				return types.Message{}, errors.New("args.GasPrice higher than 2^256-1")
 			}
 			gasFeeCap, gasTipCap = gasPrice, gasPrice
 		} else {
@@ -116,14 +119,14 @@ func (args *CallArgs) ToMessage(globalGasCap uint64, baseFee *uint256.Int) (type
 			if args.MaxFeePerGas != nil {
 				overflow := gasFeeCap.SetFromBig(args.MaxFeePerGas.ToInt())
 				if overflow {
-					return types.Message{}, fmt.Errorf("args.GasPrice higher than 2^256-1")
+					return types.Message{}, errors.New("args.GasPrice higher than 2^256-1")
 				}
 			}
 			gasTipCap = new(uint256.Int)
 			if args.MaxPriorityFeePerGas != nil {
 				overflow := gasTipCap.SetFromBig(args.MaxPriorityFeePerGas.ToInt())
 				if overflow {
-					return types.Message{}, fmt.Errorf("args.GasPrice higher than 2^256-1")
+					return types.Message{}, errors.New("args.GasPrice higher than 2^256-1")
 				}
 			}
 			// Backfill the legacy gasPrice for EVM execution, unless we're all zeroes
@@ -135,7 +138,7 @@ func (args *CallArgs) ToMessage(globalGasCap uint64, baseFee *uint256.Int) (type
 		if args.MaxFeePerBlobGas != nil {
 			blobFee, overflow := uint256.FromBig(args.MaxFeePerBlobGas.ToInt())
 			if overflow {
-				return types.Message{}, fmt.Errorf("args.MaxFeePerBlobGas higher than 2^256-1")
+				return types.Message{}, errors.New("args.MaxFeePerBlobGas higher than 2^256-1")
 			}
 			maxFeePerBlobGas = blobFee
 		}
@@ -145,7 +148,7 @@ func (args *CallArgs) ToMessage(globalGasCap uint64, baseFee *uint256.Int) (type
 	if args.Value != nil {
 		overflow := value.SetFromBig(args.Value.ToInt())
 		if overflow {
-			return types.Message{}, fmt.Errorf("args.Value higher than 2^256-1")
+			return types.Message{}, errors.New("args.Value higher than 2^256-1")
 		}
 	}
 	var data []byte
@@ -170,14 +173,14 @@ func (args *CallArgs) ToMessage(globalGasCap uint64, baseFee *uint256.Int) (type
 // if statDiff is set, all diff will be applied first and then execute the call
 // message.
 type Account struct {
-	Nonce     *hexutil.Uint64                 `json:"nonce"`
-	Code      *hexutility.Bytes               `json:"code"`
-	Balance   **hexutil.Big                   `json:"balance"`
-	State     *map[libcommon.Hash]uint256.Int `json:"state"`
-	StateDiff *map[libcommon.Hash]uint256.Int `json:"stateDiff"`
+	Nonce     *hexutil.Uint64                    `json:"nonce"`
+	Code      *hexutility.Bytes                  `json:"code"`
+	Balance   **hexutil.Big                      `json:"balance"`
+	State     *map[libcommon.Hash]libcommon.Hash `json:"state"`
+	StateDiff *map[libcommon.Hash]libcommon.Hash `json:"stateDiff"`
 }
 
-func NewRevertError(result *core.ExecutionResult) *RevertError {
+func NewRevertError(result *evmtypes.ExecutionResult) *RevertError {
 	reason, errUnpack := abi.UnpackRevert(result.Revert())
 	err := errors.New("execution reverted")
 	if errUnpack == nil {
@@ -246,14 +249,14 @@ func FormatLogs(logs []logger.StructLog) []StructLogRes {
 		if trace.Stack != nil {
 			stack := make([]string, len(trace.Stack))
 			for i, stackValue := range trace.Stack {
-				stack[i] = fmt.Sprintf("%x", math.PaddedBigBytes(stackValue, 32))
+				stack[i] = hex.EncodeToString(math.PaddedBigBytes(stackValue, 32))
 			}
 			formatted[index].Stack = &stack
 		}
 		if trace.Memory != nil {
 			memory := make([]string, 0, (len(trace.Memory)+31)/32)
 			for i := 0; i+32 <= len(trace.Memory); i += 32 {
-				memory = append(memory, fmt.Sprintf("%x", trace.Memory[i:i+32]))
+				memory = append(memory, hex.EncodeToString(trace.Memory[i:i+32]))
 			}
 			formatted[index].Memory = &memory
 		}
@@ -304,6 +307,9 @@ func RPCMarshalHeader(head *types.Header) map[string]interface{} {
 	if head.ParentBeaconBlockRoot != nil {
 		result["parentBeaconBlockRoot"] = head.ParentBeaconBlockRoot
 	}
+	if head.RequestsRoot != nil {
+		result["requestsRoot"] = head.RequestsRoot
+	}
 
 	return result
 }
@@ -339,8 +345,8 @@ func RPCMarshalBlockExDeprecated(block *types.Block, inclTx bool, fullTx bool, b
 			receipts = make([]*types.Receipt, len(txs))
 		}
 		var err error
-		for i, tx := range txs {
-			if transactions[i], err = formatTx(tx, i); err != nil {
+		for i, txn := range txs {
+			if transactions[i], err = formatTx(txn, i); err != nil {
 				return nil, err
 			}
 		}
@@ -364,6 +370,10 @@ func RPCMarshalBlockExDeprecated(block *types.Block, inclTx bool, fullTx bool, b
 
 	if block.Withdrawals() != nil {
 		fields["withdrawals"] = block.Withdrawals()
+	}
+
+	if block.Requests() != nil {
+		fields["requests"] = block.Requests()
 	}
 
 	return fields, nil
@@ -585,8 +595,8 @@ func newRPCTransactionFromBlockIndex(b *types.Block, index uint64) *RPCTransacti
 */
 
 // newRPCTransactionFromBlockAndTxGivenIndex returns a transaction that will serialize to the RPC representation.
-func newRPCTransactionFromBlockAndTxGivenIndex(b *types.Block, tx types.Transaction, index uint64, receipt *types.Receipt) *RPCTransaction {
-	return newRPCTransaction(tx, b.Hash(), b.NumberU64(), index, b.BaseFee(), receipt)
+func newRPCTransactionFromBlockAndTxGivenIndex(b *types.Block, txn types.Transaction, index uint64, receipt *types.Receipt) *RPCTransaction {
+	return newRPCTransaction(txn, b.Hash(), b.NumberU64(), index, b.BaseFee(), receipt)
 }
 
 /*
@@ -612,7 +622,7 @@ func newRPCRawTransactionFromBlockIndex(b *types.Block, index uint64) hexutil.By
 /*
 // newRPCTransactionFromBlockHash returns a transaction that will serialize to the RPC representation.
 func newRPCTransactionFromBlockHash(b *types.Block, hash libcommon.Hash) *RPCTransaction {
-	for idx, tx := range b.Transactions() {
+	for idx, txn := range b.Transactions() {
 		if tx.Hash() == hash {
 			return newRPCTransactionFromBlockIndex(b, uint64(idx))
 		}
@@ -713,11 +723,11 @@ func (s *PublicTransactionPoolAPI) GetTransactionByHash(ctx context.Context, has
 	if err != nil {
 		return nil, err
 	}
-	if tx != nil {
+	if txn != nil {
 		return newRPCTransaction(tx, blockHash, blockNumber, index), nil
 	}
 	// No finalized transaction, try to retrieve it from the pool
-	if tx := s.b.GetPoolTransaction(hash); tx != nil {
+	if txn := s.b.GetPoolTransaction(hash); txn != nil {
 		return newRPCPendingTransaction(tx), nil
 	}
 
@@ -732,8 +742,8 @@ func (s *PublicTransactionPoolAPI) GetRawTransactionByHash(ctx context.Context, 
 	if err != nil {
 		return nil, err
 	}
-	if tx == nil {
-		if tx = s.b.GetPoolTransaction(hash); tx == nil {
+	if txn == nil {
+		if txn = s.b.GetPoolTransaction(hash); txn == nil {
 			// Transaction not found anywhere, abort
 			return nil, nil
 		}
@@ -801,7 +811,7 @@ func (s *PublicTransactionPoolAPI) GetTransactionReceipt(ctx context.Context, ha
 	return fields, nil
 }
 
-// SendTxArgs represents the arguments to sumbit a new transaction into the transaction pool.
+// SendTxArgs represents the arguments to submit a new transaction into the transaction pool.
 type SendTxArgs struct {
 	From     libcommon.Address  `json:"from"`
 	To       *libcommon.Address `json:"to"`
@@ -821,7 +831,7 @@ type SendTxArgs struct {
 	ChainID    *hexutil.Big      `json:"chainId,omitempty"`
 }
 
-// setDefaults fills in default values for unspecified tx fields.
+// setDefaults fills in default values for unspecified txn fields.
 func (args *SendTxArgs) setDefaults(ctx context.Context, b Backend) error {
 	if args.GasPrice == nil {
 		price, err := b.SuggestPrice(ctx)
@@ -897,7 +907,7 @@ func (args *SendTxArgs) toTransaction() types.Transaction {
 		input = *args.Data
 	}
 
-	var tx types.Transaction
+	var txn types.Transaction
 	gasPrice, _ := uint256.FromBig((*big.Int)(args.GasPrice))
 	value, _ := uint256.FromBig((*big.Int)(args.Value))
 	if args.AccessList == nil {
@@ -949,8 +959,8 @@ func (args *SendTxArgs) toTransaction() types.Transaction {
 	return tx
 }
 
-// SubmitTransaction is a helper function that submits tx to txPool and logs a message.
-func SubmitTransaction(ctx context.Context, b Backend, tx types.Transaction) (libcommon.Hash, error) {
+// SubmitTransaction is a helper function that submits txn to txPool and logs a message.
+func SubmitTransaction(ctx context.Context, b Backend, txn types.Transaction) (libcommon.Hash, error) {
 	// If the transaction fee cap is already specified, ensure the
 	// fee of the given transaction is _reasonable_.
 	if err := checkTxFee(tx.GetPrice().ToBig(), tx.GetGas(), b.RPCTxFeeCap()); err != nil {
@@ -963,7 +973,7 @@ func SubmitTransaction(ctx context.Context, b Backend, tx types.Transaction) (li
 	if err := b.SendTx(ctx, tx); err != nil {
 		return libcommon.Hash{}, err
 	}
-	// Print a log with full tx details for manual investigations and interventions
+	// Print a log with full txn details for manual investigations and interventions
 	signer := types.MakeSigner(b.ChainConfig(), b.CurrentBlock().Number().Uint64())
 	from, err := tx.Sender(*signer)
 	if err != nil {

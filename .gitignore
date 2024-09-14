@@ -18,6 +18,7 @@ build/_vendor/pkg
 docs/readthedocs/build
 .dev
 
+/.VSCodeCounter
 #*
 .#*
 *#
@@ -74,8 +75,6 @@ tests/testdata/*
 
 go.work*
 
-/goerli
-
 docker-compose.*.yml
 .env
 coverage.out
@@ -91,11 +90,13 @@ caplin-recordings
 jwt.hex
 
 .tool-versions
+salt.txt
 
 *__debug_bin*
 yarn.lock
 node_modules
 
+*.pgo
 /config.toml
 /config.yaml
 /config.yml

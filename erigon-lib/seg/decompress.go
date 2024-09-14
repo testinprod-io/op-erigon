@@ -1,18 +1,18 @@
-/*
-   Copyright 2022 Erigon contributors
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
+// Copyright 2022 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
 
 package seg
 
@@ -24,16 +24,18 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
+	"sync/atomic"
 	"time"
 	"unsafe"
 
-	"github.com/ledgerwatch/erigon-lib/common/assert"
+	"github.com/erigontech/erigon-lib/common/assert"
+	"github.com/erigontech/erigon-lib/log/v3"
 
 	"github.com/c2h5oh/datasize"
-	"github.com/ledgerwatch/log/v3"
 
-	"github.com/ledgerwatch/erigon-lib/common/dbg"
-	"github.com/ledgerwatch/erigon-lib/mmap"
+	"github.com/erigontech/erigon-lib/common/dbg"
+	"github.com/erigontech/erigon-lib/mmap"
 )
 
 type word []byte // plain text word associated with code from dictionary
@@ -131,7 +133,12 @@ type Decompressor struct {
 	wordsCount      uint64
 	emptyWordsCount uint64
 
-	filePath, fileName string
+	serializedDictSize uint64
+	dictWords          int
+
+	filePath, FileName1 string
+
+	readAheadRefcnt atomic.Int32 // ref-counter: allow enable/disable read-ahead from goroutines. only when refcnt=0 - disable read-ahead once
 }
 
 const (
@@ -144,7 +151,7 @@ const (
 
 // Tables with bitlen greater than threshold will be condensed.
 // Condensing reduces size of decompression table but leads to slower reads.
-// To disable condesning at all set to 9 (we dont use tables larger than 2^9)
+// To disable condesning at all set to 9 (we don't use tables larger than 2^9)
 // To enable condensing for tables of size larger 64 = 6
 // for all tables                                    = 0
 // There is no sense to condense tables of size [1 - 64] in terms of performance
@@ -176,8 +183,8 @@ func NewDecompressor(compressedFilePath string) (*Decompressor, error) {
 	var err error
 	var closeDecompressor = true
 	d := &Decompressor{
-		filePath: compressedFilePath,
-		fileName: fName,
+		filePath:  compressedFilePath,
+		FileName1: fName,
 	}
 
 	defer func() {
@@ -213,13 +220,14 @@ func NewDecompressor(compressedFilePath string) (*Decompressor, error) {
 	}
 	// read patterns from file
 	d.data = d.mmapHandle1[:d.size]
-	defer d.EnableReadAhead().DisableReadAhead() //speedup opening on slow drives
+	defer d.EnableMadvNormal().DisableReadAhead() //speedup opening on slow drives
 
 	d.wordsCount = binary.BigEndian.Uint64(d.data[:8])
 	d.emptyWordsCount = binary.BigEndian.Uint64(d.data[8:16])
 
 	pos := uint64(24)
 	dictSize := binary.BigEndian.Uint64(d.data[16:pos])
+	d.serializedDictSize = dictSize
 
 	if pos+dictSize > uint64(d.size) {
 		return nil, &ErrCompressedFileCorrupted{
@@ -254,6 +262,7 @@ func NewDecompressor(compressedFilePath string) (*Decompressor, error) {
 		//fmt.Printf("depth = %d, pattern = [%x]\n", depth, data[dictPos:dictPos+l])
 		dictPos += l
 	}
+	d.dictWords = len(patterns)
 
 	if dictSize > 0 {
 		var bitLen int
@@ -431,6 +440,8 @@ func buildPosTable(depths []uint64, poss []uint64, table *posTable, code uint16,
 func (d *Decompressor) DataHandle() unsafe.Pointer {
 	return unsafe.Pointer(&d.data[0])
 }
+func (d *Decompressor) SerializedDictSize() uint64 { return d.serializedDictSize }
+func (d *Decompressor) DictWords() int             { return d.dictWords }
 
 func (d *Decompressor) Size() int64 {
 	return d.size
@@ -460,16 +471,14 @@ func (d *Decompressor) Close() {
 }
 
 func (d *Decompressor) FilePath() string { return d.filePath }
-func (d *Decompressor) FileName() string { return d.fileName }
+func (d *Decompressor) FileName() string { return d.FileName1 }
 
 // WithReadAhead - Expect read in sequential order. (Hence, pages in the given range can be aggressively read ahead, and may be freed soon after they are accessed.)
 func (d *Decompressor) WithReadAhead(f func() error) error {
 	if d == nil || d.mmapHandle1 == nil {
 		return nil
 	}
-	_ = mmap.MadviseSequential(d.mmapHandle1)
-	//_ = mmap.MadviseWillNeed(d.mmapHandle1)
-	defer mmap.MadviseRandom(d.mmapHandle1)
+	defer d.EnableReadAhead().DisableReadAhead()
 	return f()
 }
 
@@ -478,12 +487,49 @@ func (d *Decompressor) DisableReadAhead() {
 	if d == nil || d.mmapHandle1 == nil {
 		return
 	}
+	leftReaders := d.readAheadRefcnt.Add(-1)
+	if leftReaders < 0 {
+		log.Warn("read-ahead negative counter", "file", d.FileName())
+		return
+	}
+
+	if !dbg.SnapshotMadvRnd { // all files
+		_ = mmap.MadviseNormal(d.mmapHandle1)
+		return
+	}
+
+	if dbg.KvMadvNormal != "" && strings.HasSuffix(d.FileName(), ".kv") { //all .kv files
+		for _, t := range strings.Split(dbg.KvMadvNormal, ",") {
+			if !strings.Contains(d.FileName(), t) {
+				continue
+			}
+			_ = mmap.MadviseNormal(d.mmapHandle1)
+			return
+		}
+	}
+
+	if dbg.KvMadvNormalNoLastLvl != "" && strings.HasSuffix(d.FileName(), ".kv") { //all .kv files - except last-level `v1-storage.0-1024.kv` - starting from step 0
+		for _, t := range strings.Split(dbg.KvMadvNormalNoLastLvl, ",") {
+			if !strings.Contains(d.FileName(), t) {
+				continue
+			}
+			if strings.Contains(d.FileName(), t+".0-") {
+				continue
+			}
+			_ = mmap.MadviseNormal(d.mmapHandle1)
+			return
+		}
+		return
+	}
+
 	_ = mmap.MadviseRandom(d.mmapHandle1)
 }
+
 func (d *Decompressor) EnableReadAhead() *Decompressor {
 	if d == nil || d.mmapHandle1 == nil {
 		return d
 	}
+	d.readAheadRefcnt.Add(1)
 	_ = mmap.MadviseSequential(d.mmapHandle1)
 	return d
 }
@@ -491,6 +537,7 @@ func (d *Decompressor) EnableMadvNormal() *Decompressor {
 	if d == nil || d.mmapHandle1 == nil {
 		return d
 	}
+	d.readAheadRefcnt.Add(1)
 	_ = mmap.MadviseNormal(d.mmapHandle1)
 	return d
 }
@@ -498,11 +545,12 @@ func (d *Decompressor) EnableMadvWillNeed() *Decompressor {
 	if d == nil || d.mmapHandle1 == nil {
 		return d
 	}
+	d.readAheadRefcnt.Add(1)
 	_ = mmap.MadviseWillNeed(d.mmapHandle1)
 	return d
 }
 
-// Getter represent "reader" or "interator" that can move accross the data of the decompressor
+// Getter represent "reader" or "iterator" that can move across the data of the decompressor
 // The full state of the getter can be captured by saving dataP, and dataBit
 type Getter struct {
 	patternDict *patternTable
@@ -522,14 +570,14 @@ func (g *Getter) nextPos(clean bool) (pos uint64) {
 		g.dataP++
 		g.dataBit = 0
 	}
-	table := g.posDict
+	table, dataLen, data := g.posDict, len(g.data), g.data
 	if table.bitLen == 0 {
 		return table.pos[0]
 	}
 	for l := byte(0); l == 0; {
-		code := uint16(g.data[g.dataP]) >> g.dataBit
-		if 8-g.dataBit < table.bitLen && int(g.dataP)+1 < len(g.data) {
-			code |= uint16(g.data[g.dataP+1]) << (8 - g.dataBit)
+		code := uint16(data[g.dataP]) >> g.dataBit
+		if 8-g.dataBit < table.bitLen && int(g.dataP)+1 < dataLen {
+			code |= uint16(data[g.dataP+1]) << (8 - g.dataBit)
 		}
 		code &= (uint16(1) << table.bitLen) - 1
 		l = table.lens[code]
@@ -615,7 +663,7 @@ func (d *Decompressor) MakeGetter() *Getter {
 		posDict:     d.posDict,
 		data:        d.data[d.wordsStart:],
 		patternDict: d.dict,
-		fName:       d.fileName,
+		fName:       d.FileName1,
 	}
 }
 
@@ -632,6 +680,11 @@ func (g *Getter) HasNext() bool {
 // and appends it to the given buf, returning the result of appending
 // After extracting next word, it moves to the beginning of the next one
 func (g *Getter) Next(buf []byte) ([]byte, uint64) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			panic(fmt.Sprintf("file: %s, %s, %s", g.fName, rec, dbg.Stack()))
+		}
+	}()
 	savePos := g.dataP
 	wordLen := g.nextPos(true)
 	wordLen-- // because when create huffman tree we do ++ , because 0 is terminator
@@ -698,6 +751,11 @@ func (g *Getter) Next(buf []byte) ([]byte, uint64) {
 }
 
 func (g *Getter) NextUncompressed() ([]byte, uint64) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			panic(fmt.Sprintf("file: %s, %s, %s", g.fName, rec, dbg.Stack()))
+		}
+	}()
 	wordLen := g.nextPos(true)
 	wordLen-- // because when create huffman tree we do ++ , because 0 is terminator
 	if wordLen == 0 {
@@ -772,72 +830,6 @@ func (g *Getter) SkipUncompressed() (uint64, int) {
 	}
 	g.dataP += wordLen
 	return g.dataP, int(wordLen)
-}
-
-// Match returns true and next offset if the word at current offset fully matches the buf
-// returns false and current offset otherwise.
-func (g *Getter) Match(buf []byte) (bool, uint64) {
-	savePos := g.dataP
-	wordLen := g.nextPos(true)
-	wordLen-- // because when create huffman tree we do ++ , because 0 is terminator
-	lenBuf := len(buf)
-	if wordLen == 0 || int(wordLen) != lenBuf {
-		if g.dataBit > 0 {
-			g.dataP++
-			g.dataBit = 0
-		}
-		if lenBuf != 0 {
-			g.dataP, g.dataBit = savePos, 0
-		}
-		return lenBuf == int(wordLen), g.dataP
-	}
-
-	var bufPos int
-	// In the first pass, we only check patterns
-	for pos := g.nextPos(false /* clean */); pos != 0; pos = g.nextPos(false) {
-		bufPos += int(pos) - 1
-		pattern := g.nextPattern()
-		if lenBuf < bufPos+len(pattern) || !bytes.Equal(buf[bufPos:bufPos+len(pattern)], pattern) {
-			g.dataP, g.dataBit = savePos, 0
-			return false, savePos
-		}
-	}
-	if g.dataBit > 0 {
-		g.dataP++
-		g.dataBit = 0
-	}
-	postLoopPos := g.dataP
-	g.dataP, g.dataBit = savePos, 0
-	g.nextPos(true /* clean */) // Reset the state of huffman decoder
-	// Second pass - we check spaces not covered by the patterns
-	var lastUncovered int
-	bufPos = 0
-	for pos := g.nextPos(false /* clean */); pos != 0; pos = g.nextPos(false) {
-		bufPos += int(pos) - 1
-		if bufPos > lastUncovered {
-			dif := uint64(bufPos - lastUncovered)
-			if lenBuf < bufPos || !bytes.Equal(buf[lastUncovered:bufPos], g.data[postLoopPos:postLoopPos+dif]) {
-				g.dataP, g.dataBit = savePos, 0
-				return false, savePos
-			}
-			postLoopPos += dif
-		}
-		lastUncovered = bufPos + len(g.nextPattern())
-	}
-	if int(wordLen) > lastUncovered {
-		dif := wordLen - uint64(lastUncovered)
-		if lenBuf < int(wordLen) || !bytes.Equal(buf[lastUncovered:wordLen], g.data[postLoopPos:postLoopPos+dif]) {
-			g.dataP, g.dataBit = savePos, 0
-			return false, savePos
-		}
-		postLoopPos += dif
-	}
-	if lenBuf != int(wordLen) {
-		g.dataP, g.dataBit = savePos, 0
-		return false, savePos
-	}
-	g.dataP, g.dataBit = postLoopPos, 0
-	return true, postLoopPos
 }
 
 // MatchPrefix only checks if the word at the current offset has a buf prefix. Does not move offset to the next word.
@@ -984,9 +976,7 @@ func (g *Getter) MatchCmp(buf []byte) int {
 	return cmp
 }
 
-// MatchPrefixCmp lexicographically compares given prefix with the word at the current offset in the file.
-// returns 0 if buf == word, -1 if buf < word, 1 if buf > word
-func (g *Getter) MatchPrefixCmp(prefix []byte) int {
+func (g *Getter) MatchPrefixUncompressed(prefix []byte) bool {
 	savePos := g.dataP
 	defer func() {
 		g.dataP, g.dataBit = savePos, 0
@@ -996,87 +986,36 @@ func (g *Getter) MatchPrefixCmp(prefix []byte) int {
 	wordLen-- // because when create huffman tree we do ++ , because 0 is terminator
 	prefixLen := len(prefix)
 	if wordLen == 0 && prefixLen != 0 {
-		return 1
+		return true
 	}
 	if prefixLen == 0 {
-		return 0
-	}
-
-	decoded := make([]byte, wordLen)
-	var bufPos int
-	// In the first pass, we only check patterns
-	// Only run this loop as far as the prefix goes, there is no need to check further
-	for pos := g.nextPos(false /* clean */); pos != 0; pos = g.nextPos(false) {
-		bufPos += int(pos) - 1
-		if bufPos > prefixLen {
-			break
-		}
-		pattern := g.nextPattern()
-		copy(decoded[bufPos:], pattern)
-	}
-
-	if g.dataBit > 0 {
-		g.dataP++
-		g.dataBit = 0
-	}
-	postLoopPos := g.dataP
-	g.dataP, g.dataBit = savePos, 0
-	g.nextPos(true /* clean */) // Reset the state of huffman decoder
-	// Second pass - we check spaces not covered by the patterns
-	var lastUncovered int
-	bufPos = 0
-	for pos := g.nextPos(false /* clean */); pos != 0 && lastUncovered < prefixLen; pos = g.nextPos(false) {
-		bufPos += int(pos) - 1
-		if bufPos > lastUncovered {
-			dif := uint64(bufPos - lastUncovered)
-			copy(decoded[lastUncovered:bufPos], g.data[postLoopPos:postLoopPos+dif])
-			postLoopPos += dif
-		}
-		lastUncovered = bufPos + len(g.nextPattern())
-	}
-	if prefixLen > lastUncovered && int(wordLen) > lastUncovered {
-		dif := wordLen - uint64(lastUncovered)
-		copy(decoded[lastUncovered:wordLen], g.data[postLoopPos:postLoopPos+dif])
-		// postLoopPos += dif
-	}
-	var cmp int
-	if prefixLen > int(wordLen) {
-		// TODO(racytech): handle this case
-		// e.g: prefix = 'aaacb'
-		// 		word = 'aaa'
-		cmp = bytes.Compare(prefix, decoded)
-	} else {
-		cmp = bytes.Compare(prefix, decoded[:prefixLen])
-	}
-
-	return cmp
-}
-
-func (g *Getter) MatchPrefixUncompressed(prefix []byte) int {
-	savePos := g.dataP
-	defer func() {
-		g.dataP, g.dataBit = savePos, 0
-	}()
-
-	wordLen := g.nextPos(true /* clean */)
-	wordLen-- // because when create huffman tree we do ++ , because 0 is terminator
-	prefixLen := len(prefix)
-	if wordLen == 0 && prefixLen != 0 {
-		return 1
-	}
-	if prefixLen == 0 {
-		return 0
+		return false
 	}
 
 	g.nextPos(true)
 
-	// if prefixLen > int(wordLen) {
-	// 	// TODO(racytech): handle this case
-	// 	// e.g: prefix = 'aaacb'
-	// 	// 		word = 'aaa'
-	// }
+	return bytes.HasPrefix(g.data[g.dataP:g.dataP+wordLen], prefix)
+}
 
-	return bytes.Compare(prefix, g.data[g.dataP:g.dataP+wordLen])
+func (g *Getter) MatchCmpUncompressed(buf []byte) int {
+	savePos := g.dataP
+	defer func() {
+		g.dataP, g.dataBit = savePos, 0
+	}()
+
+	wordLen := g.nextPos(true /* clean */)
+	wordLen-- // because when create huffman tree we do ++ , because 0 is terminator
+	bufLen := len(buf)
+	if wordLen == 0 && bufLen != 0 {
+		return 1
+	}
+	if bufLen == 0 {
+		return -1
+	}
+
+	g.nextPos(true)
+
+	return bytes.Compare(buf, g.data[g.dataP:g.dataP+wordLen])
 }
 
 // FastNext extracts a compressed word from current offset in the file

@@ -1,3 +1,19 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package eth2
 
 import (
@@ -7,23 +23,24 @@ import (
 	"slices"
 	"time"
 
-	"github.com/ledgerwatch/erigon-lib/metrics"
+	"github.com/erigontech/erigon-lib/metrics"
 
-	"github.com/ledgerwatch/erigon/cl/abstract"
+	"github.com/erigontech/erigon/cl/abstract"
 
-	"github.com/ledgerwatch/erigon/cl/transition/impl/eth2/statechange"
+	"github.com/erigontech/erigon/cl/transition/impl/eth2/statechange"
 
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon/cl/cltypes/solid"
-	"github.com/ledgerwatch/erigon/cl/phase1/core/state"
+	"github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon/cl/cltypes/solid"
+	"github.com/erigontech/erigon/cl/phase1/core/state"
 
 	"github.com/Giulio2002/bls"
-	"github.com/ledgerwatch/log/v3"
 
-	"github.com/ledgerwatch/erigon/cl/clparams"
-	"github.com/ledgerwatch/erigon/cl/cltypes"
-	"github.com/ledgerwatch/erigon/cl/fork"
-	"github.com/ledgerwatch/erigon/cl/utils"
+	"github.com/erigontech/erigon-lib/log/v3"
+
+	"github.com/erigontech/erigon/cl/clparams"
+	"github.com/erigontech/erigon/cl/cltypes"
+	"github.com/erigontech/erigon/cl/fork"
+	"github.com/erigontech/erigon/cl/utils"
 )
 
 func (I *impl) ProcessProposerSlashing(
@@ -46,7 +63,7 @@ func (I *impl) ProcessProposerSlashing(
 	}
 
 	if *h1 == *h2 {
-		return fmt.Errorf("proposee slashing headers are the same")
+		return errors.New("proposee slashing headers are the same")
 	}
 
 	proposer, err := s.ValidatorForValidatorIndex(int(h1.ProposerIndex))
@@ -108,7 +125,7 @@ func (I *impl) ProcessAttesterSlashing(
 		return fmt.Errorf("error calculating indexed attestation 1 validity: %v", err)
 	}
 	if !valid {
-		return fmt.Errorf("invalid indexed attestation 1")
+		return errors.New("invalid indexed attestation 1")
 	}
 
 	valid, err = state.IsValidIndexedAttestation(s, att2)
@@ -116,7 +133,7 @@ func (I *impl) ProcessAttesterSlashing(
 		return fmt.Errorf("error calculating indexed attestation 2 validity: %v", err)
 	}
 	if !valid {
-		return fmt.Errorf("invalid indexed attestation 2")
+		return errors.New("invalid indexed attestation 2")
 	}
 
 	slashedAny := false
@@ -141,7 +158,7 @@ func (I *impl) ProcessAttesterSlashing(
 	}
 
 	if !slashedAny {
-		return fmt.Errorf("no validators slashed")
+		return errors.New("no validators slashed")
 	}
 	return nil
 }
@@ -169,7 +186,7 @@ func (I *impl) ProcessDeposit(s abstract.BeaconState, deposit *cltypes.Deposit) 
 		depositIndex,
 		eth1Data.Root,
 	) {
-		return fmt.Errorf("processDepositForAltair: Could not validate deposit root")
+		return errors.New("processDepositForAltair: Could not validate deposit root")
 	}
 
 	// Increment index
@@ -340,25 +357,21 @@ func (I *impl) ProcessWithdrawals(
 }
 
 // ProcessExecutionPayload sets the latest payload header accordinly.
-func (I *impl) ProcessExecutionPayload(s abstract.BeaconState, payload *cltypes.Eth1Block) error {
+func (I *impl) ProcessExecutionPayload(s abstract.BeaconState, parentHash, prevRandao common.Hash, time uint64, payloadHeader *cltypes.Eth1Header) error {
 	if state.IsMergeTransitionComplete(s) {
-		if payload.ParentHash != s.LatestExecutionPayloadHeader().BlockHash {
-			return fmt.Errorf("ProcessExecutionPayload: invalid eth1 chain. mismatching parent")
+		if parentHash != s.LatestExecutionPayloadHeader().BlockHash {
+			return errors.New("ProcessExecutionPayload: invalid eth1 chain. mismatching parent")
 		}
 	}
-	if payload.PrevRandao != s.GetRandaoMixes(state.Epoch(s)) {
+	if prevRandao != s.GetRandaoMixes(state.Epoch(s)) {
 		return fmt.Errorf(
 			"ProcessExecutionPayload: randao mix mismatches with mix digest, expected %x, got %x",
 			s.GetRandaoMixes(state.Epoch(s)),
-			payload.PrevRandao,
+			prevRandao,
 		)
 	}
-	if payload.Time != state.ComputeTimestampAtSlot(s, s.Slot()) {
-		return fmt.Errorf("ProcessExecutionPayload: invalid Eth1 timestamp")
-	}
-	payloadHeader, err := payload.PayloadHeader()
-	if err != nil {
-		return err
+	if time != state.ComputeTimestampAtSlot(s, s.Slot()) {
+		return errors.New("ProcessExecutionPayload: invalid Eth1 timestamp")
 	}
 	s.SetLatestExecutionPayloadHeader(payloadHeader)
 	return nil
@@ -477,13 +490,13 @@ func (I *impl) ProcessBlsToExecutionChange(
 	if I.FullValidation {
 		// Check the validator's withdrawal credentials prefix.
 		if wc[0] != byte(beaconConfig.BLSWithdrawalPrefixByte) {
-			return fmt.Errorf("invalid withdrawal credentials prefix")
+			return errors.New("invalid withdrawal credentials prefix")
 		}
 
 		// Check the validator's withdrawal credentials against the provided message.
 		hashedFrom := utils.Sha256(change.From[:])
 		if !bytes.Equal(hashedFrom[1:], wc[1:]) {
-			return fmt.Errorf("invalid withdrawal credentials")
+			return errors.New("invalid withdrawal credentials")
 		}
 
 		// Compute the signing domain and verify the message signature.
@@ -504,7 +517,7 @@ func (I *impl) ProcessBlsToExecutionChange(
 			return err
 		}
 		if !valid {
-			return fmt.Errorf("invalid signature")
+			return errors.New("invalid signature")
 		}
 	}
 	credentials := wc
@@ -645,7 +658,7 @@ func (I *impl) processAttestationPhase0(
 	}
 
 	if len(committee) != utils.GetBitlistLength(attestation.AggregationBits()) {
-		return nil, fmt.Errorf("processAttestationPhase0: mismatching aggregation bits size")
+		return nil, errors.New("processAttestationPhase0: mismatching aggregation bits size")
 	}
 	// Cached so it is performant.
 	proposerIndex, err := s.GetBeaconProposerIndex()
@@ -664,12 +677,12 @@ func (I *impl) processAttestationPhase0(
 	// Depending of what slot we are on we put in either the current justified or previous justified.
 	if isCurrentAttestation {
 		if !data.Source().Equal(s.CurrentJustifiedCheckpoint()) {
-			return nil, fmt.Errorf("processAttestationPhase0: mismatching sources")
+			return nil, errors.New("processAttestationPhase0: mismatching sources")
 		}
 		s.AddCurrentEpochAtteastation(pendingAttestation)
 	} else {
 		if !data.Source().Equal(s.PreviousJustifiedCheckpoint()) {
-			return nil, fmt.Errorf("processAttestationPhase0: mismatching sources")
+			return nil, errors.New("processAttestationPhase0: mismatching sources")
 		}
 		s.AddPreviousEpochAttestation(pendingAttestation)
 	}
@@ -803,11 +816,8 @@ func verifyAttestations(
 	attestingIndicies [][]uint64,
 ) (bool, error) {
 	indexedAttestations := make([]*cltypes.IndexedAttestation, 0, attestations.Len())
-	commonBuffer := make([]byte, 8*2048)
 	attestations.Range(func(idx int, a *solid.Attestation, _ int) bool {
 		idxAttestations := state.GetIndexedAttestation(a, attestingIndicies[idx])
-		idxAttestations.AttestingIndices.SetReusableHashBuffer(commonBuffer)
-		idxAttestations.HashSSZ()
 		indexedAttestations = append(indexedAttestations, idxAttestations)
 		return true
 	})
@@ -848,14 +858,14 @@ func batchVerifyAttestations(
 	return true, nil
 }
 
-func (I *impl) ProcessBlockHeader(s abstract.BeaconState, block *cltypes.BeaconBlock) error {
-	if block.Slot != s.Slot() {
-		return fmt.Errorf("state slot: %d, not equal to block slot: %d", s.Slot(), block.Slot)
+func (I *impl) ProcessBlockHeader(s abstract.BeaconState, slot, proposerIndex uint64, parentRoot common.Hash, bodyRoot [32]byte) error {
+	if slot != s.Slot() {
+		return fmt.Errorf("state slot: %d, not equal to block slot: %d", s.Slot(), slot)
 	}
-	if block.Slot <= s.LatestBlockHeader().Slot {
+	if slot <= s.LatestBlockHeader().Slot {
 		return fmt.Errorf(
 			"slock slot: %d, not greater than latest block slot: %d",
-			block.Slot,
+			slot,
 			s.LatestBlockHeader().Slot,
 		)
 	}
@@ -863,10 +873,10 @@ func (I *impl) ProcessBlockHeader(s abstract.BeaconState, block *cltypes.BeaconB
 	if err != nil {
 		return fmt.Errorf("error in GetBeaconProposerIndex: %v", err)
 	}
-	if block.ProposerIndex != propInd {
+	if proposerIndex != propInd {
 		return fmt.Errorf(
 			"block proposer index: %d, does not match beacon proposer index: %d",
-			block.ProposerIndex,
+			proposerIndex,
 			propInd,
 		)
 	}
@@ -875,31 +885,27 @@ func (I *impl) ProcessBlockHeader(s abstract.BeaconState, block *cltypes.BeaconB
 	if err != nil {
 		return fmt.Errorf("unable to hash tree root of latest block header: %v", err)
 	}
-	if block.ParentRoot != latestRoot {
+	if parentRoot != latestRoot {
 		return fmt.Errorf(
 			"block parent root: %x, does not match latest block root: %x",
-			block.ParentRoot,
+			parentRoot,
 			latestRoot,
 		)
 	}
 
-	bodyRoot, err := block.Body.HashSSZ()
-	if err != nil {
-		return fmt.Errorf("unable to hash tree root of block body: %v", err)
-	}
 	s.SetLatestBlockHeader(&cltypes.BeaconBlockHeader{
-		Slot:          block.Slot,
-		ProposerIndex: block.ProposerIndex,
-		ParentRoot:    block.ParentRoot,
+		Slot:          slot,
+		ProposerIndex: proposerIndex,
+		ParentRoot:    parentRoot,
 		BodyRoot:      bodyRoot,
 	})
 
-	proposer, err := s.ValidatorForValidatorIndex(int(block.ProposerIndex))
+	proposer, err := s.ValidatorForValidatorIndex(int(proposerIndex))
 	if err != nil {
 		return err
 	}
 	if proposer.Slashed() {
-		return fmt.Errorf("proposer: %d is slashed", block.ProposerIndex)
+		return fmt.Errorf("proposer: %d is slashed", proposerIndex)
 	}
 	return nil
 }

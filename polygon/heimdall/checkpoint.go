@@ -1,16 +1,31 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package heimdall
 
 import (
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/kv"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/kv"
 )
-
-var _ Waypoint = Checkpoint{}
 
 type CheckpointId uint64
 
@@ -20,39 +35,57 @@ type Checkpoint struct {
 	Fields WaypointFields
 }
 
-func (c Checkpoint) StartBlock() *big.Int {
+var _ Entity = &Checkpoint{}
+var _ Waypoint = &Checkpoint{}
+
+func (c *Checkpoint) RawId() uint64 {
+	return uint64(c.Id)
+}
+
+func (c *Checkpoint) SetRawId(id uint64) {
+	c.Id = CheckpointId(id)
+}
+
+func (c *Checkpoint) StartBlock() *big.Int {
 	return c.Fields.StartBlock
 }
 
-func (c Checkpoint) EndBlock() *big.Int {
+func (c *Checkpoint) EndBlock() *big.Int {
 	return c.Fields.EndBlock
 }
 
-func (c Checkpoint) RootHash() libcommon.Hash {
+func (c *Checkpoint) BlockNumRange() ClosedRange {
+	return ClosedRange{
+		Start: c.StartBlock().Uint64(),
+		End:   c.EndBlock().Uint64(),
+	}
+}
+
+func (c *Checkpoint) RootHash() libcommon.Hash {
 	return c.Fields.RootHash
 }
 
-func (c Checkpoint) Timestamp() uint64 {
+func (c *Checkpoint) Timestamp() uint64 {
 	return c.Fields.Timestamp
 }
 
-func (c Checkpoint) Length() uint64 {
+func (c *Checkpoint) Length() uint64 {
 	return c.Fields.Length()
 }
 
-func (c Checkpoint) CmpRange(n uint64) int {
+func (c *Checkpoint) CmpRange(n uint64) int {
 	return c.Fields.CmpRange(n)
 }
 
-func (m Checkpoint) String() string {
+func (c *Checkpoint) String() string {
 	return fmt.Sprintf(
 		"Checkpoint {%v (%d:%d) %v %v %v}",
-		m.Fields.Proposer.String(),
-		m.Fields.StartBlock,
-		m.Fields.EndBlock,
-		m.Fields.RootHash.Hex(),
-		m.Fields.ChainID,
-		m.Fields.Timestamp,
+		c.Fields.Proposer.String(),
+		c.Fields.StartBlock,
+		c.Fields.EndBlock,
+		c.Fields.RootHash.Hex(),
+		c.Fields.ChainID,
+		c.Fields.Timestamp,
 	)
 }
 
@@ -127,7 +160,7 @@ type CheckpointListResponse struct {
 	Result Checkpoints `json:"result"`
 }
 
-var ErrCheckpointNotFound = fmt.Errorf("checkpoint not found")
+var ErrCheckpointNotFound = errors.New("checkpoint not found")
 
 func CheckpointIdAt(tx kv.Tx, block uint64) (CheckpointId, error) {
 	var id uint64

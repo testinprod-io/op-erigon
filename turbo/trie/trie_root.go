@@ -1,3 +1,19 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package trie
 
 import (
@@ -8,16 +24,16 @@ import (
 	"math/bits"
 	"time"
 
-	"github.com/ledgerwatch/log/v3"
+	"github.com/erigontech/erigon-lib/log/v3"
 
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
-	length2 "github.com/ledgerwatch/erigon-lib/common/length"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	dbutils2 "github.com/ledgerwatch/erigon-lib/kv/dbutils"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/hexutil"
+	length2 "github.com/erigontech/erigon-lib/common/length"
+	"github.com/erigontech/erigon-lib/kv"
+	dbutils2 "github.com/erigontech/erigon-lib/kv/dbutils"
 
-	"github.com/ledgerwatch/erigon/core/types/accounts"
-	"github.com/ledgerwatch/erigon/turbo/rlphacks"
+	"github.com/erigontech/erigon/core/types/accounts"
+	"github.com/erigontech/erigon/turbo/rlphacks"
 )
 
 /*
@@ -130,9 +146,9 @@ type RootHashAggregator struct {
 	cutoff        bool
 }
 
-func NewRootHashAggregator() *RootHashAggregator {
+func NewRootHashAggregator(trace bool) *RootHashAggregator {
 	return &RootHashAggregator{
-		hb: NewHashBuilder(false),
+		hb: NewHashBuilder(trace),
 	}
 }
 
@@ -144,11 +160,12 @@ func NewFlatDBTrieLoader(logPrefix string, rd RetainDeciderWithMarker, hc HashCo
 	return &FlatDBTrieLoader{
 		logPrefix: logPrefix,
 		receiver: &RootHashAggregator{
-			hb:    NewHashBuilder(false),
+			hb:    NewHashBuilder(trace),
 			hc:    hc,
 			shc:   shc,
 			trace: trace,
 		},
+		trace:       trace,
 		ihSeek:      make([]byte, 0, 128),
 		accSeek:     make([]byte, 0, 128),
 		storageSeek: make([]byte, 0, 128),
@@ -244,6 +261,10 @@ func (l *FlatDBTrieLoader) CalcTrieRoot(tx kv.Tx, quit <-chan struct{}) (libcomm
 			if err = l.accountValue.DecodeForStorage(v); err != nil {
 				return EmptyRoot, fmt.Errorf("fail DecodeForStorage: %w", err)
 			}
+			if l.trace {
+				fmt.Printf("account %x => b %d n %d ch %x\n", k, &l.accountValue.Balance, l.accountValue.Nonce, l.accountValue.CodeHash)
+			}
+
 			if err = l.receiver.Receive(AccountStreamItem, kHex, nil, &l.accountValue, nil, nil, false, 0); err != nil {
 				return EmptyRoot, err
 			}
@@ -275,6 +296,10 @@ func (l *FlatDBTrieLoader) CalcTrieRoot(tx kv.Tx, quit <-chan struct{}) (libcomm
 					if keyIsBefore(ihKS, l.kHexS) { // read until next AccTrie
 						break
 					}
+					if l.trace {
+						fmt.Printf("storage: %x => %x\n", l.kHexS, vS[32:])
+					}
+
 					if err = l.receiver.Receive(StorageStreamItem, accWithInc, l.kHexS, nil, vS[32:], nil, false, 0); err != nil {
 						return EmptyRoot, err
 					}
@@ -312,6 +337,9 @@ func (l *FlatDBTrieLoader) CalcTrieRoot(tx kv.Tx, quit <-chan struct{}) (libcomm
 
 	if err := l.receiver.Receive(CutoffStreamItem, nil, nil, nil, nil, nil, false, 0); err != nil {
 		return EmptyRoot, err
+	}
+	if l.trace {
+		fmt.Printf("StateRoot %x\n----------\n", l.receiver.Root())
 	}
 	return l.receiver.Root(), nil
 }
@@ -357,6 +385,9 @@ func (r *RootHashAggregator) Receive(itemType StreamItem,
 		if len(r.currAccK) == 0 {
 			r.currAccK = append(r.currAccK[:0], accountKey...)
 		}
+		if r.trace {
+			fmt.Printf("storage: %x => %x\n", storageKey, storageValue)
+		}
 		r.advanceKeysStorage(storageKey, true /* terminator */)
 		if r.currStorage.Len() > 0 {
 			if err := r.genStructStorage(); err != nil {
@@ -379,6 +410,9 @@ func (r *RootHashAggregator) Receive(itemType StreamItem,
 			if err := r.genStructStorage(); err != nil {
 				return err
 			}
+		}
+		if r.trace {
+			fmt.Printf("storageHashedBranch: %x => %x\n", storageKey, storageValue)
 		}
 		r.saveValueStorage(true, hasTree, storageValue, hash)
 	case AccountStreamItem:
@@ -406,6 +440,9 @@ func (r *RootHashAggregator) Receive(itemType StreamItem,
 			if err := r.genStructAccount(); err != nil {
 				return err
 			}
+		}
+		if r.trace {
+			fmt.Printf("account %x => b %d n %d ch %x\n", accountKey, &accountValue.Balance, accountValue.Nonce, accountValue.CodeHash)
 		}
 		if err := r.saveValueAccount(false, hasTree, accountValue, hash); err != nil {
 			return err
@@ -436,10 +473,14 @@ func (r *RootHashAggregator) Receive(itemType StreamItem,
 				return err
 			}
 		}
+		if r.trace && accountValue != nil {
+			fmt.Printf("accountHashedBranch %x =>b %d n %d\n", accountKey, accountValue.Balance.Uint64(), accountValue.Nonce)
+		}
 		if err := r.saveValueAccount(true, hasTree, accountValue, hash); err != nil {
 			return err
 		}
 	case CutoffStreamItem:
+		// make storage subtree pretend it's an extension node
 		if r.trace {
 			fmt.Printf("storage cuttoff %d\n", cutoff)
 		}
@@ -803,7 +844,7 @@ func (c *AccTrieCursor) _seek(seek []byte, withinPrefix []byte) (bool, error) {
 		// optimistic .Next call, can use result in 2 cases:
 		// - k is not child of current key
 		// - looking for first child, means: c.childID[c.lvl] <= int16(bits.TrailingZeros16(c.hasTree[c.lvl]))
-		// otherwise do .Seek call
+		// otherwise do .seekInFiles call
 		//k, v, err = c.c.Next()
 		//if err != nil {
 		//	return false, err
@@ -1501,19 +1542,6 @@ func CastTrieNodeValue(hashes, rootHash []byte) []libcommon.Hash {
 		i++
 	}
 	return to
-}
-
-// CalcRoot is a combination of `ResolveStateTrie` and `UpdateStateTrie`
-// DESCRIBED: docs/programmers_guide/guide.md#organising-ethereum-state-into-a-merkle-tree
-func CalcRoot(logPrefix string, tx kv.Tx) (libcommon.Hash, error) {
-	loader := NewFlatDBTrieLoader(logPrefix, NewRetainList(0), nil, nil, false)
-
-	h, err := loader.CalcTrieRoot(tx, nil)
-	if err != nil {
-		return EmptyRoot, err
-	}
-
-	return h, nil
 }
 
 func makeCurrentKeyStr(k []byte) string {

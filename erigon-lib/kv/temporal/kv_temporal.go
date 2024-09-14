@@ -1,17 +1,30 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package temporal
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/config3"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon-lib/kv/iter"
-	"github.com/ledgerwatch/erigon-lib/kv/kvcfg"
-	"github.com/ledgerwatch/erigon-lib/kv/mdbx"
-	"github.com/ledgerwatch/erigon-lib/kv/order"
-	"github.com/ledgerwatch/erigon-lib/state"
+	"github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/kv"
+	"github.com/erigontech/erigon-lib/kv/mdbx"
+	"github.com/erigontech/erigon-lib/kv/order"
+	"github.com/erigontech/erigon-lib/kv/stream"
+	"github.com/erigontech/erigon-lib/state"
 )
 
 //Variables Naming:
@@ -21,7 +34,7 @@ import (
 //  k, v - key, value
 //  ts - TimeStamp. Usually it's Ethereum's TransactionNumber (auto-increment ID). Or BlockNumber.
 //  Cursor - low-level mdbx-tide api to navigate over Table
-//  Iter - high-level iterator-like api over Table/InvertedIndex/History/Domain. Has less features than Cursor. See package `iter`
+//  Iter - high-level iterator-like api over Table/InvertedIndex/History/Domain. Server-side-streaming friendly - less methods than Cursor, but constructor is powerful as `SELECT key, value FROM table WHERE key BETWEEN x1 AND x2 ORDER DESC LIMIT n`.
 
 //Methods Naming:
 //  Get: exact match of criterias
@@ -53,22 +66,19 @@ type DB struct {
 }
 
 func New(db kv.RwDB, agg *state.Aggregator) (*DB, error) {
-	if !kvcfg.HistoryV3.FromDB(db) {
-		panic("not supported")
-	}
 	return &DB{RwDB: db, agg: agg}, nil
 }
-func (db *DB) Agg() *state.Aggregator { return db.agg }
-func (db *DB) InternalDB() kv.RwDB    { return db.RwDB }
+func (db *DB) Agg() any            { return db.agg }
+func (db *DB) InternalDB() kv.RwDB { return db.RwDB }
 
 func (db *DB) BeginTemporalRo(ctx context.Context) (kv.TemporalTx, error) {
 	kvTx, err := db.RwDB.BeginRo(ctx) //nolint:gocritic
 	if err != nil {
 		return nil, err
 	}
-	tx := &Tx{MdbxTx: kvTx.(*mdbx.MdbxTx), db: db}
+	tx := &Tx{MdbxTx: kvTx.(*mdbx.MdbxTx), db: db, ctx: ctx}
 
-	tx.aggCtx = db.agg.BeginFilesRo()
+	tx.filesTx = db.agg.BeginFilesRo()
 	return tx, nil
 }
 func (db *DB) ViewTemporal(ctx context.Context, f func(tx kv.TemporalTx) error) error {
@@ -98,9 +108,9 @@ func (db *DB) BeginTemporalRw(ctx context.Context) (kv.RwTx, error) {
 	if err != nil {
 		return nil, err
 	}
-	tx := &Tx{MdbxTx: kvTx.(*mdbx.MdbxTx), db: db}
+	tx := &Tx{MdbxTx: kvTx.(*mdbx.MdbxTx), db: db, ctx: ctx}
 
-	tx.aggCtx = db.agg.BeginFilesRo()
+	tx.filesTx = db.agg.BeginFilesRo()
 	return tx, nil
 }
 func (db *DB) BeginRw(ctx context.Context) (kv.RwTx, error) {
@@ -123,9 +133,9 @@ func (db *DB) BeginTemporalRwNosync(ctx context.Context) (kv.RwTx, error) {
 	if err != nil {
 		return nil, err
 	}
-	tx := &Tx{MdbxTx: kvTx.(*mdbx.MdbxTx), db: db}
+	tx := &Tx{MdbxTx: kvTx.(*mdbx.MdbxTx), db: db, ctx: ctx}
 
-	tx.aggCtx = db.agg.BeginFilesRo()
+	tx.filesTx = db.agg.BeginFilesRo()
 	return tx, nil
 }
 func (db *DB) BeginRwNosync(ctx context.Context) (kv.RwTx, error) {
@@ -146,246 +156,93 @@ func (db *DB) UpdateNosync(ctx context.Context, f func(tx kv.RwTx) error) error 
 type Tx struct {
 	*mdbx.MdbxTx
 	db               *DB
-	aggCtx           *state.AggregatorRoTx
+	filesTx          *state.AggregatorRoTx
 	resourcesToClose []kv.Closer
+	ctx              context.Context
 }
 
-func (tx *Tx) AggCtx() *state.AggregatorRoTx { return tx.aggCtx }
-func (tx *Tx) Agg() *state.Aggregator        { return tx.db.agg }
+func (tx *Tx) ForceReopenAggCtx() {
+	tx.filesTx.Close()
+	tx.filesTx = tx.Agg().BeginFilesRo()
+}
+
+func (tx *Tx) WarmupDB(force bool) error { return tx.MdbxTx.WarmupDB(force) }
+func (tx *Tx) LockDBInRam() error        { return tx.MdbxTx.LockDBInRam() }
+func (tx *Tx) AggTx() any                { return tx.filesTx }
+func (tx *Tx) Agg() *state.Aggregator    { return tx.db.agg }
 func (tx *Tx) Rollback() {
 	tx.autoClose()
-	tx.MdbxTx.Rollback()
+	if tx.MdbxTx == nil { // invariant: it's safe to call Commit/Rollback multiple times
+		return
+	}
+	mdbxTx := tx.MdbxTx
+	tx.MdbxTx = nil
+	mdbxTx.Rollback()
 }
 func (tx *Tx) autoClose() {
 	for _, closer := range tx.resourcesToClose {
 		closer.Close()
 	}
-	if tx.aggCtx != nil {
-		tx.aggCtx.Close()
-	}
+	tx.filesTx.Close()
 }
 func (tx *Tx) Commit() error {
 	tx.autoClose()
-	return tx.MdbxTx.Commit()
+	if tx.MdbxTx == nil { // invariant: it's safe to call Commit/Rollback multiple times
+		return nil
+	}
+	mdbxTx := tx.MdbxTx
+	tx.MdbxTx = nil
+	return mdbxTx.Commit()
 }
 
-func (tx *Tx) DomainRange(name kv.Domain, fromKey, toKey []byte, asOfTs uint64, asc order.By, limit int) (it iter.KV, err error) {
-	if asc == order.Desc {
-		panic("not supported yet")
-	}
-	switch name {
-	case kv.AccountsDomain:
-		histStateIt := tx.aggCtx.AccountHistoricalStateRange(asOfTs, fromKey, toKey, limit, tx)
-		// TODO: somehow avoid common.Copy(k) - WalkAsOfIter is not zero-copy
-		// Is histStateIt possible to increase keys lifetime to: 2 .Next() calls??
-		histStateIt2 := iter.TransformKV(histStateIt, func(k, v []byte) ([]byte, []byte, error) {
-			if len(v) == 0 {
-				return k[:20], v, nil
-			}
-			//v, err = tx.db.convertV3toV2(v)
-			//if err != nil {
-			//	return nil, nil, err
-			//}
-			return k[:20], common.Copy(v), nil
-		})
-		lastestStateIt, err := tx.RangeAscend(kv.PlainState, fromKey, toKey, -1) // don't apply limit, because need filter
-		if err != nil {
-			return nil, err
-		}
-		// TODO: instead of iterate over whole storage, need implement iterator which does cursor.Seek(nextAccount)
-		latestStateIt2 := iter.FilterKV(lastestStateIt, func(k, v []byte) bool {
-			return len(k) == 20
-		})
-		it = iter.UnionKV(histStateIt2, latestStateIt2, limit)
-	case kv.StorageDomain:
-		//storageIt := tx.aggCtx.StorageHistoricalStateRange(asOfTs, fromKey, toKey, limit, tx)
-		//storageIt1 := iter.TransformKV(storageIt, func(k, v []byte) ([]byte, []byte, error) {
-		//	return k, v, nil
-		//})
-
-		//accData, err := tx.GetOne(kv.PlainState, fromKey[:20])
-		//if err != nil {
-		//	return nil, err
-		//}
-		//inc, err := tx.db.parseInc(accData)
-		//if err != nil {
-		//	return nil, err
-		//}
-		//startkey := make([]byte, length.Addr+length.Incarnation+length.Hash)
-		//copy(startkey, fromKey[:20])
-		//binary.BigEndian.PutUint64(startkey[length.Addr:], inc)
-		//copy(startkey[length.Addr+length.Incarnation:], fromKey[20:])
-		//
-		//toPrefix := make([]byte, length.Addr+length.Incarnation)
-		//copy(toPrefix, fromKey[:20])
-		//binary.BigEndian.PutUint64(toPrefix[length.Addr:], inc+1)
-
-		//it2, err := tx.RangeAscend(kv.PlainState, startkey, toPrefix, limit)
-		//if err != nil {
-		//	return nil, err
-		//}
-		//it3 := iter.TransformKV(it2, func(k, v []byte) ([]byte, []byte, error) {
-		//	return append(append([]byte{}, k[:20]...), k[28:]...), v, nil
-		//})
-		//it = iter.UnionKV(storageIt1, it3, limit)
-	case kv.CodeDomain:
-		panic("not implemented yet")
-	default:
-		panic(fmt.Sprintf("unexpected: %s", name))
-	}
-
-	if closer, ok := it.(kv.Closer); ok {
-		tx.resourcesToClose = append(tx.resourcesToClose, closer)
-	}
-
-	return it, nil
-}
-func (tx *Tx) DomainGet(name kv.Domain, key, key2 []byte) (v []byte, ok bool, err error) {
-	if config3.EnableHistoryV4InTest {
-		panic("implement me")
-	}
-	switch name {
-	case kv.AccountsDomain:
-		v, err = tx.GetOne(kv.PlainState, key)
-		return v, v != nil, err
-	case kv.StorageDomain:
-		v, err = tx.GetOne(kv.PlainState, append(common.Copy(key), key2...))
-		return v, v != nil, err
-	case kv.CodeDomain:
-		v, err = tx.GetOne(kv.Code, key2)
-		return v, v != nil, err
-	default:
-		panic(fmt.Sprintf("unexpected: %s", name))
-	}
-}
-func (tx *Tx) DomainGetAsOf(name kv.Domain, key, key2 []byte, ts uint64) (v []byte, ok bool, err error) {
-	if config3.EnableHistoryV4InTest {
-		panic("implement me")
-	}
-	/*
-		switch name {
-		case kv.AccountsDomain:
-			v, ok, err = tx.HistoryGet(kv.AccountsHistory, key, ts)
-			if err != nil {
-				return nil, false, err
-			}
-			if ok {
-				return v, true, nil
-			}
-			v, err = tx.GetOne(kv.PlainState, key)
-			if len(v) > 0 {
-				v, err = accounts.ConvertV2toV3(v)
-				if err != nil {
-					return nil, false, err
-				}
-			}
-			return v, v != nil, err
-		case kv.StorageDomain:
-			v, ok, err = tx.HistoryGet(kv.StorageHistory, append(key[:20], key2...), ts)
-			if err != nil {
-				return nil, false, err
-			}
-			if ok {
-				return v, true, nil
-			}
-			v, err = tx.GetOne(kv.PlainState, append(key, key2...))
-			return v, v != nil, err
-		case kv.CodeDomain:
-			v, ok, err = tx.HistoryGet(kv.CodeHistory, key, ts)
-			if err != nil {
-				return nil, false, err
-			}
-			if ok {
-				return v, true, nil
-			}
-			v, err = tx.GetOne(kv.Code, key2)
-			return v, v != nil, err
-		default:
-			panic(fmt.Sprintf("unexpected: %s", name))
-		}
-	*/
-	panic("not implemented yet")
-}
-
-func (tx *Tx) HistoryGet(name kv.History, key []byte, ts uint64) (v []byte, ok bool, err error) {
-	switch name {
-	case kv.AccountsHistory:
-		v, ok, err = tx.aggCtx.ReadAccountDataNoStateWithRecent(key, ts, tx.MdbxTx)
-		if err != nil {
-			return nil, false, err
-		}
-		if !ok || len(v) == 0 {
-			return v, ok, nil
-		}
-		/*
-			v, err = tx.db.convertV3toV2(v)
-			if err != nil {
-				return nil, false, err
-			}
-			var force *common.Hash
-			if tx.db.systemContractLookup != nil {
-				if records, ok := tx.db.systemContractLookup[common.BytesToAddress(key)]; ok {
-					p := sort.Search(len(records), func(i int) bool {
-						return records[i].TxNumber > ts
-					})
-					hash := records[p-1].CodeHash
-					force = &hash
-				}
-			}
-			v, err = tx.db.restoreCodeHash(tx.MdbxTx, key, v, force)
-			if err != nil {
-				return nil, false, err
-			}
-			if len(v) > 0 {
-				v, err = tx.db.convertV2toV3(v)
-				if err != nil {
-					return nil, false, err
-				}
-			}
-		*/
-		return v, true, nil
-	case kv.StorageHistory:
-		return tx.aggCtx.ReadAccountStorageNoStateWithRecent2(key, ts, tx.MdbxTx)
-	case kv.CodeHistory:
-		return tx.aggCtx.ReadAccountCodeNoStateWithRecent(key, ts, tx.MdbxTx)
-	default:
-		panic(fmt.Sprintf("unexpected: %s", name))
-	}
-}
-
-func (tx *Tx) IndexRange(name kv.InvertedIdx, k []byte, fromTs, toTs int, asc order.By, limit int) (timestamps iter.U64, err error) {
-	timestamps, err = tx.aggCtx.IndexRange(name, k, fromTs, toTs, asc, limit, tx.MdbxTx)
+func (tx *Tx) DomainRange(name kv.Domain, fromKey, toKey []byte, asOfTs uint64, asc order.By, limit int) (stream.KV, error) {
+	it, err := tx.filesTx.DomainRange(tx.ctx, tx.MdbxTx, name, fromKey, toKey, asOfTs, asc, limit)
 	if err != nil {
 		return nil, err
 	}
-	if closer, ok := timestamps.(kv.Closer); ok {
-		tx.resourcesToClose = append(tx.resourcesToClose, closer)
+	tx.resourcesToClose = append(tx.resourcesToClose, it)
+	return it, nil
+}
+
+func (tx *Tx) DomainGet(name kv.Domain, k, k2 []byte) (v []byte, step uint64, err error) {
+	v, step, ok, err := tx.filesTx.GetLatest(name, k, k2, tx.MdbxTx)
+	if err != nil {
+		return nil, step, err
 	}
+	if !ok {
+		return nil, step, nil
+	}
+	return v, step, nil
+}
+func (tx *Tx) DomainGetAsOf(name kv.Domain, key, key2 []byte, ts uint64) (v []byte, ok bool, err error) {
+	if key2 != nil {
+		key = append(common.Copy(key), key2...)
+	}
+	return tx.filesTx.DomainGetAsOf(tx.MdbxTx, name, key, ts)
+}
+
+func (tx *Tx) HistorySeek(name kv.History, key []byte, ts uint64) (v []byte, ok bool, err error) {
+	return tx.filesTx.HistorySeek(name, key, ts, tx.MdbxTx)
+}
+
+func (tx *Tx) IndexRange(name kv.InvertedIdx, k []byte, fromTs, toTs int, asc order.By, limit int) (timestamps stream.U64, err error) {
+	timestamps, err = tx.filesTx.IndexRange(name, k, fromTs, toTs, asc, limit, tx.MdbxTx)
+	if err != nil {
+		return nil, err
+	}
+	tx.resourcesToClose = append(tx.resourcesToClose, timestamps)
 	return timestamps, nil
 }
 
-func (tx *Tx) HistoryRange(name kv.History, fromTs, toTs int, asc order.By, limit int) (it iter.KV, err error) {
-	if asc == order.Desc {
-		panic("not implemented yet")
-	}
-	if limit >= 0 {
-		panic("not implemented yet")
-	}
-	switch name {
-	case kv.AccountsHistory:
-		it, err = tx.aggCtx.AccountHistoryRange(fromTs, toTs, asc, limit, tx)
-	case kv.StorageHistory:
-		it, err = tx.aggCtx.StorageHistoryRange(fromTs, toTs, asc, limit, tx)
-	case kv.CodeHistory:
-		it, err = tx.aggCtx.CodeHistoryRange(fromTs, toTs, asc, limit, tx)
-	default:
-		return nil, fmt.Errorf("unexpected history name: %s", name)
-	}
+func (tx *Tx) HistoryRange(name kv.History, fromTs, toTs int, asc order.By, limit int) (stream.KV, error) {
+	it, err := tx.filesTx.HistoryRange(name, fromTs, toTs, asc, limit, tx.MdbxTx)
 	if err != nil {
 		return nil, err
 	}
-	if closer, ok := it.(kv.Closer); ok {
-		tx.resourcesToClose = append(tx.resourcesToClose, closer)
-	}
-	return it, err
+	tx.resourcesToClose = append(tx.resourcesToClose, it)
+	return it, nil
+}
+
+func (tx *Tx) AppendableGet(name kv.Appendable, ts kv.TxnId) ([]byte, bool, error) {
+	return tx.filesTx.AppendableGet(name, ts, tx.MdbxTx)
 }

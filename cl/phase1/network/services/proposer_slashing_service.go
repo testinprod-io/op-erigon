@@ -1,33 +1,51 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
-	"github.com/Giulio2002/bls"
-	"github.com/ledgerwatch/erigon/cl/beacon/synced_data"
-	"github.com/ledgerwatch/erigon/cl/clparams"
-	"github.com/ledgerwatch/erigon/cl/cltypes"
-	"github.com/ledgerwatch/erigon/cl/fork"
-	st "github.com/ledgerwatch/erigon/cl/phase1/core/state"
-	"github.com/ledgerwatch/erigon/cl/phase1/core/state/lru"
-	"github.com/ledgerwatch/erigon/cl/pool"
-	"github.com/ledgerwatch/erigon/cl/utils/eth_clock"
+	"github.com/erigontech/erigon/cl/beacon/beaconevents"
+	"github.com/erigontech/erigon/cl/beacon/synced_data"
+	"github.com/erigontech/erigon/cl/clparams"
+	"github.com/erigontech/erigon/cl/cltypes"
+	st "github.com/erigontech/erigon/cl/phase1/core/state"
+	"github.com/erigontech/erigon/cl/phase1/core/state/lru"
+	"github.com/erigontech/erigon/cl/pool"
+	"github.com/erigontech/erigon/cl/utils/eth_clock"
 )
 
 type proposerSlashingService struct {
 	operationsPool    pool.OperationsPool
-	syncedDataManager *synced_data.SyncedDataManager
+	syncedDataManager synced_data.SyncedData
 	beaconCfg         *clparams.BeaconChainConfig
 	ethClock          eth_clock.EthereumClock
+	emitters          *beaconevents.EventEmitter
 	cache             *lru.Cache[uint64, struct{}]
 }
 
 func NewProposerSlashingService(
 	operationsPool pool.OperationsPool,
-	syncedDataManager *synced_data.SyncedDataManager,
+	syncedDataManager synced_data.SyncedData,
 	beaconCfg *clparams.BeaconChainConfig,
 	ethClock eth_clock.EthereumClock,
+	emitters *beaconevents.EventEmitter,
 ) *proposerSlashingService {
 	cache, err := lru.New[uint64, struct{}]("proposer_slashing", proposerSlashingCacheSize)
 	if err != nil {
@@ -39,6 +57,7 @@ func NewProposerSlashingService(
 		beaconCfg:         beaconCfg,
 		ethClock:          ethClock,
 		cache:             cache,
+		emitters:          emitters,
 	}
 }
 
@@ -69,11 +88,11 @@ func (s *proposerSlashingService) ProcessMessage(ctx context.Context, subnet *ui
 
 	// Verify the headers are different
 	if *h1 == *h2 {
-		return fmt.Errorf("proposee slashing headers are the same")
+		return errors.New("proposee slashing headers are the same")
 	}
 
 	// Verify the proposer is slashable
-	state := s.syncedDataManager.HeadState()
+	state := s.syncedDataManager.HeadStateReader()
 	if state == nil {
 		return ErrIgnore
 	}
@@ -87,16 +106,16 @@ func (s *proposerSlashingService) ProcessMessage(ctx context.Context, subnet *ui
 
 	// Verify signatures for both headers
 	for _, signedHeader := range []*cltypes.SignedBeaconBlockHeader{msg.Header1, msg.Header2} {
-		domain, err := state.GetDomain(state.BeaconConfig().DomainBeaconProposer, st.GetEpochAtSlot(state.BeaconConfig(), signedHeader.Header.Slot))
+		domain, err := state.GetDomain(s.beaconCfg.DomainBeaconProposer, st.GetEpochAtSlot(s.beaconCfg, signedHeader.Header.Slot))
 		if err != nil {
 			return fmt.Errorf("unable to get domain: %v", err)
 		}
 		pk := proposer.PublicKey()
-		signingRoot, err := fork.ComputeSigningRoot(signedHeader, domain)
+		signingRoot, err := computeSigningRoot(signedHeader, domain)
 		if err != nil {
 			return fmt.Errorf("unable to compute signing root: %v", err)
 		}
-		valid, err := bls.Verify(signedHeader.Signature[:], signingRoot[:], pk[:])
+		valid, err := blsVerify(signedHeader.Signature[:], signingRoot[:], pk[:])
 		if err != nil {
 			return fmt.Errorf("unable to verify signature: %v", err)
 		}
@@ -107,5 +126,6 @@ func (s *proposerSlashingService) ProcessMessage(ctx context.Context, subnet *ui
 
 	s.operationsPool.ProposerSlashingsPool.Insert(pool.ComputeKeyForProposerSlashing(msg), msg)
 	s.cache.Add(pIndex, struct{}{})
+	s.emitters.Operation().SendProposerSlashing(msg)
 	return nil
 }

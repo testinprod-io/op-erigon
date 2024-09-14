@@ -1,18 +1,21 @@
 // Copyright 2014 The go-ethereum Authors
-// This file is part of the go-ethereum library.
+// (original work)
+// Copyright 2024 The Erigon Authors
+// (modifications)
+// This file is part of Erigon.
 //
-// The go-ethereum library is free software: you can redistribute it and/or modify
+// Erigon is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The go-ethereum library is distributed in the hope that it will be useful,
+// Erigon is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
 
 package vm
 
@@ -28,17 +31,17 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
 	"github.com/holiman/uint256"
 
-	"github.com/ledgerwatch/erigon-lib/chain"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/crypto/blake2b"
-	libkzg "github.com/ledgerwatch/erigon-lib/crypto/kzg"
+	"github.com/erigontech/erigon-lib/chain"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/crypto/blake2b"
+	libkzg "github.com/erigontech/erigon-lib/crypto/kzg"
 
-	"github.com/ledgerwatch/erigon/common"
-	"github.com/ledgerwatch/erigon/common/math"
-	"github.com/ledgerwatch/erigon/crypto"
-	"github.com/ledgerwatch/erigon/crypto/bn256"
-	"github.com/ledgerwatch/erigon/crypto/secp256r1"
-	"github.com/ledgerwatch/erigon/params"
+	"github.com/erigontech/erigon/common"
+	"github.com/erigontech/erigon/common/math"
+	"github.com/erigontech/erigon/crypto"
+	"github.com/erigontech/erigon/crypto/bn256"
+	"github.com/erigontech/erigon/crypto/secp256r1"
+	"github.com/erigontech/erigon/params"
 
 	//lint:ignore SA1019 Needed for precompile
 	"golang.org/x/crypto/ripemd160"
@@ -282,7 +285,7 @@ func (c *ecrecover) Run(input []byte) ([]byte, error) {
 	s := new(uint256.Int).SetBytes(input[96:128])
 	v := input[63] - 27
 
-	// tighter sig s values input homestead only apply to tx sigs
+	// tighter sig s values input homestead only apply to txn sigs
 	if !allZero(input[32:63]) || !crypto.ValidateSignatureValues(v, r, s, false) {
 		return nil, nil
 	}
@@ -819,6 +822,12 @@ func (c *bls12381G1Mul) Run(input []byte) ([]byte, error) {
 	if p0, err = decodePointG1(input[:128]); err != nil {
 		return nil, err
 	}
+
+	// Fast subgroup check
+	if !p0.IsInSubGroup() {
+		return nil, errBLS12381G1PointSubgroup
+	}
+
 	// Decode scalar value
 	e := new(big.Int).SetBytes(input[128:])
 
@@ -871,6 +880,10 @@ func (c *bls12381G1MultiExp) Run(input []byte) ([]byte, error) {
 		p, err := decodePointG1(input[t0:t1])
 		if err != nil {
 			return nil, err
+		}
+		// Fast subgroup check
+		if !p.IsInSubGroup() {
+			return nil, errBLS12381G1PointSubgroup
 		}
 		points[i] = *p
 		// Decode scalar value
@@ -942,6 +955,12 @@ func (c *bls12381G2Mul) Run(input []byte) ([]byte, error) {
 	if p0, err = decodePointG2(input[:256]); err != nil {
 		return nil, err
 	}
+
+	// Fast subgroup check
+	if !p0.IsInSubGroup() {
+		return nil, errBLS12381G2PointSubgroup
+	}
+
 	// Decode scalar value
 	e := new(big.Int).SetBytes(input[256:])
 
@@ -994,6 +1013,10 @@ func (c *bls12381G2MultiExp) Run(input []byte) ([]byte, error) {
 		p, err := decodePointG2(input[t0:t1])
 		if err != nil {
 			return nil, err
+		}
+		// Fast subgroup check
+		if !p.IsInSubGroup() {
+			return nil, errBLS12381G2PointSubgroup
 		}
 		points[i] = *p
 		// Decode scalar value
@@ -1184,9 +1207,6 @@ func (c *bls12381MapFpToG1) Run(input []byte) ([]byte, error) {
 
 	// Compute mapping
 	r := bls12381.MapToG1(fe)
-	if err != nil {
-		return nil, err
-	}
 
 	// Encode the G1 point to 128 bytes
 	return encodePointG1(&r), nil
@@ -1220,9 +1240,6 @@ func (c *bls12381MapFp2ToG2) Run(input []byte) ([]byte, error) {
 
 	// Compute mapping
 	r := bls12381.MapToG2(bls12381.E2{A0: c0, A1: c1})
-	if err != nil {
-		return nil, err
-	}
 
 	// Encode the G2 point to 256 bytes
 	return encodePointG2(&r), nil

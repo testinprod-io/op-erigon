@@ -1,3 +1,19 @@
+// Copyright 2024 The Erigon Authors
+// This file is part of Erigon.
+//
+// Erigon is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Erigon is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Erigon. If not, see <http://www.gnu.org/licenses/>.
+
 package services
 
 import (
@@ -8,17 +24,18 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/types/ssz"
-	mockSync "github.com/ledgerwatch/erigon/cl/beacon/synced_data/mock_services"
-	"github.com/ledgerwatch/erigon/cl/clparams"
-	"github.com/ledgerwatch/erigon/cl/cltypes"
-	"github.com/ledgerwatch/erigon/cl/cltypes/solid"
-	"github.com/ledgerwatch/erigon/cl/phase1/core/state"
-	mockState "github.com/ledgerwatch/erigon/cl/phase1/core/state/mock_services"
-	"github.com/ledgerwatch/erigon/cl/phase1/forkchoice/mock_services"
-	"github.com/ledgerwatch/erigon/cl/utils/eth_clock"
-	mockCommittee "github.com/ledgerwatch/erigon/cl/validator/committee_subscription/mock_services"
+	"github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/types/ssz"
+	"github.com/erigontech/erigon/cl/abstract"
+	mockState "github.com/erigontech/erigon/cl/abstract/mock_services"
+	"github.com/erigontech/erigon/cl/beacon/beaconevents"
+	mockSync "github.com/erigontech/erigon/cl/beacon/synced_data/mock_services"
+	"github.com/erigontech/erigon/cl/clparams"
+	"github.com/erigontech/erigon/cl/cltypes"
+	"github.com/erigontech/erigon/cl/cltypes/solid"
+	"github.com/erigontech/erigon/cl/phase1/forkchoice/mock_services"
+	"github.com/erigontech/erigon/cl/utils/eth_clock"
+	mockCommittee "github.com/erigontech/erigon/cl/validator/committee_subscription/mock_services"
 )
 
 var (
@@ -57,11 +74,12 @@ func (t *attestationTestSuite) SetupTest() {
 	t.ethClock = eth_clock.NewMockEthereumClock(t.gomockCtrl)
 	t.beaconConfig = &clparams.BeaconChainConfig{SlotsPerEpoch: mockSlotsPerEpoch}
 	netConfig := &clparams.NetworkConfig{}
+	emitters := beaconevents.NewEventEmitter()
 	computeSigningRoot = func(obj ssz.HashableSSZ, domain []byte) ([32]byte, error) { return [32]byte{}, nil }
 	blsVerify = func(sig []byte, msg []byte, pubKeys []byte) (bool, error) { return true, nil }
 	ctx, cn := context.WithCancel(context.Background())
 	cn()
-	t.attService = NewAttestationService(ctx, t.mockForkChoice, t.committeeSubscibe, t.ethClock, t.syncedData, t.beaconConfig, netConfig)
+	t.attService = NewAttestationService(ctx, t.mockForkChoice, t.committeeSubscibe, t.ethClock, t.syncedData, t.beaconConfig, netConfig, emitters)
 }
 
 func (t *attestationTestSuite) TearDownTest() {
@@ -84,7 +102,7 @@ func (t *attestationTestSuite) TestAttestationProcessMessage() {
 			name: "Test attestation with committee index out of range",
 			mock: func() {
 				t.syncedData.EXPECT().HeadStateReader().Return(t.beaconStateReader).Times(1)
-				computeCommitteeCountPerSlot = func(_ state.BeaconStateReader, _, _ uint64) uint64 {
+				computeCommitteeCountPerSlot = func(_ abstract.BeaconStateReader, _, _ uint64) uint64 {
 					return 1
 				}
 			},
@@ -99,7 +117,7 @@ func (t *attestationTestSuite) TestAttestationProcessMessage() {
 			name: "Test attestation with wrong subnet",
 			mock: func() {
 				t.syncedData.EXPECT().HeadStateReader().Return(t.beaconStateReader).Times(1)
-				computeCommitteeCountPerSlot = func(_ state.BeaconStateReader, _, _ uint64) uint64 {
+				computeCommitteeCountPerSlot = func(_ abstract.BeaconStateReader, _, _ uint64) uint64 {
 					return 5
 				}
 				computeSubnetForAttestation = func(_, _, _, _, _ uint64) uint64 {
@@ -117,7 +135,7 @@ func (t *attestationTestSuite) TestAttestationProcessMessage() {
 			name: "Test attestation with wrong slot (current_slot < slot)",
 			mock: func() {
 				t.syncedData.EXPECT().HeadStateReader().Return(t.beaconStateReader).Times(1)
-				computeCommitteeCountPerSlot = func(_ state.BeaconStateReader, _, _ uint64) uint64 {
+				computeCommitteeCountPerSlot = func(_ abstract.BeaconStateReader, _, _ uint64) uint64 {
 					return 5
 				}
 				computeSubnetForAttestation = func(_, _, _, _, _ uint64) uint64 {
@@ -136,7 +154,7 @@ func (t *attestationTestSuite) TestAttestationProcessMessage() {
 			name: "Attestation is aggregated",
 			mock: func() {
 				t.syncedData.EXPECT().HeadStateReader().Return(t.beaconStateReader).Times(1)
-				computeCommitteeCountPerSlot = func(_ state.BeaconStateReader, _, _ uint64) uint64 {
+				computeCommitteeCountPerSlot = func(_ abstract.BeaconStateReader, _, _ uint64) uint64 {
 					return 5
 				}
 				computeSubnetForAttestation = func(_, _, _, _, _ uint64) uint64 {
@@ -159,7 +177,7 @@ func (t *attestationTestSuite) TestAttestationProcessMessage() {
 			name: "Attestation is empty",
 			mock: func() {
 				t.syncedData.EXPECT().HeadStateReader().Return(t.beaconStateReader).Times(1)
-				computeCommitteeCountPerSlot = func(_ state.BeaconStateReader, _, _ uint64) uint64 {
+				computeCommitteeCountPerSlot = func(_ abstract.BeaconStateReader, _, _ uint64) uint64 {
 					return 5
 				}
 				computeSubnetForAttestation = func(_, _, _, _, _ uint64) uint64 {
@@ -182,7 +200,7 @@ func (t *attestationTestSuite) TestAttestationProcessMessage() {
 			name: "invalid signature",
 			mock: func() {
 				t.syncedData.EXPECT().HeadStateReader().Return(t.beaconStateReader).Times(1)
-				computeCommitteeCountPerSlot = func(_ state.BeaconStateReader, _, _ uint64) uint64 {
+				computeCommitteeCountPerSlot = func(_ abstract.BeaconStateReader, _, _ uint64) uint64 {
 					return 5
 				}
 				computeSubnetForAttestation = func(_, _, _, _, _ uint64) uint64 {
@@ -209,7 +227,7 @@ func (t *attestationTestSuite) TestAttestationProcessMessage() {
 			name: "block header not found",
 			mock: func() {
 				t.syncedData.EXPECT().HeadStateReader().Return(t.beaconStateReader).Times(1)
-				computeCommitteeCountPerSlot = func(_ state.BeaconStateReader, _, _ uint64) uint64 {
+				computeCommitteeCountPerSlot = func(_ abstract.BeaconStateReader, _, _ uint64) uint64 {
 					return 8
 				}
 				computeSubnetForAttestation = func(_, _, _, _, _ uint64) uint64 {
@@ -236,7 +254,7 @@ func (t *attestationTestSuite) TestAttestationProcessMessage() {
 			name: "invalid target block",
 			mock: func() {
 				t.syncedData.EXPECT().HeadStateReader().Return(t.beaconStateReader).Times(1)
-				computeCommitteeCountPerSlot = func(_ state.BeaconStateReader, _, _ uint64) uint64 {
+				computeCommitteeCountPerSlot = func(_ abstract.BeaconStateReader, _, _ uint64) uint64 {
 					return 8
 				}
 				computeSubnetForAttestation = func(_, _, _, _, _ uint64) uint64 {
@@ -266,7 +284,7 @@ func (t *attestationTestSuite) TestAttestationProcessMessage() {
 			name: "invalid finality checkpoint",
 			mock: func() {
 				t.syncedData.EXPECT().HeadStateReader().Return(t.beaconStateReader).Times(1)
-				computeCommitteeCountPerSlot = func(_ state.BeaconStateReader, _, _ uint64) uint64 {
+				computeCommitteeCountPerSlot = func(_ abstract.BeaconStateReader, _, _ uint64) uint64 {
 					return 8
 				}
 				computeSubnetForAttestation = func(_, _, _, _, _ uint64) uint64 {
@@ -304,7 +322,7 @@ func (t *attestationTestSuite) TestAttestationProcessMessage() {
 			name: "success",
 			mock: func() {
 				t.syncedData.EXPECT().HeadStateReader().Return(t.beaconStateReader).Times(1)
-				computeCommitteeCountPerSlot = func(_ state.BeaconStateReader, _, _ uint64) uint64 {
+				computeCommitteeCountPerSlot = func(_ abstract.BeaconStateReader, _, _ uint64) uint64 {
 					return 8
 				}
 				computeSubnetForAttestation = func(_, _, _, _, _ uint64) uint64 {

@@ -5,30 +5,30 @@ import (
 	"math/big"
 	"testing"
 
+	txpool "github.com/erigontech/erigon-lib/gointerfaces/txpoolproto"
+
+	"github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/kv/kvcache"
+	"github.com/erigontech/erigon-lib/log/v3"
+	"github.com/erigontech/erigon-lib/opstack"
+	"github.com/erigontech/erigon/cmd/rpcdaemon/rpcdaemontest"
+	"github.com/erigontech/erigon/common/u256"
+	"github.com/erigontech/erigon/core/rawdb"
+	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/rpc/rpccfg"
+	"github.com/erigontech/erigon/turbo/rpchelper"
+	"github.com/erigontech/erigon/turbo/stages/mock"
 	"github.com/holiman/uint256"
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/gointerfaces/txpool"
-	"github.com/ledgerwatch/erigon-lib/kv/kvcache"
-	"github.com/ledgerwatch/erigon-lib/opstack"
-	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/rpcdaemontest"
-	"github.com/ledgerwatch/erigon/common/u256"
-	"github.com/ledgerwatch/erigon/core/rawdb"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/rpc/rpccfg"
-	"github.com/ledgerwatch/erigon/turbo/rpchelper"
-	"github.com/ledgerwatch/erigon/turbo/stages/mock"
-	"github.com/ledgerwatch/log/v3"
 	"github.com/stretchr/testify/require"
 )
 
 func TestGetReceipts(t *testing.T) {
 	m, _, _ := rpcdaemontest.CreateOptimismTestSentry(t)
-	agg := m.HistoryV3Components()
 	stateCache := kvcache.New(kvcache.DefaultCoherentConfig)
 	ctx, conn := rpcdaemontest.CreateTestGrpcConn(t, mock.Mock(t))
 	mining := txpool.NewMiningClient(conn)
-	ff := rpchelper.New(ctx, nil, nil, mining, func() {}, m.Log)
-	api := NewEthAPI(NewBaseApi(ff, stateCache, m.BlockReader, agg, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs, nil, nil), m.DB, nil, nil, nil, 5000000, 1e18, 100_000, false, 100_000, 128, log.New())
+	ff := rpchelper.New(ctx, rpchelper.FiltersConfig{}, nil, nil, mining, func() {}, m.Log)
+	api := NewEthAPI(NewBaseApi(ff, stateCache, m.BlockReader, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs, nil, nil, nil), m.DB, nil, nil, nil, 5000000, 1e18, 100_000, false, 100_000, 128, log.New())
 
 	db := m.DB
 	defer db.Close()
@@ -48,7 +48,7 @@ func TestGetReceipts(t *testing.T) {
 	require.NoError(t, err)
 	defer rTx.Rollback()
 
-	receipt, err := api.getReceipts(m.Ctx, rTx, block, []common.Address{})
+	receipt, err := api.getReceipts(m.Ctx, rTx, block)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(receipt))
 
@@ -107,7 +107,7 @@ func TestGetReceipts(t *testing.T) {
 	require.NoError(t, rawdb.WriteSenders(tx, header.Hash(), header.Number.Uint64(), body.SendersFromTxs()))
 
 	br := m.BlockReader
-	b, senders, err := br.BlockWithSenders(ctx, tx, header.Hash(), header.Number.Uint64())
+	b, _, err := br.BlockWithSenders(ctx, tx, header.Hash(), header.Number.Uint64())
 	require.NoError(t, err)
 
 	require.NoError(t, rawdb.WriteBlock(tx, b))
@@ -119,7 +119,7 @@ func TestGetReceipts(t *testing.T) {
 	require.NoError(t, err)
 	defer rTx.Rollback()
 
-	receipts, err = api.getReceipts(m.Ctx, rTx, b, senders)
+	receipts, err = api.getReceipts(m.Ctx, rTx, b)
 	require.NoError(t, err)
 	require.Equal(t, 2, len(receipts))
 
