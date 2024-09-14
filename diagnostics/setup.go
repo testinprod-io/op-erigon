@@ -39,11 +39,8 @@ var (
 	pprofPortFlag           = "pprof.port"
 	pprofAddrFlag           = "pprof.addr"
 	diagnoticsSpeedTestFlag = "diagnostics.speedtest"
-<<<<<<< HEAD
-=======
 	webSeedsFlag            = "webseed"
 	chainFlag               = "chain"
->>>>>>> v3.0.0-alpha1
 )
 
 func Setup(ctx *cli.Context, node *node.ErigonNode, metricsMux *http.ServeMux, pprofMux *http.ServeMux) {
@@ -64,7 +61,7 @@ func Setup(ctx *cli.Context, node *node.ErigonNode, metricsMux *http.ServeMux, p
 	pprofPort := ctx.Int(pprofPortFlag)
 	pprofAddress := fmt.Sprintf("%s:%d", pprofHost, pprofPort)
 
-	if diagAddress == metricsAddress {
+	if diagAddress == metricsAddress && metricsMux != nil {
 		diagMux = SetupDiagnosticsEndpoint(metricsMux, diagAddress)
 	} else if diagAddress == pprofAddress && pprofMux != nil {
 		diagMux = SetupDiagnosticsEndpoint(pprofMux, diagAddress)
@@ -72,10 +69,6 @@ func Setup(ctx *cli.Context, node *node.ErigonNode, metricsMux *http.ServeMux, p
 		diagMux = SetupDiagnosticsEndpoint(nil, diagAddress)
 	}
 
-<<<<<<< HEAD
-	speedTest := ctx.Bool(diagnoticsSpeedTestFlag)
-	diagnostic, err := diaglib.NewDiagnosticClient(ctx.Context, diagMux, node.Backend().DataDir(), speedTest)
-=======
 	chain := ctx.String(chainFlag)
 	webseedsList := libcommon.CliString2Array(ctx.String(webSeedsFlag))
 	if known, ok := snapcfg.KnownWebseeds[chain]; ok {
@@ -84,7 +77,6 @@ func Setup(ctx *cli.Context, node *node.ErigonNode, metricsMux *http.ServeMux, p
 
 	speedTest := ctx.Bool(diagnoticsSpeedTestFlag)
 	diagnostic, err := diaglib.NewDiagnosticClient(ctx.Context, diagMux, node.Backend().DataDir(), speedTest, webseedsList)
->>>>>>> v3.0.0-alpha1
 	if err == nil {
 		diagnostic.Setup()
 		SetupEndpoints(ctx, node, diagMux, diagnostic)
@@ -122,6 +114,18 @@ func SetupMiddleMuxHandler(mux *http.ServeMux, middleMux *http.ServeMux, path st
 	middleMux.HandleFunc(path+"/", func(w http.ResponseWriter, r *http.Request) {
 		r.URL.Path = strings.TrimPrefix(r.URL.Path, path)
 		r.URL.RawPath = strings.TrimPrefix(r.URL.RawPath, path)
+
+		// Set CORS headers
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		// Handle preflight requests
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
 		mux.ServeHTTP(w, r)
 	})
 }
@@ -141,4 +145,5 @@ func SetupEndpoints(ctx *cli.Context, node *node.ErigonNode, diagMux *http.Serve
 	SetupMemAccess(diagMux)
 	SetupHeadersAccess(diagMux, diagnostic)
 	SetupBodiesAccess(diagMux, diagnostic)
+	SetupSysInfoAccess(diagMux, diagnostic)
 }

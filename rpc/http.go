@@ -26,6 +26,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/golang-jwt/jwt/v4"
 	"io"
 	"mime"
 	"net/http"
@@ -34,20 +35,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
 	jsoniter "github.com/json-iterator/go"
-<<<<<<< HEAD
-	"github.com/ledgerwatch/log/v3"
-
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/dbg"
-=======
-
-	"github.com/erigontech/erigon-lib/log/v3"
 
 	libcommon "github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/dbg"
->>>>>>> v3.0.0-alpha1
+	"github.com/erigontech/erigon-lib/log/v3"
 )
 
 const (
@@ -266,10 +258,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// All checks passed, create a codec that reads directly from the request body
 	// until EOF, writes the response to w, and orders the server to process a
 	// single request.
-<<<<<<< HEAD
-	ctx := r.Context()
-=======
->>>>>>> v3.0.0-alpha1
 
 	// The context might be cancelled if the client's connection was closed while waiting for ServeHTTP.
 	if libcommon.FastContextErr(ctx) != nil {
@@ -277,19 +265,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// s.logger.Warn("rpc.Server.ServeHTTP: client connection was lost. Check if the server is able to keep up with the request rate.", "url", r.URL.String())
 		w.WriteHeader(http.StatusServiceUnavailable)
 		return
-<<<<<<< HEAD
-	}
-
-	ctx = context.WithValue(ctx, "remote", r.RemoteAddr)
-	ctx = context.WithValue(ctx, "scheme", r.Proto)
-	ctx = context.WithValue(ctx, "local", r.Host)
-	if ua := r.Header.Get("User-Agent"); ua != "" {
-		ctx = context.WithValue(ctx, "User-Agent", ua)
-	}
-	if origin := r.Header.Get("Origin"); origin != "" {
-		ctx = context.WithValue(ctx, "Origin", origin)
-=======
->>>>>>> v3.0.0-alpha1
 	}
 
 	if s.debugSingleRequest {

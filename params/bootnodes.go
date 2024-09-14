@@ -20,14 +20,9 @@
 package params
 
 import (
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/chain/networkname"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"strings"
-=======
 	"github.com/erigontech/erigon-lib/chain/networkname"
 	libcommon "github.com/erigontech/erigon-lib/common"
->>>>>>> v3.0.0-alpha1
+	"strings"
 )
 
 // MainnetBootnodes are the enode URLs of the P2P bootstrap nodes running on
@@ -186,8 +181,6 @@ func BootnodeURLsOfChain(chain string) []string {
 		return HoleskyBootnodes
 	case networkname.SepoliaChainName:
 		return SepoliaBootnodes
-	case networkname.MumbaiChainName:
-		return MumbaiBootnodes
 	case networkname.AmoyChainName:
 		return AmoyBootnodes
 	case networkname.BorMainnetChainName:

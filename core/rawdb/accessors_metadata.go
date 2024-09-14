@@ -22,20 +22,14 @@ package rawdb
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/erigontech/erigon-lib/chain/networkname"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/chain"
-	"github.com/ledgerwatch/erigon-lib/chain/networkname"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/kv"
-=======
 	"github.com/erigontech/erigon/core/types"
 	"github.com/erigontech/erigon/polygon/bor/borcfg"
 
 	"github.com/erigontech/erigon-lib/chain"
 	libcommon "github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/kv"
->>>>>>> v3.0.0-alpha1
 )
 
 // ReadChainConfig retrieves the consensus settings based on the given genesis hash.
@@ -95,7 +89,15 @@ func DeleteChainConfig(db kv.Deleter, hash libcommon.Hash) error {
 	return db.Delete(kv.ConfigTable, hash[:])
 }
 
-func WriteGenesis(db kv.Putter, g *types.Genesis) error {
+func WriteGenesisIfNotExist(db kv.RwTx, g *types.Genesis) error {
+	has, err := db.Has(kv.ConfigTable, kv.GenesisKey)
+	if err != nil {
+		return err
+	}
+	if has {
+		return nil
+	}
+
 	// Marshal json g
 	val, err := json.Marshal(g)
 	if err != nil {

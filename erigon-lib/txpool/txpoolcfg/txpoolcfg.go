@@ -24,17 +24,10 @@ import (
 
 	"github.com/c2h5oh/datasize"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/fixedgas"
-	emath "github.com/ledgerwatch/erigon-lib/common/math"
-	"github.com/ledgerwatch/erigon-lib/types"
-=======
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/fixedgas"
 	emath "github.com/erigontech/erigon-lib/common/math"
 	"github.com/erigontech/erigon-lib/types"
->>>>>>> v3.0.0-alpha1
 )
 
 // BorDefaultTxPoolPriceLimit defines the minimum gas price limit for bor to enforce txs acceptance into the pool.
@@ -64,6 +57,7 @@ type Config struct {
 	MdbxPageSize    datasize.ByteSize
 	MdbxDBSizeLimit datasize.ByteSize
 	MdbxGrowthStep  datasize.ByteSize
+	MdbxWriteMap    bool
 
 	OverrideShanghaiTime *big.Int
 
@@ -93,7 +87,8 @@ var DefaultConfig = Config{
 
 	Optimism: false,
 
-	NoGossip: false,
+	NoGossip:     false,
+	MdbxWriteMap: false,
 }
 
 type DiscardReason uint8
@@ -274,7 +269,7 @@ func CalcIntrinsicGas(dataLen, dataNonZeroLen, authorizationsLen uint64, accessL
 	}
 
 	// Add the cost of authorizations
-	product, overflow := emath.SafeMul(authorizationsLen, fixedgas.PerAuthBaseCost)
+	product, overflow := emath.SafeMul(authorizationsLen, fixedgas.PerEmptyAccountCost)
 	if overflow {
 		return 0, GasUintOverflow
 	}

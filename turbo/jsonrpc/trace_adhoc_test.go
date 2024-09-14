@@ -28,24 +28,6 @@ import (
 	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/require"
 
-<<<<<<< HEAD
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/dir"
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/cli/httpcfg"
-	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/rpcdaemontest"
-	"github.com/ledgerwatch/erigon/common"
-	"github.com/ledgerwatch/erigon/common/math"
-	"github.com/ledgerwatch/erigon/core"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/core/vm"
-	"github.com/ledgerwatch/erigon/core/vm/evmtypes"
-	"github.com/ledgerwatch/erigon/eth/tracers"
-	"github.com/ledgerwatch/erigon/rpc"
-	"github.com/ledgerwatch/erigon/tests"
-	"github.com/ledgerwatch/erigon/turbo/stages/mock"
-=======
 	libcommon "github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/dir"
 	"github.com/erigontech/erigon-lib/common/hexutil"
@@ -63,7 +45,6 @@ import (
 	"github.com/erigontech/erigon/rpc"
 	"github.com/erigontech/erigon/tests"
 	"github.com/erigontech/erigon/turbo/stages/mock"
->>>>>>> v3.0.0-alpha1
 )
 
 func TestEmptyQuery(t *testing.T) {
@@ -196,11 +177,7 @@ func TestOeTracer(t *testing.T) {
 			signer := types.MakeSigner(test.Genesis.Config, uint64(test.Context.Number), uint64(test.Context.Time))
 			context := evmtypes.BlockContext{
 				CanTransfer: core.CanTransfer,
-<<<<<<< HEAD
-				Transfer:    core.Transfer,
-=======
 				Transfer:    consensus.Transfer,
->>>>>>> v3.0.0-alpha1
 				Coinbase:    test.Context.Miner,
 				BlockNumber: uint64(test.Context.Number),
 				Time:        uint64(test.Context.Time),
@@ -217,11 +194,7 @@ func TestOeTracer(t *testing.T) {
 			require.NoError(t, err)
 			defer dbTx.Rollback()
 
-<<<<<<< HEAD
 			statedb, _ := tests.MakePreState(rules, dbTx, test.Genesis.Alloc, context.BlockNumber)
-=======
-			statedb, _ := tests.MakePreState(rules, dbTx, test.Genesis.Alloc, context.BlockNumber, m.HistoryV3)
->>>>>>> v3.0.0-alpha1
 			msg, err := tx.AsMessage(*signer, (*big.Int)(test.Context.BaseFee), rules)
 			require.NoError(t, err)
 			txContext := core.NewEVMTxContext(msg)
@@ -229,11 +202,7 @@ func TestOeTracer(t *testing.T) {
 			traceResult := &TraceCallResult{Trace: []*ParityTrace{}}
 			tracer := OeTracer{}
 			tracer.r = traceResult
-<<<<<<< HEAD
-			tracer.config, err = parseOeTracerConfig(&tracers.TraceConfig{TracerConfig: &test.TracerConfig})
-=======
 			tracer.config, err = parseOeTracerConfig(&config.TraceConfig{TracerConfig: &test.TracerConfig})
->>>>>>> v3.0.0-alpha1
 			require.NoError(t, err)
 			evm := vm.NewEVM(context, txContext, statedb, test.Genesis.Config, vm.Config{Debug: true, Tracer: &tracer})
 

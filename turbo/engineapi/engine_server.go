@@ -25,6 +25,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/erigontech/erigon/eth/ethconfig"
+	"github.com/erigontech/erigon/params"
+
 	"github.com/erigontech/erigon-lib/chain"
 	libcommon "github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/hexutil"
@@ -36,38 +39,6 @@ import (
 	"github.com/erigontech/erigon-lib/kv/kvcache"
 	"github.com/erigontech/erigon-lib/log/v3"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/log/v3"
-
-	"github.com/ledgerwatch/erigon-lib/chain"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/hexutility"
-	"github.com/ledgerwatch/erigon-lib/gointerfaces"
-	"github.com/ledgerwatch/erigon-lib/gointerfaces/execution"
-	"github.com/ledgerwatch/erigon-lib/gointerfaces/txpool"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon-lib/kv/kvcache"
-	libstate "github.com/ledgerwatch/erigon-lib/state"
-
-	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/cli"
-	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/cli/httpcfg"
-	"github.com/ledgerwatch/erigon/common"
-	"github.com/ledgerwatch/erigon/common/math"
-	"github.com/ledgerwatch/erigon/consensus"
-	"github.com/ledgerwatch/erigon/consensus/merge"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/eth/ethconfig"
-	"github.com/ledgerwatch/erigon/params"
-	"github.com/ledgerwatch/erigon/rpc"
-	"github.com/ledgerwatch/erigon/turbo/engineapi/engine_block_downloader"
-	"github.com/ledgerwatch/erigon/turbo/engineapi/engine_helpers"
-	"github.com/ledgerwatch/erigon/turbo/engineapi/engine_types"
-	"github.com/ledgerwatch/erigon/turbo/execution/eth1/eth1_chain_reader.go"
-	"github.com/ledgerwatch/erigon/turbo/jsonrpc"
-	"github.com/ledgerwatch/erigon/turbo/rpchelper"
-	"github.com/ledgerwatch/erigon/turbo/services"
-	"github.com/ledgerwatch/erigon/turbo/stages/headerdownload"
-=======
 	"github.com/erigontech/erigon/cl/clparams"
 	"github.com/erigontech/erigon/cmd/rpcdaemon/cli"
 	"github.com/erigontech/erigon/cmd/rpcdaemon/cli/httpcfg"
@@ -86,7 +57,6 @@ import (
 	"github.com/erigontech/erigon/turbo/rpchelper"
 	"github.com/erigontech/erigon/turbo/services"
 	"github.com/erigontech/erigon/turbo/stages/headerdownload"
->>>>>>> v3.0.0-alpha1
 )
 
 var caplinEnabledLog = "Caplin is enabled, so the engine API cannot be used. for external CL use --externalcl"
@@ -114,11 +84,7 @@ const fcuTimeout = 1000 // according to mathematics: 1000 millisecods = 1 second
 
 func NewEngineServer(logger log.Logger, config *chain.Config, executionService execution.ExecutionClient,
 	hd *headerdownload.HeaderDownload,
-<<<<<<< HEAD
-	blockDownloader *engine_block_downloader.EngineBlockDownloader, test bool, proposing bool, ethConfig *ethconfig.Config, nodeCloser func() error) *EngineServer {
-=======
-	blockDownloader *engine_block_downloader.EngineBlockDownloader, caplin, test, proposing bool) *EngineServer {
->>>>>>> v3.0.0-alpha1
+	blockDownloader *engine_block_downloader.EngineBlockDownloader, caplin, test, proposing bool, ethConfig *ethconfig.Config, nodeCloser func() error) *EngineServer {
 	chainRW := eth1_chain_reader.NewChainReaderEth1(config, executionService, fcuTimeout)
 	return &EngineServer{
 		logger:           logger,
@@ -129,11 +95,8 @@ func NewEngineServer(logger log.Logger, config *chain.Config, executionService e
 		chainRW:          chainRW,
 		proposing:        proposing,
 		hd:               hd,
-<<<<<<< HEAD
 		nodeCloser:       nodeCloser,
-=======
 		caplin:           caplin,
->>>>>>> v3.0.0-alpha1
 	}
 }
 
@@ -149,11 +112,8 @@ func (e *EngineServer) Start(
 	txPool txpool.TxpoolClient,
 	mining txpool.MiningClient,
 ) {
-<<<<<<< HEAD
-	base := jsonrpc.NewBaseApi(filters, stateCache, blockReader, agg, httpConfig.WithDatadir, httpConfig.EvmCallTimeout, engineReader, httpConfig.Dirs, nil, nil)
-=======
-	base := jsonrpc.NewBaseApi(filters, stateCache, blockReader, httpConfig.WithDatadir, httpConfig.EvmCallTimeout, engineReader, httpConfig.Dirs)
->>>>>>> v3.0.0-alpha1
+
+	base := jsonrpc.NewBaseApi(filters, stateCache, blockReader, httpConfig.WithDatadir, httpConfig.EvmCallTimeout, engineReader, httpConfig.Dirs, nil, nil, nil)
 
 	ethImpl := jsonrpc.NewEthAPI(base, db, eth, txPool, mining, httpConfig.Gascap, httpConfig.Feecap, httpConfig.ReturnDataLimit, httpConfig.AllowUnprotectedTxs, httpConfig.MaxGetProofRewindBlockCount, httpConfig.WebsocketSubscribeLogsChannelSize, e.logger)
 
@@ -261,9 +221,6 @@ func (s *EngineServer) newPayload(ctx context.Context, req *engine_types.Executi
 		requests = append(requests, req.DepositRequests.Requests()...)
 		requests = append(requests, req.WithdrawalRequests.Requests()...)
 		requests = append(requests, req.ConsolidationRequests.Requests()...)
-	}
-
-	if requests != nil {
 		rh := types.DeriveSha(requests)
 		header.RequestsRoot = &rh
 	}
@@ -389,11 +346,11 @@ func (s *EngineServer) getQuickPayloadStatusIfPossible(ctx context.Context, bloc
 	}
 	if s.config.TerminalTotalDifficulty == nil {
 		s.logger.Error(fmt.Sprintf("[%s] not a proof-of-stake chain", prefix))
-		return nil, fmt.Errorf("not a proof-of-stake chain")
+		return nil, errors.New("not a proof-of-stake chain")
 	}
 
 	if s.hd == nil {
-		return nil, fmt.Errorf("headerdownload is nil")
+		return nil, errors.New("headerdownload is nil")
 	}
 
 	headHash, finalizedHash, safeHash, err := s.chainRW.GetForkChoice(ctx)
@@ -502,11 +459,11 @@ func (s *EngineServer) getPayload(ctx context.Context, payloadId uint64, version
 		return nil, errCaplinEnabled
 	}
 	if !s.proposing {
-		return nil, fmt.Errorf("execution layer not running as a proposer. enable proposer by taking out the --proposer.disable flag on startup")
+		return nil, errors.New("execution layer not running as a proposer. enable proposer by taking out the --proposer.disable flag on startup")
 	}
 
 	if s.config.TerminalTotalDifficulty == nil {
-		return nil, fmt.Errorf("not a proof-of-stake chain")
+		return nil, errors.New("not a proof-of-stake chain")
 	}
 
 	s.logger.Debug("[GetPayload] acquiring lock")
@@ -532,14 +489,10 @@ func (s *EngineServer) getPayload(ctx context.Context, payloadId uint64, version
 	data := resp.Data
 
 	ts := data.ExecutionPayload.Timestamp
-<<<<<<< HEAD
-	if s.config.IsCancun(ts) && version < clparams.DenebVersion {
-=======
 	if (!s.config.IsCancun(ts) && version >= clparams.DenebVersion) ||
 		(s.config.IsCancun(ts) && version < clparams.DenebVersion) ||
 		(!s.config.IsPrague(ts) && version >= clparams.ElectraVersion) ||
 		(s.config.IsPrague(ts) && version < clparams.ElectraVersion) {
->>>>>>> v3.0.0-alpha1
 		return nil, &rpc.UnsupportedForkError{Message: "Unsupported fork"}
 	}
 
@@ -562,9 +515,14 @@ func (s *EngineServer) getPayload(ctx context.Context, payloadId uint64, version
 // engineForkChoiceUpdated either states new block head or request the assembling of a new block
 func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *engine_types.ForkChoiceState, payloadAttributes *engine_types.PayloadAttributes, version clparams.StateVersion,
 ) (*engine_types.ForkChoiceUpdatedResponse, error) {
-<<<<<<< HEAD
 	var status *engine_types.PayloadStatus
 	var err error
+
+	if s.caplin {
+		s.logger.Crit("[NewPayload] caplin is enabled")
+		return nil, errCaplinEnabled
+	}
+
 	// In the Optimism case, we allow arbitrary rewinding of the safe block
 	// hash, so we skip the path which might short-circuit that
 	if s.config.Optimism == nil {
@@ -572,15 +530,6 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 		if err != nil {
 			return nil, err
 		}
-=======
-	if s.caplin {
-		s.logger.Crit("[NewPayload] caplin is enabled")
-		return nil, errCaplinEnabled
-	}
-	status, err := s.getQuickPayloadStatusIfPossible(ctx, forkchoiceState.HeadHash, 0, libcommon.Hash{}, forkchoiceState, false)
-	if err != nil {
-		return nil, err
->>>>>>> v3.0.0-alpha1
 	}
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -628,7 +577,7 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 	}
 
 	if !s.proposing {
-		return nil, fmt.Errorf("execution layer not running as a proposer. enable proposer by taking out the --proposer.disable flag on startup")
+		return nil, errors.New("execution layer not running as a proposer. enable proposer by taking out the --proposer.disable flag on startup")
 	}
 
 	headHeader := s.chainRW.GetHeaderByHash(ctx, forkchoiceState.HeadHash)
@@ -672,7 +621,8 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 		return nil, err
 	}
 	if resp.Busy {
-		return nil, errors.New("[ForkChoiceUpdated]: execution service is busy, cannot assemble blocks")
+		s.logger.Warn("[ForkChoiceUpdated] Execution Service busy, could not fulfil Assemble Block request", "req.parentHash", req.ParentHash)
+		return &engine_types.ForkChoiceUpdatedResponse{PayloadStatus: &engine_types.PayloadStatus{Status: engine_types.SyncingStatus}, PayloadId: nil}, nil
 	}
 	return &engine_types.ForkChoiceUpdatedResponse{
 		PayloadStatus: &engine_types.PayloadStatus{

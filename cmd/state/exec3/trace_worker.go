@@ -18,10 +18,10 @@ package exec3
 
 import (
 	"fmt"
-
 	"github.com/erigontech/erigon-lib/chain"
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/kv"
+	"github.com/erigontech/erigon-lib/opstack"
 
 	"github.com/erigontech/erigon/consensus"
 	"github.com/erigontech/erigon/core"
@@ -84,6 +84,10 @@ func NewTraceWorker(tx kv.TemporalTx, cc *chain.Config, engine consensus.EngineR
 	return ie
 }
 
+func (e *TraceWorker) Close() {
+	e.evm.JumpDestCache.LogStats()
+}
+
 func (e *TraceWorker) ChangeBlock(header *types.Header) {
 	e.blockNum = header.Number.Uint64()
 	blockCtx := transactions.NewEVMBlockContext(e.engine, header, true /* requireCanonical */, e.tx, e.headerReader, e.evm.ChainConfig())
@@ -96,14 +100,14 @@ func (e *TraceWorker) ChangeBlock(header *types.Header) {
 }
 
 func (e *TraceWorker) GetLogs(txIdx int, txn types.Transaction) types.Logs {
-	return e.ibs.GetLogs(txn.Hash())
+	return e.ibs.GetLogs(txn.Hash(), e.blockNum, e.header.Hash())
 }
 
 func (e *TraceWorker) ExecTxn(txNum uint64, txIndex int, txn types.Transaction) (*evmtypes.ExecutionResult, error) {
 	e.stateReader.SetTxNum(txNum)
 	txHash := txn.Hash()
 	e.ibs.Reset()
-	e.ibs.SetTxContext(txHash, e.blockHash, txIndex)
+	e.ibs.SetTxContext(txHash, txIndex)
 	gp := new(core.GasPool).AddGas(txn.GetGas()).AddBlobGas(txn.GetBlobGas())
 	msg, err := txn.AsMessage(*e.signer, e.header.BaseFee, e.rules)
 	if err != nil {
@@ -116,6 +120,9 @@ func (e *TraceWorker) ExecTxn(txNum uint64, txIndex int, txn types.Transaction) 
 			return core.SysCallContract(contract, data, e.chainConfig, e.ibs, e.header, e.engine, true /* constCall */)
 		}
 		msg.SetIsFree(e.engine.IsServiceTransaction(msg.From(), syscall))
+	}
+	if e.chainConfig.Optimism != nil {
+		e.evm.Context.L1CostFunc = opstack.NewL1CostFunc(e.chainConfig, e.ibs)
 	}
 	res, err := core.ApplyMessage(e.evm, msg, gp, true /* refunds */, false /* gasBailout */)
 	if err != nil {

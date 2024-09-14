@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/erigontech/erigon-lib/chain/networkname"
 	"io/fs"
 	"net"
 	"net/url"
@@ -29,34 +30,14 @@ import (
 	"strings"
 	"time"
 
-<<<<<<< HEAD
-	_ "github.com/ledgerwatch/erigon/core/snaptype"        //hack
-	_ "github.com/ledgerwatch/erigon/polygon/bor/snaptype" //hack
-=======
 	"github.com/erigontech/erigon-lib/common/dbg"
 	_ "github.com/erigontech/erigon/core/snaptype"        //hack
 	_ "github.com/erigontech/erigon/polygon/bor/snaptype" //hack
->>>>>>> v3.0.0-alpha1
 
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/c2h5oh/datasize"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/chain/networkname"
-	"github.com/ledgerwatch/erigon-lib/chain/snapcfg"
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/datadir"
-	"github.com/ledgerwatch/erigon-lib/common/dir"
-	"github.com/ledgerwatch/erigon-lib/downloader"
-	"github.com/ledgerwatch/erigon-lib/downloader/downloadercfg"
-	"github.com/ledgerwatch/erigon-lib/downloader/downloadergrpc"
-	proto_downloader "github.com/ledgerwatch/erigon-lib/gointerfaces/downloader"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon-lib/kv/mdbx"
-	"github.com/ledgerwatch/log/v3"
-=======
->>>>>>> v3.0.0-alpha1
 	"github.com/pelletier/go-toml/v2"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -121,6 +102,7 @@ var (
 	disableIPV4                    bool
 	seedbox                        bool
 	dbWritemap                     bool
+	all                            bool
 )
 
 func init() {
@@ -154,6 +136,7 @@ func init() {
 	withFile(createTorrent)
 	withChainFlag(createTorrent)
 	rootCmd.AddCommand(createTorrent)
+	createTorrent.Flags().BoolVar(&all, "all", false, "Produce all possible .torrent files")
 
 	rootCmd.AddCommand(torrentCat)
 	rootCmd.AddCommand(torrentMagnet)
@@ -164,6 +147,7 @@ func init() {
 	withDataDir(manifestCmd)
 	withChainFlag(manifestCmd)
 	rootCmd.AddCommand(manifestCmd)
+	manifestCmd.Flags().BoolVar(&all, "all", false, "Produce all possible .torrent files")
 
 	manifestVerifyCmd.Flags().StringVar(&webseeds, utils.WebSeedsFlag.Name, utils.WebSeedsFlag.Value, utils.WebSeedsFlag.Usage)
 	manifestVerifyCmd.PersistentFlags().BoolVar(&verifyFailfast, "verify.failfast", false, "Stop on first found error. Report it and exit")
@@ -172,6 +156,7 @@ func init() {
 
 	withDataDir(printTorrentHashes)
 	withChainFlag(printTorrentHashes)
+	printTorrentHashes.Flags().BoolVar(&all, "all", false, "Produce all possible .torrent files")
 	printTorrentHashes.PersistentFlags().BoolVar(&forceRebuild, "rebuild", false, "Force re-create .torrent files")
 	printTorrentHashes.Flags().StringVar(&targetFile, "targetfile", "", "write output to file")
 	if err := printTorrentHashes.MarkFlagFilename("targetfile"); err != nil {
@@ -257,6 +242,9 @@ func Downloader(ctx context.Context, logger log.Logger) error {
 	if known, ok := snapcfg.KnownWebseeds[chain]; ok {
 		webseedsList = append(webseedsList, known...)
 	}
+	if seedbox {
+		snapcfg.LoadRemotePreverified()
+	}
 	cfg, err := downloadercfg.New(dirs, version, torrentLogLevel, downloadRate, uploadRate, torrentPort, torrentConnsPerFile, torrentDownloadSlots, staticPeers, webseedsList, chain, true, dbWritemap)
 	if err != nil {
 		return err
@@ -321,10 +309,10 @@ func Downloader(ctx context.Context, logger log.Logger) error {
 
 var createTorrent = &cobra.Command{
 	Use:     "torrent_create",
-	Example: "go run ./cmd/downloader torrent_create --datadir=<your_datadir> --file=<relative_file_path>",
+	Example: "go run ./cmd/downloader torrent_create --datadir=<your_datadir> --file=<relative_file_path> ",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dirs := datadir.New(datadirCli)
-		createdAmount, err := downloader.BuildTorrentFilesIfNeed(cmd.Context(), dirs, downloader.NewAtomicTorrentFS(dirs.Snap), chain, nil)
+		createdAmount, err := downloader.BuildTorrentFilesIfNeed(cmd.Context(), dirs, downloader.NewAtomicTorrentFS(dirs.Snap), chain, nil, all)
 		if err != nil {
 			return err
 		}
@@ -375,7 +363,7 @@ var torrentCat = &cobra.Command{
 	Example: "go run ./cmd/downloader torrent_cat <path_to_torrent_file>",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
-			return fmt.Errorf("please pass .torrent file path by first argument")
+			return errors.New("please pass .torrent file path by first argument")
 		}
 		fPath := args[0]
 		mi, err := metainfo.LoadFromFile(fPath)
@@ -435,7 +423,7 @@ var torrentMagnet = &cobra.Command{
 	Example: "go run ./cmd/downloader torrent_magnet <path_to_torrent_file>",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
-			return fmt.Errorf("please pass .torrent file path by first argument")
+			return errors.New("please pass .torrent file path by first argument")
 		}
 		fPath := args[0]
 		mi, err := metainfo.LoadFromFile(fPath)
@@ -508,7 +496,7 @@ func manifestVerify(ctx context.Context, logger log.Logger) error {
 func manifest(ctx context.Context, logger log.Logger) error {
 	dirs := datadir.New(datadirCli)
 
-	files, err := downloader.SeedableFiles(dirs, chain)
+	files, err := downloader.SeedableFiles(dirs, chain, all)
 	if err != nil {
 		return err
 	}
@@ -574,7 +562,7 @@ func doPrintTorrentHashes(ctx context.Context, logger log.Logger) error {
 				return err
 			}
 		}
-		createdAmount, err := downloader.BuildTorrentFilesIfNeed(ctx, dirs, tf, chain, nil)
+		createdAmount, err := downloader.BuildTorrentFilesIfNeed(ctx, dirs, tf, chain, nil, all)
 		if err != nil {
 			return fmt.Errorf("BuildTorrentFilesIfNeed: %w", err)
 		}

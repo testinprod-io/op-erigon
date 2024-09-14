@@ -19,7 +19,6 @@ package diagnostics
 import (
 	"context"
 	"net/http"
-<<<<<<< HEAD
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -30,23 +29,10 @@ import (
 	"github.com/c2h5oh/datasize"
 	"golang.org/x/sync/semaphore"
 
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon-lib/kv/mdbx"
-	"github.com/ledgerwatch/log/v3"
-=======
-	"path/filepath"
-	"sync"
-	"time"
-
-	"github.com/c2h5oh/datasize"
-	"golang.org/x/sync/semaphore"
-
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/kv"
 	"github.com/erigontech/erigon-lib/kv/mdbx"
 	"github.com/erigontech/erigon-lib/log/v3"
->>>>>>> v3.0.0-alpha1
 )
 
 type DiagnosticClient struct {
@@ -74,25 +60,14 @@ type DiagnosticClient struct {
 	webseedsList        []string
 }
 
-<<<<<<< HEAD
-func NewDiagnosticClient(ctx context.Context, metricsMux *http.ServeMux, dataDirPath string, speedTest bool) (*DiagnosticClient, error) {
-=======
 func NewDiagnosticClient(ctx context.Context, metricsMux *http.ServeMux, dataDirPath string, speedTest bool, webseedsList []string) (*DiagnosticClient, error) {
->>>>>>> v3.0.0-alpha1
 	dirPath := filepath.Join(dataDirPath, "diagnostics")
 	db, err := createDb(ctx, dirPath)
 	if err != nil {
 		return nil, err
 	}
 
-<<<<<<< HEAD
-	hInfo := ReadSysInfo(db)
-	ss := ReadSyncStages(db)
-	snpdwl := ReadSnapshotDownloadInfo(db)
-	snpidx := ReadSnapshotIndexingInfo(db)
-=======
 	hInfo, ss, snpdwl, snpidx, snpfd := ReadSavedData(db)
->>>>>>> v3.0.0-alpha1
 
 	return &DiagnosticClient{
 		ctx:         ctx,
@@ -104,10 +79,7 @@ func NewDiagnosticClient(ctx context.Context, metricsMux *http.ServeMux, dataDir
 		syncStats: SyncStatistics{
 			SnapshotDownload: snpdwl,
 			SnapshotIndexing: snpidx,
-<<<<<<< HEAD
-=======
 			SnapshotFillDB:   snpfd,
->>>>>>> v3.0.0-alpha1
 		},
 		hardwareInfo:     hInfo,
 		snapshotFileList: SnapshoFilesList{},
@@ -115,12 +87,8 @@ func NewDiagnosticClient(ctx context.Context, metricsMux *http.ServeMux, dataDir
 		resourcesUsage: ResourcesUsage{
 			MemoryUsage: []MemoryStats{},
 		},
-<<<<<<< HEAD
-		peersStats: NewPeerStats(1000), // 1000 is the limit of peers; TODO: make it configurable through a flag
-=======
 		peersStats:   NewPeerStats(1000), // 1000 is the limit of peers; TODO: make it configurable through a flag
 		webseedsList: webseedsList,
->>>>>>> v3.0.0-alpha1
 	}, nil
 }
 
@@ -155,10 +123,6 @@ func (d *DiagnosticClient) Setup() {
 	d.setupResourcesUsageDiagnostics(rootCtx)
 	d.setupSpeedtestDiagnostics(rootCtx)
 	d.runSaveProcess(rootCtx)
-<<<<<<< HEAD
-	d.runStopNodeListener(rootCtx)
-=======
->>>>>>> v3.0.0-alpha1
 
 	//d.logDiagMsgs()
 
@@ -174,42 +138,6 @@ func (d *DiagnosticClient) runStopNodeListener(rootCtx context.Context) {
 		case <-rootCtx.Done():
 		}
 	}()
-}
-
-// Save diagnostic data by time interval to reduce save events
-func (d *DiagnosticClient) runSaveProcess(rootCtx context.Context) {
-	ticker := time.NewTicker(5 * time.Minute)
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				d.SaveData()
-			case <-rootCtx.Done():
-				ticker.Stop()
-				return
-			}
-		}
-	}()
-}
-
-func (d *DiagnosticClient) SaveData() {
-	var funcs []func(tx kv.RwTx) error
-	funcs = append(funcs, SnapshotDownloadUpdater(d.syncStats.SnapshotDownload), StagesListUpdater(d.syncStages), SnapshotIndexingUpdater(d.syncStats.SnapshotIndexing))
-
-	err := d.db.Update(d.ctx, func(tx kv.RwTx) error {
-		for _, updater := range funcs {
-			updErr := updater(tx)
-			if updErr != nil {
-				return updErr
-			}
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		log.Warn("Failed to save diagnostics data", "err", err)
-	}
 }
 
 // Save diagnostic data by time interval to reduce save events
@@ -333,7 +261,7 @@ func ReadSavedData(db kv.RoDB) (hinfo HardwareInfo, ssinfo []SyncStage, snpdwl S
 	}
 
 	var ramInfo RAMInfo
-	var cpuInfo CPUInfo
+	var cpuInfo []CPUInfo
 	var diskInfo DiskInfo
 	ParseData(ramBytes, &ramInfo)
 	ParseData(cpuBytes, &cpuInfo)

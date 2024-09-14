@@ -19,10 +19,12 @@ package jsonrpc
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
-	"github.com/ledgerwatch/erigon-lib/opstack"
 	"math/big"
 	"time"
+
+	"github.com/erigontech/erigon-lib/opstack"
 
 	"github.com/holiman/uint256"
 
@@ -109,7 +111,7 @@ func (api *APIImpl) CallMany(ctx context.Context, bundles []Bundle, simulateCont
 		return nil, err
 	}
 	if len(bundles) == 0 {
-		return nil, fmt.Errorf("empty bundles")
+		return nil, errors.New("empty bundles")
 	}
 	empty := true
 	for _, bundle := range bundles {
@@ -119,12 +121,12 @@ func (api *APIImpl) CallMany(ctx context.Context, bundles []Bundle, simulateCont
 	}
 
 	if empty {
-		return nil, fmt.Errorf("empty bundles")
+		return nil, errors.New("empty bundles")
 	}
 
 	defer func(start time.Time) { log.Trace("Executing EVM callMany finished", "runtime", time.Since(start)) }(time.Now())
 
-	blockNum, hash, _, err := rpchelper.GetBlockNumber(simulateContext.BlockNumber, tx, api.filters)
+	blockNum, hash, _, err := rpchelper.GetBlockNumber(ctx, simulateContext.BlockNumber, tx, api._blockReader, api.filters)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +150,7 @@ func (api *APIImpl) CallMany(ctx context.Context, bundles []Bundle, simulateCont
 
 	replayTransactions = block.Transactions()[:transactionIndex]
 
-	stateReader, err := rpchelper.CreateStateReader(ctx, tx, rpc.BlockNumberOrHashWithNumber(rpc.BlockNumber(blockNum-1)), 0, api.filters, api.stateCache, chainConfig.ChainName)
+	stateReader, err := rpchelper.CreateStateReader(ctx, tx, api._blockReader, rpc.BlockNumberOrHashWithNumber(rpc.BlockNumber(blockNum-1)), 0, api.filters, api.stateCache, chainConfig.ChainName)
 
 	if err != nil {
 		return nil, err
@@ -173,12 +175,8 @@ func (api *APIImpl) CallMany(ctx context.Context, bundles []Bundle, simulateCont
 		return hash
 	}
 
-<<<<<<< HEAD
-	blockCtx = core.NewEVMBlockContext(header, getHash, api.engine(), nil /* author */)
-	blockCtx.L1CostFunc = opstack.NewL1CostFunc(chainConfig, st)
-=======
 	blockCtx = core.NewEVMBlockContext(header, getHash, api.engine(), nil /* author */, chainConfig)
->>>>>>> v3.0.0-alpha1
+	blockCtx.L1CostFunc = opstack.NewL1CostFunc(chainConfig, st)
 
 	// Get a new instance of the EVM
 	evm = vm.NewEVM(blockCtx, txCtx, st, chainConfig, vm.Config{Debug: false})
@@ -215,7 +213,7 @@ func (api *APIImpl) CallMany(ctx context.Context, bundles []Bundle, simulateCont
 	// and apply the message.
 	gp := new(core.GasPool).AddGas(math.MaxUint64).AddBlobGas(math.MaxUint64)
 	for idx, txn := range replayTransactions {
-		st.SetTxContext(txn.Hash(), block.Hash(), idx)
+		st.SetTxContext(txn.Hash(), idx)
 		msg, err := txn.AsMessage(*signer, block.BaseFee(), rules)
 		if err != nil {
 			return nil, err

@@ -29,18 +29,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/gointerfaces/txpool"
-
-	"github.com/ledgerwatch/erigon-lib/kv/kvcache"
-
-	"github.com/ledgerwatch/log/v3"
-
-	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/rpcdaemontest"
-	"github.com/ledgerwatch/erigon/eth/filters"
-	"github.com/ledgerwatch/erigon/turbo/rpchelper"
-	"github.com/ledgerwatch/erigon/turbo/stages/mock"
-=======
 	txpool "github.com/erigontech/erigon-lib/gointerfaces/txpoolproto"
 	"github.com/erigontech/erigon-lib/kv/kvcache"
 
@@ -50,7 +38,6 @@ import (
 	"github.com/erigontech/erigon/eth/filters"
 	"github.com/erigontech/erigon/turbo/rpchelper"
 	"github.com/erigontech/erigon/turbo/stages/mock"
->>>>>>> v3.0.0-alpha1
 )
 
 func TestNewFilters(t *testing.T) {
@@ -59,13 +46,8 @@ func TestNewFilters(t *testing.T) {
 	stateCache := kvcache.New(kvcache.DefaultCoherentConfig)
 	ctx, conn := rpcdaemontest.CreateTestGrpcConn(t, mock.Mock(t))
 	mining := txpool.NewMiningClient(conn)
-<<<<<<< HEAD
-	ff := rpchelper.New(ctx, nil, nil, mining, func() {}, m.Log)
-	api := NewEthAPI(NewBaseApi(ff, stateCache, m.BlockReader, agg, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs, nil, nil), m.DB, nil, nil, nil, 5000000, 1e18, 100_000, false, 100_000, 128, log.New())
-=======
 	ff := rpchelper.New(ctx, rpchelper.DefaultFiltersConfig, nil, nil, mining, func() {}, m.Log)
-	api := NewEthAPI(NewBaseApi(ff, stateCache, m.BlockReader, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs), m.DB, nil, nil, nil, 5000000, 1e18, 100_000, false, 100_000, 128, log.New())
->>>>>>> v3.0.0-alpha1
+	api := NewEthAPI(NewBaseApi(ff, stateCache, m.BlockReader, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs, nil, nil, nil), m.DB, nil, nil, nil, 5000000, 1e18, 100_000, false, 100_000, 128, log.New())
 
 	ptf, err := api.NewPendingTransactionFilter(ctx)
 	assert.Nil(err)

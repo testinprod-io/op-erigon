@@ -110,12 +110,6 @@ func (s *Sync) NextStage() {
 		return
 	}
 	s.currentStage++
-<<<<<<< HEAD
-	if s.currentStage < uint(len(s.stages)) {
-		diagnostics.Send(diagnostics.CurrentSyncStage{Stage: string(s.stages[s.currentStage].ID)})
-	}
-=======
->>>>>>> v3.0.0-alpha1
 }
 
 // IsBefore returns true if stage1 goes before stage2 in staged sync
@@ -206,11 +200,6 @@ func (s *Sync) SetCurrentStage(id stages.SyncStage) error {
 	for i, stage := range s.stages {
 		if stage.ID == id {
 			s.currentStage = uint(i)
-<<<<<<< HEAD
-
-			diagnostics.Send(diagnostics.CurrentSyncStage{Stage: string(id)})
-=======
->>>>>>> v3.0.0-alpha1
 
 			return nil
 		}
@@ -376,9 +365,8 @@ func (s *Sync) Run(db kv.RwDB, txc wrap.TxContainer, initialCycle, firstCycle bo
 	s.timings = s.timings[:0]
 
 	hasMore := false
-
+	var badBlockUnwind bool
 	for !s.IsDone() {
-		var badBlockUnwind bool
 		if s.unwindPoint != nil {
 			for j := 0; j < len(s.unwindOrder); j++ {
 				if s.unwindOrder[j] == nil || s.unwindOrder[j].Disabled || s.unwindOrder[j].Unwind == nil {
@@ -416,11 +404,9 @@ func (s *Sync) Run(db kv.RwDB, txc wrap.TxContainer, initialCycle, firstCycle bo
 
 		if stage.Disabled || stage.Forward == nil {
 			s.logger.Trace(fmt.Sprintf("%s disabled. %s", stage.ID, stage.DisabledDescription))
-
 			s.NextStage()
 			continue
 		}
-
 		if err := s.runStage(stage, db, txc, initialCycle, firstCycle, badBlockUnwind); err != nil {
 			return false, err
 		}
@@ -461,6 +447,11 @@ func (s *Sync) Run(db kv.RwDB, txc wrap.TxContainer, initialCycle, firstCycle bo
 	}
 
 	s.currentStage = 0
+
+	if badBlockUnwind {
+		return false, errors.New("bad block unwinding")
+	}
+
 	return hasMore, nil
 }
 

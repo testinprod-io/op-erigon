@@ -30,18 +30,6 @@ import (
 	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/require"
 
-<<<<<<< HEAD
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/dir"
-	"github.com/ledgerwatch/erigon/common"
-	"github.com/ledgerwatch/erigon/core"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/core/vm"
-	"github.com/ledgerwatch/erigon/core/vm/evmtypes"
-	"github.com/ledgerwatch/erigon/eth/tracers"
-	"github.com/ledgerwatch/erigon/tests"
-	"github.com/ledgerwatch/erigon/turbo/stages/mock"
-=======
 	libcommon "github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/dir"
 	"github.com/erigontech/erigon/common"
@@ -53,7 +41,6 @@ import (
 	"github.com/erigontech/erigon/eth/tracers"
 	"github.com/erigontech/erigon/tests"
 	"github.com/erigontech/erigon/turbo/stages/mock"
->>>>>>> v3.0.0-alpha1
 )
 
 // prestateTrace is the result of a prestateTrace run.
@@ -117,11 +104,7 @@ func testPrestateDiffTracer(tracerName string, dirPath string, t *testing.T) {
 			signer := types.MakeSigner(test.Genesis.Config, uint64(test.Context.Number), uint64(test.Context.Time))
 			context := evmtypes.BlockContext{
 				CanTransfer: core.CanTransfer,
-<<<<<<< HEAD
-				Transfer:    core.Transfer,
-=======
 				Transfer:    consensus.Transfer,
->>>>>>> v3.0.0-alpha1
 				Coinbase:    test.Context.Miner,
 				BlockNumber: uint64(test.Context.Number),
 				Time:        uint64(test.Context.Time),
@@ -136,12 +119,8 @@ func testPrestateDiffTracer(tracerName string, dirPath string, t *testing.T) {
 			dbTx, err := m.DB.BeginRw(m.Ctx)
 			require.NoError(t, err)
 			defer dbTx.Rollback()
-<<<<<<< HEAD
-			statedb, _ := tests.MakePreState(rules, dbTx, test.Genesis.Alloc, context.BlockNumber)
-=======
-			statedb, err := tests.MakePreState(rules, dbTx, test.Genesis.Alloc, context.BlockNumber, m.HistoryV3)
+			statedb, err := tests.MakePreState(rules, dbTx, test.Genesis.Alloc, context.BlockNumber)
 			require.NoError(t, err)
->>>>>>> v3.0.0-alpha1
 			tracer, err := tracers.New(tracerName, new(tracers.Context), test.TracerConfig)
 			if err != nil {
 				t.Fatalf("failed to create call tracer: %v", err)

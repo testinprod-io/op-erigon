@@ -23,6 +23,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/erigontech/erigon/core/types/accounts"
+
 	"github.com/erigontech/erigon-lib/common/hexutil"
 
 	"github.com/holiman/uint256"
@@ -34,27 +36,8 @@ import (
 	txpool "github.com/erigontech/erigon-lib/gointerfaces/txpoolproto"
 	"github.com/erigontech/erigon-lib/kv"
 	"github.com/erigontech/erigon-lib/kv/kvcache"
+	"github.com/erigontech/erigon-lib/kv/rawdbv3"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/log/v3"
-
-	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/rpcdaemontest"
-	"github.com/ledgerwatch/erigon/common/math"
-	"github.com/ledgerwatch/erigon/core"
-	"github.com/ledgerwatch/erigon/core/rawdb"
-	"github.com/ledgerwatch/erigon/core/state"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/core/types/accounts"
-	"github.com/ledgerwatch/erigon/crypto"
-	"github.com/ledgerwatch/erigon/params"
-	"github.com/ledgerwatch/erigon/rpc"
-	"github.com/ledgerwatch/erigon/rpc/rpccfg"
-	"github.com/ledgerwatch/erigon/turbo/adapter/ethapi"
-	ethapi2 "github.com/ledgerwatch/erigon/turbo/adapter/ethapi"
-	"github.com/ledgerwatch/erigon/turbo/rpchelper"
-	"github.com/ledgerwatch/erigon/turbo/stages/mock"
-	"github.com/ledgerwatch/erigon/turbo/trie"
-=======
 	"github.com/erigontech/erigon-lib/log/v3"
 
 	"github.com/erigontech/erigon/cmd/rpcdaemon/rpcdaemontest"
@@ -71,7 +54,6 @@ import (
 	"github.com/erigontech/erigon/turbo/rpchelper"
 	"github.com/erigontech/erigon/turbo/stages/mock"
 	"github.com/erigontech/erigon/turbo/trie"
->>>>>>> v3.0.0-alpha1
 )
 
 func TestEstimateGas(t *testing.T) {
@@ -79,19 +61,14 @@ func TestEstimateGas(t *testing.T) {
 	stateCache := kvcache.New(kvcache.DefaultCoherentConfig)
 	ctx, conn := rpcdaemontest.CreateTestGrpcConn(t, mock.Mock(t))
 	mining := txpool.NewMiningClient(conn)
-<<<<<<< HEAD
-	ff := rpchelper.New(ctx, nil, nil, mining, func() {}, m.Log)
-	api := NewEthAPI(NewBaseApi(ff, stateCache, m.BlockReader, agg, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs, nil, nil), m.DB, nil, nil, nil, 5000000, 1e18, 100_000, false, 100_000, 128, log.New())
-=======
 	ff := rpchelper.New(ctx, rpchelper.DefaultFiltersConfig, nil, nil, mining, func() {}, m.Log)
-	api := NewEthAPI(NewBaseApi(ff, stateCache, m.BlockReader, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs), m.DB, nil, nil, nil, 5000000, 1e18, 100_000, false, 100_000, 128, log.New())
->>>>>>> v3.0.0-alpha1
+	api := NewEthAPI(NewBaseApi(ff, stateCache, m.BlockReader, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs, nil, nil, nil), m.DB, nil, nil, nil, 5000000, 1e18, 100_000, false, 100_000, 128, log.New())
 	var from = libcommon.HexToAddress("0x71562b71999873db5b286df957af199ec94617f7")
 	var to = libcommon.HexToAddress("0x0d3ab14bbad3d99f4203bd7a11acb94882050e7e")
 	if _, err := api.EstimateGas(context.Background(), &ethapi.CallArgs{
 		From: &from,
 		To:   &to,
-	}, nil); err != nil {
+	}, nil, nil); err != nil {
 		t.Errorf("calling EstimateGas: %v", err)
 	}
 }
@@ -143,7 +120,7 @@ func TestEstimateGasHistoricalRPC(t *testing.T) {
 				api.historicalRPCService = historicalRPCService
 				s.UpdatePayload(tt.payload)
 			}
-			val, err := api.EstimateGas(m.Ctx, &ethapi2.CallArgs{}, nil)
+			val, err := api.EstimateGas(m.Ctx, &ethapi.CallArgs{}, nil, nil)
 			if tt.isError {
 				require.Error(t, err, tt.caseName)
 				require.Equal(t, tt.expected, fmt.Sprintf("%v", err), tt.caseName)
@@ -158,11 +135,8 @@ func TestEstimateGasHistoricalRPC(t *testing.T) {
 func TestEthCallNonCanonical(t *testing.T) {
 	m, _, _ := rpcdaemontest.CreateTestSentry(t)
 	stateCache := kvcache.New(kvcache.DefaultCoherentConfig)
-<<<<<<< HEAD
-	api := NewEthAPI(NewBaseApi(nil, stateCache, m.BlockReader, agg, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs, nil, nil), m.DB, nil, nil, nil, 5000000, 1e18, 100_000, false, 100_000, 128, log.New())
-=======
-	api := NewEthAPI(NewBaseApi(nil, stateCache, m.BlockReader, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs), m.DB, nil, nil, nil, 5000000, 1e18, 100_000, false, 100_000, 128, log.New())
->>>>>>> v3.0.0-alpha1
+
+	api := NewEthAPI(NewBaseApi(nil, stateCache, m.BlockReader, false, rpccfg.DefaultEvmCallTimeout, m.Engine, m.Dirs, nil, nil, nil), m.DB, nil, nil, nil, 5000000, 1e18, 100_000, false, 100_000, 128, log.New())
 	var from = libcommon.HexToAddress("0x71562b71999873db5b286df957af199ec94617f7")
 	var to = libcommon.HexToAddress("0x0d3ab14bbad3d99f4203bd7a11acb94882050e7e")
 	if _, err := api.Call(context.Background(), ethapi.CallArgs{
@@ -701,13 +675,13 @@ func chainWithDeployedContract(t *testing.T) (*mock.MockSentry, libcommon.Addres
 	}
 	defer tx.Rollback()
 
-	stateReader, err := rpchelper.CreateHistoryStateReader(tx, 1, 0, "")
+	stateReader, err := rpchelper.CreateHistoryStateReader(tx, rawdbv3.TxNums, 1, 0, "")
 	assert.NoError(t, err)
 	st := state.New(stateReader)
 	assert.NoError(t, err)
 	assert.False(t, st.Exist(contractAddr), "Contract should not exist at block #1")
 
-	stateReader, err = rpchelper.CreateHistoryStateReader(tx, 2, 0, "")
+	stateReader, err = rpchelper.CreateHistoryStateReader(tx, rawdbv3.TxNums, 2, 0, "")
 	assert.NoError(t, err)
 	st = state.New(stateReader)
 	assert.NoError(t, err)

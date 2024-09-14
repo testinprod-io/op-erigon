@@ -24,11 +24,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ledgerwatch/erigon-lib/common/length"
-	"github.com/ledgerwatch/erigon-lib/etl"
-	"github.com/ledgerwatch/erigon-lib/kv/dbutils"
-	"github.com/ledgerwatch/erigon-lib/kv/temporal/historyv2"
-	"github.com/ledgerwatch/erigon/common/changeset"
+	"github.com/erigontech/erigon-lib/kv/rawdbv3"
+	state2 "github.com/erigontech/erigon-lib/state"
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/holiman/uint256"
@@ -36,7 +33,7 @@ import (
 
 	"github.com/erigontech/erigon-lib/kv/membatchwithdb"
 	"github.com/erigontech/erigon-lib/log/v3"
-	state2 "github.com/erigontech/erigon-lib/state"
+	libstate "github.com/erigontech/erigon-lib/state"
 	"github.com/erigontech/erigon-lib/wrap"
 
 	"github.com/erigontech/erigon-lib/chain"
@@ -105,7 +102,7 @@ func StageMiningExecCfg(
 // SpawnMiningExecStage
 // TODO:
 // - resubmitAdjustCh - variable is not implemented
-func SpawnMiningExecStage(s *StageState, txc wrap.TxContainer, cfg MiningExecCfg, sendersCfg SendersCfg, execCfg ExecuteBlockCfg, ctx context.Context, logger log.Logger) error {
+func SpawnMiningExecStage(s *StageState, txc wrap.TxContainer, cfg MiningExecCfg, sendersCfg SendersCfg, execCfg ExecuteBlockCfg, ctx context.Context, logger log.Logger, u Unwinder) error {
 	cfg.vmConfig.NoReceipts = false
 	chainID, _ := uint256.FromBig(cfg.chainConfig.ChainID)
 	logPrefix := s.LogPrefix()
@@ -113,16 +110,16 @@ func SpawnMiningExecStage(s *StageState, txc wrap.TxContainer, cfg MiningExecCfg
 	txs := current.PreparedTxs
 	forceTxs := current.ForceTxs
 	noempty := true
-	var domains *state2.SharedDomains
 	var (
 		stateReader state.StateReader
 	)
-	stateReader = state.NewReaderV4(txc.Doms)
+	stateReader = state.NewReaderV3(txc.Doms)
 	ibs := state.New(stateReader)
 	// Clique consensus needs forced author in the evm context
-	if cfg.chainConfig.Consensus == chain.CliqueConsensus {
-		execCfg.author = &cfg.miningState.MiningConfig.Etherbase
-	}
+	//if cfg.chainConfig.Consensus == chain.CliqueConsensus {
+	//	execCfg.author = &cfg.miningState.MiningConfig.Etherbase
+	//}
+	execCfg.author = &cfg.miningState.MiningConfig.Etherbase
 
 	// Create an empty block based on temporary copied state for
 	// sealing in advance without waiting block execution finished.
@@ -136,24 +133,18 @@ func SpawnMiningExecStage(s *StageState, txc wrap.TxContainer, cfg MiningExecCfg
 	// But if we disable empty precommit already, ignore it. Since
 	// empty block is necessary to keep the liveness of the network.
 	if noempty {
-<<<<<<< HEAD
 		if !forceTxs.Empty() {
 			// forceTxs is sent by Optimism consensus client, and all force txs must be included in the payload.
 			// Therefore, interrupts to block building must not be handled while force txs are being processed.
 			// So do not pass cfg.interrupt
-			logs, _, err := addTransactionsToMiningBlock(logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, cfg.engine, forceTxs, cfg.miningState.MiningConfig.Etherbase, ibs, quit, nil, cfg.payloadId, true, logger)
-=======
-
-		if txs != nil && !txs.Empty() {
-			logs, _, err := addTransactionsToMiningBlock(logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, cfg.engine, txs, cfg.miningState.MiningConfig.Etherbase, ibs, ctx, cfg.interrupt, cfg.payloadId, logger)
->>>>>>> v3.0.0-alpha1
+			logs, _, err := addTransactionsToMiningBlock(logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, cfg.engine, forceTxs, cfg.miningState.MiningConfig.Etherbase, ibs, ctx, nil, cfg.payloadId, true, logger)
 			if err != nil {
 				return err
 			}
 			NotifyPendingLogs(logPrefix, cfg.notifier, logs, logger)
 		}
 		if txs != nil && !txs.Empty() {
-			logs, _, err := addTransactionsToMiningBlock(logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, cfg.engine, txs, cfg.miningState.MiningConfig.Etherbase, ibs, quit, cfg.interrupt, cfg.payloadId, false, logger)
+			logs, _, err := addTransactionsToMiningBlock(logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, cfg.engine, txs, cfg.miningState.MiningConfig.Etherbase, ibs, ctx, cfg.interrupt, cfg.payloadId, false, logger)
 			if err != nil {
 				return err
 			}
@@ -163,18 +154,18 @@ func SpawnMiningExecStage(s *StageState, txc wrap.TxContainer, cfg MiningExecCfg
 			yielded := mapset.NewSet[[32]byte]()
 			var simStateReader state.StateReader
 			var simStateWriter state.StateWriter
-			m := membatchwithdb.NewMemoryBatch(txc.Tx, cfg.tmpdir, logger)
-			defer m.Rollback()
-			var err error
-			domains, err = state2.NewSharedDomains(m, logger)
+
+			mb := membatchwithdb.NewMemoryBatch(txc.Tx, cfg.tmpdir, logger)
+			defer mb.Close()
+			sd, err := state2.NewSharedDomains(mb, logger)
 			if err != nil {
 				return err
 			}
-			defer domains.Close()
-			simStateReader = state.NewReaderV4(domains)
-			simStateWriter = state.NewWriterV4(domains)
+			defer sd.Close()
+			simStateWriter = state.NewWriterV4(sd)
+			simStateReader = state.NewReaderV3(sd)
 
-			executionAt, err := s.ExecutionAt(txc.Tx)
+			executionAt, err := s.ExecutionAt(mb)
 			if err != nil {
 				return err
 			}
@@ -186,11 +177,7 @@ func SpawnMiningExecStage(s *StageState, txc wrap.TxContainer, cfg MiningExecCfg
 				}
 
 				if !txs.Empty() {
-<<<<<<< HEAD
-					logs, stop, err := addTransactionsToMiningBlock(logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, cfg.engine, txs, cfg.miningState.MiningConfig.Etherbase, ibs, quit, cfg.interrupt, cfg.payloadId, false, logger)
-=======
-					logs, stop, err := addTransactionsToMiningBlock(logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, cfg.engine, txs, cfg.miningState.MiningConfig.Etherbase, ibs, ctx, cfg.interrupt, cfg.payloadId, logger)
->>>>>>> v3.0.0-alpha1
+					logs, stop, err := addTransactionsToMiningBlock(logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, cfg.engine, txs, cfg.miningState.MiningConfig.Etherbase, ibs, ctx, cfg.interrupt, cfg.payloadId, false, logger)
 					if err != nil {
 						return err
 					}
@@ -237,38 +224,39 @@ func SpawnMiningExecStage(s *StageState, txc wrap.TxContainer, cfg MiningExecCfg
 	current.Requests = block.Requests()
 
 	// Simulate the block execution to get the final state root
-	if err := rawdb.WriteHeader(txc.Tx, block.Header()); err != nil {
+	if err = rawdb.WriteHeader(txc.Tx, block.Header()); err != nil {
 		return fmt.Errorf("cannot write header: %s", err)
 	}
 	blockHeight := block.NumberU64()
 
-	if err := rawdb.WriteCanonicalHash(txc.Tx, block.Hash(), blockHeight); err != nil {
+	if err = rawdb.WriteCanonicalHash(txc.Tx, block.Hash(), blockHeight); err != nil {
 		return fmt.Errorf("cannot write canonical hash: %s", err)
 	}
-	if err := rawdb.WriteHeadHeaderHash(txc.Tx, block.Hash()); err != nil {
+	if err = rawdb.WriteHeadHeaderHash(txc.Tx, block.Hash()); err != nil {
 		return err
 	}
 	if _, err = rawdb.WriteRawBodyIfNotExists(txc.Tx, block.Hash(), blockHeight, block.RawBody()); err != nil {
 		return fmt.Errorf("cannot write body: %s", err)
 	}
-	if err := rawdb.AppendCanonicalTxNums(txc.Tx, blockHeight); err != nil {
+	if err = rawdb.AppendCanonicalTxNums(txc.Tx, blockHeight); err != nil {
 		return err
 	}
-	if err := stages.SaveStageProgress(txc.Tx, kv.Headers, blockHeight); err != nil {
+	if err = stages.SaveStageProgress(txc.Tx, kv.Headers, blockHeight); err != nil {
 		return err
 	}
-	if err := stages.SaveStageProgress(txc.Tx, stages.Bodies, blockHeight); err != nil {
+	if err = stages.SaveStageProgress(txc.Tx, stages.Bodies, blockHeight); err != nil {
 		return err
 	}
 	senderS := &StageState{state: s.state, ID: stages.Senders, BlockNumber: blockHeight - 1}
-	if err := SpawnRecoverSendersStage(sendersCfg, senderS, nil, txc.Tx, blockHeight, ctx, logger); err != nil {
+	if err = SpawnRecoverSendersStage(sendersCfg, senderS, nil, txc.Tx, blockHeight, ctx, logger); err != nil {
 		return err
 	}
 
 	// This flag will skip checking the state root
 	execCfg.blockProduction = true
 	execS := &StageState{state: s.state, ID: stages.Execution, BlockNumber: blockHeight - 1}
-	if err := ExecBlockV3(execS, nil, txc, blockHeight, context.Background(), execCfg, false, logger); err != nil {
+	if err = ExecBlockV3(execS, u, txc, blockHeight, context.Background(), execCfg, false, logger, true); err != nil {
+		logger.Error("cannot execute block execution", "err", err)
 		return err
 	}
 
@@ -463,13 +451,8 @@ func filterBadTransactions(transactions []types.Transaction, config chain.Config
 }
 
 func addTransactionsToMiningBlock(logPrefix string, current *MiningBlock, chainConfig chain.Config, vmConfig *vm.Config, getHeader func(hash libcommon.Hash, number uint64) *types.Header,
-<<<<<<< HEAD
-	engine consensus.Engine, txs types.TransactionsStream, coinbase libcommon.Address, ibs *state.IntraBlockState, quit <-chan struct{},
-	interrupt *int32, payloadId uint64, allowDeposits bool, logger log.Logger) (types.Logs, bool, error) {
-=======
 	engine consensus.Engine, txs types.TransactionsStream, coinbase libcommon.Address, ibs *state.IntraBlockState, ctx context.Context,
-	interrupt *int32, payloadId uint64, logger log.Logger) (types.Logs, bool, error) {
->>>>>>> v3.0.0-alpha1
+	interrupt *int32, payloadId uint64, allowDeposits bool, logger log.Logger) (types.Logs, bool, error) {
 	header := current.Header
 	tcount := 0
 	gasPool := new(core.GasPool).AddGas(header.GasLimit - header.GasUsed)
@@ -482,7 +465,7 @@ func addTransactionsToMiningBlock(logPrefix string, current *MiningBlock, chainC
 	noop := state.NewNoopWriter()
 
 	var miningCommitTx = func(txn types.Transaction, coinbase libcommon.Address, vmConfig *vm.Config, chainConfig chain.Config, ibs *state.IntraBlockState, current *MiningBlock) ([]*types.Log, error) {
-		ibs.SetTxContext(txn.Hash(), libcommon.Hash{}, tcount)
+		ibs.SetTxContext(txn.Hash(), tcount)
 		gasSnap := gasPool.Gas()
 		blobGasSnap := gasPool.BlobGas()
 		snap := ibs.Snapshot()
@@ -571,7 +554,7 @@ LOOP:
 			txs.Pop()
 		} else if errors.Is(err, core.ErrNonceTooLow) {
 			// New head notification data race between the transaction pool and miner, shift
-			logger.Debug(fmt.Sprintf("[%s] Skipping transaction with low nonce", logPrefix), "hash", txn.Hash(), "sender", from, "nonce", txn.GetNonce())
+			logger.Debug(fmt.Sprintf("[%s] Skipping transaction with low nonce", logPrefix), "hash", txn.Hash(), "sender", from, "nonce", txn.GetNonce(), "err", err)
 			txs.Shift()
 		} else if errors.Is(err, core.ErrNonceTooHigh) {
 			// Reorg notification data race between the transaction pool and miner, skip account =
@@ -615,107 +598,103 @@ func NotifyPendingLogs(logPrefix string, notifier ChainEventNotifier, logs types
 }
 
 // implemented by tweaking UnwindExecutionStage
-func UnwindMiningExecutionStage(u *UnwindState, s *StageState, tx kv.RwTx, ctx context.Context, cfg MiningExecCfg, logger log.Logger) (err error) {
+func UnwindMiningExecutionStage(u *UnwindState, s *StageState, txc wrap.TxContainer, ctx context.Context, cfg MiningExecCfg, logger log.Logger) (err error) {
 	if u.UnwindPoint >= s.BlockNumber {
 		return nil
 	}
-	useExternalTx := tx != nil
+	useExternalTx := txc.Tx != nil
 	if !useExternalTx {
-		tx, err = cfg.db.BeginRw(context.Background())
+		txc.Tx, err = cfg.db.BeginRw(ctx)
 		if err != nil {
 			return err
 		}
-		defer tx.Rollback()
+		defer txc.Tx.Rollback()
 	}
 	logPrefix := u.LogPrefix()
 	log.Info(fmt.Sprintf("[%s] Unwind Mining Execution", logPrefix), "from", s.BlockNumber, "to", u.UnwindPoint)
 
-	if err = unwindMiningExecutionStage(u, s, tx, ctx, cfg, logger); err != nil {
+	unwindToLimit, ok, err := txc.Tx.(libstate.HasAggTx).AggTx().(*libstate.AggregatorRoTx).CanUnwindBeforeBlockNum(u.UnwindPoint, txc.Tx)
+	if err != nil {
 		return err
 	}
-	if err = u.Done(tx); err != nil {
+	if !ok {
+		return fmt.Errorf("%w: %d < %d", ErrTooDeepUnwind, u.UnwindPoint, unwindToLimit)
+	}
+
+	if err = unwindMiningExecutionStage(u, s, txc, ctx, cfg, logger); err != nil {
+		return err
+	}
+	if err = u.Done(txc.Tx); err != nil {
 		return err
 	}
 
 	if !useExternalTx {
-		if err = tx.Commit(); err != nil {
+		if err = txc.Tx.Commit(); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func unwindMiningExecutionStage(u *UnwindState, s *StageState, tx kv.RwTx, ctx context.Context, cfg MiningExecCfg, logger log.Logger) error {
-	logPrefix := s.LogPrefix()
-	stateBucket := kv.PlainState
-	storageKeyLength := length.Addr + length.Incarnation + length.Hash
-
-	changes := etl.NewCollector(logPrefix, cfg.tmpdir, etl.NewOldestEntryBuffer(etl.BufferOptimalSize), logger)
-	defer changes.Close()
-	errRewind := changeset.RewindData(tx, s.BlockNumber, u.UnwindPoint, changes, ctx.Done())
-	if errRewind != nil {
-		return fmt.Errorf("getting rewind data: %w", errRewind)
+func unwindMiningExecutionStage(u *UnwindState, s *StageState, txc wrap.TxContainer, ctx context.Context, cfg MiningExecCfg, logger log.Logger) error {
+	if s.BlockNumber-u.UnwindPoint < stateStreamLimit {
+		_, err := cfg.blockReader.CanonicalHash(ctx, txc.Tx, u.UnwindPoint)
+		if err != nil {
+			return fmt.Errorf("read canonical hash of unwind point: %w", err)
+		}
+		_, err = cfg.blockReader.RawTransactions(ctx, txc.Tx, u.UnwindPoint, s.BlockNumber)
+		if err != nil {
+			return err
+		}
 	}
 
-	if err := changes.Load(tx, stateBucket, func(k, v []byte, table etl.CurrentTableReader, next etl.LoadNextFunc) error {
-		if len(k) == 20 {
-			if len(v) > 0 {
-				var acc accounts.Account
-				if err := acc.DecodeForStorage(v); err != nil {
-					return err
-				}
+	return unwindMiningExec3(u, s, txc, ctx, logger)
+}
 
-				// Fetch the code hash
-				recoverCodeHashPlain(&acc, tx, k)
-				var address libcommon.Address
-				copy(address[:], k)
-
-				// cleanup contract code bucket
-				original, err := state.NewPlainStateReader(tx).ReadAccountData(address)
-				if err != nil {
-					return fmt.Errorf("read account for %x: %w", address, err)
-				}
-				if original != nil {
-					// clean up all the code incarnations original incarnation and the new one
-					for incarnation := original.Incarnation; incarnation > acc.Incarnation && incarnation > 0; incarnation-- {
-						err = tx.Delete(kv.PlainContractCode, dbutils.PlainGenerateStoragePrefix(address[:], incarnation))
-						if err != nil {
-							return fmt.Errorf("writeAccountPlain for %x: %w", address, err)
-						}
-					}
-				}
-
-				newV := make([]byte, acc.EncodingLengthForStorage())
-				acc.EncodeForStorage(newV)
-				if err := next(k, k, newV); err != nil {
-					return err
-				}
-			} else {
-				if err := next(k, k, nil); err != nil {
-					return err
-				}
-			}
-			return nil
+func unwindMiningExec3(u *UnwindState, s *StageState, txc wrap.TxContainer, ctx context.Context, logger log.Logger) error {
+	var domains *libstate.SharedDomains
+	if txc.Doms == nil {
+		domains, err := libstate.NewSharedDomains(txc.Tx, logger)
+		if err != nil {
+			return err
 		}
-		if len(v) > 0 {
-			if err := next(k, k[:storageKeyLength], v); err != nil {
-				return err
-			}
+		defer domains.Close()
+	} else {
+		domains = txc.Doms
+	}
+	rs := state.NewStateV3(domains, logger)
+	// unwind all txs of u.UnwindPoint block. 1 txn in begin/end of block - system txs
+	txNum, err := rawdbv3.TxNums.Min(txc.Tx, u.UnwindPoint+1)
+	if err != nil {
+		return err
+	}
+	t := time.Now()
+	var changeset *[kv.DomainLen][]libstate.DomainEntryDiff
+	for currentBlock := u.CurrentBlockNumber; currentBlock > u.UnwindPoint; currentBlock-- {
+		currentHash, err := rawdb.ReadCanonicalHash(txc.Tx, currentBlock)
+		if err != nil {
+			return err
+		}
+		var ok bool
+		var currentKeys [kv.DomainLen][]libstate.DomainEntryDiff
+		currentKeys, ok, err = domains.GetDiffset(txc.Tx, currentHash, currentBlock)
+		if !ok {
+			return fmt.Errorf("domains.GetDiffset(%d, %s): not found", currentBlock, currentHash)
+		}
+		if err != nil {
+			return err
+		}
+		if changeset == nil {
+			changeset = &currentKeys
 		} else {
-			if err := next(k, k[:storageKeyLength], nil); err != nil {
-				return err
+			for i := range currentKeys {
+				changeset[i] = libstate.MergeDiffSets(changeset[i], currentKeys[i])
 			}
 		}
-		return nil
-
-	}, etl.TransformArgs{Quit: ctx.Done()}); err != nil {
-		return err
 	}
-
-	if err := historyv2.Truncate(tx, u.UnwindPoint+1); err != nil {
-		return err
+	if err := rs.Unwind(ctx, txc.Tx, u.UnwindPoint, txNum, nil, changeset); err != nil {
+		return fmt.Errorf("StateV3.Unwind(%d->%d): %w, took %s", s.BlockNumber, u.UnwindPoint, err, time.Since(t))
 	}
-
 	// we do not have to delete receipt, epoch, callTraceSet because
 	// mining stage does not write anything to db.
 	return nil

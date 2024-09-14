@@ -23,20 +23,16 @@ import (
 	"os"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon/cmd/rpcdaemon/cli"
 	"github.com/erigontech/erigon/rpc"
 	"github.com/erigontech/erigon/turbo/debug"
 	"github.com/erigontech/erigon/turbo/jsonrpc"
-	"github.com/spf13/cobra"
 
-<<<<<<< HEAD
-	_ "github.com/ledgerwatch/erigon/core/snaptype"        //hack
-	_ "github.com/ledgerwatch/erigon/polygon/bor/snaptype" //hack
-=======
 	_ "github.com/erigontech/erigon/core/snaptype"        //hack
 	_ "github.com/erigontech/erigon/polygon/bor/snaptype" //hack
->>>>>>> v3.0.0-alpha1
 )
 
 func main() {
@@ -55,7 +51,6 @@ func main() {
 		defer db.Close()
 		defer engine.Close()
 
-<<<<<<< HEAD
 		var seqRPCService *rpc.Client
 		var historicalRPCService *rpc.Client
 
@@ -81,11 +76,7 @@ func main() {
 			historicalRPCService = client
 		}
 
-		// TODO: Replace with correct consensus Engine
-		apiList := jsonrpc.APIList(db, backend, txPool, mining, ff, stateCache, blockReader, agg, cfg, engine, seqRPCService, historicalRPCService, logger)
-=======
-		apiList := jsonrpc.APIList(db, backend, txPool, mining, ff, stateCache, blockReader, cfg, engine, logger)
->>>>>>> v3.0.0-alpha1
+		apiList := jsonrpc.APIList(db, backend, txPool, mining, ff, stateCache, blockReader, cfg, engine, seqRPCService, historicalRPCService, logger, nil)
 		rpc.PreAllocateRPCMetricLabels(apiList)
 		if err := cli.StartRpcServer(ctx, cfg, apiList, logger); err != nil {
 			logger.Error(err.Error())

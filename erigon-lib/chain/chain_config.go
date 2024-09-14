@@ -75,6 +75,7 @@ type Config struct {
 	// Delta: the Delta upgrade does not affect the execution-layer, and is thus not configurable in the chain config.
 	EcotoneTime *big.Int `json:"ecotoneTime,omitempty"` // Ecotone switch time (nil = no fork, 0 = already on optimism ecotone)
 	FjordTime   *big.Int `json:"fjordTime,omitempty"`   // Fjord switch time (nil = no fork, 0 = already on optimism fjord)
+	GraniteTime *big.Int `json:"graniteTime,omitempty"` // Granite switch time (nil = no fork, 0 = already on optimism granite)
 
 	// Optional EIP-4844 parameters
 	MinBlobGasPrice            *uint64 `json:"minBlobGasPrice,omitempty"`
@@ -87,7 +88,7 @@ type Config struct {
 
 	// (Optional) deposit contract of PoS chains
 	// See also EIP-6110: Supply validator deposits on chain
-	DepositContract common.Address `json:"depositContract,omitempty"`
+	DepositContract common.Address `json:"depositContractAddress,omitempty"`
 
 	// Various consensus engines
 	Ethash  *EthashConfig   `json:"ethash,omitempty"`
@@ -95,7 +96,6 @@ type Config struct {
 	Aura    *AuRaConfig     `json:"aura,omitempty"`
 	Bor     BorConfig       `json:"-"`
 	BorJSON json.RawMessage `json:"bor,omitempty"`
-<<<<<<< HEAD
 
 	// For not pruning the logs of these contracts
 	// For deposit contract logs are needed by CL to validate/produce blocks.
@@ -104,8 +104,6 @@ type Config struct {
 
 	// Optimism config
 	Optimism *OptimismConfig `json:"optimism,omitempty"`
-=======
->>>>>>> v3.0.0-alpha1
 }
 
 type BorConfig interface {
@@ -114,6 +112,7 @@ type BorConfig interface {
 	GetAgraBlock() *big.Int
 	IsNapoli(num uint64) bool
 	GetNapoliBlock() *big.Int
+	IsAhmedabad(number uint64) bool
 }
 
 // OptimismConfig is the optimism config.
@@ -131,11 +130,7 @@ func (o *OptimismConfig) String() string {
 func (c *Config) String() string {
 	engine := c.getEngine()
 
-<<<<<<< HEAD
-	configString := fmt.Sprintf("{ChainID: %v, Homestead: %v, DAO: %v, Tangerine Whistle: %v, Spurious Dragon: %v, Byzantium: %v, Constantinople: %v, Petersburg: %v, Istanbul: %v, Muir Glacier: %v, Berlin: %v, London: %v, Arrow Glacier: %v, Gray Glacier: %v, Terminal Total Difficulty: %v, Merge Netsplit: %v, Shanghai: %v, Cancun: %v, Prague: %v, Osaka: %v, Engine: %v, NoPruneContracts: %v}",
-=======
-	return fmt.Sprintf("{ChainID: %v, Homestead: %v, DAO: %v, Tangerine Whistle: %v, Spurious Dragon: %v, Byzantium: %v, Constantinople: %v, Petersburg: %v, Istanbul: %v, Muir Glacier: %v, Berlin: %v, London: %v, Arrow Glacier: %v, Gray Glacier: %v, Terminal Total Difficulty: %v, Merge Netsplit: %v, Shanghai: %v, Cancun: %v, Prague: %v, Osaka: %v, Engine: %v}",
->>>>>>> v3.0.0-alpha1
+	configString := fmt.Sprintf("{ChainID: %v, Homestead: %v, DAO: %v, Tangerine Whistle: %v, Spurious Dragon: %v, Byzantium: %v, Constantinople: %v, Petersburg: %v, Istanbul: %v, Muir Glacier: %v, Berlin: %v, London: %v, Arrow Glacier: %v, Gray Glacier: %v, Terminal Total Difficulty: %v, Merge Netsplit: %v, Shanghai: %v, Cancun: %v, Prague: %v, Osaka: %v, Engine: %v}",
 		c.ChainID,
 		c.HomesteadBlock,
 		c.DAOForkBlock,
@@ -159,12 +154,13 @@ func (c *Config) String() string {
 		engine,
 	)
 	if c.IsOptimism() {
-		configString += fmt.Sprintf("{Bedrock: %v, Regolith: %v, Canyon: %v, Ecotone: %v, Fjord: %v}",
+		configString += fmt.Sprintf("{Bedrock: %v, Regolith: %v, Canyon: %v, Ecotone: %v, Fjord: %v, Granite: %v}",
 			c.BedrockBlock,
 			c.RegolithTime,
 			c.CanyonTime,
 			c.EcotoneTime,
 			c.FjordTime,
+			c.GraniteTime,
 		)
 	}
 	return configString
@@ -346,6 +342,10 @@ func (c *Config) IsFjord(time uint64) bool {
 	return isForked(c.FjordTime, time)
 }
 
+func (c *Config) IsGranite(time uint64) bool {
+	return isForked(c.GraniteTime, time)
+}
+
 // IsOptimism returns whether the node is an optimism node or not.
 func (c *Config) IsOptimism() bool {
 	return c.Optimism != nil
@@ -370,6 +370,10 @@ func (c *Config) IsOptimismEcotone(time uint64) bool {
 
 func (c *Config) IsOptimismFjord(time uint64) bool {
 	return c.IsOptimism() && c.IsFjord(time)
+}
+
+func (c *Config) IsOptimismGranite(time uint64) bool {
+	return c.IsOptimism() && c.IsGranite(time)
 }
 
 // IsOptimismPreBedrock returns true iff this is an optimism node & bedrock is not yet active
@@ -625,6 +629,7 @@ type Rules struct {
 	IsAura                                               bool
 	IsOptimismBedrock, IsOptimismRegolith                bool
 	IsOptimismCanyon, IsOptimismEcotone, IsOptimismFjord bool
+	IsOptimismGranite                                    bool
 }
 
 // Rules ensures c's ChainID is not nil and returns a new Rules instance
@@ -656,6 +661,7 @@ func (c *Config) Rules(num uint64, time uint64) *Rules {
 		IsOptimismCanyon:   c.IsOptimismCanyon(time),
 		IsOptimismEcotone:  c.IsOptimismEcotone(time),
 		IsOptimismFjord:    c.IsOptimismFjord(time),
+		IsOptimismGranite:  c.IsOptimismGranite(time),
 	}
 }
 

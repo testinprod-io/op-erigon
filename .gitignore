@@ -18,6 +18,7 @@ build/_vendor/pkg
 docs/readthedocs/build
 .dev
 
+/.VSCodeCounter
 #*
 .#*
 *#

@@ -35,6 +35,7 @@ import (
 	"github.com/erigontech/erigon/cl/clparams"
 	"github.com/erigontech/erigon/cl/cltypes"
 	"github.com/erigontech/erigon/cl/cltypes/solid"
+	"github.com/erigontech/erigon/cl/monitor"
 	"github.com/erigontech/erigon/cl/persistence/blob_storage"
 	"github.com/erigontech/erigon/cl/persistence/state/historical_states_reader"
 	"github.com/erigontech/erigon/cl/phase1/core/state/lru"
@@ -82,7 +83,7 @@ type ApiHandler struct {
 
 	// caches
 	lighthouseInclusionCache sync.Map
-	emitters                 *beaconevents.Emitters
+	emitters                 *beaconevents.EventEmitter
 
 	routerCfg *beacon_router_configuration.RouterConfiguration
 	logger    log.Logger
@@ -105,6 +106,7 @@ type ApiHandler struct {
 	blsToExecutionChangeService      services.BLSToExecutionChangeService
 	proposerSlashingService          services.ProposerSlashingService
 	builderClient                    builder.BuilderClient
+	validatorsMonitor                monitor.ValidatorMonitor
 }
 
 func NewApiHandler(
@@ -121,7 +123,7 @@ func NewApiHandler(
 	sentinel sentinel.SentinelClient,
 	version string,
 	routerCfg *beacon_router_configuration.RouterConfiguration,
-	emitters *beaconevents.Emitters,
+	emitters *beaconevents.EventEmitter,
 	blobStoage blob_storage.BlobStorage,
 	caplinSnapshots *freezeblocks.CaplinSnapshots,
 	validatorParams *validator_params.ValidatorParams,
@@ -138,6 +140,7 @@ func NewApiHandler(
 	blsToExecutionChangeService services.BLSToExecutionChangeService,
 	proposerSlashingService services.ProposerSlashingService,
 	builderClient builder.BuilderClient,
+	validatorMonitor monitor.ValidatorMonitor,
 ) *ApiHandler {
 	blobBundles, err := lru.New[common.Bytes48, BlobBundle]("blobs", maxBlobBundleCacheSize)
 	if err != nil {
@@ -179,6 +182,7 @@ func NewApiHandler(
 		blsToExecutionChangeService:      blsToExecutionChangeService,
 		proposerSlashingService:          proposerSlashingService,
 		builderClient:                    builderClient,
+		validatorsMonitor:                validatorMonitor,
 	}
 }
 
@@ -244,11 +248,7 @@ func (a *ApiHandler) init() {
 						r.Get("/{block_id}", beaconhttp.HandleEndpointFunc(a.getHeader))
 					})
 					r.Route("/blocks", func(r chi.Router) {
-<<<<<<< HEAD
-						r.Post("/", a.PostEthV1BeaconBlocks)
-=======
 						r.Post("/", beaconhttp.HandleEndpointFunc(a.PostEthV1BeaconBlocks))
->>>>>>> v3.0.0-alpha1
 						r.Get("/{block_id}", beaconhttp.HandleEndpointFunc(a.GetEthV1BeaconBlock))
 						r.Get("/{block_id}/attestations", beaconhttp.HandleEndpointFunc(a.GetEthV1BeaconBlockAttestations))
 						r.Get("/{block_id}/root", beaconhttp.HandleEndpointFunc(a.GetEthV1BeaconBlockRoot))
@@ -328,19 +328,15 @@ func (a *ApiHandler) init() {
 			if a.routerCfg.Beacon {
 				r.Route("/beacon", func(r chi.Router) {
 					r.Get("/blocks/{block_id}", beaconhttp.HandleEndpointFunc(a.GetEthV1BeaconBlock))
-<<<<<<< HEAD
-					r.Post("/blocks", a.PostEthV2BeaconBlocks)
-=======
 					r.Post("/blocks", beaconhttp.HandleEndpointFunc(a.PostEthV2BeaconBlocks))
 					if a.routerCfg.Builder {
 						r.Post("/blinded_blocks", beaconhttp.HandleEndpointFunc(a.PostEthV2BlindedBlocks))
 					}
->>>>>>> v3.0.0-alpha1
 				})
 			}
 			if a.routerCfg.Validator {
 				r.Route("/validator", func(r chi.Router) {
-					r.Post("/blocks/{slot}", http.NotFound)
+					r.Get("/blocks/{slot}", beaconhttp.HandleEndpointFunc(a.GetEthV3ValidatorBlock)) // deprecate
 				})
 			}
 		})

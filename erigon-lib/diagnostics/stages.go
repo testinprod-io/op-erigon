@@ -19,18 +19,12 @@ package diagnostics
 import (
 	"context"
 	"encoding/json"
-<<<<<<< HEAD
-
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/log/v3"
-=======
 	"fmt"
 	"io"
 
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/kv"
 	"github.com/erigontech/erigon-lib/log/v3"
->>>>>>> v3.0.0-alpha1
 )
 
 var (
@@ -182,15 +176,12 @@ func (d *DiagnosticClient) runSubStageListener(rootCtx context.Context) {
 	}()
 }
 
-<<<<<<< HEAD
-=======
 func (d *DiagnosticClient) GetCurrentSyncIdxs() CurrentSyncStagesIdxs {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return d.getCurrentSyncIdxs()
 }
 
->>>>>>> v3.0.0-alpha1
 func (d *DiagnosticClient) getCurrentSyncIdxs() CurrentSyncStagesIdxs {
 	currentIdxs := CurrentSyncStagesIdxs{
 		Stage:    -1,
@@ -235,11 +226,6 @@ func (d *DiagnosticClient) SetSubStagesList(stageId string, subStages []SyncSubS
 	}
 }
 
-<<<<<<< HEAD
-func (d *DiagnosticClient) SetCurrentSyncStage(css CurrentSyncStage) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-=======
 func (d *DiagnosticClient) SetCurrentSyncStage(css CurrentSyncStage) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -252,7 +238,6 @@ func (d *DiagnosticClient) SetCurrentSyncStage(css CurrentSyncStage) error {
 		return nil
 	}
 
->>>>>>> v3.0.0-alpha1
 	isSet := false
 	for idx, stage := range d.syncStages {
 		if !isSet {
@@ -266,11 +251,8 @@ func (d *DiagnosticClient) SetCurrentSyncStage(css CurrentSyncStage) error {
 			d.setStagesState(idx, Queued)
 		}
 	}
-<<<<<<< HEAD
-=======
 
 	return nil
->>>>>>> v3.0.0-alpha1
 }
 
 func (d *DiagnosticClient) setStagesState(stadeIdx int, state StageState) {
@@ -309,24 +291,6 @@ func (d *DiagnosticClient) SetCurrentSyncSubStage(css CurrentSyncSubStage) {
 	}
 }
 
-<<<<<<< HEAD
-func ReadSyncStages(db kv.RoDB) []SyncStage {
-	data := ReadDataFromTable(db, kv.DiagSyncStages, StagesListKey)
-
-	if len(data) == 0 {
-		return []SyncStage{}
-	}
-
-	var info []SyncStage
-	err := json.Unmarshal(data, &info)
-
-	if err != nil {
-		log.Error("[Diagnostics] Failed to read stages list", "err", err)
-		return []SyncStage{}
-	} else {
-		return info
-	}
-=======
 // Deprecated - used only in tests. Non-thread-safe.
 func (d *DiagnosticClient) GetStageState(stageId string) (StageState, error) {
 	return d.getStageState(stageId)
@@ -354,18 +318,12 @@ func SyncStagesFromTX(tx kv.Tx) ([]byte, error) {
 	}
 
 	return common.CopyBytes(bytes), nil
->>>>>>> v3.0.0-alpha1
 }
 
 func StagesListUpdater(info []SyncStage) func(tx kv.RwTx) error {
 	return PutDataToTable(kv.DiagSyncStages, StagesListKey, info)
 }
 
-<<<<<<< HEAD
-func (d *DiagnosticClient) GetSyncStages() []SyncStage {
-	return d.syncStages
-}
-=======
 // Deprecated - not thread-safe method. Used only in tests. Need introduce more thread-safe method or something special for tests.
 func (d *DiagnosticClient) GetSyncStages() []SyncStage {
 	return d.syncStages
@@ -378,4 +336,3 @@ func (d *DiagnosticClient) SyncStagesJson(w io.Writer) {
 		log.Debug("[diagnostics] HardwareInfoJson", "err", err)
 	}
 }
->>>>>>> v3.0.0-alpha1

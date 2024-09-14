@@ -235,6 +235,10 @@ const (
 	// account within the same txn (captured at end of tx).
 	// Note it doesn't account for a self-destruct which appoints itself as recipient.
 	BalanceDecreaseSelfdestructBurn BalanceChangeReason = 14
+
+	// FIXME: V3_MERGE
+	// Optimism
+	BalanceIncreaseOptimismL1Cost BalanceChangeReason = 100
 )
 
 // GasChangeReason is used to indicate the reason for a gas change, useful
@@ -293,6 +297,8 @@ const (
 	GasChangeCallStorageColdAccess GasChangeReason = 13
 	// GasChangeCallFailedExecution is the burning of the remaining gas when the execution failed without a revert.
 	GasChangeCallFailedExecution GasChangeReason = 14
+	// GasChangeDelegatedDesignation is the amount of gas that will be charged for resolution of delegated designation.
+	GasChangeDelegatedDesignation GasChangeReason = 15
 
 	// GasChangeIgnored is a special value that can be used to indicate that the gas change should be ignored as
 	// it will be "manually" tracked by a direct emit of the gas change event.

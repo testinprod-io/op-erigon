@@ -18,19 +18,12 @@ package engineapi
 
 import (
 	"context"
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
-	"github.com/ledgerwatch/erigon-lib/common/hexutility"
-	"github.com/ledgerwatch/erigon/params"
-	"github.com/ledgerwatch/erigon/turbo/engineapi/engine_types"
-=======
+	"github.com/erigontech/erigon/params"
 
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/hexutil"
 	"github.com/erigontech/erigon-lib/common/hexutility"
 	"github.com/erigontech/erigon/turbo/engineapi/engine_types"
->>>>>>> v3.0.0-alpha1
 )
 
 // EngineAPI Beacon chain communication endpoint
@@ -47,14 +40,9 @@ type EngineAPI interface {
 	GetPayloadV3(ctx context.Context, payloadID hexutility.Bytes) (*engine_types.GetPayloadResponse, error)
 	GetPayloadV4(ctx context.Context, payloadID hexutility.Bytes) (*engine_types.GetPayloadResponse, error)
 	ExchangeTransitionConfigurationV1(ctx context.Context, transitionConfiguration *engine_types.TransitionConfiguration) (*engine_types.TransitionConfiguration, error)
-<<<<<<< HEAD
-	GetPayloadBodiesByHashV1(ctx context.Context, hashes []common.Hash) ([]*engine_types.ExecutionPayloadBodyV1, error)
-	GetPayloadBodiesByRangeV1(ctx context.Context, start, count hexutil.Uint64) ([]*engine_types.ExecutionPayloadBodyV1, error)
-	SignalSuperchainV1(ctx context.Context, signal *engine_types.SuperchainSignal) (params.ProtocolVersion, error)
-=======
 	GetPayloadBodiesByHashV1(ctx context.Context, hashes []common.Hash) ([]*engine_types.ExecutionPayloadBody, error)
 	GetPayloadBodiesByHashV2(ctx context.Context, hashes []common.Hash) ([]*engine_types.ExecutionPayloadBody, error)
 	GetPayloadBodiesByRangeV1(ctx context.Context, start, count hexutil.Uint64) ([]*engine_types.ExecutionPayloadBody, error)
 	GetPayloadBodiesByRangeV2(ctx context.Context, start, count hexutil.Uint64) ([]*engine_types.ExecutionPayloadBody, error)
->>>>>>> v3.0.0-alpha1
+	SignalSuperchainV1(ctx context.Context, signal *engine_types.SuperchainSignal) (params.ProtocolVersion, error)
 }

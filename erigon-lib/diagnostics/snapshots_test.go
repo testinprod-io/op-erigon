@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 // Copyright 2024 The Erigon Authors
 // This file is part of Erigon.
 //
@@ -16,17 +14,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with Erigon. If not, see <http://www.gnu.org/licenses/>.
 
->>>>>>> v3.0.0-alpha1
 package diagnostics_test
 
 import (
 	"testing"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/diagnostics"
-=======
 	"github.com/erigontech/erigon-lib/diagnostics"
->>>>>>> v3.0.0-alpha1
 	"github.com/stretchr/testify/require"
 )
 
@@ -49,7 +42,9 @@ func TestUpdateFileDownloadingStats(t *testing.T) {
 
 	d.UpdateFileDownloadedStatistics(&fileDownloadedUpdMock, nil)
 
-	require.Equal(t, sd["test"], diagnostics.SegmentDownloadStatistics{
+	sd = d.SyncStatistics().SnapshotDownload.SegmentsDownloading
+
+	toccompare := diagnostics.SegmentDownloadStatistics{
 		Name:            "test",
 		TotalBytes:      1,
 		DownloadedBytes: 1,
@@ -59,7 +54,8 @@ func TestUpdateFileDownloadingStats(t *testing.T) {
 			TimeTook:    1.0,
 			AverageRate: 1,
 		},
-	})
+	}
+	require.Equal(t, sd["test"], toccompare)
 }
 
 var (
@@ -78,8 +74,6 @@ var (
 		DownloadedStats: diagnostics.FileDownloadedStatistics{},
 	}
 )
-<<<<<<< HEAD
-=======
 
 func TestPercentDiownloaded(t *testing.T) {
 	downloaded := uint64(10)
@@ -93,19 +87,19 @@ func TestPercentDiownloaded(t *testing.T) {
 
 	//Test metadata ready
 	progress = diagnostics.GetShanpshotsPercentDownloaded(downloaded, total, files, files)
-	require.Equal(t, progress, "10.00%")
+	require.Equal(t, progress, "10%")
 
 	//Test 100 %
 	progress = diagnostics.GetShanpshotsPercentDownloaded(total, total, files, files)
-	require.Equal(t, progress, "100.00%")
+	require.Equal(t, progress, "100%")
 
 	//Test 0 %
 	progress = diagnostics.GetShanpshotsPercentDownloaded(0, total, files, files)
-	require.Equal(t, progress, "0.00%")
+	require.Equal(t, progress, "0%")
 
 	//Test more than 100 %
 	progress = diagnostics.GetShanpshotsPercentDownloaded(total+1, total, files, files)
-	require.Equal(t, progress, "100.00%")
+	require.Equal(t, progress, "100%")
 }
 
 func TestFillDBFromSnapshots(t *testing.T) {
@@ -117,4 +111,74 @@ func TestFillDBFromSnapshots(t *testing.T) {
 	require.NotEmpty(t, stats.SnapshotFillDB.Stages)
 	require.Equal(t, stats.SnapshotFillDB.Stages[0], diagnostics.SnapshotFillDBStage{StageName: "Headers", Current: 1, Total: 10})
 }
->>>>>>> v3.0.0-alpha1
+
+func TestAddOrUpdateSegmentIndexingState(t *testing.T) {
+	dts := []diagnostics.SnapshotSegmentIndexingStatistics{
+		{
+			SegmentName: "test",
+			Percent:     50,
+			Alloc:       0,
+			Sys:         0,
+		},
+	}
+
+	d, err := NewTestDiagnosticClient()
+	require.NoError(t, err)
+
+	d.AddOrUpdateSegmentIndexingState(diagnostics.SnapshotIndexingStatistics{
+		Segments:    dts,
+		TimeElapsed: -1,
+	})
+	stats := d.SyncStatistics()
+
+	require.NotEmpty(t, stats.SnapshotIndexing)
+	require.NotEmpty(t, stats.SnapshotIndexing.Segments)
+	require.Equal(t, stats.SnapshotIndexing.Segments[0], dts[0])
+	require.True(t, stats.SnapshotIndexing.TimeElapsed == 0)
+	require.False(t, stats.SnapshotIndexing.IndexingFinished)
+
+	dts = []diagnostics.SnapshotSegmentIndexingStatistics{
+		{
+			SegmentName: "test",
+			Percent:     100,
+			Alloc:       0,
+			Sys:         0,
+		},
+		{
+			SegmentName: "test2",
+			Percent:     10,
+			Alloc:       0,
+			Sys:         0,
+		},
+	}
+
+	d.AddOrUpdateSegmentIndexingState(diagnostics.SnapshotIndexingStatistics{
+		Segments:    dts,
+		TimeElapsed: 20,
+	})
+
+	stats = d.SyncStatistics()
+	require.Equal(t, stats.SnapshotIndexing.Segments[0].Percent, 100)
+
+	finished := d.UpdateIndexingStatus()
+	require.False(t, finished)
+
+	//test indexing finished
+	dts = []diagnostics.SnapshotSegmentIndexingStatistics{
+		{
+			SegmentName: "test2",
+			Percent:     100,
+			Alloc:       0,
+			Sys:         0,
+		},
+	}
+	d.AddOrUpdateSegmentIndexingState(diagnostics.SnapshotIndexingStatistics{
+		Segments:    dts,
+		TimeElapsed: 20,
+	})
+
+	finished = d.UpdateIndexingStatus()
+	require.True(t, finished)
+	stats = d.SyncStatistics()
+	require.True(t, stats.SnapshotIndexing.IndexingFinished)
+}

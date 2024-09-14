@@ -36,7 +36,6 @@ import (
 	"github.com/erigontech/erigon-lib/common/datadir"
 	"github.com/erigontech/erigon-lib/downloader/downloadercfg"
 	"github.com/erigontech/erigon-lib/txpool/txpoolcfg"
-	"github.com/erigontech/erigon/cl/beacon/beacon_router_configuration"
 	"github.com/erigontech/erigon/cl/clparams"
 	"github.com/erigontech/erigon/consensus/ethash/ethashcfg"
 	"github.com/erigontech/erigon/core/types"
@@ -75,13 +74,13 @@ var LightClientGPO = gaspricecfg.Config{
 // Defaults contains default settings for use on the Ethereum main net.
 var Defaults = Config{
 	Sync: Sync{
-		UseSnapshots:               true,
 		ExecWorkerCount:            estimate.ReconstituteState.WorkersHalf(), //only half of CPU, other half will spend for snapshots build/merge/prune
 		ReconWorkerCount:           estimate.ReconstituteState.Workers(),
 		BodyCacheLimit:             256 * 1024 * 1024,
 		BodyDownloadTimeoutSeconds: 2,
 		//LoopBlockLimit:             100_000,
-		PruneLimit: 100,
+		PruneLimit:            100,
+		ParallelStateFlushing: true,
 	},
 	Ethash: ethashcfg.Config{
 		CachesInMem:      2,
@@ -105,7 +104,6 @@ var Defaults = Config{
 
 	ImportMode: false,
 	Snapshot: BlocksFreezing{
-		Enabled:    true,
 		KeepBlocks: false,
 		ProduceE2:  true,
 		ProduceE3:  true,
@@ -139,7 +137,6 @@ func init() {
 //go:generate gencodec -dir . -type Config -formats toml -out gen_config.go
 
 type BlocksFreezing struct {
-	Enabled        bool
 	KeepBlocks     bool // produce new snapshots of blocks but don't remove blocks from DB
 	ProduceE2      bool // produce new block files
 	ProduceE3      bool // produce new state files
@@ -150,9 +147,6 @@ type BlocksFreezing struct {
 
 func (s BlocksFreezing) String() string {
 	var out []string
-	if s.Enabled {
-		out = append(out, "--snapshots=true")
-	}
 	if s.KeepBlocks {
 		out = append(out, "--"+FlagSnapKeepBlocks+"=true")
 	}
@@ -168,8 +162,8 @@ var (
 	FlagSnapStateStop  = "snap.state.stop"
 )
 
-func NewSnapCfg(enabled, keepBlocks, produceE2, produceE3 bool) BlocksFreezing {
-	return BlocksFreezing{Enabled: enabled, KeepBlocks: keepBlocks, ProduceE2: produceE2, ProduceE3: produceE3}
+func NewSnapCfg(keepBlocks, produceE2, produceE3 bool) BlocksFreezing {
+	return BlocksFreezing{KeepBlocks: keepBlocks, ProduceE2: produceE2, ProduceE3: produceE3}
 }
 
 // Config contains configuration options for ETH protocol.
@@ -196,7 +190,6 @@ type Config struct {
 
 	Snapshot     BlocksFreezing
 	Downloader   *downloadercfg.Cfg
-	BeaconRouter beacon_router_configuration.RouterConfiguration
 	CaplinConfig clparams.CaplinConfig
 
 	Dirs datadir.Dirs
@@ -248,12 +241,7 @@ type Config struct {
 	// Ethstats service
 	Ethstats string
 	// Consensus layer
-	InternalCL             bool
-	CaplinDiscoveryAddr    string
-	CaplinDiscoveryPort    uint64
-	CaplinDiscoveryTCPPort uint64
-	SentinelAddr           string
-	SentinelPort           uint64
+	InternalCL bool
 
 	OverrideCancunTime   *big.Int `toml:",omitempty"`
 	OverrideShanghaiTime *big.Int `toml:",omitempty"`
@@ -261,18 +249,16 @@ type Config struct {
 	OverrideOptimismCanyonTime  *big.Int `toml:",omitempty"`
 	OverrideOptimismEcotoneTime *big.Int `toml:",omitempty"`
 	OverrideOptimismFjordTime   *big.Int `toml:",omitempty"`
+	OverrideOptimismGraniteTime *big.Int `toml:",omitempty"`
 
 	OverridePragueTime *big.Int `toml:",omitempty"`
 
-<<<<<<< HEAD
 	RollupSequencerHTTP        string
 	RollupHistoricalRPC        string
 	RollupHistoricalRPCTimeout time.Duration
 
 	ForcePartialCommit bool
 
-=======
->>>>>>> v3.0.0-alpha1
 	// Embedded Silkworm support
 	SilkwormExecution            bool
 	SilkwormRpcDaemon            bool
@@ -293,8 +279,6 @@ type Config struct {
 }
 
 type Sync struct {
-	UseSnapshots bool
-
 	// LoopThrottle sets a minimum time between staged loop iterations
 	LoopThrottle     time.Duration
 	ExecWorkerCount  int
@@ -305,10 +289,9 @@ type Sync struct {
 	PruneLimit                 int //the maximum records to delete from the DB during pruning
 	BreakAfterStage            string
 	LoopBlockLimit             uint
+	ParallelStateFlushing      bool
 
 	UploadLocation   string
 	UploadFrom       rpc.BlockNumber
 	FrozenBlockLimit uint64
 }
-
-func UseSnapshotsByChainName(chain string) bool { return true }

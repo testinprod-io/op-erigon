@@ -19,27 +19,15 @@ package remotedb
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"runtime"
 	"unsafe"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/log/v3"
-=======
->>>>>>> v3.0.0-alpha1
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/kv/iter"
-	"github.com/ledgerwatch/erigon-lib/kv/order"
-
-	"github.com/ledgerwatch/erigon-lib/gointerfaces"
-	"github.com/ledgerwatch/erigon-lib/gointerfaces/grpcutil"
-	"github.com/ledgerwatch/erigon-lib/gointerfaces/remote"
-	"github.com/ledgerwatch/erigon-lib/kv"
-=======
 	"github.com/erigontech/erigon-lib/kv/order"
 	"github.com/erigontech/erigon-lib/kv/stream"
 	"github.com/erigontech/erigon-lib/log/v3"
@@ -48,7 +36,6 @@ import (
 	"github.com/erigontech/erigon-lib/gointerfaces/grpcutil"
 	remote "github.com/erigontech/erigon-lib/gointerfaces/remoteproto"
 	"github.com/erigontech/erigon-lib/kv"
->>>>>>> v3.0.0-alpha1
 )
 
 // generate the messages and services
@@ -205,16 +192,16 @@ func (db *DB) BeginTemporalRo(ctx context.Context) (kv.TemporalTx, error) {
 	return t.(kv.TemporalTx), nil
 }
 func (db *DB) BeginRw(ctx context.Context) (kv.RwTx, error) {
-	return nil, fmt.Errorf("remote db provider doesn't support .BeginRw method")
+	return nil, errors.New("remote db provider doesn't support .BeginRw method")
 }
 func (db *DB) BeginRwNosync(ctx context.Context) (kv.RwTx, error) {
-	return nil, fmt.Errorf("remote db provider doesn't support .BeginRw method")
+	return nil, errors.New("remote db provider doesn't support .BeginRw method")
 }
 func (db *DB) BeginTemporalRw(ctx context.Context) (kv.RwTx, error) {
-	return nil, fmt.Errorf("remote db provider doesn't support .BeginTemporalRw method")
+	return nil, errors.New("remote db provider doesn't support .BeginTemporalRw method")
 }
 func (db *DB) BeginTemporalRwNosync(ctx context.Context) (kv.RwTx, error) {
-	return nil, fmt.Errorf("remote db provider doesn't support .BeginTemporalRwNosync method")
+	return nil, errors.New("remote db provider doesn't support .BeginTemporalRwNosync method")
 }
 
 func (db *DB) View(ctx context.Context, f func(tx kv.Tx) error) (err error) {
@@ -235,10 +222,10 @@ func (db *DB) ViewTemporal(ctx context.Context, f func(tx kv.TemporalTx) error) 
 }
 
 func (db *DB) Update(ctx context.Context, f func(tx kv.RwTx) error) (err error) {
-	return fmt.Errorf("remote db provider doesn't support .Update method")
+	return errors.New("remote db provider doesn't support .Update method")
 }
 func (db *DB) UpdateNosync(ctx context.Context, f func(tx kv.RwTx) error) (err error) {
-	return fmt.Errorf("remote db provider doesn't support .UpdateNosync method")
+	return errors.New("remote db provider doesn't support .UpdateNosync method")
 }
 
 func (tx *tx) ViewID() uint64  { return tx.viewID }
@@ -373,7 +360,7 @@ func (tx *tx) Cursor(bucket string) (kv.Cursor, error) {
 }
 
 func (tx *tx) ListBuckets() ([]string, error) {
-	return nil, fmt.Errorf("function ListBuckets is not implemented for remoteTx")
+	return nil, errors.New("function ListBuckets is not implemented for remoteTx")
 }
 
 // func (c *remoteCursor) Put(k []byte, v []byte) error            { panic("not supported") }

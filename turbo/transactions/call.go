@@ -18,22 +18,17 @@ package transactions
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/holiman/uint256"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/chain"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon-lib/opstack"
-=======
 	"github.com/erigontech/erigon-lib/chain"
 	libcommon "github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/kv"
 	"github.com/erigontech/erigon-lib/log/v3"
->>>>>>> v3.0.0-alpha1
+	"github.com/erigontech/erigon-lib/opstack"
 
 	"github.com/erigontech/erigon/consensus"
 	"github.com/erigontech/erigon/core"
@@ -96,7 +91,7 @@ func DoCall(
 		var overflow bool
 		baseFee, overflow = uint256.FromBig(header.BaseFee)
 		if overflow {
-			return nil, fmt.Errorf("header.BaseFee uint256 overflow")
+			return nil, errors.New("header.BaseFee uint256 overflow")
 		}
 	}
 	msg, err := args.ToMessage(gasCap, baseFee)
@@ -229,7 +224,7 @@ func NewReusableCaller(
 		var overflow bool
 		baseFee, overflow = uint256.FromBig(header.BaseFee)
 		if overflow {
-			return nil, fmt.Errorf("header.BaseFee uint256 overflow")
+			return nil, errors.New("header.BaseFee uint256 overflow")
 		}
 	}
 
@@ -238,12 +233,8 @@ func NewReusableCaller(
 		return nil, err
 	}
 
-<<<<<<< HEAD
-	blockCtx := NewEVMBlockContext(engine, header, blockNrOrHash.RequireCanonical, tx, headerReader)
-	blockCtx.L1CostFunc = opstack.NewL1CostFunc(chainConfig, ibs)
-=======
 	blockCtx := NewEVMBlockContext(engine, header, blockNrOrHash.RequireCanonical, tx, headerReader, chainConfig)
->>>>>>> v3.0.0-alpha1
+	blockCtx.L1CostFunc = opstack.NewL1CostFunc(chainConfig, ibs)
 	txCtx := core.NewEVMTxContext(msg)
 
 	evm := vm.NewEVM(blockCtx, txCtx, ibs, chainConfig, vm.Config{NoBaseFee: true})

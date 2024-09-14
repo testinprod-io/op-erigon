@@ -20,19 +20,6 @@ package node
 import (
 	"context"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/chain/networkname"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon/cmd/utils"
-	"github.com/ledgerwatch/erigon/eth"
-	"github.com/ledgerwatch/erigon/eth/ethconfig"
-	"github.com/ledgerwatch/erigon/node"
-	"github.com/ledgerwatch/erigon/node/nodecfg"
-	"github.com/ledgerwatch/erigon/params"
-	erigoncli "github.com/ledgerwatch/erigon/turbo/cli"
-	"github.com/ledgerwatch/log/v3"
-	"github.com/urfave/cli/v2"
-=======
 	"github.com/urfave/cli/v2"
 
 	"github.com/erigontech/erigon-lib/chain/networkname"
@@ -46,7 +33,6 @@ import (
 	"github.com/erigontech/erigon/node/nodecfg"
 	"github.com/erigontech/erigon/params"
 	erigoncli "github.com/erigontech/erigon/turbo/cli"
->>>>>>> v3.0.0-alpha1
 )
 
 // ErigonNode represents a single node, that runs sync and p2p network.
@@ -105,8 +91,6 @@ func NewNodConfigUrfave(ctx *cli.Context, logger log.Logger) *nodecfg.Config {
 		logger.Info("Starting Erigon on Sepolia testnet...")
 	case networkname.DevChainName:
 		logger.Info("Starting Erigon in ephemeral dev mode...")
-	case networkname.MumbaiChainName:
-		logger.Info("Starting Erigon on Mumbai testnet...")
 	case networkname.AmoyChainName:
 		logger.Info("Starting Erigon on Amoy testnet...")
 	case networkname.BorMainnetChainName:

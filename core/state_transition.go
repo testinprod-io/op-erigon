@@ -26,8 +26,8 @@ import (
 
 	"github.com/holiman/uint256"
 
-	"github.com/erigontech/erigon-lib/common"
 	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/fixedgas"
 	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/erigontech/erigon-lib/txpool/txpoolcfg"
 	types2 "github.com/erigontech/erigon-lib/types"
@@ -206,51 +206,45 @@ func (st *StateTransition) buyGas(gasBailout bool) error {
 		}
 	}
 
-	balanceCheck := gasVal
-	if st.gasFeeCap != nil {
-		balanceCheck = st.sharedBuyGasBalance.SetUint64(st.msg.Gas())
-		balanceCheck, overflow = balanceCheck.MulOverflow(balanceCheck, st.gasFeeCap)
-		if overflow {
-			return fmt.Errorf("%w: address %v", ErrInsufficientFunds, st.msg.From().Hex())
-		}
-		balanceCheck, overflow = balanceCheck.AddOverflow(balanceCheck, st.value)
-		if overflow {
-			return fmt.Errorf("%w: address %v", ErrInsufficientFunds, st.msg.From().Hex())
-		}
-		if l1Cost != nil {
-			balanceCheck.Add(balanceCheck, l1Cost)
-		}
-		if st.evm.ChainRules().IsCancun {
-			maxBlobFee, overflow := new(uint256.Int).MulOverflow(st.msg.MaxFeePerBlobGas(), new(uint256.Int).SetUint64(st.msg.BlobGas()))
+	if !gasBailout {
+		balanceCheck := gasVal
+		if st.gasFeeCap != nil {
+			balanceCheck = st.sharedBuyGasBalance.SetUint64(st.msg.Gas())
+			balanceCheck, overflow = balanceCheck.MulOverflow(balanceCheck, st.gasFeeCap)
 			if overflow {
 				return fmt.Errorf("%w: address %v", ErrInsufficientFunds, st.msg.From().Hex())
 			}
-			balanceCheck, overflow = balanceCheck.AddOverflow(balanceCheck, maxBlobFee)
+			balanceCheck, overflow = balanceCheck.AddOverflow(balanceCheck, st.value)
 			if overflow {
 				return fmt.Errorf("%w: address %v", ErrInsufficientFunds, st.msg.From().Hex())
 			}
+			if l1Cost != nil {
+				balanceCheck.Add(balanceCheck, l1Cost)
+			}
+			if st.evm.ChainRules().IsCancun {
+				maxBlobFee, overflow := new(uint256.Int).MulOverflow(st.msg.MaxFeePerBlobGas(), new(uint256.Int).SetUint64(st.msg.BlobGas()))
+				if overflow {
+					return fmt.Errorf("%w: address %v", ErrInsufficientFunds, st.msg.From().Hex())
+				}
+				balanceCheck, overflow = balanceCheck.AddOverflow(balanceCheck, maxBlobFee)
+				if overflow {
+					return fmt.Errorf("%w: address %v", ErrInsufficientFunds, st.msg.From().Hex())
+				}
+			}
 		}
-	}
-	var subBalance = false
-	if have, want := st.state.GetBalance(st.msg.From()), balanceCheck; have.Cmp(want) < 0 {
-		if !gasBailout {
+		if have, want := st.state.GetBalance(st.msg.From()), balanceCheck; have.Cmp(want) < 0 {
 			return fmt.Errorf("%w: address %v have %v want %v", ErrInsufficientFunds, st.msg.From().Hex(), have, want)
 		}
-	} else {
-		subBalance = true
-	}
-	if err := st.gp.SubGas(st.msg.Gas()); err != nil {
-		if !gasBailout {
-			return err
-		}
-	}
-	st.gasRemaining += st.msg.Gas()
-	st.initialGas = st.msg.Gas()
-
-	if subBalance {
 		st.state.SubBalance(st.msg.From(), gasVal, tracing.BalanceDecreaseGasBuy)
 		st.state.SubBalance(st.msg.From(), blobGasVal, tracing.BalanceDecreaseGasBuy)
 	}
+
+	if err := st.gp.SubGas(st.msg.Gas()); err != nil {
+		return err
+	}
+	st.gasRemaining += st.msg.Gas()
+	st.initialGas = st.msg.Gas()
+	st.evm.BlobFee = blobGasVal
 	return nil
 }
 
@@ -317,8 +311,12 @@ func (st *StateTransition) preCheck(gasBailout bool) error {
 			// libcommon.Hash{} means that the sender is not in the state.
 			// Historically there were transactions with 0 gas price and non-existing sender,
 			// so we have to allow that.
-			return fmt.Errorf("%w: address %v, codehash: %s", ErrSenderNoEOA,
-				st.msg.From().Hex(), codeHash)
+
+			// eip-7702 allows tx origination from accounts having delegated designation code.
+			if _, ok := st.state.GetDelegatedDesignation(st.msg.From()); !ok {
+				return fmt.Errorf("%w: address %v, codehash: %s", ErrSenderNoEOA,
+					st.msg.From().Hex(), codeHash)
+			}
 		}
 	}
 
@@ -339,14 +337,9 @@ func (st *StateTransition) preCheck(gasBailout bool) error {
 		}
 		maxFeePerBlobGas := st.msg.MaxFeePerBlobGas()
 		if !st.evm.Config().NoBaseFee && blobGasPrice.Cmp(maxFeePerBlobGas) > 0 {
-<<<<<<< HEAD
 			return fmt.Errorf("%w: address %v, maxFeePerBlobGas: %v blobGasPrice: %v, excessBlobGas: %v",
 				ErrMaxFeePerBlobGas,
-				st.msg.From().Hex(), st.msg.MaxFeePerBlobGas(), blobGasPrice, st.evm.Context.ExcessBlobGas)
-=======
-			return fmt.Errorf("%w: address %v, maxFeePerBlobGas: %v < blobGasPrice: %v",
-				ErrMaxFeePerBlobGas, st.msg.From().Hex(), st.msg.MaxFeePerBlobGas(), blobGasPrice)
->>>>>>> v3.0.0-alpha1
+				st.msg.From().Hex(), st.msg.MaxFeePerBlobGas(), blobGasPrice, st.evm.Context.BlobBaseFee)
 		}
 	}
 
@@ -366,10 +359,9 @@ func (st *StateTransition) preCheck(gasBailout bool) error {
 //
 // However if any consensus issue encountered, return the error directly with
 // nil evm execution result.
-<<<<<<< HEAD
-func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*ExecutionResult, error) {
+func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*evmtypes.ExecutionResult, error) {
 	if mint := st.msg.Mint(); mint != nil {
-		st.state.AddBalance(st.msg.From(), mint)
+		st.state.AddBalance(st.msg.From(), mint, tracing.BalanceChangeUnspecified)
 	}
 	snap := st.state.Snapshot()
 
@@ -388,7 +380,8 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*Executi
 		if st.msg.IsSystemTx() && !st.evm.ChainConfig().IsRegolith(st.evm.Context.Time) {
 			gasUsed = 0
 		}
-		result = &ExecutionResult{
+
+		result = &evmtypes.ExecutionResult{
 			UsedGas:    gasUsed,
 			Err:        fmt.Errorf("failed deposit: %w", err),
 			ReturnData: nil,
@@ -399,22 +392,11 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*Executi
 
 }
 
-func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*ExecutionResult, error) {
+func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*evmtypes.ExecutionResult, error) {
 	coinbase := st.evm.Context.Coinbase
-	var input1 *uint256.Int
-	var input2 *uint256.Int
-	if st.isBor {
-		input1 = st.state.GetBalance(st.msg.From()).Clone()
-		input2 = st.state.GetBalance(coinbase).Clone()
-	}
-=======
-func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*evmtypes.ExecutionResult, error) {
-	coinbase := st.evm.Context.Coinbase
-
 	senderInitBalance := st.state.GetBalance(st.msg.From()).Clone()
 	coinbaseInitBalance := st.state.GetBalance(coinbase).Clone()
 
->>>>>>> v3.0.0-alpha1
 	// First check this message satisfies all consensus rules before
 	// applying the message. The rules include these clauses
 	//
@@ -444,16 +426,27 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*evmtype
 	isEIP3860 := vmConfig.HasEip3860(rules)
 	accessTuples := slices.Clone[types2.AccessList](msg.AccessList())
 
+	if !contractCreation {
+		// Increment the nonce for the next transaction
+		st.state.SetNonce(msg.From(), st.state.GetNonce(sender.Address())+1)
+	}
+
 	// set code tx
 	auths := msg.Authorizations()
-	verifiedAuthorities := make([]common.Address, 0)
+	verifiedAuthorities := make([]libcommon.Address, 0)
 	if len(auths) > 0 {
 		var b [33]byte
 		data := bytes.NewBuffer(nil)
 		for i, auth := range auths {
 			data.Reset()
 
-			// 1. authority recover
+			// 1. chainId check
+			if auth.ChainID != nil && !auth.ChainID.IsZero() && auth.ChainID.CmpBig(st.evm.ChainRules().ChainID) != 0 {
+				log.Debug("invalid chainID, skipping", "chainId", auth.ChainID, "auth index", i)
+				continue
+			}
+
+			// 2. authority recover
 			authorityPtr, err := auth.RecoverSigner(data, b[:])
 			if err != nil {
 				log.Debug("authority recover failed, skipping", "err", err, "auth index", i)
@@ -461,43 +454,38 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*evmtype
 			}
 			authority := *authorityPtr
 
-			// 2. chainId check
-			if auth.ChainID != nil && auth.ChainID.Uint64() != 0 && auth.ChainID.Uint64() != st.evm.ChainRules().ChainID.Uint64() {
-				log.Debug("invalid chainID, skipping", "chainId", auth.ChainID, "auth index", i)
-				continue
-			}
+			// 3. add authority account to accesses_addresses
+			verifiedAuthorities = append(verifiedAuthorities, authority)
+			// authority is added to accessed_address in prepare step
 
-			// 3. authority code should be empty
+			// 4. authority code should be empty or already delegated
 			if codeHash := st.state.GetCodeHash(authority); codeHash != emptyCodeHash && codeHash != (libcommon.Hash{}) {
-				log.Debug("authority code is not empty, skipping", "auth index", i)
-				continue
+				// check for delegation
+				if _, ok := st.state.GetDelegatedDesignation(authority); ok {
+					// noop: has delegated designation
+				} else {
+					log.Debug("authority code is not empty or not delegated, skipping", "auth index", i)
+					continue
+				}
 			}
 
-			// 4. nonce check
-			if len(auth.Nonce) > 0 && st.state.GetNonce(authority) != auth.Nonce[0] {
+			// 5. nonce check
+			authorityNonce := st.state.GetNonce(authority)
+			if authorityNonce != auth.Nonce {
 				log.Debug("invalid nonce, skipping", "auth index", i)
 				continue
 			}
 
-			// 5. set code of authority to code associated with address
-			st.state.SetCode(authority, st.state.GetCode(auth.Address))
-
-			// 6. add authority account to accesses_addresses
-			verifiedAuthorities = append(verifiedAuthorities, authority)
-			// authority is added to accessed_address in prepare step
-		}
-	}
-
-	if len(verifiedAuthorities) > 0 {
-		oldPostApplyMessage := st.evm.Context.PostApplyMessage
-		st.evm.Context.PostApplyMessage = func(ibs evmtypes.IntraBlockState, sender common.Address, coinbase common.Address, result *evmtypes.ExecutionResult) {
-			for _, authority := range verifiedAuthorities {
-				ibs.SetCode(authority, nil)
+			// 6. Add PER_EMPTY_ACCOUNT_COST - PER_AUTH_BASE_COST gas to the global refund counter if authority exists in the trie.
+			if st.state.Exist(authority) {
+				st.state.AddRefund(fixedgas.PerEmptyAccountCost - fixedgas.PerAuthBaseCost)
 			}
 
-			if oldPostApplyMessage != nil {
-				oldPostApplyMessage(ibs, sender, coinbase, result)
-			}
+			// 7. set authority code
+			st.state.SetCode(authority, types.AddressToDelegation(auth.Address))
+
+			// 8. increase the nonce of authority
+			st.state.SetNonce(authority, authorityNonce+1)
 		}
 	}
 
@@ -525,7 +513,7 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*evmtype
 	}
 
 	// Execute the preparatory steps for state transition which includes:
-	// - prepare accessList(post-berlin)
+	// - prepare accessList(post-berlin; eip-7702)
 	// - reset transient storage(eip 1153)
 	st.state.Prepare(rules, msg.From(), coinbase, msg.To(), vm.ActivePrecompiles(rules), accessTuples, verifiedAuthorities)
 
@@ -540,10 +528,9 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*evmtype
 		// of the contract's address, but before the execution of the code.
 		ret, _, st.gasRemaining, vmerr = st.evm.Create(sender, st.data, st.gasRemaining, st.value, bailout)
 	} else {
-		// Increment the nonce for the next transaction
-		st.state.SetNonce(msg.From(), st.state.GetNonce(sender.Address())+1)
 		ret, st.gasRemaining, vmerr = st.evm.Call(sender, st.to(), st.data, st.gasRemaining, st.value, bailout)
 	}
+
 	// if deposit: skip refunds, skip tipping coinbase
 	// Regolith changes this behaviour to report the actual gasUsed instead of always reporting all gas used.
 	if st.msg.IsDepositTx() && !rules.IsOptimismRegolith {
@@ -553,7 +540,7 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*evmtype
 		if st.msg.IsSystemTx() {
 			gasUsed = 0
 		}
-		return &ExecutionResult{
+		return &evmtypes.ExecutionResult{
 			UsedGas:    gasUsed,
 			Err:        vmerr,
 			ReturnData: ret,
@@ -562,7 +549,7 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*evmtype
 	// Note for deposit tx there is no ETH refunded for unused gas, but that's taken care of by the fact that gasPrice
 	// is always 0 for deposit tx. So calling refundGas will ensure the gasUsed accounting is correct without actually
 	// changing the sender's balance
-	if refunds {
+	if refunds && !gasBailout {
 		if rules.IsLondon {
 			// After EIP-3529: refunds are capped to gasUsed / 5
 			st.refundGas(params.RefundQuotientEIP3529)
@@ -573,7 +560,7 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*evmtype
 	}
 	if st.msg.IsDepositTx() && rules.IsOptimismRegolith {
 		// Skip coinbase payments for deposit tx in Regolith
-		return &ExecutionResult{
+		return &evmtypes.ExecutionResult{
 			UsedGas:    st.gasUsed(),
 			Err:        vmerr,
 			ReturnData: ret,
@@ -608,12 +595,12 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*evmtype
 		FeeTipped:           amount,
 	}
 	if optimismConfig := st.evm.ChainConfig().Optimism; optimismConfig != nil {
-		st.state.AddBalance(params.OptimismBaseFeeRecipient, new(uint256.Int).Mul(uint256.NewInt(st.gasUsed()), st.evm.Context.BaseFee))
+		st.state.AddBalance(params.OptimismBaseFeeRecipient, new(uint256.Int).Mul(uint256.NewInt(st.gasUsed()), st.evm.Context.BaseFee), tracing.BalanceChangeUnspecified)
 		if st.evm.Context.L1CostFunc == nil { // Erigon EVM context is used in many unexpected/hacky ways, let's panic if it's misconfigured
 			panic("missing L1 cost func in block context, please configure l1 cost when using optimism config to run EVM")
 		}
 		if cost := st.evm.Context.L1CostFunc(st.msg.RollupCostData(), st.evm.Context.Time); cost != nil {
-			st.state.AddBalance(params.OptimismL1FeeRecipient, cost)
+			st.state.AddBalance(params.OptimismL1FeeRecipient, cost, tracing.BalanceIncreaseOptimismL1Cost)
 		}
 	}
 

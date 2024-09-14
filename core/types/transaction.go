@@ -27,18 +27,12 @@ import (
 	"math/big"
 	"sync/atomic"
 
+	"github.com/erigontech/erigon-lib/fastlz"
+
 	"github.com/holiman/uint256"
 	"github.com/protolambda/ztyp/codec"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/chain"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/fixedgas"
-	fastlz "github.com/ledgerwatch/erigon-lib/fastlz"
-	types2 "github.com/ledgerwatch/erigon-lib/types"
-=======
 	"github.com/erigontech/erigon-lib/log/v3"
->>>>>>> v3.0.0-alpha1
 
 	"github.com/erigontech/erigon-lib/chain"
 	libcommon "github.com/erigontech/erigon-lib/common"
@@ -63,11 +57,8 @@ const (
 	AccessListTxType
 	DynamicFeeTxType
 	BlobTxType
-<<<<<<< HEAD
-	DepositTxType = 0x7E
-=======
 	SetCodeTxType
->>>>>>> v3.0.0-alpha1
+	DepositTxType = 0x7E
 )
 
 // Transaction is an Ethereum transaction.
@@ -86,7 +77,6 @@ type Transaction interface {
 	GetTo() *libcommon.Address
 	AsMessage(s Signer, baseFee *big.Int, rules *chain.Rules) (Message, error)
 	WithSignature(signer Signer, sig []byte) (Transaction, error)
-	FakeSign(address libcommon.Address) Transaction
 	Hash() libcommon.Hash
 	SigningHash(chainID *big.Int) libcommon.Hash
 	GetData() []byte
@@ -109,20 +99,16 @@ type Transaction interface {
 	GetSender() (libcommon.Address, bool)
 	SetSender(libcommon.Address)
 	IsContractDeploy() bool
-<<<<<<< HEAD
 	RollupCostData() types2.RollupCostData
-	Unwrap() Transaction // If this is a network wrapper, returns the unwrapped tx. Otherwiwes returns itself.
-=======
 	Unwrap() Transaction // If this is a network wrapper, returns the unwrapped txn. Otherwise returns itself.
->>>>>>> v3.0.0-alpha1
 }
 
 // TransactionMisc is collection of miscellaneous fields for transaction that is supposed to be embedded into concrete
 // implementations of different transaction types
 type TransactionMisc struct {
 	// caches
-	hash atomic.Value //nolint:structcheck
-	from atomic.Value
+	hash atomic.Pointer[libcommon.Hash]
+	from atomic.Pointer[libcommon.Address]
 
 	// cache how much gas the tx takes on L1 for its share of rollup data
 	rollupGas atomic.Pointer[types2.RollupCostData]
@@ -239,7 +225,7 @@ func DecodeTransaction(data []byte) (Transaction, error) {
 		return nil, err
 	}
 	if s.Remaining() != 0 {
-		return nil, fmt.Errorf("trailing bytes after rlp encoded transaction")
+		return nil, errors.New("trailing bytes after rlp encoded transaction")
 	}
 	return tx, nil
 }
@@ -255,22 +241,9 @@ func UnmarshalTransactionFromBinary(data []byte, blobTxnsAreWrappedWithBlobs boo
 	case AccessListTxType:
 		t = &AccessListTx{}
 	case DynamicFeeTxType:
-<<<<<<< HEAD
-		t := &DynamicFeeTransaction{}
-		if err := t.DecodeRLP(s); err != nil {
-			return nil, err
-		}
-		return t, nil
-	case DepositTxType:
-		s := rlp.NewStream(bytes.NewReader(data[1:]), uint64(len(data)-1))
-		t := &DepositTx{}
-		if err := t.DecodeRLP(s); err != nil {
-			return nil, err
-		}
-		return t, nil
-=======
 		t = &DynamicFeeTransaction{}
->>>>>>> v3.0.0-alpha1
+	case DepositTxType:
+		t = &DepositTx{}
 	case BlobTxType:
 		if blobTxnsAreWrappedWithBlobs {
 			t = &BlobTxWrapper{}
@@ -290,7 +263,7 @@ func UnmarshalTransactionFromBinary(data []byte, blobTxnsAreWrappedWithBlobs boo
 		return nil, err
 	}
 	if s.Remaining() != 0 {
-		return nil, fmt.Errorf("trailing bytes after rlp encoded transaction")
+		return nil, errors.New("trailing bytes after rlp encoded transaction")
 	}
 	return t, nil
 }
@@ -493,16 +466,15 @@ type Message struct {
 	checkNonce       bool
 	isFree           bool
 	blobHashes       []libcommon.Hash
-<<<<<<< HEAD
-	isFake           bool
+
+	isFake bool
 
 	isSystemTx  bool
 	isDepositTx bool
 	mint        *uint256.Int
 	l1CostGas   types2.RollupCostData
-=======
-	authorizations   []Authorization
->>>>>>> v3.0.0-alpha1
+
+	authorizations []Authorization
 }
 
 func NewMessage(from libcommon.Address, to *libcommon.Address, nonce uint64, amount *uint256.Int, gasLimit uint64,
@@ -547,7 +519,10 @@ func (m Message) Nonce() uint64                   { return m.nonce }
 func (m Message) Data() []byte                    { return m.data }
 func (m Message) AccessList() types2.AccessList   { return m.accessList }
 func (m Message) Authorizations() []Authorization { return m.authorizations }
-func (m Message) CheckNonce() bool                { return m.checkNonce }
+func (m *Message) SetAuthorizations(authorizations []Authorization) {
+	m.authorizations = authorizations
+}
+func (m Message) CheckNonce() bool { return m.checkNonce }
 func (m *Message) SetCheckNonce(checkNonce bool) {
 	m.checkNonce = checkNonce
 }

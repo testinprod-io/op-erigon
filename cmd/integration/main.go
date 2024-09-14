@@ -20,19 +20,11 @@ import (
 	"fmt"
 	"os"
 
-<<<<<<< HEAD
-	_ "github.com/ledgerwatch/erigon/core/snaptype"        //hack
-	_ "github.com/ledgerwatch/erigon/polygon/bor/snaptype" //hack
-
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon/cmd/integration/commands"
-=======
 	_ "github.com/erigontech/erigon/core/snaptype"        //hack
 	_ "github.com/erigontech/erigon/polygon/bor/snaptype" //hack
 
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon/cmd/integration/commands"
->>>>>>> v3.0.0-alpha1
 )
 
 func main() {

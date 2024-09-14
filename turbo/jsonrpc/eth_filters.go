@@ -18,14 +18,10 @@ package jsonrpc
 
 import (
 	"context"
+	"github.com/erigontech/erigon-lib/common"
 	"strings"
 
-<<<<<<< HEAD
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/log/v3"
-=======
 	"github.com/erigontech/erigon-lib/log/v3"
->>>>>>> v3.0.0-alpha1
 
 	"github.com/erigontech/erigon/common/debug"
 	"github.com/erigontech/erigon/core/types"
@@ -293,7 +289,7 @@ func (api *APIImpl) Logs(ctx context.Context, crit filters.FilterCriteria) (*rpc
 				if h != nil {
 					// avoid null json array for topics
 					if h.Topics == nil {
-						h.Topics = []libcommon.Hash{}
+						h.Topics = []common.Hash{}
 					}
 					err := notifier.Notify(rpcSub.ID, h)
 					if err != nil {

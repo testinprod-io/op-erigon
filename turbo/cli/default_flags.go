@@ -17,14 +17,9 @@
 package cli
 
 import (
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon/cmd/utils"
-	"github.com/urfave/cli/v2"
-=======
 	"github.com/urfave/cli/v2"
 
 	"github.com/erigontech/erigon/cmd/utils"
->>>>>>> v3.0.0-alpha1
 )
 
 // DefaultFlags contains all flags that are used and supported by Erigon binary.
@@ -188,6 +183,7 @@ var DefaultFlags = []cli.Flag{
 	&utils.OverrideOptimismCanyonFlag,
 	&utils.OverrideOptimismEcotoneFlag,
 	&utils.OverrideOptimismFjordFlag,
+	&utils.OverrideOptimismGraniteFlag,
 	&utils.RollupSequencerHTTPFlag,
 	&utils.RollupHistoricalRPCFlag,
 	&utils.RollupHistoricalRPCTimeoutFlag,
@@ -201,6 +197,7 @@ var DefaultFlags = []cli.Flag{
 	&utils.CaplinCheckpointSyncUrlFlag,
 	&utils.SentinelAddrFlag,
 	&utils.SentinelPortFlag,
+	&utils.SentinelBootnodes,
 
 	&utils.GenesisPathFlag,
 	&utils.OtsSearchMaxCapFlag,
@@ -231,8 +228,12 @@ var DefaultFlags = []cli.Flag{
 	&utils.CaplinBackfillingFlag,
 	&utils.CaplinBlobBackfillingFlag,
 	&utils.CaplinDisableBlobPruningFlag,
+	&utils.CaplinDisableCheckpointSyncFlag,
 	&utils.CaplinArchiveFlag,
 	&utils.CaplinMevRelayUrl,
+	&utils.CaplinValidatorMonitorFlag,
+	&utils.CaplinCustomConfigFlag,
+	&utils.CaplinCustomGenesisFlag,
 
 	&utils.TrustedSetupFile,
 	&utils.RPCSlowFlag,
@@ -241,4 +242,5 @@ var DefaultFlags = []cli.Flag{
 	&SyncLoopBlockLimitFlag,
 	&SyncLoopBreakAfterFlag,
 	&SyncLoopPruneLimitFlag,
+	&SyncParallelStateFlushing,
 }

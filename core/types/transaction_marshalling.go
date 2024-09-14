@@ -78,7 +78,7 @@ type txJSON struct {
 type JsonAuthorization struct {
 	ChainID *hexutil.Big      `json:"chainId"`
 	Address libcommon.Address `json:"address"`
-	Nonce   []uint64          `json:"nonce,omitempty"`
+	Nonce   uint64            `json:"nonce"`
 	V       hexutil.Big       `json:"v"`
 	R       hexutil.Big       `json:"r"`
 	S       hexutil.Big       `json:"s"`
@@ -88,11 +88,7 @@ func (a JsonAuthorization) FromAuthorization(authorization Authorization) JsonAu
 	chainId := hexutil.Big(*authorization.ChainID.ToBig())
 	a.ChainID = &chainId
 	a.Address = authorization.Address
-
-	a.Nonce = make([]uint64, len(authorization.Nonce))
-	for i, nonce := range authorization.Nonce {
-		a.Nonce[i] = nonce
-	}
+	a.Nonce = authorization.Nonce
 
 	a.V = hexutil.Big(*authorization.V.ToBig())
 	a.R = hexutil.Big(*authorization.R.ToBig())
@@ -101,8 +97,6 @@ func (a JsonAuthorization) FromAuthorization(authorization Authorization) JsonAu
 }
 
 func (a JsonAuthorization) ToAuthorization() Authorization {
-	nonce := make([]uint64, len(a.Nonce))
-	copy(nonce, a.Nonce)
 	v, _ := uint256.FromBig((*big.Int)(&a.V))
 	r, _ := uint256.FromBig((*big.Int)(&a.R))
 	s, _ := uint256.FromBig((*big.Int)(&a.S))
@@ -110,7 +104,7 @@ func (a JsonAuthorization) ToAuthorization() Authorization {
 	return Authorization{
 		ChainID: chainId,
 		Address: a.Address,
-		Nonce:   nonce,
+		Nonce:   a.Nonce,
 		V:       *v,
 		R:       *r,
 		S:       *s,
@@ -329,21 +323,21 @@ func (tx *LegacyTx) UnmarshalJSON(input []byte) error {
 	}
 	overflow = tx.V.SetFromBig(dec.V.ToInt())
 	if overflow {
-		return fmt.Errorf("dec.V higher than 2^256-1")
+		return errors.New("dec.V higher than 2^256-1")
 	}
 	if dec.R == nil {
 		return errors.New("missing required field 'r' in transaction")
 	}
 	overflow = tx.R.SetFromBig(dec.R.ToInt())
 	if overflow {
-		return fmt.Errorf("dec.R higher than 2^256-1")
+		return errors.New("dec.R higher than 2^256-1")
 	}
 	if dec.S == nil {
 		return errors.New("missing required field 's' in transaction")
 	}
 	overflow = tx.S.SetFromBig(dec.S.ToInt())
 	if overflow {
-		return fmt.Errorf("dec.S higher than 2^256-1")
+		return errors.New("dec.S higher than 2^256-1")
 	}
 	if overflow {
 		return errors.New("'s' in transaction does not fit in 256 bits")
@@ -408,21 +402,21 @@ func (tx *AccessListTx) UnmarshalJSON(input []byte) error {
 	}
 	overflow = tx.V.SetFromBig(dec.V.ToInt())
 	if overflow {
-		return fmt.Errorf("dec.V higher than 2^256-1")
+		return errors.New("dec.V higher than 2^256-1")
 	}
 	if dec.R == nil {
 		return errors.New("missing required field 'r' in transaction")
 	}
 	overflow = tx.R.SetFromBig(dec.R.ToInt())
 	if overflow {
-		return fmt.Errorf("dec.R higher than 2^256-1")
+		return errors.New("dec.R higher than 2^256-1")
 	}
 	if dec.S == nil {
 		return errors.New("missing required field 's' in transaction")
 	}
 	overflow = tx.S.SetFromBig(dec.S.ToInt())
 	if overflow {
-		return fmt.Errorf("dec.S higher than 2^256-1")
+		return errors.New("dec.S higher than 2^256-1")
 	}
 	withSignature := !tx.V.IsZero() || !tx.R.IsZero() || !tx.S.IsZero()
 	if withSignature {
@@ -484,21 +478,21 @@ func (tx *DynamicFeeTransaction) unmarshalJson(dec txJSON) error {
 	}
 	overflow = tx.V.SetFromBig(dec.V.ToInt())
 	if overflow {
-		return fmt.Errorf("dec.V higher than 2^256-1")
+		return errors.New("dec.V higher than 2^256-1")
 	}
 	if dec.R == nil {
 		return errors.New("missing required field 'r' in transaction")
 	}
 	overflow = tx.R.SetFromBig(dec.R.ToInt())
 	if overflow {
-		return fmt.Errorf("dec.R higher than 2^256-1")
+		return errors.New("dec.R higher than 2^256-1")
 	}
 	if dec.S == nil {
 		return errors.New("missing required field 's' in transaction")
 	}
 	overflow = tx.S.SetFromBig(dec.S.ToInt())
 	if overflow {
-		return fmt.Errorf("dec.S higher than 2^256-1")
+		return errors.New("dec.S higher than 2^256-1")
 	}
 	if overflow {
 		return errors.New("'s' in transaction does not fit in 256 bits")
@@ -512,16 +506,36 @@ func (tx *DynamicFeeTransaction) unmarshalJson(dec txJSON) error {
 	return nil
 }
 
-<<<<<<< HEAD
-func (tx *DepositTx) UnmarshalJSON(input []byte) error {
-=======
 func (tx *DynamicFeeTransaction) UnmarshalJSON(input []byte) error {
->>>>>>> v3.0.0-alpha1
 	var dec txJSON
 	if err := json.Unmarshal(input, &dec); err != nil {
 		return err
 	}
-<<<<<<< HEAD
+	return tx.unmarshalJson(dec)
+}
+
+func (tx *SetCodeTransaction) UnmarshalJSON(input []byte) error {
+	var dec txJSON
+	if err := json.Unmarshal(input, &dec); err != nil {
+		return err
+	}
+
+	if err := tx.DynamicFeeTransaction.unmarshalJson(dec); err != nil {
+		return err
+	}
+	tx.Authorizations = make([]Authorization, len(*dec.Authorizations))
+	for i, auth := range *dec.Authorizations {
+		tx.Authorizations[i] = auth.ToAuthorization()
+	}
+
+	return nil
+}
+
+func (tx *DepositTx) UnmarshalJSON(input []byte) error {
+	var dec txJSON
+	if err := json.Unmarshal(input, &dec); err != nil {
+		return err
+	}
 	if dec.AccessList != nil || dec.FeeCap != nil || dec.Tip != nil {
 		return errors.New("unexpected field(s) in deposit transaction")
 	}
@@ -567,28 +581,6 @@ func (tx *DynamicFeeTransaction) UnmarshalJSON(input []byte) error {
 		tx.IsSystemTransaction = *dec.IsSystemTx
 	}
 	// nonce is not checked becaues depositTx has no nonce field.
-=======
-
-	return tx.unmarshalJson(dec)
-}
-
-func (tx *SetCodeTransaction) UnmarshalJSON(input []byte) error {
-	var dec txJSON
-	if err := json.Unmarshal(input, &dec); err != nil {
-		return err
-	}
-
-	dTx := DynamicFeeTransaction{}
-	if err := dTx.unmarshalJson(dec); err != nil {
-		return err
-	}
-
-	tx.DynamicFeeTransaction = dTx
-	tx.Authorizations = make([]Authorization, len(*dec.Authorizations))
-	for i, auth := range *dec.Authorizations {
-		tx.Authorizations[i] = auth.ToAuthorization()
-	}
->>>>>>> v3.0.0-alpha1
 	return nil
 }
 
@@ -666,21 +658,21 @@ func UnmarshalBlobTxJSON(input []byte) (Transaction, error) {
 	}
 	overflow = tx.V.SetFromBig(dec.V.ToInt())
 	if overflow {
-		return nil, fmt.Errorf("dec.V higher than 2^256-1")
+		return nil, errors.New("dec.V higher than 2^256-1")
 	}
 	if dec.R == nil {
 		return nil, errors.New("missing required field 'r' in transaction")
 	}
 	overflow = tx.R.SetFromBig(dec.R.ToInt())
 	if overflow {
-		return nil, fmt.Errorf("dec.R higher than 2^256-1")
+		return nil, errors.New("dec.R higher than 2^256-1")
 	}
 	if dec.S == nil {
 		return nil, errors.New("missing required field 's' in transaction")
 	}
 	overflow = tx.S.SetFromBig(dec.S.ToInt())
 	if overflow {
-		return nil, fmt.Errorf("dec.S higher than 2^256-1")
+		return nil, errors.New("dec.S higher than 2^256-1")
 	}
 
 	withSignature := !tx.V.IsZero() || !tx.R.IsZero() || !tx.S.IsZero()
@@ -696,7 +688,8 @@ func UnmarshalBlobTxJSON(input []byte) (Transaction, error) {
 	}
 
 	btx := BlobTxWrapper{
-		Tx:          tx,
+		// it's ok to copy here - because it's constructor of object - no parallel access yet
+		Tx:          tx, //nolint
 		Commitments: dec.Commitments,
 		Blobs:       dec.Blobs,
 		Proofs:      dec.Proofs,

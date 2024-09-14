@@ -22,21 +22,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/common"
-
-	"github.com/ledgerwatch/log/v3"
-
-	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/rpcdaemontest"
-	"github.com/ledgerwatch/erigon/rpc"
-=======
 	"github.com/erigontech/erigon-lib/common"
 
 	"github.com/erigontech/erigon-lib/log/v3"
 
 	"github.com/erigontech/erigon/cmd/rpcdaemon/rpcdaemontest"
 	"github.com/erigontech/erigon/rpc"
->>>>>>> v3.0.0-alpha1
 )
 
 // TestNotFoundMustReturnNil - next methods - when record not found in db - must return nil instead of error

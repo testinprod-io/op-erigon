@@ -35,17 +35,10 @@ var (
 // Version is the version of upstream erigon
 // see https://calver.org
 const (
-<<<<<<< HEAD
-	VersionMajor       = 2  // Major version component of the current release
-	VersionMinor       = 60 // Minor version component of the current release
-	VersionMicro       = 4  // Patch version component of the current release
-	VersionModifier    = "" // Modifier component of the current release
-=======
 	VersionMajor       = 3        // Major version component of the current release
 	VersionMinor       = 0        // Minor version component of the current release
 	VersionMicro       = 0        // Patch version component of the current release
-	VersionModifier    = "alpha1" // Modifier component of the current release
->>>>>>> v3.0.0-alpha1
+	VersionModifier    = "alpha3" // Modifier component of the current release
 	VersionKeyCreated  = "ErigonVersionCreated"
 	VersionKeyFinished = "ErigonVersionFinished"
 )
@@ -53,8 +46,8 @@ const (
 // OPVersion is the version of op-erigon
 const (
 	OPVersionMajor    = 0          // Major version component of the current release
-	OPVersionMinor    = 6          // Minor version component of the current release
-	OPVersionMicro    = 6          // Patch version component of the current release
+	OPVersionMinor    = 7          // Minor version component of the current release
+	OPVersionMicro    = 1          // Patch version component of the current release
 	OPVersionModifier = "unstable" // Version metadata to append to the version string
 )
 

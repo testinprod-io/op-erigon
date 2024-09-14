@@ -1,33 +1,18 @@
 name: QA - Snapshot Download
 
 on:
-<<<<<<< HEAD
-  push:
-    branches:
-      - 'release/2.*'
-  pull_request:
-    branches:
-      - 'release/2.*'
-    types:
-      - ready_for_review
-=======
   schedule:
-    - cron: '0 5 * * 1-6'  # Run every day at 05:00 AM UTC except Sunday
->>>>>>> v3.0.0-alpha1
+    - cron: '0 0 * * 1-6'  # Run every night at 00:00 AM UTC except Sunday
   workflow_dispatch:     # Run manually
 
 jobs:
   snap-download-test:
-<<<<<<< HEAD
-    runs-on: [self-hosted, Erigon2]
-=======
     runs-on: self-hosted
->>>>>>> v3.0.0-alpha1
-    timeout-minutes: 800
+    timeout-minutes: 500
     env:
       ERIGON_DATA_DIR: ${{ github.workspace }}/erigon_data
       ERIGON_QA_PATH: /home/qarunner/erigon-qa
-      TOTAL_TIME_SECONDS: 43200 # 12 hours
+      TOTAL_TIME_SECONDS: 28800 # 8 hours
       CHAIN: mainnet
 
     steps:
@@ -54,12 +39,8 @@ jobs:
         set +e # Disable exit on error
              
         # Run Erigon, monitor snapshot downloading and check logs
-<<<<<<< HEAD
-        python3 $ERIGON_QA_PATH/test_system/qa-tests/snap-download/run_and_check_snap_download.py ${{ github.workspace }}/build/bin $ERIGON_DATA_DIR $TOTAL_TIME_SECONDS Erigon2 $CHAIN
-=======
         python3 $ERIGON_QA_PATH/test_system/qa-tests/snap-download/run_and_check_snap_download.py \
           ${{ github.workspace }}/build/bin $ERIGON_DATA_DIR $TOTAL_TIME_SECONDS Erigon3 $CHAIN
->>>>>>> v3.0.0-alpha1
   
         # Capture monitoring script exit status
         test_exit_status=$?
@@ -83,22 +64,10 @@ jobs:
           echo "TEST_RESULT=failure" >> "$GITHUB_OUTPUT"
         fi
 
-    - name: Clean up Erigon data directory
-      if: always()
-      run: |
-        rm -rf $ERIGON_DATA_DIR
-
-    - name: Resume the Erigon instance dedicated to db maintenance
-      run: |
-        python3 $ERIGON_QA_PATH/test_system/db-producer/resume_production.py || true
-
     - name: Save test results
       if: steps.test_step.outputs.test_executed == 'true'
       env:
         TEST_RESULT: ${{ steps.test_step.outputs.TEST_RESULT }}
-<<<<<<< HEAD
-      run: python3 $ERIGON_QA_PATH/test_system/qa-tests/uploads/upload_test_results.py --repo erigon --commit $(git rev-parse HEAD) --branch ${{ github.ref_name }} --test_name snap-download --chain $CHAIN --runner ${{ runner.name }} --outcome $TEST_RESULT --result_file ${{ github.workspace }}/result-$CHAIN.json
-=======
       run: |
         python3 $ERIGON_QA_PATH/test_system/qa-tests/uploads/upload_test_results.py \
           --repo erigon \
@@ -109,14 +78,24 @@ jobs:
           --runner ${{ runner.name }} \
           --outcome $TEST_RESULT \
           --result_file ${{ github.workspace }}/result-$CHAIN.json
->>>>>>> v3.0.0-alpha1
 
     - name: Upload test results
       if: steps.test_step.outputs.test_executed == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: test-results
-        path: ${{ github.workspace }}/result-${{ env.CHAIN }}.json
+        path: |
+          ${{ github.workspace }}/result-${{ env.CHAIN }}.json
+          ${{ github.workspace }}/erigon_data/logs/erigon.log
+
+    - name: Clean up Erigon data directory
+      if: always()
+      run: |
+        rm -rf $ERIGON_DATA_DIR
+
+    - name: Resume the Erigon instance dedicated to db maintenance
+      run: |
+        python3 $ERIGON_QA_PATH/test_system/db-producer/resume_production.py || true
 
     - name: Action for Success
       if: steps.test_step.outputs.TEST_RESULT == 'success'

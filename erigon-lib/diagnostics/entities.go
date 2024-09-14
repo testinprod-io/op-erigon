@@ -22,23 +22,6 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-type SyncStageType string
-
-const (
-	Snapshots           SyncStageType = "Snapshots"
-	BlockHashes         SyncStageType = "BlockHashes"
-	Senders             SyncStageType = "Senders"
-	Execution           SyncStageType = "Execution"
-	HashState           SyncStageType = "HashState"
-	IntermediateHashes  SyncStageType = "IntermediateHashes"
-	CallTraces          SyncStageType = "CallTraces"
-	AccountHistoryIndex SyncStageType = "AccountHistoryIndex"
-	StorageHistoryIndex SyncStageType = "StorageHistoryIndex"
-	LogIndex            SyncStageType = "LogIndex"
-	TxLookup            SyncStageType = "TxLookup"
-	Finish              SyncStageType = "Finish"
-)
-
 type PeerStatistics struct {
 	PeerType     string
 	BytesIn      uint64
@@ -90,11 +73,7 @@ type PeerStatisticMsgUpdate struct {
 type SyncStatistics struct {
 	SnapshotDownload SnapshotDownloadStatistics `json:"snapshotDownload"`
 	SnapshotIndexing SnapshotIndexingStatistics `json:"snapshotIndexing"`
-<<<<<<< HEAD
-	BlockExecution   BlockExecutionStatistics   `json:"blockExecution"`
-=======
 	SnapshotFillDB   SnapshotFillDBStatistics   `json:"snapshotFillDB"`
->>>>>>> v3.0.0-alpha1
 	SyncFinished     bool                       `json:"syncFinished"`
 }
 
@@ -152,24 +131,6 @@ type SnapshotSegmentIndexingStatistics struct {
 	Sys         uint64 `json:"sys"`
 }
 
-type SnapshotSegmentIndexingFinishedUpdate struct {
-	SegmentName string `json:"segmentName"`
-}
-
-<<<<<<< HEAD
-type BlockExecutionStatistics struct {
-	From        uint64  `json:"from"`
-	To          uint64  `json:"to"`
-	BlockNumber uint64  `json:"blockNumber"`
-	BlkPerSec   float64 `json:"blkPerSec"`
-	TxPerSec    float64 `json:"txPerSec"`
-	MgasPerSec  float64 `json:"mgasPerSec"`
-	GasState    float64 `json:"gasState"`
-	Batch       uint64  `json:"batch"`
-	Alloc       uint64  `json:"alloc"`
-	Sys         uint64  `json:"sys"`
-	TimeElapsed float64 `json:"timeElapsed"`
-=======
 type SnapshotFillDBStatistics struct {
 	Stages []SnapshotFillDBStage `json:"stages"`
 }
@@ -183,7 +144,6 @@ type SnapshotFillDBStage struct {
 type SnapshotFillDBStageUpdate struct {
 	Stage       SnapshotFillDBStage `json:"stage"`
 	TimeElapsed float64             `json:"timeElapsed"`
->>>>>>> v3.0.0-alpha1
 }
 
 type SnapshoFilesList struct {
@@ -191,26 +151,41 @@ type SnapshoFilesList struct {
 }
 
 type HardwareInfo struct {
-	Disk DiskInfo `json:"disk"`
-	RAM  RAMInfo  `json:"ram"`
-	CPU  CPUInfo  `json:"cpu"`
+	Disk DiskInfo  `json:"disk"`
+	RAM  RAMInfo   `json:"ram"`
+	CPU  []CPUInfo `json:"cpu"`
 }
 
 type RAMInfo struct {
-	Total uint64 `json:"total"`
-	Free  uint64 `json:"free"`
+	Total       uint64  `json:"total"`
+	Available   uint64  `json:"available"`
+	Used        uint64  `json:"used"`
+	UsedPercent float64 `json:"usedPercent"`
 }
 
 type DiskInfo struct {
-	FsType string `json:"fsType"`
-	Total  uint64 `json:"total"`
-	Free   uint64 `json:"free"`
+	FsType     string `json:"fsType"`
+	Total      uint64 `json:"total"`
+	Free       uint64 `json:"free"`
+	MountPoint string `json:"mountPoint"`
+	Device     string `json:"device"`
+	Details    string `json:"details"`
 }
 
 type CPUInfo struct {
-	Cores     int     `json:"cores"`
-	ModelName string  `json:"modelName"`
-	Mhz       float64 `json:"mhz"`
+	CPU        int32    `json:"cpu"`
+	VendorID   string   `json:"vendorId"`
+	Family     string   `json:"family"`
+	Model      string   `json:"model"`
+	Stepping   int32    `json:"stepping"`
+	PhysicalID string   `json:"physicalId"`
+	CoreID     string   `json:"coreId"`
+	Cores      int32    `json:"cores"`
+	ModelName  string   `json:"modelName"`
+	Mhz        float64  `json:"mhz"`
+	CacheSize  int32    `json:"cacheSize"`
+	Flags      []string `json:"flags"`
+	Microcode  string   `json:"microcode"`
 }
 
 type BlockHeadersUpdate struct {
@@ -347,10 +322,6 @@ func (ti SegmentDownloadStatistics) Type() Type {
 }
 
 func (ti SnapshotIndexingStatistics) Type() Type {
-	return TypeOf(ti)
-}
-
-func (ti SnapshotSegmentIndexingFinishedUpdate) Type() Type {
 	return TypeOf(ti)
 }
 

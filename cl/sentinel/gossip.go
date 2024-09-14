@@ -269,6 +269,7 @@ func (s *Sentinel) topicScoreParams(topic string) *pubsub.TopicScoreParams {
 		return s.defaultAggregateSubnetTopicParams()
 	case gossip.IsTopicSyncCommittee(topic):
 		return s.defaultSyncSubnetTopicParams(s.cfg.ActiveIndicies)
+
 	default:
 		return nil
 	}
@@ -531,49 +532,12 @@ type GossipSubscription struct {
 
 	stopCh    chan struct{}
 	closeOnce sync.Once
+	lock      sync.Mutex
 }
 
-<<<<<<< HEAD
-func (sub *GossipSubscription) Listen() {
-	go func() {
-		var err error
-		checkingInterval := time.NewTicker(100 * time.Millisecond)
-		for {
-			select {
-			case <-sub.ctx.Done():
-				return
-			case <-checkingInterval.C:
-
-				expirationTime := sub.expiration.Load().(time.Time)
-				if sub.subscribed.Load() && time.Now().After(expirationTime) {
-					sub.stopCh <- struct{}{}
-					if cancelFunc := sub.cf; cancelFunc != nil {
-						cancelFunc() // stop pubsub.Subscription.Next
-					}
-					sub.topic.Close()
-					sub.subscribed.Store(false)
-					log.Info("[Gossip] Unsubscribed from topic", "topic", sub.sub.Topic())
-					sub.s.updateENROnSubscription(sub.sub.Topic(), false)
-					continue
-				}
-				if !sub.subscribed.Load() && time.Now().Before(expirationTime) {
-					sub.stopCh = make(chan struct{}, 3)
-					sub.sub, err = sub.topic.Subscribe()
-					if err != nil {
-						log.Warn("[Gossip] failed to begin topic subscription", "err", err)
-						time.Sleep(30 * time.Second)
-						continue
-					}
-					var sctx context.Context
-					sctx, sub.cf = context.WithCancel(sub.ctx)
-					go sub.run(sctx, sub.sub, sub.sub.Topic())
-					sub.subscribed.Store(true)
-					sub.s.updateENROnSubscription(sub.sub.Topic(), true)
-					log.Info("[Gossip] Subscribed to topic", "topic", sub.sub.Topic())
-				}
-			}
-=======
 func (sub *GossipSubscription) checkIfTopicNeedsToEnabledOrDisabled() {
+	sub.lock.Lock()
+	defer sub.lock.Unlock()
 	var err error
 	expirationTime := sub.expiration.Load().(time.Time)
 	if sub.subscribed.Load() && time.Now().After(expirationTime) {
@@ -590,7 +554,6 @@ func (sub *GossipSubscription) checkIfTopicNeedsToEnabledOrDisabled() {
 		if err != nil {
 			log.Warn("[Gossip] failed to begin topic subscription", "err", err)
 			return
->>>>>>> v3.0.0-alpha1
 		}
 		var sctx context.Context
 		sctx, sub.cf = context.WithCancel(sub.ctx)
@@ -610,8 +573,12 @@ func (sub *GossipSubscription) OverwriteSubscriptionExpiry(expiry time.Time) {
 
 // calls the cancel func for the subscriber and closes the topic and sub
 func (s *GossipSubscription) Close() {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	s.closeOnce.Do(func() {
-		close(s.stopCh)
+		if s.stopCh != nil {
+			close(s.stopCh)
+		}
 		if s.cf != nil {
 			s.cf()
 		}
@@ -675,5 +642,5 @@ func (g *GossipSubscription) Publish(data []byte) error {
 	if len(g.topic.ListPeers()) == 0 {
 		log.Warn("[Gossip] No peers to publish to for topic", "topic", g.topic.String())
 	}
-	return g.topic.Publish(g.ctx, data)
+	return g.topic.Publish(g.ctx, data, pubsub.WithReadiness(pubsub.MinTopicSize(1)))
 }

@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 // Copyright 2024 The Erigon Authors
 // This file is part of Erigon.
 //
@@ -16,7 +14,6 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with Erigon. If not, see <http://www.gnu.org/licenses/>.
 
->>>>>>> v3.0.0-alpha1
 package downloadercfg
 
 import (

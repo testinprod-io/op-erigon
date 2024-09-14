@@ -30,6 +30,7 @@ import (
 
 	"github.com/erigontech/erigon/core/types/accounts"
 	"github.com/erigontech/erigon/turbo/rpchelper"
+	"github.com/erigontech/erigon/turbo/snapshotsync/freezeblocks"
 )
 
 type ContractCreatorData struct {
@@ -43,6 +44,7 @@ func (api *OtterscanAPIImpl) GetContractCreator(ctx context.Context, addr common
 		return nil, err
 	}
 	defer tx.Rollback()
+	txNumsReader := rawdbv3.TxNums.WithCustomReadTxNumFunc(freezeblocks.ReadTxNumFuncFromBlockReader(ctx, api._blockReader))
 
 	latestState := rpchelper.NewLatestStateReader(tx)
 	plainStateAcc, err := latestState.ReadAccountData(addr)
@@ -164,21 +166,14 @@ func (api *OtterscanAPIImpl) GetContractCreator(ctx context.Context, addr common
 		return nil, fmt.Errorf("binary search between %d-%d doesn't find anything", nextTxnID, prevTxnID)
 	}
 
-<<<<<<< HEAD
-	// TODO: check if precompiled contract
-	if !tracer.Found() {
-		return nil, nil
-	}
-
-=======
-	ok, bn, err := rawdbv3.TxNums.FindBlockNum(tx, creationTxnID)
+	ok, bn, err := txNumsReader.FindBlockNum(tx, creationTxnID)
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
 		return nil, fmt.Errorf("block not found by txnID=%d", creationTxnID)
 	}
-	minTxNum, err := rawdbv3.TxNums.Min(tx, bn)
+	minTxNum, err := txNumsReader.Min(tx, bn)
 	if err != nil {
 		return nil, err
 	}
@@ -189,10 +184,16 @@ func (api *OtterscanAPIImpl) GetContractCreator(ctx context.Context, addr common
 
 	// Trace block, find txn and contract creator
 	tracer := NewCreateTracer(ctx, addr)
+
 	if err := api.genericTracer(tx, ctx, bn, creationTxnID, txIndex, chainConfig, tracer); err != nil {
 		return nil, err
 	}
->>>>>>> v3.0.0-alpha1
+
+	// TODO: check if precompiled contract
+	if !tracer.Found() {
+		return nil, nil
+	}
+
 	return &ContractCreatorData{
 		Tx:      tracer.Tx.Hash(),
 		Creator: tracer.Creator,

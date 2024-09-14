@@ -22,20 +22,12 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/erigontech/erigon-lib/common/datadir"
+
 	"github.com/RoaringBitmap/roaring/roaring64"
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/chain"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/length"
-	"github.com/ledgerwatch/erigon-lib/etl"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	libstate "github.com/ledgerwatch/erigon-lib/state"
-	"github.com/ledgerwatch/log/v3"
-=======
 
 	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/erigontech/erigon/eth/consensuschain"
->>>>>>> v3.0.0-alpha1
 
 	"github.com/erigontech/erigon-lib/chain"
 	libcommon "github.com/erigontech/erigon-lib/common"
@@ -257,8 +249,9 @@ type ReconWorker struct {
 	genesis     *types.Genesis
 	chain       *consensuschain.Reader
 
-	evm *vm.EVM
-	ibs *state.IntraBlockState
+	evm  *vm.EVM
+	ibs  *state.IntraBlockState
+	dirs datadir.Dirs
 }
 
 func NewReconWorker(lock sync.Locker, ctx context.Context, rs *state.ReconState,
@@ -294,6 +287,10 @@ func (rw *ReconWorker) SetChainTx(chainTx kv.Tx) {
 	rw.stateWriter.SetChainTx(chainTx)
 }
 
+func (rw *ReconWorker) SetDirs(dirs datadir.Dirs) {
+	rw.dirs = dirs
+}
+
 func (rw *ReconWorker) Run() error {
 	for txTask, ok, err := rw.rs.Schedule(rw.ctx); ok || err != nil; txTask, ok, err = rw.rs.Schedule(rw.ctx) {
 		if err != nil {
@@ -322,7 +319,7 @@ func (rw *ReconWorker) runTxTask(txTask *state.TxTask) error {
 	if txTask.BlockNum == 0 && txTask.TxIndex == -1 {
 		//fmt.Printf("txNum=%d, blockNum=%d, Genesis\n", txTask.TxNum, txTask.BlockNum)
 		// Genesis block
-		_, ibs, err = core.GenesisToBlock(rw.genesis, "", rw.logger)
+		_, ibs, err = core.GenesisToBlock(rw.genesis, rw.dirs, rw.logger)
 		if err != nil {
 			return err
 		}
@@ -356,7 +353,7 @@ func (rw *ReconWorker) runTxTask(txTask *state.TxTask) error {
 	} else {
 		gp := new(core.GasPool).AddGas(txTask.Tx.GetGas()).AddBlobGas(txTask.Tx.GetBlobGas())
 		vmConfig := vm.Config{NoReceipts: true, SkipAnalysis: txTask.SkipAnalysis}
-		ibs.SetTxContext(txTask.Tx.Hash(), txTask.BlockHash, txTask.TxIndex)
+		ibs.SetTxContext(txTask.Tx.Hash(), txTask.TxIndex)
 		msg := txTask.TxAsMessage
 
 		rw.evm.ResetBetweenBlocks(txTask.EvmBlockContext, core.NewEVMTxContext(msg), ibs, vmConfig, txTask.Rules)
