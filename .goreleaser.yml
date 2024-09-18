@@ -1025,7 +1025,6 @@ checksum:
     - darwin-arm64
     # - windows-amd64
 
-<<<<<<< HEAD
 dockers:
   - image_templates:
       - testinprod/{{ .ProjectName }}:{{ .Version }}-amd64
@@ -1061,7 +1060,6 @@ docker_manifests:
     image_templates:
       - testinprod/{{ .ProjectName }}:{{ .Version }}-amd64
       - testinprod/{{ .ProjectName }}:{{ .Version }}-arm64
-=======
 
 archives:
   - id: linux-arm64
@@ -1096,51 +1094,50 @@ archives:
     wrap_in_directory: true
     format: tar.gz
 
-  - id: darwin-amd64
-    builds:
-      - darwin-amd64-erigon
-      - darwin-amd64-downloader
-      - darwin-amd64-devnet
-      - darwin-amd64-evm
-      - darwin-amd64-caplin
-      - darwin-amd64-diag
-      - darwin-amd64-integration
-      - darwin-amd64-rpcdaemon
-      - darwin-amd64-sentry
-      - darwin-amd64-txpool
-    name_template: "{{ .Env.APPLICATION }}_{{ .Env.BUILD_VERSION }}_{{ .Os }}_{{ .Arch }}"
-    wrap_in_directory: true
-    format: tar.gz
->>>>>>> 2.60.7
+  # - id: darwin-amd64
+  #   builds:
+  #     - darwin-amd64-erigon
+  #     - darwin-amd64-downloader
+  #     - darwin-amd64-devnet
+  #     - darwin-amd64-evm
+  #     - darwin-amd64-caplin
+  #     - darwin-amd64-diag
+  #     - darwin-amd64-integration
+  #     - darwin-amd64-rpcdaemon
+  #     - darwin-amd64-sentry
+  #     - darwin-amd64-txpool
+  #   name_template: "{{ .Env.APPLICATION }}_{{ .Env.BUILD_VERSION }}_{{ .Os }}_{{ .Arch }}"
+  #   wrap_in_directory: true
+  #   format: tar.gz
 
-  - id: darwin-arm64
-    builds:
-      - darwin-arm64-erigon
-      - darwin-arm64-downloader
-      - darwin-arm64-devnet
-      - darwin-arm64-evm
-      - darwin-arm64-caplin
-      - darwin-arm64-diag
-      - darwin-arm64-integration
-      - darwin-arm64-rpcdaemon
-      - darwin-arm64-sentry
-      - darwin-arm64-txpool
-    name_template: "{{ .Env.APPLICATION }}_{{ .Env.BUILD_VERSION }}_{{ .Os }}_{{ .Arch }}"
-    wrap_in_directory: true
-    format: tar.gz
+  # - id: darwin-arm64
+  #   builds:
+  #     - darwin-arm64-erigon
+  #     - darwin-arm64-downloader
+  #     - darwin-arm64-devnet
+  #     - darwin-arm64-evm
+  #     - darwin-arm64-caplin
+  #     - darwin-arm64-diag
+  #     - darwin-arm64-integration
+  #     - darwin-arm64-rpcdaemon
+  #     - darwin-arm64-sentry
+  #     - darwin-arm64-txpool
+  #   name_template: "{{ .Env.APPLICATION }}_{{ .Env.BUILD_VERSION }}_{{ .Os }}_{{ .Arch }}"
+  #   wrap_in_directory: true
+  #   format: tar.gz
 
-  - id: windows-amd64
-    builds:
-      - windows-amd64-erigon
-      - windows-amd64-downloader
-      - windows-amd64-devnet
-      - windows-amd64-evm
-      - windows-amd64-caplin
-      - windows-amd64-diag
-      - windows-amd64-integration
-      - windows-amd64-rpcdaemon
-      - windows-amd64-sentry
-      - windows-amd64-txpool
-    name_template: "{{ .Env.APPLICATION }}_{{ .Env.BUILD_VERSION }}_{{ .Os }}_{{ .Arch }}"
-    wrap_in_directory: true
-    format: zip
+  # - id: windows-amd64
+  #   builds:
+  #     - windows-amd64-erigon
+  #     - windows-amd64-downloader
+  #     - windows-amd64-devnet
+  #     - windows-amd64-evm
+  #     - windows-amd64-caplin
+  #     - windows-amd64-diag
+  #     - windows-amd64-integration
+  #     - windows-amd64-rpcdaemon
+  #     - windows-amd64-sentry
+  #     - windows-amd64-txpool
+  #   name_template: "{{ .Env.APPLICATION }}_{{ .Env.BUILD_VERSION }}_{{ .Os }}_{{ .Arch }}"
+  #   wrap_in_directory: true
+  #   format: zip

@@ -95,14 +95,14 @@ jobs:
           DOCKER_URL: ${{ env.DOCKERHUB_REPOSITORY }}
         run: |
           docker run --rm \
-            -w /go/src/${{ env.APPLICATION }}/ \
+            -w /${{ env.APPLICATION }}/ \
             -e BUILD_VERSION=${{ env.BUILD_VERSION }} \
             -e GIT_COMMIT=${{ steps.getCommitId.outputs.id }} \
             -e GIT_BRANCH=${{ inputs.checkout_ref }} \
             -e GIT_TAG=${{ inputs.release_version }} \
             -e PACKAGE=${{ env.PACKAGE }} \
             -e APPLICATION=${{ env.APPLICATION }} \
-            -v $(pwd):/go/src/${{ env.APPLICATION}} \
+            -v $(pwd):/${{ env.APPLICATION }} \
             -v /var/run/docker.sock:/var/run/docker.sock \
             ${{ env.BUILDER_IMAGE }} release --clean --skip=validate,announce,publish
           echo "DEBUG: ls -lao in the working directory"
