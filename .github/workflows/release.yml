@@ -4,7 +4,7 @@ env:
   APPLICATION: "op-erigon"
   BUILDER_IMAGE: "ghcr.io/goreleaser/goreleaser-cross:v1.21.13"
   DOCKER_BASE_IMAGE: "alpine:3.20.2"
-  APP_REPO: "testinprod/op-erigon"
+  APP_REPO: "testinprod-io/op-erigon"
   PACKAGE: "github.com/testinprod-io/op-erigon"
   DOCKERHUB_REPOSITORY: "testinprod/op-erigon"
   DOCKERFILE_PATH: "./Dockerfile.release"
@@ -82,9 +82,17 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB }}
           password: ${{ secrets.DOCKERHUB_KEY }}
-
+      
+      - name: Prepare
+        id: prepare
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          echo "tag_name=${TAG}" >> $GITHUB_OUTPUT
+      
       - name: Set up QEMU
         uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf ## v3.2.0
+      
+      - run: echo ${{ steps.prepare.outputs.tag_name }}
 
       - name: Run GoReleaser
         run: |
