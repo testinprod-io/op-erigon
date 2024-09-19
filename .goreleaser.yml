@@ -1021,8 +1021,8 @@ checksum:
   ids:
     - linux-arm64
     - linux-amd64
-    - darwin-amd64
-    - darwin-arm64
+    # - darwin-amd64
+    # - darwin-arm64
     # - windows-amd64
 
 dockers:
@@ -1065,15 +1065,15 @@ archives:
   - id: linux-arm64
     builds:
       - linux-arm64-erigon
-      - linux-arm64-downloader
-      - linux-arm64-devnet
-      - linux-arm64-evm
-      - linux-arm64-caplin
-      - linux-arm64-diag
-      - linux-arm64-integration
-      - linux-arm64-rpcdaemon
-      - linux-arm64-sentry
-      - linux-arm64-txpool
+      # - linux-arm64-downloader
+      # - linux-arm64-devnet
+      # - linux-arm64-evm
+      # - linux-arm64-caplin
+      # - linux-arm64-diag
+      # - linux-arm64-integration
+      # - linux-arm64-rpcdaemon
+      # - linux-arm64-sentry
+      # - linux-arm64-txpool
     name_template: "{{ .Env.APPLICATION }}_{{ .Env.BUILD_VERSION }}_{{ .Os }}_{{ .Arch }}"
     wrap_in_directory: true
     format: tar.gz
@@ -1081,15 +1081,15 @@ archives:
   - id: linux-amd64
     builds:
       - linux-amd64-erigon
-      - linux-amd64-downloader
-      - linux-amd64-devnet
-      - linux-amd64-evm
-      - linux-amd64-caplin
-      - linux-amd64-diag
-      - linux-amd64-integration
-      - linux-amd64-rpcdaemon
-      - linux-amd64-sentry
-      - linux-amd64-txpool
+      # - linux-amd64-downloader
+      # - linux-amd64-devnet
+      # - linux-amd64-evm
+      # - linux-amd64-caplin
+      # - linux-amd64-diag
+      # - linux-amd64-integration
+      # - linux-amd64-rpcdaemon
+      # - linux-amd64-sentry
+      # - linux-amd64-txpool
     name_template: "{{ .Env.APPLICATION }}_{{ .Env.BUILD_VERSION }}_{{ .Os }}_{{ .Arch }}"
     wrap_in_directory: true
     format: tar.gz
