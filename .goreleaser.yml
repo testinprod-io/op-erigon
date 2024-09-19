@@ -20,6 +20,7 @@ builds:
 
 ## Darwin AMD64:
   - id: darwin-amd64-erigon
+    skip: true
     main: ./cmd/erigon
     binary: erigon
     goos: [ darwin ]
@@ -40,6 +41,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: darwin-amd64-downloader
+    skip: true
     main: ./cmd/downloader
     binary: downloader
     goos: [ darwin ]
@@ -60,6 +62,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: darwin-amd64-devnet
+    skip: true
     main: ./cmd/devnet
     binary: devnet
     goos: [ darwin ]
@@ -80,6 +83,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: darwin-amd64-evm
+    skip: true
     main: ./cmd/evm
     binary: evm
     goos: [ darwin ]
@@ -100,6 +104,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: darwin-amd64-caplin
+    skip: true
     main: ./cmd/caplin
     binary: caplin
     goos: [ darwin ]
@@ -120,6 +125,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: darwin-amd64-diag
+    skip: true
     main: ./cmd/diag
     binary: diag
     goos: [ darwin ]
@@ -140,6 +146,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: darwin-amd64-integration
+    skip: true
     main: ./cmd/integration
     binary: integration
     goos: [ darwin ]
@@ -160,6 +167,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: darwin-amd64-rpcdaemon
+    skip: true
     main: ./cmd/rpcdaemon
     binary: rpcdaemon
     goos: [ darwin ]
@@ -180,6 +188,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: darwin-amd64-sentry
+    skip: true
     main: ./cmd/sentry
     binary: sentry
     goos: [ darwin ]
@@ -200,6 +209,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: darwin-amd64-txpool
+    skip: true
     main: ./cmd/txpool
     binary: txpool
     goos: [ darwin ]
@@ -223,6 +233,7 @@ builds:
 
 ## Darwin ARM64:
   - id: darwin-arm64-erigon
+    skip: true
     main: ./cmd/erigon
     binary: erigon
     goos: [ darwin ]
@@ -241,6 +252,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: darwin-arm64-downloader
+    skip: true
     main: ./cmd/downloader
     binary: downloader
     goos: [ darwin ]
@@ -259,6 +271,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: darwin-arm64-devnet
+    skip: true
     main: ./cmd/devnet
     binary: devnet
     goos: [ darwin ]
@@ -277,6 +290,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: darwin-arm64-evm
+    skip: true
     main: ./cmd/evm
     binary: evm
     goos: [ darwin ]
@@ -295,6 +309,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: darwin-arm64-caplin
+    skip: true
     main: ./cmd/caplin
     binary: caplin
     goos: [ darwin ]
@@ -313,6 +328,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: darwin-arm64-diag
+    skip: true
     main: ./cmd/diag
     binary: diag
     goos: [ darwin ]
@@ -331,6 +347,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: darwin-arm64-integration
+    skip: true
     main: ./cmd/integration
     binary: integration
     goos: [ darwin ]
@@ -349,6 +366,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: darwin-arm64-rpcdaemon
+    skip: true
     main: ./cmd/rpcdaemon
     binary: rpcdaemon
     goos: [ darwin ]
@@ -367,6 +385,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: darwin-arm64-sentry
+    skip: true
     main: ./cmd/sentry
     binary: sentry
     goos: [ darwin ]
@@ -385,6 +404,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: darwin-arm64-txpool
+    skip: true
     main: ./cmd/txpool
     binary: txpool
     goos: [ darwin ]
@@ -792,6 +812,7 @@ builds:
 
 ## Windows AMD64:
   - id: windows-amd64-erigon
+    skip: true
     main: ./cmd/erigon
     binary: erigon
     goos: [ windows ]
@@ -815,6 +836,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: windows-amd64-downloader
+    skip: true
     main: ./cmd/downloader
     binary: downloader
     goos: [ windows ]
@@ -837,6 +859,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: windows-amd64-devnet
+    skip: true
     main: ./cmd/devnet
     binary: devnet
     goos: [ windows ]
@@ -859,6 +882,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: windows-amd64-evm
+    skip: true
     main: ./cmd/evm
     binary: evm
     goos: [ windows ]
@@ -881,6 +905,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: windows-amd64-caplin
+    skip: true
     main: ./cmd/caplin
     binary: caplin
     goos: [ windows ]
@@ -903,6 +928,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: windows-amd64-diag
+    skip: true
     main: ./cmd/diag
     binary: diag
     goos: [ windows ]
@@ -925,6 +951,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: windows-amd64-integration
+    skip: true
     main: ./cmd/integration
     binary: integration
     goos: [ windows ]
@@ -947,6 +974,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: windows-amd64-rpcdaemon
+    skip: true
     main: ./cmd/rpcdaemon
     binary: rpcdaemon
     goos: [ windows ]
@@ -969,6 +997,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: windows-amd64-sentry
+    skip: true
     main: ./cmd/sentry
     binary: sentry
     goos: [ windows ]
@@ -991,6 +1020,7 @@ builds:
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
 
   - id: windows-amd64-txpool
+    skip: true
     main: ./cmd/txpool
     binary: txpool
     goos: [ windows ]
