@@ -23,8 +23,8 @@ RUN --mount=type=bind,from=temporary,source=/tmp/${APPLICATION},target=/tmp/${AP
     addgroup ${GROUP} && \
     adduser -D -h /home/${USER} -G ${GROUP} ${USER} && \
     install -d -o ${USER} -g ${GROUP} /home/${USER}/.local /home/${USER}/.local/share /home/${USER}/.local/share/erigon && \
-    install -o ${USER} -g ${GROUP} /tmp/${APPLICATION}/erigon /usr/local/bin/
-#    install -o ${USER} -g ${GROUP} /tmp/${APPLICATION}/integration /usr/local/bin/ && \
+    install -o ${USER} -g ${GROUP} /tmp/${APPLICATION}/erigon /usr/local/bin/ && \
+    install -o ${USER} -g ${GROUP} /tmp/${APPLICATION}/integration /usr/local/bin/
 #    install -o ${USER} -g ${GROUP} /tmp/${APPLICATION}/diag /usr/local/bin/ && \
 #    install -o ${USER} -g ${GROUP} /tmp/${APPLICATION}/sentry /usr/local/bin/ && \
 #    install -o ${USER} -g ${GROUP} /tmp/${APPLICATION}/txpool /usr/local/bin/ && \
