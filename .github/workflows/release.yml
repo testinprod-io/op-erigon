@@ -2,8 +2,8 @@ name: Release
 
 env:
   APPLICATION: "op-erigon"
-  BUILDER_IMAGE: "ghcr.io/goreleaser/goreleaser-cross:v1.21.13"
-  DOCKER_BASE_IMAGE: "alpine:3.20.2"
+  BUILDER_IMAGE: "ghcr.io/goreleaser/goreleaser-cross:v1.22.7"
+  DOCKER_BASE_IMAGE: "alpine:3.20.3"
   APP_REPO: "testinprod-io/op-erigon"
   PACKAGE: "github.com/testinprod-io/op-erigon"
   DOCKERHUB_REPOSITORY: "testinprod/op-erigon"
@@ -209,6 +209,7 @@ jobs:
           DOCKER_TAGS: ${{ env.DOCKERHUB_REPOSITORY }}:${{ inputs.release_version }}
           GITHUB_RELEASE_TARGET: ${{ inputs.checkout_ref }}
         run: |
+          cd dist
           gh release create ${{ inputs.release_version }} *.tar.gz *_checksums.txt \
             --generate-notes \
             --target ${GITHUB_RELEASE_TARGET} \
