@@ -1100,7 +1100,7 @@ archives:
       # - linux-arm64-evm
       # - linux-arm64-caplin
       # - linux-arm64-diag
-      # - linux-arm64-integration
+      - linux-arm64-integration
       # - linux-arm64-rpcdaemon
       # - linux-arm64-sentry
       # - linux-arm64-txpool
@@ -1116,7 +1116,7 @@ archives:
       # - linux-amd64-evm
       # - linux-amd64-caplin
       # - linux-amd64-diag
-      # - linux-amd64-integration
+      - linux-amd64-integration
       # - linux-amd64-rpcdaemon
       # - linux-amd64-sentry
       # - linux-amd64-txpool
