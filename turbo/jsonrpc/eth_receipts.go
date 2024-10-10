@@ -17,6 +17,7 @@ import (
 	"github.com/ledgerwatch/erigon-lib/kv/iter"
 	"github.com/ledgerwatch/erigon-lib/kv/order"
 	"github.com/ledgerwatch/erigon-lib/kv/rawdbv3"
+	"github.com/ledgerwatch/erigon-lib/opstack"
 	"github.com/ledgerwatch/erigon/eth/ethutils"
 	bortypes "github.com/ledgerwatch/erigon/polygon/bor/types"
 
@@ -80,6 +81,27 @@ func (api *BaseAPI) getReceipts(ctx context.Context, tx kv.Tx, block *types.Bloc
 		if err != nil {
 			return nil, err
 		}
+
+		if header.Number != nil && chainConfig.IsOptimismBedrock(header.Number.Uint64()) {
+			gasParams, err := opstack.ExtractL1GasParams(chainConfig, header.Time, block.Transactions()[0].GetData())
+			if err == nil && txn.Type() != types.DepositTxType {
+				receipt.L1GasPrice = gasParams.L1BaseFee.ToBig()
+				l1Fee, l1GasUsed := gasParams.CostFunc(txn.RollupCostData())
+				receipt.L1Fee = l1Fee.ToBig()
+				receipt.L1GasUsed = l1GasUsed.ToBig()
+				receipt.FeeScalar = gasParams.FeeScalar
+				receipt.L1BlobBaseFee = gasParams.L1BlobBaseFee.ToBig()
+				if gasParams.L1BaseFeeScalar != nil {
+					l1BaseFeeScalar := uint64(*gasParams.L1BaseFeeScalar)
+					receipt.L1BaseFeeScalar = &l1BaseFeeScalar
+				}
+				if gasParams.L1BlobBaseFeeScalar != nil {
+					l1BlobBaseFeeScalar := uint64(*gasParams.L1BlobBaseFeeScalar)
+					receipt.L1BlobBaseFeeScalar = &l1BlobBaseFeeScalar
+				}
+			}
+		}
+
 		receipt.BlockHash = block.Hash()
 		receipts[i] = receipt
 	}
