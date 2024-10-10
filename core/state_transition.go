@@ -303,6 +303,7 @@ func (st *StateTransition) preCheck(gasBailout bool) error {
 		// Gas is free, but no refunds!
 		st.initialGas = st.msg.Gas()
 		st.gasRemaining += st.msg.Gas() // Add gas here in order to be able to execute calls.
+		st.evm.BlobFee = new(uint256.Int)
 		// Don't touch the gas pool for system transactions
 		if st.msg.IsSystemTx() {
 			if st.evm.ChainConfig().IsOptimismRegolith(st.evm.Context.Time) {
