@@ -73,9 +73,10 @@ type Config struct {
 	RegolithTime *big.Int `json:"regolithTime,omitempty"` // Regolith switch time (nil = no fork, 0 = already on optimism regolith)
 	CanyonTime   *big.Int `json:"canyonTime,omitempty"`   // Canyon switch time (nil = no fork, 0 = already on optimism canyon)
 	// Delta: the Delta upgrade does not affect the execution-layer, and is thus not configurable in the chain config.
-	EcotoneTime *big.Int `json:"ecotoneTime,omitempty"` // Ecotone switch time (nil = no fork, 0 = already on optimism ecotone)
-	FjordTime   *big.Int `json:"fjordTime,omitempty"`   // Fjord switch time (nil = no fork, 0 = already on optimism fjord)
-	GraniteTime *big.Int `json:"graniteTime,omitempty"` // Granite switch time (nil = no fork, 0 = already on optimism granite)
+	EcotoneTime  *big.Int `json:"ecotoneTime,omitempty"` // Ecotone switch time (nil = no fork, 0 = already on optimism ecotone)
+	FjordTime    *big.Int `json:"fjordTime,omitempty"`   // Fjord switch time (nil = no fork, 0 = already on optimism fjord)
+	GraniteTime  *big.Int `json:"graniteTime,omitempty"` // Granite switch time (nil = no fork, 0 = already on optimism granite)
+	HoloceneTime *big.Int `json:"holoceneTime,omitempty"`
 
 	// Optional EIP-4844 parameters
 	MinBlobGasPrice            *uint64 `json:"minBlobGasPrice,omitempty"`
@@ -151,13 +152,14 @@ func (c *Config) String() string {
 		c.NoPruneContracts,
 	)
 	if c.IsOptimism() {
-		configString += fmt.Sprintf("{Bedrock: %v, Regolith: %v, Canyon: %v, Ecotone: %v, Fjord: %v, Granite: %v}",
+		configString += fmt.Sprintf("{Bedrock: %v, Regolith: %v, Canyon: %v, Ecotone: %v, Fjord: %v, Granite: %v, Holocene: %v}",
 			c.BedrockBlock,
 			c.RegolithTime,
 			c.CanyonTime,
 			c.EcotoneTime,
 			c.FjordTime,
 			c.GraniteTime,
+			c.HoloceneTime,
 		)
 	}
 	return configString
@@ -343,6 +345,10 @@ func (c *Config) IsGranite(time uint64) bool {
 	return isForked(c.GraniteTime, time)
 }
 
+func (c *Config) IsHolocene(time uint64) bool {
+	return isForked(c.HoloceneTime, time)
+}
+
 // IsOptimism returns whether the node is an optimism node or not.
 func (c *Config) IsOptimism() bool {
 	return c.Optimism != nil
@@ -371,6 +377,10 @@ func (c *Config) IsOptimismFjord(time uint64) bool {
 
 func (c *Config) IsOptimismGranite(time uint64) bool {
 	return c.IsOptimism() && c.IsGranite(time)
+}
+
+func (c *Config) IsOptimismHolocene(time uint64) bool {
+	return c.IsOptimism() && c.IsHolocene(time)
 }
 
 // IsOptimismPreBedrock returns true iff this is an optimism node & bedrock is not yet active
@@ -626,7 +636,7 @@ type Rules struct {
 	IsAura                                               bool
 	IsOptimismBedrock, IsOptimismRegolith                bool
 	IsOptimismCanyon, IsOptimismEcotone, IsOptimismFjord bool
-	IsOptimismGranite                                    bool
+	IsOptimismGranite, IsOptimismHolocene                bool
 }
 
 // Rules ensures c's ChainID is not nil and returns a new Rules instance
@@ -659,6 +669,7 @@ func (c *Config) Rules(num uint64, time uint64) *Rules {
 		IsOptimismEcotone:  c.IsOptimismEcotone(time),
 		IsOptimismFjord:    c.IsOptimismFjord(time),
 		IsOptimismGranite:  c.IsOptimismGranite(time),
+		IsOptimismHolocene: c.IsOptimismHolocene(time),
 	}
 }
 
