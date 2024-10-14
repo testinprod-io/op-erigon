@@ -31,6 +31,7 @@ import (
 	"github.com/ledgerwatch/erigon/common/math"
 	"github.com/ledgerwatch/erigon/consensus"
 	"github.com/ledgerwatch/erigon/consensus/merge"
+	"github.com/ledgerwatch/erigon/consensus/misc"
 	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/eth/ethconfig"
 	"github.com/ledgerwatch/erigon/params"
@@ -530,6 +531,7 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 		SuggestedFeeRecipient: gointerfaces.ConvertAddressToH160(payloadAttributes.SuggestedFeeRecipient),
 		Transactions:          txs,
 		NoTxPool:              payloadAttributes.NoTxPool,
+		Eip_1599Params:        payloadAttributes.EIP1559Params,
 	}
 
 	if version >= clparams.CapellaVersion {
@@ -540,8 +542,22 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 		req.ParentBeaconBlockRoot = gointerfaces.ConvertHashToH256(*payloadAttributes.ParentBeaconBlockRoot)
 	}
 
-	if s.config.Optimism != nil && payloadAttributes.GasLimit == nil {
-		return nil, &engine_helpers.InvalidPayloadAttributesErr
+	if s.config.Optimism != nil {
+		if payloadAttributes.GasLimit == nil {
+			return nil, &engine_helpers.InvalidPayloadAttributesErr
+		}
+		if s.config.IsHolocene(payloadAttributes.Timestamp.Uint64()) {
+			var eip1559Params types.BlockNonce
+			copy(eip1559Params[:], payloadAttributes.EIP1559Params)
+			if len(payloadAttributes.EIP1559Params) != 8 {
+				return nil, &engine_helpers.InvalidPayloadAttributesErr
+			}
+			if err := misc.ValidateHoloceneParams(eip1559Params); err != nil {
+				return nil, err
+			}
+		} else if len(payloadAttributes.EIP1559Params) != 0 {
+			return nil, &engine_helpers.InvalidPayloadAttributesErr
+		}
 	}
 
 	if payloadAttributes.GasLimit != nil {
