@@ -207,7 +207,7 @@ func (s *Merge) verifyHeader(chain consensus.ChainHeaderReader, header, parent *
 		return errInvalidDifficulty
 	}
 
-	if !bytes.Equal(header.Nonce[:], ProofOfStakeNonce[:]) {
+	if !chain.Config().IsOptimism() && !bytes.Equal(header.Nonce[:], ProofOfStakeNonce[:]) {
 		return errInvalidNonce
 	}
 
