@@ -159,6 +159,18 @@ func (s *EngineServer) newPayload(ctx context.Context, req *engine_types.Executi
 		ReceiptHash: req.ReceiptsRoot,
 		TxHash:      types.DeriveSha(types.BinaryTransactions(txs)),
 	}
+
+	if s.config.IsHolocene(req.Timestamp.Uint64()) {
+		// Payload must have a nonce if this is the holocene upgrade
+		if req.EIP1559Params == nil {
+			return nil, &rpc.InvalidParamsError{Message: "holocene payloads must have eip-1559 params, got none"}
+		}
+		if len(req.EIP1559Params) != 8 {
+			return nil, &rpc.InvalidParamsError{Message: fmt.Sprintf("invalid EIP1559Params length: %v", len(req.EIP1559Params))}
+		}
+		copy(header.Nonce[:], req.EIP1559Params)
+	}
+
 	var withdrawals []*types.Withdrawal
 	if version >= clparams.CapellaVersion {
 		withdrawals = req.Withdrawals

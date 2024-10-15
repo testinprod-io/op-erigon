@@ -169,6 +169,13 @@ func (e *EthereumExecutionModule) GetAssembledBlock(ctx context.Context, req *ex
 		payload.ExcessBlobGas = header.ExcessBlobGas
 	}
 
+	// In OP-stack, a non-zero nonce implies EIP-1559 parameters are being encoded as specified
+	// by Holocene upgrade rules.
+	if block.Nonce() != [8]byte{} {
+		nonce := block.Nonce()
+		payload.Eip_1559Params = nonce[:]
+	}
+
 	blockValue := blockValue(blockWithReceipts, baseFee)
 
 	blobsBundle := &types2.BlobsBundleV1{}
