@@ -531,7 +531,7 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 		SuggestedFeeRecipient: gointerfaces.ConvertAddressToH160(payloadAttributes.SuggestedFeeRecipient),
 		Transactions:          txs,
 		NoTxPool:              payloadAttributes.NoTxPool,
-		Eip_1599Params:        payloadAttributes.EIP1559Params,
+		Eip_1559Params:        payloadAttributes.EIP1559Params,
 	}
 
 	if version >= clparams.CapellaVersion {

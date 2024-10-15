@@ -102,7 +102,7 @@ func (f eip1559Calculator) CurrentFees(chainConfig *chain.Config, db kv.Getter) 
 	return baseFee, blobFee, minBlobGasPrice, currentHeader.GasLimit, nil
 }
 
-// DecodeHolocene1599Params extracts the Holcene 1599 parameters from the encoded form:
+// DecodeHolocene1559Params extracts the Holcene 1559 parameters from the encoded form:
 // https://github.com/ethereum-optimism/specs/blob/main/specs/protocol/holocene/exec-engine.md#eip1559params-encoding
 func DecodeHolocene1559Params(params types.BlockNonce) (uint64, uint64) {
 	elasticity := binary.BigEndian.Uint32(params[4:])
