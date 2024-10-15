@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ledgerwatch/erigon/consensus/misc"
 	"github.com/ledgerwatch/erigon/eth/stagedsync/stages"
 	"math/big"
 	"time"
@@ -216,6 +217,27 @@ func SpawnMiningCreateBlockStage(s *StageState, tx kv.RwTx, cfg MiningCreateBloc
 
 	stateReader := state.NewPlainStateReader(tx)
 	ibs := state.New(stateReader)
+
+	if cfg.chainConfig.IsHolocene(header.Time) {
+		if cfg.blockBuilderParameters.EIP1559Params == nil {
+			return fmt.Errorf("expected eip1559 params, got none")
+		}
+		var nonce types.BlockNonce
+		copy(nonce[:], cfg.blockBuilderParameters.EIP1559Params)
+		if err := misc.ValidateHoloceneParams(nonce); err != nil {
+			return err
+		}
+		header.Nonce = nonce
+		// If this is a holocene block and the params are 0, we must convert them to their Canyon
+		// defaults in the header.
+		if header.Nonce == [8]byte{} {
+			elasticity := cfg.chainConfig.ElasticityMultiplier(params.ElasticityMultiplier)
+			denominator := cfg.chainConfig.BaseFeeChangeDenominator(params.BaseFeeChangeDenominator, header.Time)
+			header.Nonce = misc.EncodeHolocene1559Params(uint32(elasticity), uint32(denominator))
+		}
+	} else if cfg.blockBuilderParameters.EIP1559Params != nil {
+		return fmt.Errorf("got eip1559 params, expected none")
+	}
 
 	if err = cfg.engine.Prepare(chain, header, ibs); err != nil {
 		logger.Error("Failed to prepare header for mining",

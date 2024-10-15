@@ -53,9 +53,10 @@ type PayloadAttributes struct {
 	ParentBeaconBlockRoot *common.Hash        `json:"parentBeaconBlockRoot"`
 
 	// optimism
-	Transactions []hexutility.Bytes `json:"transactions,omitempty"`
-	NoTxPool     bool               `json:"noTxPool,omitempty"`
-	GasLimit     *hexutil.Uint64    `json:"gasLimit,omitempty"`
+	Transactions  []hexutility.Bytes `json:"transactions,omitempty"`
+	NoTxPool      bool               `json:"noTxPool,omitempty"`
+	GasLimit      *hexutil.Uint64    `json:"gasLimit,omitempty"`
+	EIP1559Params hexutility.Bytes   `json:"eip1559Params,omitempty" gencodec:"optional"`
 }
 
 // TransitionConfiguration represents the correct configurations of the CL and the EL

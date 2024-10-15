@@ -17,6 +17,7 @@
 package misc
 
 import (
+	"encoding/binary"
 	"fmt"
 	"math/big"
 
@@ -101,18 +102,55 @@ func (f eip1559Calculator) CurrentFees(chainConfig *chain.Config, db kv.Getter) 
 	return baseFee, blobFee, minBlobGasPrice, currentHeader.GasLimit, nil
 }
 
-// CalcBaseFee calculates the basefee of the header.
+// DecodeHolocene1559Params extracts the Holcene 1559 parameters from the encoded form:
+// https://github.com/ethereum-optimism/specs/blob/main/specs/protocol/holocene/exec-engine.md#eip1559params-encoding
+func DecodeHolocene1559Params(params types.BlockNonce) (uint64, uint64) {
+	elasticity := binary.BigEndian.Uint32(params[4:])
+	denominator := binary.BigEndian.Uint32(params[:4])
+	return uint64(elasticity), uint64(denominator)
+}
+
+func EncodeHolocene1559Params(elasticity, denom uint32) types.BlockNonce {
+	var nonce types.BlockNonce
+	binary.BigEndian.PutUint32(nonce[4:], elasticity)
+	binary.BigEndian.PutUint32(nonce[:4], denom)
+	return nonce
+}
+
+// ValidateHoloceneParams checks if the encoded parameters are valid according to the Holocene
+// upgrade.
+func ValidateHoloceneParams(params types.BlockNonce) error {
+	e, d := DecodeHolocene1559Params(params)
+	if e != 0 && d == 0 {
+		return fmt.Errorf("holocene params cannot have a 0 denominator unless elasticity is also 0")
+	}
+	return nil
+}
+
+// The time belongs to the new block to check which upgrades are active.
 func CalcBaseFee(config *chain.Config, parent *types.Header, time uint64) *big.Int {
 	// If the current block is the first EIP-1559 block, return the InitialBaseFee.
 	if !config.IsLondon(parent.Number.Uint64()) {
 		return new(big.Int).SetUint64(params.InitialBaseFee)
 	}
 
+	elasticity := config.ElasticityMultiplier(params.ElasticityMultiplier)
+	denominator := getBaseFeeChangeDenominator(config, params.BaseFeeChangeDenominator, time)
+
+	if config.IsHolocene(time) {
+		// Holocene requires we get the 1559 parameters from the nonce field of the parent header
+		// unless the field is zero, in which case we use the Canyon values.
+		if parent.Nonce != types.BlockNonce([8]byte{}) {
+			elasticity, denominator = DecodeHolocene1559Params(parent.Nonce)
+		}
+	}
+
 	var (
-		parentGasTarget          = parent.GasLimit / config.ElasticityMultiplier(params.ElasticityMultiplier)
+		parentGasTarget          = parent.GasLimit / elasticity
 		parentGasTargetBig       = new(big.Int).SetUint64(parentGasTarget)
-		baseFeeChangeDenominator = new(big.Int).SetUint64(getBaseFeeChangeDenominator(config, parent.Number.Uint64(), time))
+		baseFeeChangeDenominator = new(big.Int).SetUint64(denominator)
 	)
+
 	// If the parent gasUsed is the same as the target, the baseFee remains unchanged.
 	if parent.GasUsed == parentGasTarget {
 		return new(big.Int).Set(parent.BaseFee)
