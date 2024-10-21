@@ -1,6 +1,7 @@
 package engineapi
 
 import (
+	"bytes"
 	"context"
 	"encoding/binary"
 	"errors"
@@ -160,15 +161,11 @@ func (s *EngineServer) newPayload(ctx context.Context, req *engine_types.Executi
 		TxHash:      types.DeriveSha(types.BinaryTransactions(txs)),
 	}
 
+	// Payload must have eip-1559 params in ExtraData after Holocene
 	if s.config.IsHolocene(req.Timestamp.Uint64()) {
-		// Payload must have a nonce if this is the holocene upgrade
-		if req.EIP1559Params == nil {
+		if err := misc.ValidateHoloceneExtraData(req.ExtraData); err != nil {
 			return nil, &rpc.InvalidParamsError{Message: "holocene payloads must have eip-1559 params, got none"}
 		}
-		if len(req.EIP1559Params) != 8 {
-			return nil, &rpc.InvalidParamsError{Message: fmt.Sprintf("invalid EIP1559Params length: %v", len(req.EIP1559Params))}
-		}
-		copy(header.Nonce[:], req.EIP1559Params)
 	}
 
 	var withdrawals []*types.Withdrawal
@@ -543,7 +540,6 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 		SuggestedFeeRecipient: gointerfaces.ConvertAddressToH160(payloadAttributes.SuggestedFeeRecipient),
 		Transactions:          txs,
 		NoTxPool:              payloadAttributes.NoTxPool,
-		Eip_1559Params:        payloadAttributes.EIP1559Params,
 	}
 
 	if version >= clparams.CapellaVersion {
@@ -559,14 +555,10 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 			return nil, &engine_helpers.InvalidPayloadAttributesErr
 		}
 		if s.config.IsHolocene(payloadAttributes.Timestamp.Uint64()) {
-			var eip1559Params types.BlockNonce
-			copy(eip1559Params[:], payloadAttributes.EIP1559Params)
-			if len(payloadAttributes.EIP1559Params) != 8 {
+			if err := misc.ValidateHolocene1559Params(payloadAttributes.EIP1559Params); err != nil {
 				return nil, &engine_helpers.InvalidPayloadAttributesErr
 			}
-			if err := misc.ValidateHoloceneParams(eip1559Params); err != nil {
-				return nil, err
-			}
+			req.Eip_1559Params = bytes.Clone(payloadAttributes.EIP1559Params)
 		} else if len(payloadAttributes.EIP1559Params) != 0 {
 			return nil, &engine_helpers.InvalidPayloadAttributesErr
 		}

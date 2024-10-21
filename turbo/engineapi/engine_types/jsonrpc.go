@@ -35,7 +35,6 @@ type ExecutionPayload struct {
 	Withdrawals   []*types.Withdrawal `json:"withdrawals"`
 	BlobGasUsed   *hexutil.Uint64     `json:"blobGasUsed"`
 	ExcessBlobGas *hexutil.Uint64     `json:"excessBlobGas"`
-	EIP1559Params hexutility.Bytes    `json:"eip1559Params,omitempty" gencodec:"optional"`
 }
 
 // PayloadAttributes represent the attributes required to start assembling a payload
@@ -193,7 +192,6 @@ func ConvertPayloadFromRpc(payload *types2.ExecutionPayload) *ExecutionPayload {
 		BaseFeePerGas: (*hexutil.Big)(baseFee),
 		BlockHash:     gointerfaces.ConvertH256ToHash(payload.BlockHash),
 		Transactions:  transactions,
-		EIP1559Params: payload.Eip_1559Params,
 	}
 	if payload.Version >= 2 {
 		res.Withdrawals = ConvertWithdrawalsFromRpc(payload.Withdrawals)
