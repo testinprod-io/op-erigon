@@ -219,22 +219,17 @@ func SpawnMiningCreateBlockStage(s *StageState, tx kv.RwTx, cfg MiningCreateBloc
 	ibs := state.New(stateReader)
 
 	if cfg.chainConfig.IsHolocene(header.Time) {
-		if cfg.blockBuilderParameters.EIP1559Params == nil {
-			return fmt.Errorf("expected eip1559 params, got none")
-		}
-		var nonce types.BlockNonce
-		copy(nonce[:], cfg.blockBuilderParameters.EIP1559Params)
-		if err := misc.ValidateHoloceneParams(nonce); err != nil {
+		if err := misc.ValidateHolocene1559Params(cfg.blockBuilderParameters.EIP1559Params); err != nil {
 			return err
 		}
-		header.Nonce = nonce
-		// If this is a holocene block and the params are 0, we must convert them to their Canyon
-		// defaults in the header.
-		if header.Nonce == [8]byte{} {
-			elasticity := cfg.chainConfig.ElasticityMultiplier(params.ElasticityMultiplier)
-			denominator := cfg.chainConfig.BaseFeeChangeDenominator(params.BaseFeeChangeDenominator, header.Time)
-			header.Nonce = misc.EncodeHolocene1559Params(uint32(elasticity), uint32(denominator))
+		// If this is a holocene block and the params are 0, we must convert them to their previous
+		// constants in the header.
+		d, e := misc.DecodeHolocene1559Params(cfg.blockBuilderParameters.EIP1559Params)
+		if d == 0 {
+			d = cfg.chainConfig.BaseFeeChangeDenominator(params.BaseFeeChangeDenominator, header.Time)
+			e = cfg.chainConfig.ElasticityMultiplier(params.ElasticityMultiplier)
 		}
+		header.Extra = misc.EncodeHoloceneExtraData(uint32(d), uint32(e))
 	} else if cfg.blockBuilderParameters.EIP1559Params != nil {
 		return fmt.Errorf("got eip1559 params, expected none")
 	}
