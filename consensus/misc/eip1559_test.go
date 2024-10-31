@@ -49,6 +49,8 @@ func opConfig() *chain.Config {
 		EIP1559Denominator:       50,
 		EIP1559DenominatorCanyon: 250,
 	}
+	ht := big.NewInt(12)
+	config.HoloceneTime = ht
 	return config
 }
 
@@ -153,6 +155,45 @@ func TestCalcBaseFeeOptimism(t *testing.T) {
 		}
 		if test.postCanyon {
 			parent.Time = 8
+		}
+		if have, want := CalcBaseFee(opConfig(), parent, parent.Time+2), big.NewInt(test.expectedBaseFee); have.Cmp(want) != 0 {
+			t.Errorf("test %d: have %d  want %d, ", i, have, want)
+		}
+		if test.postCanyon {
+			// make sure Holocene activation doesn't change the outcome; since these tests have empty eip1559 params,
+			// they should be handled using the Canyon config.
+			parent.Time = 10
+			if have, want := CalcBaseFee(opConfig(), parent, parent.Time+2), big.NewInt(test.expectedBaseFee); have.Cmp(want) != 0 {
+				t.Errorf("test %d: have %d  want %d, ", i, have, want)
+			}
+		}
+	}
+}
+
+// TestCalcBaseFeeHolocene assumes all blocks are Optimism blocks post-Holocene upgrade
+func TestCalcBaseFeeOptimismHolocene(t *testing.T) {
+	parentBaseFee := int64(10_000_000)
+	parentGasLimit := uint64(30_000_000)
+	tests := []struct {
+		parentGasUsed     uint64
+		expectedBaseFee   int64
+		denom, elasticity uint32
+	}{
+		{parentGasLimit / 2, parentBaseFee, 10, 2},  // target
+		{10_000_000, 9_666_667, 10, 2},              // below
+		{20_000_000, 10_333_333, 10, 2},             // above
+		{parentGasLimit / 10, parentBaseFee, 2, 10}, // target
+		{1_000_000, 6_666_667, 2, 10},               // below
+		{30_000_000, 55_000_000, 2, 10},             // above
+	}
+	for i, test := range tests {
+		parent := &types.Header{
+			Number:   common.Big32,
+			GasLimit: parentGasLimit,
+			GasUsed:  test.parentGasUsed,
+			BaseFee:  big.NewInt(parentBaseFee),
+			Time:     12,
+			Extra:    EncodeHoloceneExtraData(test.denom, test.elasticity),
 		}
 		if have, want := CalcBaseFee(opConfig(), parent, parent.Time+2), big.NewInt(test.expectedBaseFee); have.Cmp(want) != 0 {
 			t.Errorf("test %d: have %d  want %d, ", i, have, want)
