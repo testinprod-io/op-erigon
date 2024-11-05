@@ -424,13 +424,14 @@ builds:
 ## End Darwin ARM64
 
 
-## Linux AMD64:
+## Linux AMD64 (v1, v2):
   - id: linux-amd64-erigon
     main: ./cmd/erigon
     binary: erigon
     goos: [ linux ]
     goarch: [ amd64 ]
     goamd64:
+      - v1
       - v2
     env:
       - CC=x86_64-linux-gnu-gcc
@@ -451,6 +452,7 @@ builds:
     goos: [ linux ]
     goarch: [ amd64 ]
     goamd64:
+      - v1
       - v2
     env:
       - CC=x86_64-linux-gnu-gcc
@@ -471,6 +473,7 @@ builds:
     goos: [ linux ]
     goarch: [ amd64 ]
     goamd64:
+      - v1
       - v2
     env:
       - CC=x86_64-linux-gnu-gcc
@@ -491,6 +494,7 @@ builds:
     goos: [ linux ]
     goarch: [ amd64 ]
     goamd64:
+      - v1
       - v2
     env:
       - CC=x86_64-linux-gnu-gcc
@@ -511,6 +515,7 @@ builds:
     goos: [ linux ]
     goarch: [ amd64 ]
     goamd64:
+      - v1
       - v2
     env:
       - CC=x86_64-linux-gnu-gcc
@@ -531,6 +536,7 @@ builds:
     goos: [ linux ]
     goarch: [ amd64 ]
     goamd64:
+      - v1
       - v2
     env:
       - CC=x86_64-linux-gnu-gcc
@@ -551,6 +557,7 @@ builds:
     goos: [ linux ]
     goarch: [ amd64 ]
     goamd64:
+      - v1
       - v2
     env:
       - CC=x86_64-linux-gnu-gcc
@@ -571,6 +578,7 @@ builds:
     goos: [ linux ]
     goarch: [ amd64 ]
     goamd64:
+      - v1
       - v2
     env:
       - CC=x86_64-linux-gnu-gcc
@@ -591,6 +599,7 @@ builds:
     goos: [ linux ]
     goarch: [ amd64 ]
     goamd64:
+      - v1
       - v2
     env:
       - CC=x86_64-linux-gnu-gcc
@@ -611,6 +620,7 @@ builds:
     goos: [ linux ]
     goarch: [ amd64 ]
     goamd64:
+      - v1
       - v2
     env:
       - CC=x86_64-linux-gnu-gcc
@@ -624,7 +634,7 @@ builds:
     ldflags:
       - -s -w -extldflags "-static"
       - -X {{ .Env.PACKAGE }}/params.GitCommit={{ .Env.GIT_COMMIT }} -X {{ .Env.PACKAGE }}/params.GitBranch={{ .Env.GIT_BRANCH }} -X {{ .Env.PACKAGE }}/params.GitTag={{ .Env.GIT_TAG }}
-## End of Linux AMD64
+## End of Linux AMD64 (v1, v2)
 
 
 ## Linux ARM64
@@ -1120,7 +1130,7 @@ archives:
       # - linux-amd64-rpcdaemon
       # - linux-amd64-sentry
       # - linux-amd64-txpool
-    name_template: "{{ .Env.APPLICATION }}_{{ .Env.BUILD_VERSION }}_{{ .Os }}_{{ .Arch }}"
+    name_template: '{{ .Env.APPLICATION }}_{{ .Env.BUILD_VERSION }}_{{ .Os }}_{{ .Arch }}{{ if not (eq .Amd64 "v1") }}{{ .Amd64 }}{{ end }}'
     wrap_in_directory: true
     format: tar.gz
 
@@ -1156,18 +1166,18 @@ archives:
   #   wrap_in_directory: true
   #   format: tar.gz
 
-  # - id: windows-amd64
-  #   builds:
-  #     - windows-amd64-erigon
-  #     - windows-amd64-downloader
-  #     - windows-amd64-devnet
-  #     - windows-amd64-evm
-  #     - windows-amd64-caplin
-  #     - windows-amd64-diag
-  #     - windows-amd64-integration
-  #     - windows-amd64-rpcdaemon
-  #     - windows-amd64-sentry
-  #     - windows-amd64-txpool
-  #   name_template: "{{ .Env.APPLICATION }}_{{ .Env.BUILD_VERSION }}_{{ .Os }}_{{ .Arch }}"
-  #   wrap_in_directory: true
-  #   format: zip
+#  - id: windows-amd64
+#    builds:
+#      - windows-amd64-erigon
+#      - windows-amd64-downloader
+#      - windows-amd64-devnet
+#      - windows-amd64-evm
+#      - windows-amd64-caplin
+#      - windows-amd64-diag
+#      - windows-amd64-integration
+#      - windows-amd64-rpcdaemon
+#      - windows-amd64-sentry
+#      - windows-amd64-txpool
+#    name_template: "{{ .Env.APPLICATION }}_{{ .Env.BUILD_VERSION }}_{{ .Os }}_{{ .Arch }}"
+#    wrap_in_directory: true
+#    format: zip

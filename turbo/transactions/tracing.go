@@ -38,7 +38,7 @@ type BlockGetter interface {
 }
 
 // ComputeTxEnv returns the execution environment of a certain transaction.
-func ComputeTxEnv(ctx context.Context, engine consensus.EngineReader, block *types.Block, cfg *chain.Config, headerReader services.HeaderReader, dbtx kv.Tx, txIndex int, historyV3 bool) (core.Message, evmtypes.BlockContext, evmtypes.TxContext, *state.IntraBlockState, state.StateReader, error) {
+func ComputeTxEnv(ctx context.Context, engine consensus.EngineReader, block *types.Block, cfg *chain.Config, headerReader services.HeaderReader, dbtx kv.Tx, txIndex int, historyV3, isBorStateSyncTxn bool) (core.Message, evmtypes.BlockContext, evmtypes.TxContext, *state.IntraBlockState, state.StateReader, error) {
 	reader, err := rpchelper.CreateHistoryStateReader(dbtx, block.NumberU64(), txIndex, historyV3, cfg.ChainName)
 	if err != nil {
 		return nil, evmtypes.BlockContext{}, evmtypes.TxContext{}, nil, nil, err
@@ -47,9 +47,10 @@ func ComputeTxEnv(ctx context.Context, engine consensus.EngineReader, block *typ
 	// Create the parent state database
 	statedb := state.New(reader)
 
-	if txIndex == 0 && len(block.Transactions()) == 0 {
+	if !isBorStateSyncTxn && txIndex == 0 && len(block.Transactions()) == 0 {
 		return nil, evmtypes.BlockContext{}, evmtypes.TxContext{}, statedb, reader, nil
 	}
+
 	getHeader := func(hash libcommon.Hash, n uint64) *types.Header {
 		h, _ := headerReader.HeaderByNumber(ctx, dbtx, n)
 		return h
@@ -62,6 +63,11 @@ func ComputeTxEnv(ctx context.Context, engine consensus.EngineReader, block *typ
 	// Recompute transactions up to the target index.
 	signer := types.MakeSigner(cfg, block.NumberU64(), block.Time())
 	if historyV3 {
+		if isBorStateSyncTxn && txIndex == len(block.Transactions()) {
+			// tx is a state sync transaction
+			return nil, blockContext, evmtypes.TxContext{}, statedb, reader, nil
+		}
+
 		rules := cfg.Rules(blockContext.BlockNumber, blockContext.Time)
 		txn := block.Transactions()[txIndex]
 		statedb.SetTxContext(txn.Hash(), block.Hash(), txIndex)
@@ -122,6 +128,12 @@ func ComputeTxEnv(ctx context.Context, engine consensus.EngineReader, block *typ
 			return nil, blockContext, evmtypes.TxContext{}, statedb, reader, nil
 		}
 	}
+
+	if isBorStateSyncTxn && txIndex == len(block.Transactions()) {
+		// we can reach here if the block has 0 normal transactions but has state sync transactions
+		return nil, blockContext, evmtypes.TxContext{}, statedb, reader, nil
+	}
+
 	return nil, evmtypes.BlockContext{}, evmtypes.TxContext{}, nil, nil, fmt.Errorf("transaction index %d out of range for block %x", txIndex, block.Hash())
 }
 
