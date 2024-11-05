@@ -254,10 +254,11 @@ type Config struct {
 	OverrideCancunTime   *big.Int `toml:",omitempty"`
 	OverrideShanghaiTime *big.Int `toml:",omitempty"`
 
-	OverrideOptimismCanyonTime  *big.Int `toml:",omitempty"`
-	OverrideOptimismEcotoneTime *big.Int `toml:",omitempty"`
-	OverrideOptimismFjordTime   *big.Int `toml:",omitempty"`
-	OverrideOptimismGraniteTime *big.Int `toml:",omitempty"`
+	OverrideOptimismCanyonTime   *big.Int `toml:",omitempty"`
+	OverrideOptimismEcotoneTime  *big.Int `toml:",omitempty"`
+	OverrideOptimismFjordTime    *big.Int `toml:",omitempty"`
+	OverrideOptimismGraniteTime  *big.Int `toml:",omitempty"`
+	OverrideOptimismHoloceneTime *big.Int `toml:",omitempty"`
 
 	OverridePragueTime *big.Int `toml:",omitempty"`
 

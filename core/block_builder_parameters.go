@@ -19,4 +19,5 @@ type BlockBuilderParameters struct {
 	Transactions          [][]byte
 	NoTxPool              bool
 	GasLimit              *uint64
+	EIP1559Params         []byte
 }

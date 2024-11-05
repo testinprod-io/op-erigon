@@ -147,6 +147,10 @@ var (
 		Name:  "override.granite",
 		Usage: "Manually specify the Optimism Granite fork time, overriding the bundled setting",
 	}
+	OverrideOptimismHoloceneFlag = flags.BigFlag{
+		Name:  "override.holocene",
+		Usage: "Manually specify the Optimism Holocene fork time, overriding the bundled setting",
+	}
 	// Ethash settings
 	EthashCachesInMemoryFlag = cli.IntFlag{
 		Name:  "ethash.cachesinmem",
@@ -2026,6 +2030,9 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 	}
 	if ctx.IsSet(OverrideOptimismGraniteFlag.Name) {
 		cfg.OverrideOptimismGraniteTime = flags.GlobalBig(ctx, OverrideOptimismGraniteFlag.Name)
+	}
+	if ctx.IsSet(OverrideOptimismHoloceneFlag.Name) {
+		cfg.OverrideOptimismHoloceneTime = flags.GlobalBig(ctx, OverrideOptimismHoloceneFlag.Name)
 	}
 	if ctx.IsSet(InternalConsensusFlag.Name) && clparams.EmbeddedSupported(cfg.NetworkID) {
 		cfg.InternalCL = ctx.Bool(InternalConsensusFlag.Name)
