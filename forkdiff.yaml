@@ -57,9 +57,11 @@ def:
                 Deposit transactions have special processing rules: gas is pre-paid on L1, and deposits with EVM-failure are included with rolled back changes (except mint). For regular transactions, at the end of the transition, the 1559 burn and L1 cost are routed to vaults.
               globs:
                 - "core/state_transition.go"
-            - title: "Gaslimit"
+            - title: "Gaslimit and EIP-1559 Params"
               description: |
-                Deposit transactions have special processing rules: gas is pre-paid on L1, and deposits with EVM-failure are included with rolled back changes (except mint). For regular transactions, at the end of the transition, the 1559 burn and L1 cost are routed to vaults.
+                The gaslimit is free to be set by the Engine API caller, instead of enforcing adjustments of the gaslimit in increments of 1/1024 of the previous gaslimit. 
+                The elasticity-multiplier and base-fee-max-change-denominator EIP-1559 parameters can also be set by the Engine API caller through the ExtraData field.  
+                The gaslimit and EIP-1559 parameters are changed (and limited) through the `SystemConfig` contract.
               globs:
                 - "consensus/misc/eip1559.go"
             - title: "Regolith upgrade"
@@ -67,7 +69,10 @@ def:
                 - "core/state_processor.go"
         - title: "Engine API modifications"
           description: |
-            The Engine API is extended to insert transactions into the block and optionally exclude the tx-pool, to reproduce the exact block of the sequencer from just the inputs, as derived from L1 by the rollup-node. See [L2 execution engine specs](https://github.com/ethereum-optimism/optimism/blob/develop/specs/exec-engine.md).
+            The Engine API is extended to insert transactions into the block and optionally exclude the tx-pool, to reproduce the exact block of the sequencer from just the inputs, as derived from L1 by the rollup-node. 
+            See [L2 execution engine specs](https://github.com/ethereum-optimism/optimism/blob/develop/specs/exec-engine.md).              
+            
+            It is also extended to support dynamic EIP-1559 parameters. See [Holocene execution engine specs](https://github.com/ethereum-optimism/specs/blob/main/specs/protocol/holocene/exec-engine.md).
           globs:
             - "turbo/engineapi/engine_server.go"
             - "turbo/engineapi/engine_types/jsonrpc.go"
@@ -76,7 +81,7 @@ def:
             - "turbo/execution/eth1/eth1_chain_reader.go/chain_reader.go"
         - title: "Block-building modifications"
           description: |
-            The block-building code (in the “mining” stages because of Proof-Of-Work legacy of ethereum) implements the changes to support the transaction-inclusion, tx-pool toggle and gaslimit parameters of the Engine API.
+            The block-building code (in the “mining” stages because of Proof-Of-Work legacy of ethereum) implements the changes to support the transaction-inclusion, tx-pool toggle, gaslimit, and EIP-1559 parameters of the Engine API.
           globs:
             - "cmd/integration/commands/stages.go"
             - "eth/stagedsync/default_stages.go"
