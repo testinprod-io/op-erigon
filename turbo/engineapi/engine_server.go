@@ -556,7 +556,7 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 		}
 		if s.config.IsHolocene(payloadAttributes.Timestamp.Uint64()) {
 			if err := misc.ValidateHolocene1559Params(payloadAttributes.EIP1559Params); err != nil {
-				return nil, &engine_helpers.InvalidPayloadAttributesErr
+				return nil, err
 			}
 			req.Eip_1559Params = bytes.Clone(payloadAttributes.EIP1559Params)
 		} else if len(payloadAttributes.EIP1559Params) != 0 {
