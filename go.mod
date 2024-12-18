@@ -37,7 +37,7 @@ require (
 	github.com/dop251/goja v0.0.0-20220405120441-9037c2b61cbf
 	github.com/edsrzf/mmap-go v1.1.0
 	github.com/emicklei/dot v1.6.1
-	github.com/ethereum-optimism/superchain-registry/superchain v0.0.0-20241113154227-e72c6311f6e7
+	github.com/ethereum-optimism/superchain-registry/superchain v0.0.0-20241210175229-327d7af91761
 	github.com/fjl/gencodec v0.0.0-20220412091415-8bb9e558978c
 	github.com/gballet/go-verkle v0.0.0-20221121182333-31427a1f2d35
 	github.com/gfx-labs/sse v0.0.0-20231226060816-f747e26a9baa
