@@ -120,11 +120,7 @@ func LoadSuperChainConfig(opStackChainCfg *superchain.ChainConfig) *chain.Config
 		TerminalTotalDifficultyPassed: true,
 		Ethash:                        nil,
 		Clique:                        nil,
-		Optimism: &chain.OptimismConfig{
-			EIP1559Elasticity:        6,
-			EIP1559Denominator:       50,
-			EIP1559DenominatorCanyon: 250,
-		},
+		Optimism:                      nil,
 	}
 
 	if chConfig.CanyonTime != nil {
@@ -144,6 +140,17 @@ func LoadSuperChainConfig(opStackChainCfg *superchain.ChainConfig) *chain.Config
 	if chConfig.HoloceneTime != nil {
 		out.HoloceneTime = new(big.Int).SetUint64(*chConfig.HoloceneTime)
 	}
+
+	if chConfig.Optimism != nil {
+		out.Optimism = &chain.OptimismConfig{
+			EIP1559Elasticity:  chConfig.Optimism.EIP1559Elasticity,
+			EIP1559Denominator: chConfig.Optimism.EIP1559Denominator,
+		}
+		if chConfig.Optimism.EIP1559DenominatorCanyon != nil {
+			out.Optimism.EIP1559DenominatorCanyon = *chConfig.Optimism.EIP1559DenominatorCanyon
+		}
+	}
+
 	// special overrides for OP-Stack chains with pre-Regolith upgrade history
 	switch opStackChainCfg.ChainID {
 	case OPMainnetChainID:
@@ -153,17 +160,6 @@ func LoadSuperChainConfig(opStackChainCfg *superchain.ChainConfig) *chain.Config
 		out.GrayGlacierBlock = big.NewInt(105235063)
 		out.MergeNetsplitBlock = big.NewInt(105235063)
 		out.BedrockBlock = big.NewInt(105235063)
-	case baseSepoliaChainID:
-		out.Optimism.EIP1559Elasticity = 10
-	case pgnSepoliaChainID:
-		out.Optimism.EIP1559Elasticity = 2
-		out.Optimism.EIP1559Denominator = 8
-	case devnetChainID:
-		out.RegolithTime = devnetRegolithTime
-		out.Optimism.EIP1559Elasticity = 10
-	case chaosnetChainID:
-		out.RegolithTime = chaosnetRegolithTime
-		out.Optimism.EIP1559Elasticity = 10
 	}
 
 	return out

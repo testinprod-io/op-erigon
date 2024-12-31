@@ -161,6 +161,11 @@ func (c *Config) String() string {
 			c.GraniteTime,
 			c.HoloceneTime,
 		)
+		configString += fmt.Sprintf("{EIP1559Elasticity: %v, EIP1559Denominator: %v, EIP1559DenominatorCanyon: %v}",
+			c.Optimism.EIP1559Elasticity,
+			c.Optimism.EIP1559Denominator,
+			c.Optimism.EIP1559DenominatorCanyon,
+		)
 	}
 	return configString
 }
