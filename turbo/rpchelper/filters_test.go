@@ -2,18 +2,19 @@ package rpchelper
 
 import (
 	"context"
-	"github.com/holiman/uint256"
-	"github.com/ledgerwatch/erigon/core/types"
 	"testing"
 
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/gointerfaces"
-	"github.com/ledgerwatch/erigon-lib/gointerfaces/remote"
+	"github.com/erigontech/erigon/core/types"
+	"github.com/holiman/uint256"
 
-	types2 "github.com/ledgerwatch/erigon-lib/gointerfaces/types"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/gointerfaces"
+	"github.com/erigontech/erigon-lib/gointerfaces/remote"
 
-	"github.com/ledgerwatch/erigon/eth/filters"
-	"github.com/ledgerwatch/log/v3"
+	types2 "github.com/erigontech/erigon-lib/gointerfaces/types"
+
+	"github.com/erigontech/erigon-lib/log/v3"
+	"github.com/erigontech/erigon/eth/filters"
 )
 
 func createLog() *remote.SubscribeLogsReply {

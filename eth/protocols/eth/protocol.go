@@ -21,14 +21,14 @@ import (
 	"io"
 	"math/big"
 
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/direct"
-	proto_sentry "github.com/ledgerwatch/erigon-lib/gointerfaces/sentry"
-	rlp2 "github.com/ledgerwatch/erigon-lib/rlp"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/direct"
+	proto_sentry "github.com/erigontech/erigon-lib/gointerfaces/sentry"
+	rlp2 "github.com/erigontech/erigon-lib/rlp"
 
-	"github.com/ledgerwatch/erigon/core/forkid"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/rlp"
+	"github.com/erigontech/erigon/core/forkid"
+	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/rlp"
 )
 
 var ProtocolToString = map[uint]string{
@@ -356,7 +356,7 @@ type BlockBodiesRLPPacket66 struct {
 	BlockBodiesRLPPacket
 }
 
-// Unpack retrieves the transactions, uncles, and withdrawals from the range packet and returns
+// Unpack retrieves the transactions, uncles, withdrawals from the range packet and returns
 // them in a split flat format that's more consistent with the internal data structures.
 func (p *BlockRawBodiesPacket) Unpack() ([][][]byte, [][]*types.Header, []types.Withdrawals) {
 	var (

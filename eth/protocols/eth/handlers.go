@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"github.com/ledgerwatch/erigon-lib/chain"
 
+<<<<<<< HEAD
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon/common"
@@ -29,6 +30,17 @@ import (
 	"github.com/ledgerwatch/erigon/rlp"
 	"github.com/ledgerwatch/erigon/turbo/services"
 	"github.com/ledgerwatch/log/v3"
+=======
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/kv"
+	"github.com/erigontech/erigon-lib/log/v3"
+
+	"github.com/erigontech/erigon/common"
+	"github.com/erigontech/erigon/core/rawdb"
+	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/rlp"
+	"github.com/erigontech/erigon/turbo/services"
+>>>>>>> v2.61.0
 )
 
 func AnswerGetBlockHeadersQuery(db kv.Tx, query *GetBlockHeadersPacket, blockReader services.HeaderAndCanonicalReader) ([]*types.Header, error) {

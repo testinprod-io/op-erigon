@@ -25,7 +25,9 @@ import (
 	"reflect"
 	"testing"
 
+	libcommon "github.com/erigontech/erigon-lib/common"
 	"github.com/holiman/uint256"
+<<<<<<< HEAD
 	"github.com/stretchr/testify/require"
 
 	"github.com/ledgerwatch/erigon-lib/chain"
@@ -35,6 +37,14 @@ import (
 	"github.com/ledgerwatch/erigon/crypto"
 	"github.com/ledgerwatch/erigon/params"
 	"github.com/ledgerwatch/erigon/rlp"
+=======
+
+	"github.com/erigontech/erigon/common"
+	"github.com/erigontech/erigon/common/u256"
+	"github.com/erigontech/erigon/crypto"
+	"github.com/erigontech/erigon/params"
+	"github.com/erigontech/erigon/rlp"
+>>>>>>> v2.61.0
 )
 
 var (

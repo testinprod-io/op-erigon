@@ -17,13 +17,17 @@
 package nodecfg
 
 import (
+<<<<<<< HEAD
 	"github.com/c2h5oh/datasize"
 	"github.com/ledgerwatch/erigon-lib/direct"
 	"github.com/ledgerwatch/erigon-lib/kv"
+=======
+	"github.com/erigontech/erigon-lib/direct"
+>>>>>>> v2.61.0
 
-	"github.com/ledgerwatch/erigon/p2p"
-	"github.com/ledgerwatch/erigon/p2p/nat"
-	"github.com/ledgerwatch/erigon/rpc/rpccfg"
+	"github.com/erigontech/erigon/p2p"
+	"github.com/erigontech/erigon/p2p/nat"
+	"github.com/erigontech/erigon/rpc/rpccfg"
 )
 
 const (

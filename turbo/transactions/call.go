@@ -5,23 +5,29 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/holiman/uint256"
-	"github.com/ledgerwatch/log/v3"
 
+<<<<<<< HEAD
 	"github.com/ledgerwatch/erigon-lib/chain"
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon-lib/opstack"
+=======
+	"github.com/erigontech/erigon-lib/chain"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/kv"
+>>>>>>> v2.61.0
 
-	"github.com/ledgerwatch/erigon/consensus"
-	"github.com/ledgerwatch/erigon/core"
-	"github.com/ledgerwatch/erigon/core/state"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/core/vm"
-	"github.com/ledgerwatch/erigon/core/vm/evmtypes"
-	"github.com/ledgerwatch/erigon/rpc"
-	ethapi2 "github.com/ledgerwatch/erigon/turbo/adapter/ethapi"
-	"github.com/ledgerwatch/erigon/turbo/services"
+	"github.com/erigontech/erigon/consensus"
+	"github.com/erigontech/erigon/core"
+	"github.com/erigontech/erigon/core/state"
+	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/core/vm"
+	"github.com/erigontech/erigon/core/vm/evmtypes"
+	"github.com/erigontech/erigon/rpc"
+	ethapi2 "github.com/erigontech/erigon/turbo/adapter/ethapi"
+	"github.com/erigontech/erigon/turbo/services"
 )
 
 func DoCall(
@@ -37,7 +43,7 @@ func DoCall(
 	stateReader state.StateReader,
 	headerReader services.HeaderReader,
 	callTimeout time.Duration,
-) (*core.ExecutionResult, error) {
+) (*evmtypes.ExecutionResult, error) {
 	// todo: Pending state is only known by the miner
 	/*
 		if blockNrOrHash.BlockNumber != nil && *blockNrOrHash.BlockNumber == rpc.PendingBlockNumber {
@@ -139,7 +145,7 @@ type ReusableCaller struct {
 func (r *ReusableCaller) DoCallWithNewGas(
 	ctx context.Context,
 	newGas uint64,
-) (*core.ExecutionResult, error) {
+) (*evmtypes.ExecutionResult, error) {
 	var cancel context.CancelFunc
 	if r.callTimeout > 0 {
 		ctx, cancel = context.WithTimeout(ctx, r.callTimeout)

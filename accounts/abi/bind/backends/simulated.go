@@ -25,16 +25,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/holiman/uint256"
-	"github.com/ledgerwatch/log/v3"
 
-	"github.com/ledgerwatch/erigon-lib/chain"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/hexutility"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	state2 "github.com/ledgerwatch/erigon-lib/state"
-	types2 "github.com/ledgerwatch/erigon-lib/types"
+	"github.com/erigontech/erigon-lib/chain"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/hexutility"
+	"github.com/erigontech/erigon-lib/kv"
+	state2 "github.com/erigontech/erigon-lib/state"
+	types2 "github.com/erigontech/erigon-lib/types"
 
+<<<<<<< HEAD
 	ethereum "github.com/ledgerwatch/erigon"
 	"github.com/ledgerwatch/erigon-lib/opstack"
 	"github.com/ledgerwatch/erigon/accounts/abi"
@@ -53,6 +54,26 @@ import (
 	"github.com/ledgerwatch/erigon/params"
 	"github.com/ledgerwatch/erigon/turbo/services"
 	"github.com/ledgerwatch/erigon/turbo/stages/mock"
+=======
+	ethereum "github.com/erigontech/erigon"
+	"github.com/erigontech/erigon/accounts/abi"
+	"github.com/erigontech/erigon/accounts/abi/bind"
+	"github.com/erigontech/erigon/common/math"
+	"github.com/erigontech/erigon/common/u256"
+	"github.com/erigontech/erigon/consensus"
+	"github.com/erigontech/erigon/consensus/ethash"
+	"github.com/erigontech/erigon/consensus/misc"
+	"github.com/erigontech/erigon/core"
+	"github.com/erigontech/erigon/core/rawdb"
+	"github.com/erigontech/erigon/core/state"
+	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/core/vm"
+	"github.com/erigontech/erigon/core/vm/evmtypes"
+	"github.com/erigontech/erigon/event"
+	"github.com/erigontech/erigon/params"
+	"github.com/erigontech/erigon/turbo/services"
+	"github.com/erigontech/erigon/turbo/stages/mock"
+>>>>>>> v2.61.0
 )
 
 // This nil assignment ensures at compile time that SimulatedBackend implements bind.ContractBackend.
@@ -514,7 +535,7 @@ func (b *SimulatedBackend) PendingCodeAt(ctx context.Context, contract libcommon
 	return b.pendingState.GetCode(contract), nil
 }
 
-func newRevertError(result *core.ExecutionResult) *revertError {
+func newRevertError(result *evmtypes.ExecutionResult) *revertError {
 	reason, errUnpack := abi.UnpackRevert(result.Revert())
 	err := errors.New("execution reverted")
 	if errUnpack == nil {
@@ -552,7 +573,7 @@ func (b *SimulatedBackend) CallContract(ctx context.Context, call ethereum.CallM
 	if blockNumber != nil && blockNumber.Cmp(b.pendingBlock.Number()) != 0 {
 		return nil, errBlockNumberUnsupported
 	}
-	var res *core.ExecutionResult
+	var res *evmtypes.ExecutionResult
 	if err := b.m.DB.View(context.Background(), func(tx kv.Tx) (err error) {
 		s := state.New(b.m.NewStateReader(tx))
 		res, err = b.callContract(ctx, call, b.pendingBlock, s)
@@ -644,7 +665,7 @@ func (b *SimulatedBackend) EstimateGas(ctx context.Context, call ethereum.CallMs
 	b.pendingState.SetTxContext(libcommon.Hash{}, libcommon.Hash{}, len(b.pendingBlock.Transactions()))
 
 	// Create a helper to check if a gas allowance results in an executable transaction
-	executable := func(gas uint64) (bool, *core.ExecutionResult, error) {
+	executable := func(gas uint64) (bool, *evmtypes.ExecutionResult, error) {
 		call.Gas = gas
 
 		snapshot := b.pendingState.Snapshot()
@@ -698,7 +719,7 @@ func (b *SimulatedBackend) EstimateGas(ctx context.Context, call ethereum.CallMs
 
 // callContract implements common code between normal and pending contract calls.
 // state is modified during execution, make sure to copy it if necessary.
-func (b *SimulatedBackend) callContract(_ context.Context, call ethereum.CallMsg, block *types.Block, statedb *state.IntraBlockState) (*core.ExecutionResult, error) {
+func (b *SimulatedBackend) callContract(_ context.Context, call ethereum.CallMsg, block *types.Block, statedb *state.IntraBlockState) (*evmtypes.ExecutionResult, error) {
 	const baseFeeUpperLimit = 880000000
 	// Ensure message is initialized properly.
 	if call.GasPrice == nil {
@@ -839,12 +860,17 @@ func (m callMsg) Gas() uint64                           { return m.CallMsg.Gas }
 func (m callMsg) Value() *uint256.Int                   { return m.CallMsg.Value }
 func (m callMsg) Data() []byte                          { return m.CallMsg.Data }
 func (m callMsg) AccessList() types2.AccessList         { return m.CallMsg.AccessList }
+<<<<<<< HEAD
 func (m callMsg) IsFree() bool                          { return false }
 func (m callMsg) IsFake() bool                          { return true }
 func (m callMsg) Mint() *uint256.Int                    { return nil }
 func (m callMsg) RollupCostData() types2.RollupCostData { return types2.RollupCostData{} }
 func (m callMsg) IsDepositTx() bool                     { return false }
 func (m callMsg) IsSystemTx() bool                      { return false }
+=======
+func (m callMsg) Authorizations() []types.Authorization { return m.CallMsg.Authorizations }
+func (m callMsg) IsFree() bool                          { return false }
+>>>>>>> v2.61.0
 
 func (m callMsg) BlobGas() uint64                { return misc.GetBlobGasUsed(len(m.CallMsg.BlobHashes)) }
 func (m callMsg) MaxFeePerBlobGas() *uint256.Int { return m.CallMsg.MaxFeePerBlobGas }

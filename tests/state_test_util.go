@@ -25,28 +25,28 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/erigontech/erigon-lib/config3"
 	"github.com/holiman/uint256"
-	"github.com/ledgerwatch/erigon-lib/config3"
 	"golang.org/x/crypto/sha3"
 
-	"github.com/ledgerwatch/erigon-lib/chain"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/hexutility"
-	"github.com/ledgerwatch/erigon-lib/common/length"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	types2 "github.com/ledgerwatch/erigon-lib/types"
+	"github.com/erigontech/erigon-lib/chain"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/hexutility"
+	"github.com/erigontech/erigon-lib/common/length"
+	"github.com/erigontech/erigon-lib/kv"
+	types2 "github.com/erigontech/erigon-lib/types"
 
-	"github.com/ledgerwatch/erigon/common"
-	"github.com/ledgerwatch/erigon/common/math"
-	"github.com/ledgerwatch/erigon/core"
-	"github.com/ledgerwatch/erigon/core/state"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/core/vm"
-	"github.com/ledgerwatch/erigon/crypto"
-	"github.com/ledgerwatch/erigon/rlp"
-	"github.com/ledgerwatch/erigon/turbo/rpchelper"
-	"github.com/ledgerwatch/erigon/turbo/trie"
-	"github.com/ledgerwatch/log/v3"
+	"github.com/erigontech/erigon-lib/log/v3"
+	"github.com/erigontech/erigon/common"
+	"github.com/erigontech/erigon/common/math"
+	"github.com/erigontech/erigon/core"
+	"github.com/erigontech/erigon/core/state"
+	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/core/vm"
+	"github.com/erigontech/erigon/crypto"
+	"github.com/erigontech/erigon/rlp"
+	"github.com/erigontech/erigon/turbo/rpchelper"
+	"github.com/erigontech/erigon/turbo/trie"
 )
 
 // StateTest checks transaction processing without block context.
@@ -86,17 +86,18 @@ type stPostState struct {
 }
 
 type stTransaction struct {
-	GasPrice             *math.HexOrDecimal256 `json:"gasPrice"`
-	MaxFeePerGas         *math.HexOrDecimal256 `json:"maxFeePerGas"`
-	MaxPriorityFeePerGas *math.HexOrDecimal256 `json:"maxPriorityFeePerGas"`
-	Nonce                math.HexOrDecimal64   `json:"nonce"`
-	GasLimit             []math.HexOrDecimal64 `json:"gasLimit"`
-	PrivateKey           hexutility.Bytes      `json:"secretKey"`
-	To                   string                `json:"to"`
-	Data                 []string              `json:"data"`
-	Value                []string              `json:"value"`
-	AccessLists          []*types2.AccessList  `json:"accessLists,omitempty"`
-	BlobGasFeeCap        *math.HexOrDecimal256 `json:"maxFeePerBlobGas,omitempty"`
+	GasPrice             *math.HexOrDecimal256     `json:"gasPrice"`
+	MaxFeePerGas         *math.HexOrDecimal256     `json:"maxFeePerGas"`
+	MaxPriorityFeePerGas *math.HexOrDecimal256     `json:"maxPriorityFeePerGas"`
+	Nonce                math.HexOrDecimal64       `json:"nonce"`
+	GasLimit             []math.HexOrDecimal64     `json:"gasLimit"`
+	PrivateKey           hexutility.Bytes          `json:"secretKey"`
+	To                   string                    `json:"to"`
+	Data                 []string                  `json:"data"`
+	Value                []string                  `json:"value"`
+	AccessLists          []*types2.AccessList      `json:"accessLists,omitempty"`
+	BlobGasFeeCap        *math.HexOrDecimal256     `json:"maxFeePerBlobGas,omitempty"`
+	Authorizations       []types.JsonAuthorization `json:"authorizationList,omitempty"`
 }
 
 //go:generate gencodec -type stEnv -field-override stEnvMarshaling -out gen_stenv.go
@@ -481,6 +482,18 @@ func toMessage(tx stTransaction, ps stPostState, baseFee *big.Int) (core.Message
 		false, /* isFake */
 		uint256.MustFromBig(blobFeeCap),
 	)
+
+	// Add authorizations if present.
+	if len(tx.Authorizations) > 0 {
+		authorizations := make([]types.Authorization, len(tx.Authorizations))
+		for i, auth := range tx.Authorizations {
+			authorizations[i], err = auth.ToAuthorization()
+			if err != nil {
+				return nil, err
+			}
+		}
+		msg.SetAuthorizations(authorizations)
+	}
 
 	return msg, nil
 }

@@ -1,4 +1,5 @@
 GO ?= go # if using docker, should not need to be installed/linked
+GOAMD64_VERSION ?= v2 # See https://go.dev/wiki/MinimumRequirements#microarchitecture-support
 GOBINREL = build/bin
 GOBIN = $(CURDIR)/$(GOBINREL)
 UNAME = $(shell uname) # Supported: Darwin, Linux
@@ -6,7 +7,7 @@ DOCKER := $(shell command -v docker 2> /dev/null)
 
 GIT_COMMIT ?= $(shell git rev-list -1 HEAD)
 GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
-GIT_TAG    ?= $(shell git describe --tags '--match=v*' --dirty)
+GIT_TAG    ?= $(shell git describe --tags '--match=*.*.*' --abbrev=7 --dirty)
 ERIGON_USER ?= erigon
 # if using volume-mounting data dir, then must exist on host OS
 DOCKER_UID ?= $(shell id -u)
@@ -34,6 +35,11 @@ ifeq ($(shell uname -s), Darwin)
 	endif
 endif
 
+# Configure GOAMD64 env.variable for AMD64 architecture:
+ifeq ($(shell uname -m),x86_64)
+	CPU_ARCH= GOAMD64=${GOAMD64_VERSION}
+endif
+
 # about netgo see: https://github.com/golang/go/issues/30310#issuecomment-471669125 and https://github.com/golang/go/issues/57757
 BUILD_TAGS = nosqlite,noboltdb
 
@@ -43,14 +49,18 @@ endif
 
 GOPRIVATE = github.com/erigontech/silkworm-go
 
+<<<<<<< HEAD
 PACKAGE = github.com/testinprod-io/op-erigon
+=======
+PACKAGE = github.com/erigontech/erigon
+>>>>>>> v2.61.0
 
 GO_FLAGS += -trimpath -tags $(BUILD_TAGS) -buildvcs=false
 GO_FLAGS += -ldflags "-X ${PACKAGE}/params.GitCommit=${GIT_COMMIT} -X ${PACKAGE}/params.GitBranch=${GIT_BRANCH} -X ${PACKAGE}/params.GitTag=${GIT_TAG}"
 
-GOBUILD = CGO_CFLAGS="$(CGO_CFLAGS)" CGO_LDFLAGS="$(CGO_LDFLAGS)" GOPRIVATE="$(GOPRIVATE)" $(GO) build $(GO_FLAGS)
-GO_DBG_BUILD = CGO_CFLAGS="$(CGO_CFLAGS) -DMDBX_DEBUG=1" CGO_LDFLAGS="$(CGO_LDFLAGS)" GOPRIVATE="$(GOPRIVATE)" $(GO) build -tags $(BUILD_TAGS),debug -gcflags=all="-N -l"  # see delve docs
-GOTEST = CGO_CFLAGS="$(CGO_CFLAGS)" CGO_LDFLAGS="$(CGO_LDFLAGS)" GOPRIVATE="$(GOPRIVATE)" GODEBUG=cgocheck=0 $(GO) test $(GO_FLAGS) ./... -p 2
+GOBUILD = ${CPU_ARCH} CGO_CFLAGS="$(CGO_CFLAGS)" CGO_LDFLAGS="$(CGO_LDFLAGS)" GOPRIVATE="$(GOPRIVATE)" $(GO) build $(GO_FLAGS)
+GO_DBG_BUILD = ${CPU_ARCH} CGO_CFLAGS="$(CGO_CFLAGS) -DMDBX_DEBUG=1" CGO_LDFLAGS="$(CGO_LDFLAGS)" GOPRIVATE="$(GOPRIVATE)" $(GO) build -tags $(BUILD_TAGS),debug -gcflags=all="-N -l"  # see delve docs
+GOTEST = ${CPU_ARCH} CGO_CFLAGS="$(CGO_CFLAGS)" CGO_LDFLAGS="$(CGO_LDFLAGS)" GOPRIVATE="$(GOPRIVATE)" GODEBUG=cgocheck=0 $(GO) test $(GO_FLAGS) ./... -p 2
 
 default: all
 
@@ -179,6 +189,18 @@ test-integration: test-erigon-lib
 test3-integration: test-erigon-lib
 	$(GOTEST) --timeout 240m -tags $(BUILD_TAGS),integration,e3
 
+## test-hive						run the hive tests locally off nektos/act workflows simulator
+test-hive:	
+	@if ! command -v act >/dev/null 2>&1; then \
+		echo "act command not found in PATH, please source it in PATH. If nektosact is not installed, install it by visiting https://nektosact.com/installation/index.html"; \
+	elif [ -z "$(GITHUB_TOKEN)"]; then \
+		echo "Please export GITHUB_TOKEN var in the environment" ; \
+	elif [ "$(SUITE)" = "eest" ]; then \
+		act -j test-hive-eest -s GITHUB_TOKEN=$(GITHUB_TOKEN) ; \
+	else \
+		act -j test-hive -s GITHUB_TOKEN=$(GITHUB_TOKEN) ; \
+	fi
+
 ## lint-deps:                         install lint dependencies
 lint-deps:
 	@cd erigon-lib && $(MAKE) lint-deps
@@ -282,7 +304,11 @@ install:
 	@echo "Copied files to $(DIST):"
 	@ls -al "$(DIST)"
 
+<<<<<<< HEAD
 PACKAGE_NAME          := github.com/testinprod-io/op-erigon
+=======
+PACKAGE_NAME          := github.com/erigontech/erigon
+>>>>>>> v2.61.0
 GOLANG_CROSS_VERSION  ?= v1.21.6
 
 .PHONY: release-dry-run

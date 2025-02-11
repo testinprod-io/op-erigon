@@ -21,20 +21,19 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
-
+	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/holiman/uint256"
-	"github.com/ledgerwatch/log/v3"
 
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/hexutility"
-	types2 "github.com/ledgerwatch/erigon-lib/types"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/hexutil"
+	"github.com/erigontech/erigon-lib/common/hexutility"
+	types2 "github.com/erigontech/erigon-lib/types"
 
-	"github.com/ledgerwatch/erigon/accounts/abi"
-	"github.com/ledgerwatch/erigon/common/math"
-	"github.com/ledgerwatch/erigon/core"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/eth/tracers/logger"
+	"github.com/erigontech/erigon/accounts/abi"
+	"github.com/erigontech/erigon/common/math"
+	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/core/vm/evmtypes"
+	"github.com/erigontech/erigon/eth/tracers/logger"
 )
 
 // CallArgs represents the arguments for a call.
@@ -177,7 +176,7 @@ type Account struct {
 	StateDiff *map[libcommon.Hash]libcommon.Hash `json:"stateDiff"`
 }
 
-func NewRevertError(result *core.ExecutionResult) *RevertError {
+func NewRevertError(result *evmtypes.ExecutionResult) *RevertError {
 	reason, errUnpack := abi.UnpackRevert(result.Revert())
 	err := errors.New("execution reverted")
 	if errUnpack == nil {
@@ -303,6 +302,9 @@ func RPCMarshalHeader(head *types.Header) map[string]interface{} {
 	}
 	if head.ParentBeaconBlockRoot != nil {
 		result["parentBeaconBlockRoot"] = head.ParentBeaconBlockRoot
+	}
+	if head.RequestsHash != nil {
+		result["requestsHash"] = head.RequestsHash
 	}
 
 	return result

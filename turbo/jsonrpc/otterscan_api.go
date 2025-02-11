@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/holiman/uint256"
-	"github.com/ledgerwatch/log/v3"
 	"golang.org/x/sync/errgroup"
 
+<<<<<<< HEAD
 	"github.com/ledgerwatch/erigon-lib/chain"
 	"github.com/ledgerwatch/erigon-lib/common"
 	hexutil2 "github.com/ledgerwatch/erigon-lib/common/hexutil"
@@ -31,6 +32,27 @@ import (
 	"github.com/ledgerwatch/erigon/turbo/adapter/ethapi"
 	"github.com/ledgerwatch/erigon/turbo/rpchelper"
 	"github.com/ledgerwatch/erigon/turbo/transactions"
+=======
+	"github.com/erigontech/erigon-lib/chain"
+	"github.com/erigontech/erigon-lib/common"
+	hexutil2 "github.com/erigontech/erigon-lib/common/hexutil"
+	"github.com/erigontech/erigon-lib/common/hexutility"
+	"github.com/erigontech/erigon-lib/kv"
+	"github.com/erigontech/erigon-lib/kv/iter"
+	"github.com/erigontech/erigon-lib/kv/order"
+	"github.com/erigontech/erigon-lib/kv/rawdbv3"
+	"github.com/erigontech/erigon/consensus"
+	"github.com/erigontech/erigon/core"
+	"github.com/erigontech/erigon/core/rawdb"
+	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/core/vm"
+	"github.com/erigontech/erigon/core/vm/evmtypes"
+	"github.com/erigontech/erigon/eth/ethutils"
+	"github.com/erigontech/erigon/rpc"
+	"github.com/erigontech/erigon/turbo/adapter/ethapi"
+	"github.com/erigontech/erigon/turbo/rpchelper"
+	"github.com/erigontech/erigon/turbo/transactions"
+>>>>>>> v2.61.0
 )
 
 // API_LEVEL Must be incremented every time new additions are made
@@ -118,6 +140,7 @@ func (api *OtterscanAPIImpl) getTransactionByHash(ctx context.Context, tx kv.Tx,
 	return txn, block, blockHash, blockNum, txnIndex, nil
 }
 
+<<<<<<< HEAD
 func (api *OtterscanAPIImpl) relayToHistoricalBackend(ctx context.Context, result interface{}, method string, args ...interface{}) error {
 	return api.historicalRPCService.CallContext(ctx, result, method, args...)
 }
@@ -280,6 +303,9 @@ func (api *OtterscanAPIImpl) translateRelayTraceResult(gethTrace *GethTrace, tra
 }
 
 func (api *OtterscanAPIImpl) runTracer(ctx context.Context, tx kv.Tx, hash common.Hash, tracer vm.EVMLogger) (*core.ExecutionResult, error) {
+=======
+func (api *OtterscanAPIImpl) runTracer(ctx context.Context, tx kv.Tx, hash common.Hash, tracer vm.EVMLogger) (*evmtypes.ExecutionResult, error) {
+>>>>>>> v2.61.0
 	txn, block, _, _, txIndex, err := api.getTransactionByHash(ctx, tx, hash)
 	if err != nil {
 		return nil, err
@@ -701,7 +727,7 @@ func delegateGetBlockByNumber(tx kv.Tx, b *types.Block, number rpc.BlockNumber, 
 	receipts := rawdb.ReadRawReceipts(tx, uint64(number.Int64()))
 	response, err := ethapi.RPCMarshalBlock(b, inclTx, inclTx, additionalFields, receipts)
 	if !inclTx {
-		delete(response, "transactions") // workaround for https://github.com/ledgerwatch/erigon/issues/4989#issuecomment-1218415666
+		delete(response, "transactions") // workaround for https://github.com/erigontech/erigon/issues/4989#issuecomment-1218415666
 	}
 	response["totalDifficulty"] = (*hexutil2.Big)(td)
 	response["transactionCount"] = b.Transactions().Len()

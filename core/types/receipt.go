@@ -23,6 +23,7 @@ import (
 	"io"
 	"math/big"
 
+<<<<<<< HEAD
 	"github.com/ledgerwatch/erigon-lib/chain"
 
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
@@ -33,6 +34,13 @@ import (
 
 	"github.com/ledgerwatch/erigon/crypto"
 	"github.com/ledgerwatch/erigon/rlp"
+=======
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/hexutil"
+	"github.com/erigontech/erigon-lib/common/hexutility"
+	"github.com/erigontech/erigon/crypto"
+	"github.com/erigontech/erigon/rlp"
+>>>>>>> v2.61.0
 )
 
 // go:generate gencodec -type Receipt -field-override receiptMarshaling -out gen_receipt_json.go
@@ -42,7 +50,7 @@ import (
 //   - https://github.com/ugorji/go/commit/8286c2dc986535d23e3fad8d3e816b9dd1e5aea6
 // however updating the lib has caused us issues in the past, and we don't have good unit test coverage for updating atm
 // we also use this for storing Receipts and Logs in the DB - we won't be doing that in Erigon 3
-// do not regen, more context: https://github.com/ledgerwatch/erigon/pull/10105#pullrequestreview-2027423601
+// do not regen, more context: https://github.com/erigontech/erigon/pull/10105#pullrequestreview-2027423601
 // go:generate codecgen -o receipt_codecgen_gen.go -r "^Receipts$|^Receipt$|^Logs$|^Log$" -st "codec" -j=false -nx=true -ta=true -oe=false -d 2 receipt.go log.go
 
 var (
@@ -347,7 +355,11 @@ func (r *Receipt) DecodeRLP(s *rlp.Stream) error {
 		}
 		r.Type = b[0]
 		switch r.Type {
+<<<<<<< HEAD
 		case AccessListTxType, DynamicFeeTxType, DepositTxType, BlobTxType:
+=======
+		case AccessListTxType, DynamicFeeTxType, BlobTxType, SetCodeTxType:
+>>>>>>> v2.61.0
 			if err := r.decodePayload(s); err != nil {
 				return err
 			}
@@ -573,6 +585,11 @@ func (rs Receipts) EncodeIndex(i int, w *bytes.Buffer) {
 		}
 	case BlobTxType:
 		w.WriteByte(BlobTxType)
+		if err := rlp.Encode(w, data); err != nil {
+			panic(err)
+		}
+	case SetCodeTxType:
+		w.WriteByte(SetCodeTxType)
 		if err := rlp.Encode(w, data); err != nil {
 			panic(err)
 		}

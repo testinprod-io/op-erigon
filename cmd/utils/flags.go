@@ -32,22 +32,23 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/c2h5oh/datasize"
-	"github.com/ledgerwatch/log/v3"
+	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/urfave/cli/v2"
 
-	"github.com/ledgerwatch/erigon-lib/chain/networkname"
-	"github.com/ledgerwatch/erigon-lib/chain/snapcfg"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/cmp"
-	"github.com/ledgerwatch/erigon-lib/common/datadir"
-	"github.com/ledgerwatch/erigon-lib/common/metrics"
-	libkzg "github.com/ledgerwatch/erigon-lib/crypto/kzg"
-	"github.com/ledgerwatch/erigon-lib/direct"
-	downloadercfg2 "github.com/ledgerwatch/erigon-lib/downloader/downloadercfg"
-	"github.com/ledgerwatch/erigon-lib/txpool/txpoolcfg"
+	"github.com/erigontech/erigon-lib/chain/networkname"
+	"github.com/erigontech/erigon-lib/chain/snapcfg"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/cmp"
+	"github.com/erigontech/erigon-lib/common/datadir"
+	"github.com/erigontech/erigon-lib/common/metrics"
+	libkzg "github.com/erigontech/erigon-lib/crypto/kzg"
+	"github.com/erigontech/erigon-lib/direct"
+	downloadercfg2 "github.com/erigontech/erigon-lib/downloader/downloadercfg"
+	"github.com/erigontech/erigon-lib/txpool/txpoolcfg"
 
+<<<<<<< HEAD
 	"github.com/ledgerwatch/erigon/cl/clparams"
 	"github.com/ledgerwatch/erigon/cmd/downloader/downloadernat"
 	"github.com/ledgerwatch/erigon/cmd/utils/flags"
@@ -68,6 +69,27 @@ import (
 	borsnaptype "github.com/ledgerwatch/erigon/polygon/bor/snaptype"
 	"github.com/ledgerwatch/erigon/rpc/rpccfg"
 	"github.com/ledgerwatch/erigon/turbo/logging"
+=======
+	"github.com/erigontech/erigon/cl/clparams"
+	"github.com/erigontech/erigon/cmd/downloader/downloadernat"
+	"github.com/erigontech/erigon/cmd/utils/flags"
+	common2 "github.com/erigontech/erigon/common"
+	"github.com/erigontech/erigon/common/paths"
+	"github.com/erigontech/erigon/consensus/ethash/ethashcfg"
+	"github.com/erigontech/erigon/core"
+	"github.com/erigontech/erigon/crypto"
+	"github.com/erigontech/erigon/eth/ethconfig"
+	"github.com/erigontech/erigon/eth/gasprice/gaspricecfg"
+	"github.com/erigontech/erigon/node/nodecfg"
+	"github.com/erigontech/erigon/p2p"
+	"github.com/erigontech/erigon/p2p/enode"
+	"github.com/erigontech/erigon/p2p/nat"
+	"github.com/erigontech/erigon/p2p/netutil"
+	"github.com/erigontech/erigon/params"
+	borsnaptype "github.com/erigontech/erigon/polygon/bor/snaptype"
+	"github.com/erigontech/erigon/rpc/rpccfg"
+	"github.com/erigontech/erigon/turbo/logging"
+>>>>>>> v2.61.0
 )
 
 // These are all the command line flags we support.
@@ -1992,6 +2014,7 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 
 	if ctx.IsSet(OverridePragueFlag.Name) {
 		cfg.OverridePragueTime = flags.GlobalBig(ctx, OverridePragueFlag.Name)
+		cfg.TxPool.OverridePragueTime = cfg.OverridePragueTime
 	}
 	if ctx.IsSet(OverrideShanghaiTime.Name) {
 		cfg.OverrideShanghaiTime = flags.GlobalBig(ctx, OverrideShanghaiTime.Name)

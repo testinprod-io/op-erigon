@@ -7,7 +7,11 @@ package types
 
 import (
 	"errors"
+<<<<<<< HEAD
 	pkg1_common "github.com/ledgerwatch/erigon-lib/common"
+=======
+	libcommon "github.com/erigontech/erigon-lib/common"
+>>>>>>> v2.61.0
 	codec1978 "github.com/ugorji/go/codec"
 	pkg2_big "math/big"
 	"runtime"

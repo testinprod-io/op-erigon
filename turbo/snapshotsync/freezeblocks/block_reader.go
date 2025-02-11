@@ -10,28 +10,28 @@ import (
 	"sort"
 	"time"
 
-	borsnaptype "github.com/ledgerwatch/erigon/polygon/bor/snaptype"
-	"github.com/ledgerwatch/log/v3"
+	"github.com/erigontech/erigon-lib/log/v3"
+	borsnaptype "github.com/erigontech/erigon/polygon/bor/snaptype"
 
-	"github.com/ledgerwatch/erigon-lib/common/hexutility"
-	"github.com/ledgerwatch/erigon/polygon/bor"
+	"github.com/erigontech/erigon-lib/common/hexutility"
+	"github.com/erigontech/erigon/polygon/bor"
 
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/dbg"
-	"github.com/ledgerwatch/erigon-lib/common/length"
-	"github.com/ledgerwatch/erigon-lib/downloader/snaptype"
-	"github.com/ledgerwatch/erigon-lib/gointerfaces"
-	"github.com/ledgerwatch/erigon-lib/gointerfaces/remote"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon-lib/recsplit"
-	"github.com/ledgerwatch/erigon/core/rawdb"
-	coresnaptype "github.com/ledgerwatch/erigon/core/snaptype"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/eth/ethconfig"
-	bortypes "github.com/ledgerwatch/erigon/polygon/bor/types"
-	"github.com/ledgerwatch/erigon/polygon/heimdall"
-	"github.com/ledgerwatch/erigon/rlp"
-	"github.com/ledgerwatch/erigon/turbo/services"
+	"github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/dbg"
+	"github.com/erigontech/erigon-lib/common/length"
+	"github.com/erigontech/erigon-lib/downloader/snaptype"
+	"github.com/erigontech/erigon-lib/gointerfaces"
+	"github.com/erigontech/erigon-lib/gointerfaces/remote"
+	"github.com/erigontech/erigon-lib/kv"
+	"github.com/erigontech/erigon-lib/recsplit"
+	"github.com/erigontech/erigon/core/rawdb"
+	coresnaptype "github.com/erigontech/erigon/core/snaptype"
+	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/eth/ethconfig"
+	bortypes "github.com/erigontech/erigon/polygon/bor/types"
+	"github.com/erigontech/erigon/polygon/heimdall"
+	"github.com/erigontech/erigon/rlp"
+	"github.com/erigontech/erigon/turbo/services"
 )
 
 var ErrSpanNotFound = errors.New("span not found")
@@ -712,33 +712,29 @@ func (r *BlockReader) blockWithSenders(ctx context.Context, tx kv.Getter, hash c
 		}
 		return
 	}
-	if txsAmount == 0 {
-		block = types.NewBlockFromStorage(hash, h, nil, b.Uncles, b.Withdrawals)
-		if len(senders) != block.Transactions().Len() {
-			if dbgLogs {
-				log.Info(dbgPrefix + fmt.Sprintf("found block with %d transactions, but %d senders", block.Transactions().Len(), len(senders)))
-			}
-			return block, senders, nil // no senders is fine - will recover them on the fly
-		}
-		block.SendersToTxs(senders)
-		return block, senders, nil
-	}
 
-	txnSeg, ok, release := r.sn.ViewSingleFile(coresnaptype.Transactions, blockHeight)
-	if !ok {
-		if dbgLogs {
-			log.Info(dbgPrefix+"no transactions file for this block num", "r.sn.BlocksAvailable()", r.sn.BlocksAvailable(), "r.sn.indicesReady", r.sn.indicesReady.Load())
-		}
-		return
-	}
-	defer release()
 	var txs []types.Transaction
-	txs, senders, err = r.txsFromSnapshot(baseTxnId, txsAmount, txnSeg, buf)
-	if err != nil {
-		return nil, nil, err
+	if txsAmount != 0 {
+		txnSeg, ok, release := r.sn.ViewSingleFile(coresnaptype.Transactions, blockHeight)
+		if !ok {
+			if dbgLogs {
+				log.Info(dbgPrefix+"no transactions file for this block num", "r.sn.BlocksAvailable()", r.sn.BlocksAvailable(), "r.sn.indicesReady", r.sn.indicesReady.Load())
+			}
+			return
+		}
+		defer release()
+		txs, senders, err = r.txsFromSnapshot(baseTxnId, txsAmount, txnSeg, buf)
+		if err != nil {
+			return nil, nil, err
+		}
+		release()
 	}
-	release()
 
+	if h.WithdrawalsHash == nil && len(b.Withdrawals) == 0 {
+		// Hack for Issue 12297
+		// Apparently some snapshots have pre-Shapella blocks with empty rather than nil withdrawals
+		b.Withdrawals = nil
+	}
 	block = types.NewBlockFromStorage(hash, h, txs, b.Uncles, b.Withdrawals)
 	if len(senders) != block.Transactions().Len() {
 		if dbgLogs {
@@ -824,7 +820,6 @@ func (r *BlockReader) bodyFromSnapshot(blockHeight uint64, sn *Segment, buf []by
 	if b == nil {
 		return nil, 0, 0, buf, nil
 	}
-
 	body := new(types.Body)
 	body.Uncles = b.Uncles
 	body.Withdrawals = b.Withdrawals

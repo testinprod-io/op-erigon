@@ -8,9 +8,10 @@ import (
 	"math"
 	"strings"
 
+	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/holiman/uint256"
-	"github.com/ledgerwatch/log/v3"
 
+<<<<<<< HEAD
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/hexutil"
 	"github.com/ledgerwatch/erigon-lib/common/hexutility"
@@ -29,6 +30,27 @@ import (
 	"github.com/ledgerwatch/erigon/turbo/rpchelper"
 	"github.com/ledgerwatch/erigon/turbo/shards"
 	"github.com/ledgerwatch/erigon/turbo/transactions"
+=======
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/hexutil"
+	"github.com/erigontech/erigon-lib/common/hexutility"
+	"github.com/erigontech/erigon-lib/kv"
+	types2 "github.com/erigontech/erigon-lib/types"
+
+	math2 "github.com/erigontech/erigon/common/math"
+	"github.com/erigontech/erigon/core"
+	"github.com/erigontech/erigon/core/state"
+	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/core/types/accounts"
+	"github.com/erigontech/erigon/core/vm"
+	"github.com/erigontech/erigon/core/vm/evmtypes"
+	"github.com/erigontech/erigon/eth/tracers"
+	"github.com/erigontech/erigon/polygon/tracer"
+	"github.com/erigontech/erigon/rpc"
+	"github.com/erigontech/erigon/turbo/rpchelper"
+	"github.com/erigontech/erigon/turbo/shards"
+	"github.com/erigontech/erigon/turbo/transactions"
+>>>>>>> v2.61.0
 )
 
 const (
@@ -1017,7 +1039,7 @@ func (api *TraceAPIImpl) Call(ctx context.Context, args TraceCallParam, traceTyp
 	}()
 
 	gp := new(core.GasPool).AddGas(msg.Gas()).AddBlobGas(msg.BlobGas())
-	var execResult *core.ExecutionResult
+	var execResult *evmtypes.ExecutionResult
 	ibs.SetTxContext(libcommon.Hash{}, libcommon.Hash{}, 0)
 	execResult, err = core.ApplyMessage(evm, msg, gp, true /* refunds */, true /* gasBailout */)
 	if err != nil {
@@ -1269,7 +1291,7 @@ func (api *TraceAPIImpl) doCallMany(ctx context.Context, dbtx kv.Tx, stateReader
 		ibs.Reset()
 
 		var txFinalized bool
-		var execResult *core.ExecutionResult
+		var execResult *evmtypes.ExecutionResult
 		if args.isBorStateSyncTxn {
 			txFinalized = true
 			execResult, err = tracer.TraceBorStateSyncTxnTraceAPI(
