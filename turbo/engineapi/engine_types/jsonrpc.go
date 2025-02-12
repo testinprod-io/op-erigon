@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-	"github.com/ledgerwatch/erigon/params"
+	"github.com/erigontech/erigon/params"
 
 	"github.com/erigontech/erigon-lib/common/hexutil"
 
@@ -91,11 +91,11 @@ type ForkChoiceUpdatedResponse struct {
 }
 
 type GetPayloadResponse struct {
-<<<<<<< HEAD
-	ExecutionPayload      *ExecutionPayload `json:"executionPayload" gencodec:"required"`
-	BlockValue            *hexutil.Big      `json:"blockValue"`
-	BlobsBundle           *BlobsBundleV1    `json:"blobsBundle"`
-	ShouldOverrideBuilder bool              `json:"shouldOverrideBuilder"`
+	ExecutionPayload      *ExecutionPayload  `json:"executionPayload" gencodec:"required"`
+	BlockValue            *hexutil.Big       `json:"blockValue"`
+	BlobsBundle           *BlobsBundleV1     `json:"blobsBundle"`
+	ExecutionRequests     []hexutility.Bytes `json:"executionRequests"`
+	ShouldOverrideBuilder bool               `json:"shouldOverrideBuilder"`
 
 	// OP-Stack: Ecotone specific fields
 	ParentBeaconBlockRoot *common.Hash `json:"parentBeaconBlockRoot,omitempty"`
@@ -104,13 +104,6 @@ type GetPayloadResponse struct {
 type SuperchainSignal struct {
 	Recommended params.ProtocolVersion `json:"recommended"`
 	Required    params.ProtocolVersion `json:"required"`
-=======
-	ExecutionPayload      *ExecutionPayload  `json:"executionPayload" gencodec:"required"`
-	BlockValue            *hexutil.Big       `json:"blockValue"`
-	BlobsBundle           *BlobsBundleV1     `json:"blobsBundle"`
-	ExecutionRequests     []hexutility.Bytes `json:"executionRequests"`
-	ShouldOverrideBuilder bool               `json:"shouldOverrideBuilder"`
->>>>>>> v2.61.0
 }
 
 type StringifiedError struct{ err error }

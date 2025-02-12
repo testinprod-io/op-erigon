@@ -8,13 +8,8 @@ import (
 	"github.com/erigontech/erigon-lib/common/hexutil"
 	"math/big"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/hexutility"
-=======
 	libcommon "github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/hexutility"
->>>>>>> v2.61.0
 )
 
 var _ = (*receiptMarshaling)(nil)
@@ -28,10 +23,10 @@ func (r Receipt) MarshalJSON() ([]byte, error) {
 		CumulativeGasUsed     hexutil.Uint64   `json:"cumulativeGasUsed" gencodec:"required" codec:"3"`
 		Bloom                 Bloom            `json:"logsBloom"         gencodec:"required" codec:"-"`
 		Logs                  Logs             `json:"logs"              gencodec:"required" codec:"-"`
-		TxHash                common.Hash      `json:"transactionHash" gencodec:"required" codec:"-"`
-		ContractAddress       common.Address   `json:"contractAddress" codec:"-"`
+		TxHash                libcommon.Hash      `json:"transactionHash" gencodec:"required" codec:"-"`
+		ContractAddress       libcommon.Address   `json:"contractAddress" codec:"-"`
 		GasUsed               hexutil.Uint64   `json:"gasUsed" gencodec:"required" codec:"-"`
-		BlockHash             common.Hash      `json:"blockHash,omitempty" codec:"-"`
+		BlockHash             libcommon.Hash      `json:"blockHash,omitempty" codec:"-"`
 		BlockNumber           *hexutil.Big     `json:"blockNumber,omitempty" codec:"-"`
 		TransactionIndex      hexutil.Uint     `json:"transactionIndex" codec:"-"`
 		L1GasPrice            *hexutil.Big     `json:"l1GasPrice,omitempty"`
@@ -72,10 +67,10 @@ func (r *Receipt) UnmarshalJSON(input []byte) error {
 		CumulativeGasUsed     *hexutil.Uint64   `json:"cumulativeGasUsed" gencodec:"required" codec:"3"`
 		Bloom                 *Bloom            `json:"logsBloom"         gencodec:"required" codec:"-"`
 		Logs                  *Logs             `json:"logs"              gencodec:"required" codec:"-"`
-		TxHash                *common.Hash      `json:"transactionHash" gencodec:"required" codec:"-"`
-		ContractAddress       *common.Address   `json:"contractAddress" codec:"-"`
+		TxHash                *libcommon.Hash      `json:"transactionHash" gencodec:"required" codec:"-"`
+		ContractAddress       *libcommon.Address   `json:"contractAddress" codec:"-"`
 		GasUsed               *hexutil.Uint64   `json:"gasUsed" gencodec:"required" codec:"-"`
-		BlockHash             *common.Hash      `json:"blockHash,omitempty" codec:"-"`
+		BlockHash             *libcommon.Hash      `json:"blockHash,omitempty" codec:"-"`
 		BlockNumber           *hexutil.Big      `json:"blockNumber,omitempty" codec:"-"`
 		TransactionIndex      *hexutil.Uint     `json:"transactionIndex" codec:"-"`
 		L1GasPrice            *hexutil.Big      `json:"l1GasPrice,omitempty"`

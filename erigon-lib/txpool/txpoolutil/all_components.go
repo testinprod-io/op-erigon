@@ -145,23 +145,18 @@ func AllComponents(ctx context.Context, cfg txpoolcfg.Config, cache kvcache.Cach
 		pragueTime = cfg.OverridePragueTime
 	}
 
-<<<<<<< HEAD:erigon-lib/txpool/txpooluitl/all_components.go
 	regolithTime := chainConfig.RegolithTime
 	canyonTime := chainConfig.CanyonTime
 	ecotoneTime := chainConfig.EcotoneTime
 	fjordTime := chainConfig.FjordTime
 
-	var pool txpool.Pool
-	txPool, err := txpool.New(newTxs, chainDB, cfg, cache, *chainID, shanghaiTime, agraBlock, cancunTime,
-		regolithTime, canyonTime, ecotoneTime, fjordTime,
-=======
 	txPool, err := txpool.New(newTxs, chainDB, cfg, cache, *chainID, shanghaiTime, agraBlock, cancunTime, pragueTime,
->>>>>>> v2.61.0:erigon-lib/txpool/txpoolutil/all_components.go
+		regolithTime, canyonTime, ecotoneTime, fjordTime,
 		maxBlobsPerBlock, feeCalculator, logger)
 	if err != nil {
 		return nil, nil, nil, nil, nil, err
 	}
-	pool = txpool.Pool(txPool)
+	pool := txpool.Pool(txPool)
 
 	fetch := txpool.NewFetch(ctx, sentryClients, pool, stateChangesClient, chainDB, txPoolDB, *chainID, logger)
 	//fetch.ConnectCore()

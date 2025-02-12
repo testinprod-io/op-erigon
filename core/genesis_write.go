@@ -29,12 +29,9 @@ import (
 	"sync"
 
 	"github.com/c2h5oh/datasize"
-<<<<<<< HEAD
-	"github.com/ethereum-optimism/superchain-registry/superchain"
-=======
 	"github.com/erigontech/erigon-lib/config3"
 	"github.com/erigontech/erigon-lib/log/v3"
->>>>>>> v2.61.0
+	"github.com/ethereum-optimism/superchain-registry/superchain"
 	"github.com/holiman/uint256"
 
 	"github.com/erigontech/erigon-lib/chain"

@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/erigontech/erigon-lib/fastlz"
 	"io"
 	"math/big"
 	"sync/atomic"
@@ -28,19 +29,11 @@ import (
 	"github.com/holiman/uint256"
 	"github.com/protolambda/ztyp/codec"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/chain"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/fixedgas"
-	fastlz "github.com/ledgerwatch/erigon-lib/fastlz"
-	types2 "github.com/ledgerwatch/erigon-lib/types"
-=======
 	"github.com/erigontech/erigon-lib/chain"
 	libcommon "github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/fixedgas"
 	libcrypto "github.com/erigontech/erigon-lib/crypto"
 	types2 "github.com/erigontech/erigon-lib/types"
->>>>>>> v2.61.0
 
 	"github.com/erigontech/erigon/common/math"
 	"github.com/erigontech/erigon/rlp"
@@ -59,11 +52,8 @@ const (
 	AccessListTxType
 	DynamicFeeTxType
 	BlobTxType
-<<<<<<< HEAD
-	DepositTxType = 0x7E
-=======
 	SetCodeTxType
->>>>>>> v2.61.0
+	DepositTxType = 0x7E
 )
 
 // Transaction is an Ethereum transaction.
@@ -111,9 +101,8 @@ type Transaction interface {
 // implementations of different transaction types
 type TransactionMisc struct {
 	// caches
-<<<<<<< HEAD
-	hash atomic.Value //nolint:structcheck
-	from atomic.Value
+	hash atomic.Pointer[libcommon.Hash]
+	from atomic.Pointer[libcommon.Address]
 
 	// cache how much gas the tx takes on L1 for its share of rollup data
 	rollupGas atomic.Pointer[types2.RollupCostData]
@@ -161,10 +150,6 @@ func (tm *TransactionMisc) computeRollupGas(tx interface {
 	total := types2.RollupCostData{Zeroes: c.zeroes, Ones: c.ones, FastLzSize: c.fastLzSize}
 	tm.rollupGas.Store(&total)
 	return total
-=======
-	hash atomic.Pointer[libcommon.Hash]
-	from atomic.Pointer[libcommon.Address]
->>>>>>> v2.61.0
 }
 
 // RLP-marshalled legacy transactions and binary-marshalled (not wrapped into an RLP string) typed (EIP-2718) transactions
@@ -250,22 +235,9 @@ func UnmarshalTransactionFromBinary(data []byte, blobTxnsAreWrappedWithBlobs boo
 	case AccessListTxType:
 		t = &AccessListTx{}
 	case DynamicFeeTxType:
-<<<<<<< HEAD
-		t := &DynamicFeeTransaction{}
-		if err := t.DecodeRLP(s); err != nil {
-			return nil, err
-		}
-		return t, nil
-	case DepositTxType:
-		s := rlp.NewStream(bytes.NewReader(data[1:]), uint64(len(data)-1))
-		t := &DepositTx{}
-		if err := t.DecodeRLP(s); err != nil {
-			return nil, err
-		}
-		return t, nil
-=======
 		t = &DynamicFeeTransaction{}
->>>>>>> v2.61.0
+	case DepositTxType:
+		t = &DepositTx{}
 	case BlobTxType:
 		if blobTxnsAreWrappedWithBlobs {
 			t = &BlobTxWrapper{}
@@ -488,16 +460,14 @@ type Message struct {
 	checkNonce       bool
 	isFree           bool
 	blobHashes       []libcommon.Hash
-<<<<<<< HEAD
 	isFake           bool
+	isSystemTx       bool
 
-	isSystemTx  bool
+	authorizations []Authorization
+
 	isDepositTx bool
 	mint        *uint256.Int
 	l1CostGas   types2.RollupCostData
-=======
-	authorizations   []Authorization
->>>>>>> v2.61.0
 }
 
 func NewMessage(from libcommon.Address, to *libcommon.Address, nonce uint64, amount *uint256.Int, gasLimit uint64,

@@ -203,20 +203,6 @@ func (e *EthereumExecutionModule) GetAssembledBlock(ctx context.Context, req *ex
 		}
 	}
 
-<<<<<<< HEAD
-	data := execution.AssembledBlockData{
-		ExecutionPayload: payload,
-		BlockValue:       gointerfaces.ConvertUint256IntToH256(blockValue),
-		BlobsBundle:      blobsBundle,
-	}
-
-	if header.ParentBeaconBlockRoot != nil {
-		data.ParentBeaconBlockRoot = gointerfaces.ConvertHashToH256(*header.ParentBeaconBlockRoot)
-	}
-
-	return &execution.GetAssembledBlockResponse{
-		Data: &data,
-=======
 	var requestsBundle types2.RequestsBundle
 	if blockWithReceipts.Requests != nil {
 		requests := make([][]byte, len(types.KnownRequestTypes))
@@ -234,14 +220,19 @@ func (e *EthereumExecutionModule) GetAssembledBlock(ctx context.Context, req *ex
 		requestsBundle = types2.RequestsBundle{Requests: requests}
 	}
 
+	data := execution.AssembledBlockData{
+		ExecutionPayload: payload,
+		BlockValue:       gointerfaces.ConvertUint256IntToH256(blockValue),
+		BlobsBundle:      blobsBundle,
+		Requests:         &requestsBundle,
+	}
+
+	if header.ParentBeaconBlockRoot != nil {
+		data.ParentBeaconBlockRoot = gointerfaces.ConvertHashToH256(*header.ParentBeaconBlockRoot)
+	}
+
 	return &execution.GetAssembledBlockResponse{
-		Data: &execution.AssembledBlockData{
-			ExecutionPayload: payload,
-			BlockValue:       gointerfaces.ConvertUint256IntToH256(blockValue),
-			BlobsBundle:      blobsBundle,
-			Requests:         &requestsBundle,
-		},
->>>>>>> v2.61.0
+		Data: &data,
 		Busy: false,
 	}, nil
 }

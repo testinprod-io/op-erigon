@@ -20,27 +20,16 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/erigontech/erigon-lib/chain"
 	"io"
 	"math/big"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/chain"
-
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
-	"github.com/ledgerwatch/erigon-lib/common/hexutility"
-
-	"github.com/ledgerwatch/erigon-lib/opstack"
-
-	"github.com/ledgerwatch/erigon/crypto"
-	"github.com/ledgerwatch/erigon/rlp"
-=======
 	libcommon "github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/hexutil"
 	"github.com/erigontech/erigon-lib/common/hexutility"
+	"github.com/erigontech/erigon-lib/opstack"
 	"github.com/erigontech/erigon/crypto"
 	"github.com/erigontech/erigon/rlp"
->>>>>>> v2.61.0
 )
 
 // go:generate gencodec -type Receipt -field-override receiptMarshaling -out gen_receipt_json.go
@@ -355,11 +344,7 @@ func (r *Receipt) DecodeRLP(s *rlp.Stream) error {
 		}
 		r.Type = b[0]
 		switch r.Type {
-<<<<<<< HEAD
-		case AccessListTxType, DynamicFeeTxType, DepositTxType, BlobTxType:
-=======
-		case AccessListTxType, DynamicFeeTxType, BlobTxType, SetCodeTxType:
->>>>>>> v2.61.0
+		case AccessListTxType, DynamicFeeTxType, DepositTxType, BlobTxType, SetCodeTxType:
 			if err := r.decodePayload(s); err != nil {
 				return err
 			}

@@ -17,13 +17,9 @@
 package nodecfg
 
 import (
-<<<<<<< HEAD
 	"github.com/c2h5oh/datasize"
-	"github.com/ledgerwatch/erigon-lib/direct"
-	"github.com/ledgerwatch/erigon-lib/kv"
-=======
 	"github.com/erigontech/erigon-lib/direct"
->>>>>>> v2.61.0
+	"github.com/erigontech/erigon-lib/kv"
 
 	"github.com/erigontech/erigon/p2p"
 	"github.com/erigontech/erigon/p2p/nat"

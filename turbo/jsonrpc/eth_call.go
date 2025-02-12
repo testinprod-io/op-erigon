@@ -4,23 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/erigontech/erigon-lib/opstack"
 	"math/big"
 
-<<<<<<< HEAD
-	"github.com/holiman/uint256"
-	"github.com/ledgerwatch/log/v3"
-	"google.golang.org/grpc"
-
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
-	"github.com/ledgerwatch/erigon-lib/common/hexutility"
-	"github.com/ledgerwatch/erigon-lib/gointerfaces"
-	txpool_proto "github.com/ledgerwatch/erigon-lib/gointerfaces/txpool"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon-lib/kv/membatchwithdb"
-	"github.com/ledgerwatch/erigon-lib/opstack"
-	types2 "github.com/ledgerwatch/erigon-lib/types"
-=======
 	"github.com/erigontech/erigon-lib/kv/membatchwithdb"
 	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/holiman/uint256"
@@ -33,7 +19,6 @@ import (
 	txpool_proto "github.com/erigontech/erigon-lib/gointerfaces/txpool"
 	"github.com/erigontech/erigon-lib/kv"
 	types2 "github.com/erigontech/erigon-lib/types"
->>>>>>> v2.61.0
 
 	"github.com/erigontech/erigon/core"
 	"github.com/erigontech/erigon/core/state"

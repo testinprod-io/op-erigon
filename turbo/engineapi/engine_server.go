@@ -6,6 +6,9 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/erigontech/erigon/consensus/misc"
+	"github.com/erigontech/erigon/eth/ethconfig"
+	"github.com/erigontech/erigon/params"
 	"math/big"
 	"sync"
 	"time"
@@ -26,27 +29,6 @@ import (
 	"github.com/erigontech/erigon-lib/kv/kvcache"
 	libstate "github.com/erigontech/erigon-lib/state"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/cli"
-	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/cli/httpcfg"
-	"github.com/ledgerwatch/erigon/common"
-	"github.com/ledgerwatch/erigon/common/math"
-	"github.com/ledgerwatch/erigon/consensus"
-	"github.com/ledgerwatch/erigon/consensus/merge"
-	"github.com/ledgerwatch/erigon/consensus/misc"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/eth/ethconfig"
-	"github.com/ledgerwatch/erigon/params"
-	"github.com/ledgerwatch/erigon/rpc"
-	"github.com/ledgerwatch/erigon/turbo/engineapi/engine_block_downloader"
-	"github.com/ledgerwatch/erigon/turbo/engineapi/engine_helpers"
-	"github.com/ledgerwatch/erigon/turbo/engineapi/engine_types"
-	"github.com/ledgerwatch/erigon/turbo/execution/eth1/eth1_chain_reader.go"
-	"github.com/ledgerwatch/erigon/turbo/jsonrpc"
-	"github.com/ledgerwatch/erigon/turbo/rpchelper"
-	"github.com/ledgerwatch/erigon/turbo/services"
-	"github.com/ledgerwatch/erigon/turbo/stages/headerdownload"
-=======
 	"github.com/erigontech/erigon/cmd/rpcdaemon/cli"
 	"github.com/erigontech/erigon/cmd/rpcdaemon/cli/httpcfg"
 	"github.com/erigontech/erigon/common"
@@ -63,7 +45,6 @@ import (
 	"github.com/erigontech/erigon/turbo/rpchelper"
 	"github.com/erigontech/erigon/turbo/services"
 	"github.com/erigontech/erigon/turbo/stages/headerdownload"
->>>>>>> v2.61.0
 )
 
 type EngineServer struct {
@@ -194,7 +175,6 @@ func (s *EngineServer) newPayload(ctx context.Context, req *engine_types.Executi
 		TxHash:      types.DeriveSha(types.BinaryTransactions(txs)),
 	}
 
-<<<<<<< HEAD
 	// Payload must have eip-1559 params in ExtraData after Holocene
 	if s.config.IsHolocene(req.Timestamp.Uint64()) {
 		if err := misc.ValidateHoloceneExtraData(req.ExtraData); err != nil {
@@ -202,10 +182,7 @@ func (s *EngineServer) newPayload(ctx context.Context, req *engine_types.Executi
 		}
 	}
 
-	var withdrawals []*types.Withdrawal
-=======
 	var withdrawals types.Withdrawals
->>>>>>> v2.61.0
 	if version >= clparams.CapellaVersion {
 		withdrawals = req.Withdrawals
 	}
@@ -514,16 +491,20 @@ func (s *EngineServer) getPayload(ctx context.Context, payloadId uint64, version
 	}
 
 	ts := data.ExecutionPayload.Timestamp
-<<<<<<< HEAD
-	if s.config.IsCancun(ts) && version < clparams.DenebVersion {
+	if (!s.config.IsCancun(ts) && version >= clparams.DenebVersion) ||
+		(s.config.IsCancun(ts) && version < clparams.DenebVersion) ||
+		(!s.config.IsPrague(ts) && version >= clparams.ElectraVersion) ||
+		(s.config.IsPrague(ts) && version < clparams.ElectraVersion) {
 		return nil, &rpc.UnsupportedForkError{Message: "Unsupported fork"}
 	}
 
 	response := engine_types.GetPayloadResponse{
-		ExecutionPayload: engine_types.ConvertPayloadFromRpc(data.ExecutionPayload),
-		BlockValue:       (*hexutil.Big)(gointerfaces.ConvertH256ToUint256Int(data.BlockValue).ToBig()),
-		BlobsBundle:      engine_types.ConvertBlobsFromRpc(data.BlobsBundle),
+		ExecutionPayload:  engine_types.ConvertPayloadFromRpc(data.ExecutionPayload),
+		BlockValue:        (*hexutil.Big)(gointerfaces.ConvertH256ToUint256Int(data.BlockValue).ToBig()),
+		BlobsBundle:       engine_types.ConvertBlobsFromRpc(data.BlobsBundle),
+		ExecutionRequests: executionRequests,
 	}
+
 	if s.config.IsOptimism() && s.config.IsCancun(ts) && version >= clparams.DenebVersion {
 		if data.ParentBeaconBlockRoot == nil {
 			panic("missing ParentBeaconBlockRoot in Ecotone block")
@@ -533,21 +514,6 @@ func (s *EngineServer) getPayload(ctx context.Context, payloadId uint64, version
 	}
 
 	return &response, nil
-=======
-	if (!s.config.IsCancun(ts) && version >= clparams.DenebVersion) ||
-		(s.config.IsCancun(ts) && version < clparams.DenebVersion) ||
-		(!s.config.IsPrague(ts) && version >= clparams.ElectraVersion) ||
-		(s.config.IsPrague(ts) && version < clparams.ElectraVersion) {
-		return nil, &rpc.UnsupportedForkError{Message: "Unsupported fork"}
-	}
-
-	return &engine_types.GetPayloadResponse{
-		ExecutionPayload:  engine_types.ConvertPayloadFromRpc(data.ExecutionPayload),
-		BlockValue:        (*hexutil.Big)(gointerfaces.ConvertH256ToUint256Int(data.BlockValue).ToBig()),
-		BlobsBundle:       engine_types.ConvertBlobsFromRpc(data.BlobsBundle),
-		ExecutionRequests: executionRequests,
-	}, nil
->>>>>>> v2.61.0
 }
 
 // engineForkChoiceUpdated either states new block head or request the assembling of a new block
@@ -640,7 +606,6 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 		req.ParentBeaconBlockRoot = gointerfaces.ConvertHashToH256(*payloadAttributes.ParentBeaconBlockRoot)
 	}
 
-<<<<<<< HEAD
 	if s.config.Optimism != nil {
 		if payloadAttributes.GasLimit == nil {
 			return nil, &engine_helpers.InvalidPayloadAttributesErr
@@ -659,8 +624,6 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 		req.GasLimit = (*uint64)(payloadAttributes.GasLimit)
 	}
 
-	resp, err := s.executionService.AssembleBlock(ctx, req)
-=======
 	var resp *execution.AssembleBlockResponse
 
 	execBusy, err := waitForStuff(func() (bool, error) {
@@ -670,7 +633,7 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 		}
 		return resp.Busy, nil
 	})
->>>>>>> v2.61.0
+
 	if err != nil {
 		return nil, err
 	}

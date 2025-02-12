@@ -23,20 +23,16 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"github.com/erigontech/erigon-lib/chain"
 	"math"
 	"math/big"
 	"time"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/chain"
-	"github.com/ledgerwatch/erigon-lib/kv/dbutils"
-=======
 	"github.com/erigontech/erigon-lib/kv/dbutils"
 	"github.com/erigontech/erigon/core/rawdb/utils"
 	"github.com/erigontech/erigon/core/types"
 	"github.com/erigontech/erigon/ethdb/cbor"
 	"github.com/erigontech/erigon/rlp"
->>>>>>> v2.61.0
 
 	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/gballet/go-verkle"

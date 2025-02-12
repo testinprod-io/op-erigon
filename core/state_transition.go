@@ -359,15 +359,14 @@ func (st *StateTransition) preCheck(gasBailout bool) error {
 //
 // However if any consensus issue encountered, return the error directly with
 // nil evm execution result.
-<<<<<<< HEAD
-func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*ExecutionResult, error) {
+func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*evmtypes.ExecutionResult, error) {
 	if mint := st.msg.Mint(); mint != nil {
 		st.state.AddBalance(st.msg.From(), mint)
 	}
 	snap := st.state.Snapshot()
 
 	result, err := st.innerTransitionDb(refunds, gasBailout)
-	// Failed deposits must still be included. Unless we cannot produce the block at all due to the gas limit.
+	// Failed deposits₩ must still be included. Unless we cannot produce the block at all due to the gas limit.
 	// On deposit failure, we rewind any state changes from after the minting, and increment the nonce.
 	if err != nil && err != ErrGasLimitReached && st.msg.IsDepositTx() {
 		st.state.RevertToSnapshot(snap)
@@ -381,7 +380,7 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*Executi
 		if st.msg.IsSystemTx() && !st.evm.ChainConfig().IsRegolith(st.evm.Context.Time) {
 			gasUsed = 0
 		}
-		result = &ExecutionResult{
+		result = &evmtypes.ExecutionResult{
 			UsedGas:    gasUsed,
 			Err:        fmt.Errorf("failed deposit: %w", err),
 			ReturnData: nil,
@@ -392,22 +391,12 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*Executi
 
 }
 
-func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*ExecutionResult, error) {
-	coinbase := st.evm.Context.Coinbase
-	var input1 *uint256.Int
-	var input2 *uint256.Int
-	if st.isBor {
-		input1 = st.state.GetBalance(st.msg.From()).Clone()
-		input2 = st.state.GetBalance(coinbase).Clone()
-	}
-=======
-func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*evmtypes.ExecutionResult, error) {
+func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*evmtypes.ExecutionResult, error) {
 	coinbase := st.evm.Context.Coinbase
 
 	senderInitBalance := st.state.GetBalance(st.msg.From()).Clone()
 	coinbaseInitBalance := st.state.GetBalance(coinbase).Clone()
 
->>>>>>> v2.61.0
 	// First check this message satisfies all consensus rules before
 	// applying the message. The rules include these clauses
 	//
@@ -558,7 +547,7 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*evmtype
 		if st.msg.IsSystemTx() {
 			gasUsed = 0
 		}
-		return &ExecutionResult{
+		return &evmtypes.ExecutionResult{
 			UsedGas:    gasUsed,
 			Err:        vmerr,
 			ReturnData: ret,
@@ -578,7 +567,7 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*evmtype
 	}
 	if st.msg.IsDepositTx() && rules.IsOptimismRegolith {
 		// Skip coinbase payments for deposit tx in Regolith
-		return &ExecutionResult{
+		return &evmtypes.ExecutionResult{
 			UsedGas:    st.gasUsed(),
 			Err:        vmerr,
 			ReturnData: ret,

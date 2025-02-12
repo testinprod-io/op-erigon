@@ -11,14 +11,9 @@ import (
 	"github.com/holiman/uint256"
 	jsoniter "github.com/json-iterator/go"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
-	"github.com/ledgerwatch/erigon-lib/opstack"
-=======
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/hexutil"
->>>>>>> v2.61.0
+	"github.com/erigontech/erigon-lib/opstack"
 
 	"github.com/erigontech/erigon/common/math"
 	"github.com/erigontech/erigon/core"

@@ -4,17 +4,10 @@ run-name: Build release ${{ inputs.release_version }} from branch ${{ inputs.che
 env:
   APPLICATION: "op-erigon"
   BUILDER_IMAGE: "golang:1.22-bookworm"
-<<<<<<< HEAD
-  DOCKER_BASE_IMAGE: "debian:12.7-slim"
+  DOCKER_BASE_IMAGE: "debian:12.8-slim"
   APP_REPO: "testinprod-io/op-erigon"
   PACKAGE: "github.com/testinprod-io/op-erigon"
   DOCKERHUB_REPOSITORY: "testinprod/op-erigon"
-=======
-  DOCKER_BASE_IMAGE: "debian:12.8-slim"
-  APP_REPO: "erigontech/erigon"
-  PACKAGE: "github.com/erigontech/erigon"
-  DOCKERHUB_REPOSITORY: "erigontech/erigon"
->>>>>>> v2.61.0
   DOCKERFILE_PATH: "Dockerfile.release"
   LABEL_DESCRIPTION: "Erigon is an implementation of Ethereum (execution layer with embeddable consensus layer), on the efficiency frontier. Archive Node by default."
 

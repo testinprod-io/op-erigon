@@ -57,7 +57,6 @@ RUN --mount=type=bind,from=temporary,source=/tmp/${APPLICATION},target=/tmp/${AP
         echo "Done." ; \
     fi && \    
     install -d -o ${USER} -g ${GROUP} /home/${USER}/.local /home/${USER}/.local/share /home/${USER}/.local/share/erigon && \
-<<<<<<< HEAD
     install -o ${USER} -g ${GROUP} /tmp/${APPLICATION}/erigon /usr/local/bin/ && \
     install -o ${USER} -g ${GROUP} /tmp/${APPLICATION}/integration /usr/local/bin/
 #    install -o ${USER} -g ${GROUP} /tmp/${APPLICATION}/diag /usr/local/bin/ && \
@@ -65,15 +64,6 @@ RUN --mount=type=bind,from=temporary,source=/tmp/${APPLICATION},target=/tmp/${AP
 #    install -o ${USER} -g ${GROUP} /tmp/${APPLICATION}/txpool /usr/local/bin/ && \
 #    install -o ${USER} -g ${GROUP} /tmp/${APPLICATION}/downloader /usr/local/bin/ && \
 #    install -o ${USER} -g ${GROUP} /tmp/${APPLICATION}/rpcdaemon /usr/local/bin/
-=======
-    install -o root -g root /tmp/${APPLICATION}/erigon /usr/local/bin/ && \
-    install -o root -g root /tmp/${APPLICATION}/integration /usr/local/bin/ && \
-    install -o root -g root /tmp/${APPLICATION}/diag /usr/local/bin/ && \
-    install -o root -g root /tmp/${APPLICATION}/sentry /usr/local/bin/ && \
-    install -o root -g root /tmp/${APPLICATION}/txpool /usr/local/bin/ && \
-    install -o root -g root /tmp/${APPLICATION}/downloader /usr/local/bin/ && \
-    install -o root -g root /tmp/${APPLICATION}/rpcdaemon /usr/local/bin/
->>>>>>> v2.61.0
 
 VOLUME [ "/home/${USER}" ]
 WORKDIR /home/${USER}

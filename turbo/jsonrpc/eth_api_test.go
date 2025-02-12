@@ -7,12 +7,7 @@ import (
 	"math/big"
 	"testing"
 
-<<<<<<< HEAD
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
-=======
 	"github.com/erigontech/erigon-lib/common/hexutil"
->>>>>>> v2.61.0
 
 	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/assert"
@@ -20,22 +15,13 @@ import (
 
 	"github.com/erigontech/erigon-lib/common"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/kv/kvcache"
-	"github.com/ledgerwatch/erigon/core"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/rpc"
-	"github.com/ledgerwatch/erigon/rpc/rpccfg"
-	"github.com/ledgerwatch/erigon/turbo/adapter/ethapi"
-	"github.com/ledgerwatch/erigon/turbo/stages/mock"
-=======
 	"github.com/erigontech/erigon-lib/kv/kvcache"
 	"github.com/erigontech/erigon/core"
+	"github.com/erigontech/erigon/core/types"
 	"github.com/erigontech/erigon/rpc"
 	"github.com/erigontech/erigon/rpc/rpccfg"
 	"github.com/erigontech/erigon/turbo/adapter/ethapi"
 	"github.com/erigontech/erigon/turbo/stages/mock"
->>>>>>> v2.61.0
 
 	"github.com/erigontech/erigon-lib/log/v3"
 
@@ -295,7 +281,7 @@ func TestNewRPCTransactionDepositTxWithVersion(t *testing.T) {
 		DepositNonce:          &nonce,
 		DepositReceiptVersion: &version,
 	}
-	got := NewRPCTransaction(tx, libcommon.Hash{}, uint64(12), uint64(1), big.NewInt(0), receipt)
+	got := NewRPCTransaction(tx, common.Hash{}, uint64(12), uint64(1), big.NewInt(0), receipt)
 	// Should provide zero values for unused fields that are required in other transactions
 	require.Equal(t, got.GasPrice, (*hexutil.Big)(big.NewInt(0)), "NewRPCTransaction().GasPrice = %v, want 0x0", got.GasPrice)
 	require.Equal(t, got.V, (*hexutil.Big)(big.NewInt(0)), "NewRPCTransaction().V = %v, want 0x0", got.V)

@@ -65,14 +65,13 @@ type Genesis struct {
 	BlobGasUsed           *uint64      `json:"blobGasUsed"`           // EIP-4844
 	ExcessBlobGas         *uint64      `json:"excessBlobGas"`         // EIP-4844
 	ParentBeaconBlockRoot *common.Hash `json:"parentBeaconBlockRoot"` // EIP-4788
-<<<<<<< HEAD
 
 	// StateHash represents the genesis state, to allow instantiation of a chain with missing initial state.
 	// Chains with history pruning, or extraordinarily large genesis allocation (e.g. after a regenesis event)
 	// may utilize this to get started, and then state-sync the latest state, while still verifying the header chain.
 	StateHash *common.Hash `json:"stateHash,omitempty"`
-=======
-	RequestsHash          *common.Hash `json:"requestsHash"`          // EIP-7685
+
+	RequestsHash *common.Hash `json:"requestsHash"` // EIP-7685
 }
 
 type AuRaSeal struct {
@@ -87,7 +86,6 @@ func NewAuraSeal(step uint64, signature []byte) *AuRaSeal {
 	a.AuthorityRound.Step = math.HexOrDecimal64(step)
 	a.AuthorityRound.Signature = append([]byte{}, signature...)
 	return &a
->>>>>>> v2.61.0
 }
 
 // GenesisAlloc specifies the initial state that is part of the genesis block.

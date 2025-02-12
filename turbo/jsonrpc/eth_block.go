@@ -6,12 +6,8 @@ import (
 	"math/big"
 	"time"
 
-<<<<<<< HEAD
-	"github.com/ledgerwatch/erigon-lib/opstack"
-	"github.com/ledgerwatch/log/v3"
-=======
 	"github.com/erigontech/erigon-lib/log/v3"
->>>>>>> v2.61.0
+	"github.com/erigontech/erigon-lib/opstack"
 
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/hexutil"
@@ -341,7 +337,7 @@ func (api *APIImpl) GetBadBlocks(ctx context.Context) ([]map[string]interface{},
 			blockRlp = fmt.Sprintf("%#x", rlpBytes)
 		}
 
-		blockJson, err := ethapi.RPCMarshalBlock(block, true, true, nil)
+		blockJson, err := ethapi.RPCMarshalBlock(block, true, true, nil, nil)
 		if err != nil {
 			log.Error("Failed to marshal block", "err", err)
 			blockJson = map[string]interface{}{}

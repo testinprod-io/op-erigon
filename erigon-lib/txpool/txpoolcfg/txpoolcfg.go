@@ -124,11 +124,8 @@ const (
 	UnmatchedBlobTxExt  DiscardReason = 29 // KZGcommitments must match the corresponding blobs and proofs
 	BlobTxReplace       DiscardReason = 30 // Cannot replace type-3 blob txn with another type of txn
 	BlobPoolOverflow    DiscardReason = 31 // The total number of blobs (through blob txs) in the pool has reached its limit
-<<<<<<< HEAD
-	TxTypeNotSupported  DiscardReason = 32
-=======
 	NoAuthorizations    DiscardReason = 32 // EIP-7702 transactions with an empty authorization list are invalid
->>>>>>> v2.61.0
+	TxTypeNotSupported  DiscardReason = 33
 )
 
 func (r DiscardReason) String() string {

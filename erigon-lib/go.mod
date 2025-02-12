@@ -2,8 +2,6 @@ module github.com/erigontech/erigon-lib
 
 go 1.22.0
 
-replace github.com/ledgerwatch/interfaces v0.0.0-20240320062914-b57f05746087 => github.com/testinprod-io/erigon-interfaces v0.0.0-20241031184256-b29ff6d8ff9b
-
 //for local dev:
 //replace github.com/ledgerwatch/interfaces v0.0.0-20240105174738-fe57049f198c => ../erigon-interfaces
 
@@ -152,4 +150,6 @@ replace github.com/anacrolix/torrent => github.com/erigontech/torrent v1.54.2-al
 
 replace github.com/erigontech/erigon-snapshot => github.com/ledgerwatch/erigon-snapshot v1.3.1-0.20240805114253-42da880260bb
 
-replace github.com/erigontech/interfaces => github.com/ledgerwatch/interfaces v0.0.0-20241024161200-024ffe1cabff
+//replace github.com/erigontech/interfaces => github.com/ledgerwatch/interfaces v0.0.0-20241024161200-024ffe1cabff
+
+replace github.com/erigontech/interfaces => github.com/testinprod-io/erigon-interfaces v0.0.0-20250211234611-0dad1c1f1dd2

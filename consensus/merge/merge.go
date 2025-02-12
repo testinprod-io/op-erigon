@@ -333,13 +333,10 @@ func (s *Merge) Initialize(config *chain.Config, chain consensus.ChainHeaderRead
 			return syscall(addr, data, state, header, false /* constCall */)
 		})
 	}
-<<<<<<< HEAD
-	misc.EnsureCreate2Deployer(config, header.Time, state)
-=======
 	if chain.Config().IsPrague(header.Time) {
 		misc.StoreBlockHashesEip2935(header, state, config, chain)
 	}
->>>>>>> v2.61.0
+	misc.EnsureCreate2Deployer(config, header.Time, state)
 }
 
 func (s *Merge) APIs(chain consensus.ChainHeaderReader) []rpc.API {

@@ -1,12 +1,6 @@
 ChangeLog
 ## v2.61.0
 
-<<<<<<< HEAD
-## v2.60.10
-
-**Bugfixes:**
-
-=======
 **Improvements:**
 
 - Up to date implementation of Pectra network fork specs till [pectra-devnet-4](https://notes.ethereum.org/@ethpandaops/pectra-devnet-4)
@@ -23,7 +17,6 @@ See https://eips.ethereum.org/EIPS/eip-7600
 
 **Bugfixes:**
 
->>>>>>> v2.61.0
 - Trace API: commit state changes from InitializeBlockExecution @yperbasis in [#12559](https://github.com/erigontech/erigon/pull/12559).
 Prior to this PR in `callManyTransactions` (invoked by `trace_block`)
 changes made by `InitializeBlockExecution` were discarded. That was immaterial before since no much was

@@ -4,12 +4,8 @@ import (
 	"context"
 	"strings"
 
-<<<<<<< HEAD
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/log/v3"
-=======
+	libcommon "github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/log/v3"
->>>>>>> v2.61.0
 
 	"github.com/erigontech/erigon/common/debug"
 	"github.com/erigontech/erigon/core/types"

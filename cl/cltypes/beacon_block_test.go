@@ -6,15 +6,10 @@ import (
 	"math/big"
 	"testing"
 
-<<<<<<< HEAD
-	_ "embed"
-
-=======
 	libcommon "github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon/cl/clparams"
 	"github.com/erigontech/erigon/cl/cltypes/solid"
 	"github.com/erigontech/erigon/core/types"
->>>>>>> v2.61.0
 	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
