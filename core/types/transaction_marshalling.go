@@ -4,15 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
+	"github.com/erigontech/erigon-lib/common/hexutil"
 
 	"github.com/holiman/uint256"
 	"github.com/valyala/fastjson"
 
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/hexutility"
-	types2 "github.com/ledgerwatch/erigon-lib/types"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/hexutility"
+	types2 "github.com/erigontech/erigon-lib/types"
 )
 
 // txJSON is the JSON representation of transactions.
@@ -39,8 +40,9 @@ type txJSON struct {
 	IsSystemTx *bool              `json:"isSystemTx,omitempty"`
 
 	// Access list transaction fields:
-	ChainID    *hexutil.Big       `json:"chainId,omitempty"`
-	AccessList *types2.AccessList `json:"accessList,omitempty"`
+	ChainID        *hexutil.Big         `json:"chainId,omitempty"`
+	AccessList     *types2.AccessList   `json:"accessList,omitempty"`
+	Authorizations *[]JsonAuthorization `json:"authorizationList,omitempty"`
 
 	// Blob transaction fields:
 	MaxFeePerBlobGas    *hexutil.Big     `json:"maxFeePerBlobGas,omitempty"`
@@ -52,6 +54,50 @@ type txJSON struct {
 
 	// Only used for encoding:
 	Hash libcommon.Hash `json:"hash"`
+}
+
+type JsonAuthorization struct {
+	ChainID hexutil.Uint64    `json:"chainId"`
+	Address libcommon.Address `json:"address"`
+	Nonce   hexutil.Uint64    `json:"nonce"`
+	V       hexutil.Uint64    `json:"v"`
+	R       hexutil.Big       `json:"r"`
+	S       hexutil.Big       `json:"s"`
+}
+
+func (a JsonAuthorization) FromAuthorization(authorization Authorization) JsonAuthorization {
+	a.ChainID = (hexutil.Uint64)(authorization.ChainID)
+	a.Address = authorization.Address
+	a.Nonce = (hexutil.Uint64)(authorization.Nonce)
+
+	a.V = (hexutil.Uint64)(authorization.YParity)
+	a.R = hexutil.Big(*authorization.R.ToBig())
+	a.S = hexutil.Big(*authorization.S.ToBig())
+	return a
+}
+
+func (a JsonAuthorization) ToAuthorization() (Authorization, error) {
+	auth := Authorization{
+		ChainID: a.ChainID.Uint64(),
+		Address: a.Address,
+		Nonce:   a.Nonce.Uint64(),
+	}
+	yParity := a.V.Uint64()
+	if yParity >= 1<<8 {
+		return auth, errors.New("y parity in authorization does not fit in 8 bits")
+	}
+	auth.YParity = uint8(yParity)
+	r, overflow := uint256.FromBig((*big.Int)(&a.R))
+	if overflow {
+		return auth, errors.New("r in authorization does not fit in 256 bits")
+	}
+	auth.R = *r
+	s, overflow := uint256.FromBig((*big.Int)(&a.S))
+	if overflow {
+		return auth, errors.New("s in authorization does not fit in 256 bits")
+	}
+	auth.S = *s
+	return auth, nil
 }
 
 func (tx *LegacyTx) MarshalJSON() ([]byte, error) {
@@ -215,6 +261,12 @@ func UnmarshalTransactionFromJSON(input []byte) (Transaction, error) {
 			return nil, err
 		}
 		return tx, nil
+	case SetCodeTxType:
+		tx := &SetCodeTransaction{}
+		if err = tx.UnmarshalJSON(input); err != nil {
+			return nil, err
+		}
+		return tx, nil
 	default:
 		return nil, fmt.Errorf("unknown transaction type: %v", txType)
 	}
@@ -364,11 +416,7 @@ func (tx *AccessListTx) UnmarshalJSON(input []byte) error {
 	return nil
 }
 
-func (tx *DynamicFeeTransaction) UnmarshalJSON(input []byte) error {
-	var dec txJSON
-	if err := json.Unmarshal(input, &dec); err != nil {
-		return err
-	}
+func (tx *DynamicFeeTransaction) unmarshalJson(dec txJSON) error {
 	// Access list is optional for now.
 	if dec.AccessList != nil {
 		tx.AccessList = *dec.AccessList
@@ -449,6 +497,7 @@ func (tx *DepositTx) UnmarshalJSON(input []byte) error {
 	if err := json.Unmarshal(input, &dec); err != nil {
 		return err
 	}
+
 	if dec.AccessList != nil || dec.FeeCap != nil || dec.Tip != nil {
 		return errors.New("unexpected field(s) in deposit transaction")
 	}
@@ -494,6 +543,36 @@ func (tx *DepositTx) UnmarshalJSON(input []byte) error {
 		tx.IsSystemTransaction = *dec.IsSystemTx
 	}
 	// nonce is not checked becaues depositTx has no nonce field.
+
+	return nil
+}
+
+func (tx *DynamicFeeTransaction) UnmarshalJSON(input []byte) error {
+	var dec txJSON
+	if err := json.Unmarshal(input, &dec); err != nil {
+		return err
+	}
+
+	return tx.unmarshalJson(dec)
+}
+
+func (tx *SetCodeTransaction) UnmarshalJSON(input []byte) error {
+	var dec txJSON
+	if err := json.Unmarshal(input, &dec); err != nil {
+		return err
+	}
+
+	if err := tx.DynamicFeeTransaction.unmarshalJson(dec); err != nil {
+		return err
+	}
+	tx.Authorizations = make([]Authorization, len(*dec.Authorizations))
+	for i, auth := range *dec.Authorizations {
+		var err error
+		tx.Authorizations[i], err = auth.ToAuthorization()
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -598,7 +677,8 @@ func UnmarshalBlobTxJSON(input []byte) (Transaction, error) {
 	}
 
 	btx := BlobTxWrapper{
-		Tx:          tx,
+		// it's ok to copy here - because it's constructor of object - no parallel access yet
+		Tx:          tx, //nolint
 		Commitments: dec.Commitments,
 		Blobs:       dec.Blobs,
 		Proofs:      dec.Proofs,

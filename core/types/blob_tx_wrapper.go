@@ -9,13 +9,13 @@ import (
 	gokzg4844 "github.com/crate-crypto/go-kzg-4844"
 	"github.com/holiman/uint256"
 
-	"github.com/ledgerwatch/erigon-lib/chain"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/fixedgas"
-	libkzg "github.com/ledgerwatch/erigon-lib/crypto/kzg"
-	types2 "github.com/ledgerwatch/erigon-lib/types"
+	"github.com/erigontech/erigon-lib/chain"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/fixedgas"
+	libkzg "github.com/erigontech/erigon-lib/crypto/kzg"
+	types2 "github.com/erigontech/erigon-lib/types"
 
-	"github.com/ledgerwatch/erigon/rlp"
+	"github.com/erigontech/erigon/rlp"
 )
 
 const (
@@ -256,8 +256,7 @@ func (c KZGCommitment) ComputeVersionedHash() libcommon.Hash {
 
 // validateBlobTransactionWrapper implements validate_blob_transaction_wrapper from EIP-4844
 func (txw *BlobTxWrapper) ValidateBlobTransactionWrapper() error {
-	blobTx := txw.Tx
-	l1 := len(blobTx.BlobVersionedHashes)
+	l1 := len(txw.Tx.BlobVersionedHashes)
 	if l1 == 0 {
 		return fmt.Errorf("a blob tx must contain at least one blob")
 	}
@@ -278,7 +277,7 @@ func (txw *BlobTxWrapper) ValidateBlobTransactionWrapper() error {
 	if err != nil {
 		return fmt.Errorf("error during proof verification: %v", err)
 	}
-	for i, h := range blobTx.BlobVersionedHashes {
+	for i, h := range txw.Tx.BlobVersionedHashes {
 		if computed := txw.Commitments[i].ComputeVersionedHash(); computed != h {
 			return fmt.Errorf("versioned hash %d supposedly %s but does not match computed %s", i, h, computed)
 		}
@@ -309,10 +308,6 @@ func (txw *BlobTxWrapper) AsMessage(s Signer, baseFee *big.Int, rules *chain.Rul
 }
 func (txw *BlobTxWrapper) WithSignature(signer Signer, sig []byte) (Transaction, error) {
 	return txw.Tx.WithSignature(signer, sig)
-}
-
-func (txw *BlobTxWrapper) FakeSign(address libcommon.Address) (Transaction, error) {
-	return txw.Tx.FakeSign(address)
 }
 
 func (txw *BlobTxWrapper) Hash() libcommon.Hash { return txw.Tx.Hash() }

@@ -24,14 +24,14 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ledgerwatch/erigon-lib/chain"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	types2 "github.com/ledgerwatch/erigon-lib/types"
+	"github.com/erigontech/erigon-lib/chain"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	types2 "github.com/erigontech/erigon-lib/types"
 
-	"github.com/ledgerwatch/erigon/rlp"
+	"github.com/erigontech/erigon/rlp"
 
+	"github.com/erigontech/erigon/common"
 	"github.com/holiman/uint256"
-	"github.com/ledgerwatch/erigon/common"
 )
 
 type DepositTx struct {
@@ -100,7 +100,7 @@ func (tx *DepositTx) SetSender(addr libcommon.Address) {
 }
 
 func (tx DepositTx) RawSignatureValues() (*uint256.Int, *uint256.Int, *uint256.Int) {
-	panic("deposit tx does not have a signature")
+	return uint256.NewInt(0), uint256.NewInt(0), uint256.NewInt(0)
 }
 
 func (tx DepositTx) SigningHash(chainID *big.Int) libcommon.Hash {

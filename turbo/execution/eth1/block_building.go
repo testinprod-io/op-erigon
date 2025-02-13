@@ -7,17 +7,17 @@ import (
 
 	"github.com/holiman/uint256"
 
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/gointerfaces"
-	"github.com/ledgerwatch/erigon-lib/gointerfaces/execution"
-	types2 "github.com/ledgerwatch/erigon-lib/gointerfaces/types"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/gointerfaces"
+	"github.com/erigontech/erigon-lib/gointerfaces/execution"
+	types2 "github.com/erigontech/erigon-lib/gointerfaces/types"
 
-	"github.com/ledgerwatch/erigon/core"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/rpc"
-	"github.com/ledgerwatch/erigon/turbo/builder"
-	"github.com/ledgerwatch/erigon/turbo/engineapi/engine_helpers"
-	"github.com/ledgerwatch/erigon/turbo/execution/eth1/eth1_utils"
+	"github.com/erigontech/erigon/core"
+	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/rpc"
+	"github.com/erigontech/erigon/turbo/builder"
+	"github.com/erigontech/erigon/turbo/engineapi/engine_helpers"
+	"github.com/erigontech/erigon/turbo/execution/eth1/eth1_utils"
 )
 
 func (e *EthereumExecutionModule) checkWithdrawalsPresence(time uint64, withdrawals []*types.Withdrawal) error {
@@ -203,10 +203,28 @@ func (e *EthereumExecutionModule) GetAssembledBlock(ctx context.Context, req *ex
 		}
 	}
 
+	var requestsBundle types2.RequestsBundle
+	if blockWithReceipts.Requests != nil {
+		requests := make([][]byte, len(types.KnownRequestTypes))
+		if len(blockWithReceipts.Requests) == len(types.KnownRequestTypes) {
+			for i, r := range blockWithReceipts.Requests {
+				requests[i] = make([]byte, 0)
+				requests[i] = append(requests[i], r.RequestData...)
+			}
+		} else {
+			e.logger.Error("Requests len SHOULD BE", "equal to", len(types.KnownRequestTypes), "got", len(blockWithReceipts.Requests))
+			for i := 0; i < len(types.KnownRequestTypes); i++ {
+				requests[i] = make([]byte, 0)
+			}
+		}
+		requestsBundle = types2.RequestsBundle{Requests: requests}
+	}
+
 	data := execution.AssembledBlockData{
 		ExecutionPayload: payload,
 		BlockValue:       gointerfaces.ConvertUint256IntToH256(blockValue),
 		BlobsBundle:      blobsBundle,
+		Requests:         &requestsBundle,
 	}
 
 	if header.ParentBeaconBlockRoot != nil {

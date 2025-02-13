@@ -24,17 +24,18 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ledgerwatch/erigon-lib/chain"
-	"github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/hexutility"
+	"github.com/erigontech/erigon-lib/chain"
+	"github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/hexutility"
 
-	common2 "github.com/ledgerwatch/erigon/common"
-	"github.com/ledgerwatch/erigon/common/math"
-	"github.com/ledgerwatch/erigon/params"
+	common2 "github.com/erigontech/erigon/common"
+	"github.com/erigontech/erigon/common/math"
+	"github.com/erigontech/erigon/params"
 )
 
 //go:generate gencodec -type Genesis -field-override genesisSpecMarshaling -out gen_genesis.go
 //go:generate gencodec -type GenesisAccount -field-override genesisAccountMarshaling -out gen_genesis_account.go
+//go:generate gencodec -type AuRaSeal -out gen_aura_seal.go
 
 var ErrGenesisNoConfig = errors.New("genesis has no chain configuration")
 
@@ -51,8 +52,7 @@ type Genesis struct {
 	Coinbase   common.Address `json:"coinbase"`
 	Alloc      GenesisAlloc   `json:"alloc"      gencodec:"required"`
 
-	AuRaStep uint64 `json:"auRaStep"`
-	AuRaSeal []byte `json:"auRaSeal"`
+	AuRaSeal *AuRaSeal `json:"seal"`
 
 	// These fields are used for consensus tests. Please don't use them
 	// in actual genesis blocks.
@@ -70,6 +70,22 @@ type Genesis struct {
 	// Chains with history pruning, or extraordinarily large genesis allocation (e.g. after a regenesis event)
 	// may utilize this to get started, and then state-sync the latest state, while still verifying the header chain.
 	StateHash *common.Hash `json:"stateHash,omitempty"`
+
+	RequestsHash *common.Hash `json:"requestsHash"` // EIP-7685
+}
+
+type AuRaSeal struct {
+	AuthorityRound struct {
+		Step      math.HexOrDecimal64 `json:"step"`
+		Signature hexutility.Bytes    `json:"signature"`
+	} `json:"authorityRound"`
+}
+
+func NewAuraSeal(step uint64, signature []byte) *AuRaSeal {
+	a := AuRaSeal{}
+	a.AuthorityRound.Step = math.HexOrDecimal64(step)
+	a.AuthorityRound.Signature = append([]byte{}, signature...)
+	return &a
 }
 
 // GenesisAlloc specifies the initial state that is part of the genesis block.

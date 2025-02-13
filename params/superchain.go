@@ -7,10 +7,10 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/erigontech/erigon-lib/chain"
+	"github.com/erigontech/erigon-lib/chain/networkname"
+	"github.com/erigontech/erigon-lib/common"
 	"github.com/ethereum-optimism/superchain-registry/superchain"
-	"github.com/ledgerwatch/erigon-lib/chain"
-	"github.com/ledgerwatch/erigon-lib/chain/networkname"
-	"github.com/ledgerwatch/erigon-lib/common"
 )
 
 const (

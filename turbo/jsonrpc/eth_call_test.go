@@ -3,40 +3,39 @@ package jsonrpc
 import (
 	"context"
 	"fmt"
+	"github.com/erigontech/erigon/core/types/accounts"
 	"math/big"
 	"testing"
 	"time"
 
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
+	"github.com/erigontech/erigon-lib/common/hexutil"
 
 	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/hexutility"
-	"github.com/ledgerwatch/erigon-lib/gointerfaces/txpool"
-	"github.com/ledgerwatch/erigon-lib/kv"
-	"github.com/ledgerwatch/erigon-lib/kv/kvcache"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/hexutility"
+	"github.com/erigontech/erigon-lib/gointerfaces/txpool"
+	"github.com/erigontech/erigon-lib/kv"
+	"github.com/erigontech/erigon-lib/kv/kvcache"
 
-	"github.com/ledgerwatch/log/v3"
+	"github.com/erigontech/erigon-lib/log/v3"
 
-	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/rpcdaemontest"
-	"github.com/ledgerwatch/erigon/common/math"
-	"github.com/ledgerwatch/erigon/core"
-	"github.com/ledgerwatch/erigon/core/rawdb"
-	"github.com/ledgerwatch/erigon/core/state"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/core/types/accounts"
-	"github.com/ledgerwatch/erigon/crypto"
-	"github.com/ledgerwatch/erigon/params"
-	"github.com/ledgerwatch/erigon/rpc"
-	"github.com/ledgerwatch/erigon/rpc/rpccfg"
-	"github.com/ledgerwatch/erigon/turbo/adapter/ethapi"
-	ethapi2 "github.com/ledgerwatch/erigon/turbo/adapter/ethapi"
-	"github.com/ledgerwatch/erigon/turbo/rpchelper"
-	"github.com/ledgerwatch/erigon/turbo/stages/mock"
-	"github.com/ledgerwatch/erigon/turbo/trie"
+	"github.com/erigontech/erigon/cmd/rpcdaemon/rpcdaemontest"
+	"github.com/erigontech/erigon/common/math"
+	"github.com/erigontech/erigon/core"
+	"github.com/erigontech/erigon/core/rawdb"
+	"github.com/erigontech/erigon/core/state"
+	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/crypto"
+	"github.com/erigontech/erigon/params"
+	"github.com/erigontech/erigon/rpc"
+	"github.com/erigontech/erigon/rpc/rpccfg"
+	"github.com/erigontech/erigon/turbo/adapter/ethapi"
+	"github.com/erigontech/erigon/turbo/rpchelper"
+	"github.com/erigontech/erigon/turbo/stages/mock"
+	"github.com/erigontech/erigon/turbo/trie"
 )
 
 func TestEstimateGas(t *testing.T) {
@@ -52,7 +51,7 @@ func TestEstimateGas(t *testing.T) {
 	if _, err := api.EstimateGas(context.Background(), &ethapi.CallArgs{
 		From: &from,
 		To:   &to,
-	}, nil); err != nil {
+	}, nil, nil); err != nil {
 		t.Errorf("calling EstimateGas: %v", err)
 	}
 }
@@ -104,7 +103,7 @@ func TestEstimateGasHistoricalRPC(t *testing.T) {
 				api.historicalRPCService = historicalRPCService
 				s.UpdatePayload(tt.payload)
 			}
-			val, err := api.EstimateGas(m.Ctx, &ethapi2.CallArgs{}, nil)
+			val, err := api.EstimateGas(m.Ctx, &ethapi.CallArgs{}, nil, nil)
 			if tt.isError {
 				require.Error(t, err, tt.caseName)
 				require.Equal(t, tt.expected, fmt.Sprintf("%v", err), tt.caseName)

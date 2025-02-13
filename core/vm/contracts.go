@@ -28,17 +28,18 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
 	"github.com/holiman/uint256"
 
-	"github.com/ledgerwatch/erigon-lib/chain"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/crypto/blake2b"
-	libkzg "github.com/ledgerwatch/erigon-lib/crypto/kzg"
+	"github.com/erigontech/erigon-lib/chain"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	libcrypto "github.com/erigontech/erigon-lib/crypto"
+	"github.com/erigontech/erigon-lib/crypto/blake2b"
+	libkzg "github.com/erigontech/erigon-lib/crypto/kzg"
 
-	"github.com/ledgerwatch/erigon/common"
-	"github.com/ledgerwatch/erigon/common/math"
-	"github.com/ledgerwatch/erigon/crypto"
-	"github.com/ledgerwatch/erigon/crypto/bn256"
-	"github.com/ledgerwatch/erigon/crypto/secp256r1"
-	"github.com/ledgerwatch/erigon/params"
+	"github.com/erigontech/erigon/common"
+	"github.com/erigontech/erigon/common/math"
+	"github.com/erigontech/erigon/crypto"
+	"github.com/erigontech/erigon/crypto/bn256"
+	"github.com/erigontech/erigon/crypto/secp256r1"
+	"github.com/erigontech/erigon/params"
 
 	//lint:ignore SA1019 Needed for precompile
 	"golang.org/x/crypto/ripemd160"
@@ -282,8 +283,8 @@ func (c *ecrecover) Run(input []byte) ([]byte, error) {
 	s := new(uint256.Int).SetBytes(input[96:128])
 	v := input[63] - 27
 
-	// tighter sig s values input homestead only apply to tx sigs
-	if !allZero(input[32:63]) || !crypto.ValidateSignatureValues(v, r, s, false) {
+	// tighter sig s values input homestead only apply to txn sigs
+	if !allZero(input[32:63]) || !libcrypto.TransactionSignatureIsValid(v, r, s, true /* allowPreEip2s */) {
 		return nil, nil
 	}
 	// We must make sure not to modify the 'input', so placing the 'v' along with
@@ -819,6 +820,12 @@ func (c *bls12381G1Mul) Run(input []byte) ([]byte, error) {
 	if p0, err = decodePointG1(input[:128]); err != nil {
 		return nil, err
 	}
+
+	// Fast subgroup check
+	if !p0.IsInSubGroup() {
+		return nil, errBLS12381G1PointSubgroup
+	}
+
 	// Decode scalar value
 	e := new(big.Int).SetBytes(input[128:])
 
@@ -871,6 +878,10 @@ func (c *bls12381G1MultiExp) Run(input []byte) ([]byte, error) {
 		p, err := decodePointG1(input[t0:t1])
 		if err != nil {
 			return nil, err
+		}
+		// Fast subgroup check
+		if !p.IsInSubGroup() {
+			return nil, errBLS12381G1PointSubgroup
 		}
 		points[i] = *p
 		// Decode scalar value
@@ -942,6 +953,12 @@ func (c *bls12381G2Mul) Run(input []byte) ([]byte, error) {
 	if p0, err = decodePointG2(input[:256]); err != nil {
 		return nil, err
 	}
+
+	// Fast subgroup check
+	if !p0.IsInSubGroup() {
+		return nil, errBLS12381G2PointSubgroup
+	}
+
 	// Decode scalar value
 	e := new(big.Int).SetBytes(input[256:])
 
@@ -994,6 +1011,10 @@ func (c *bls12381G2MultiExp) Run(input []byte) ([]byte, error) {
 		p, err := decodePointG2(input[t0:t1])
 		if err != nil {
 			return nil, err
+		}
+		// Fast subgroup check
+		if !p.IsInSubGroup() {
+			return nil, errBLS12381G2PointSubgroup
 		}
 		points[i] = *p
 		// Decode scalar value

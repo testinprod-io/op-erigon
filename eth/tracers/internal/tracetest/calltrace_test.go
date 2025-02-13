@@ -27,24 +27,25 @@ import (
 	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ledgerwatch/erigon-lib/chain"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
-	"github.com/ledgerwatch/erigon-lib/common/dir"
-	"github.com/ledgerwatch/erigon-lib/common/hexutil"
-	"github.com/ledgerwatch/erigon-lib/common/hexutility"
-	"github.com/ledgerwatch/erigon/common"
-	"github.com/ledgerwatch/erigon/common/math"
-	"github.com/ledgerwatch/erigon/core"
-	"github.com/ledgerwatch/erigon/core/types"
-	"github.com/ledgerwatch/erigon/core/vm"
-	"github.com/ledgerwatch/erigon/core/vm/evmtypes"
-	"github.com/ledgerwatch/erigon/crypto"
-	"github.com/ledgerwatch/erigon/eth/tracers"
-	_ "github.com/ledgerwatch/erigon/eth/tracers/js"
-	_ "github.com/ledgerwatch/erigon/eth/tracers/native"
-	"github.com/ledgerwatch/erigon/params"
-	"github.com/ledgerwatch/erigon/tests"
-	"github.com/ledgerwatch/erigon/turbo/stages/mock"
+	"github.com/erigontech/erigon-lib/chain"
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/dir"
+	"github.com/erigontech/erigon-lib/common/hexutil"
+	"github.com/erigontech/erigon-lib/common/hexutility"
+	"github.com/erigontech/erigon/common"
+	"github.com/erigontech/erigon/common/math"
+	"github.com/erigontech/erigon/consensus"
+	"github.com/erigontech/erigon/core"
+	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/core/vm"
+	"github.com/erigontech/erigon/core/vm/evmtypes"
+	"github.com/erigontech/erigon/crypto"
+	"github.com/erigontech/erigon/eth/tracers"
+	_ "github.com/erigontech/erigon/eth/tracers/js"
+	_ "github.com/erigontech/erigon/eth/tracers/native"
+	"github.com/erigontech/erigon/params"
+	"github.com/erigontech/erigon/tests"
+	"github.com/erigontech/erigon/turbo/stages/mock"
 )
 
 type callContext struct {
@@ -135,7 +136,7 @@ func testCallTracer(tracerName string, dirPath string, t *testing.T) {
 			signer := types.MakeSigner(test.Genesis.Config, uint64(test.Context.Number), uint64(test.Context.Time))
 			context := evmtypes.BlockContext{
 				CanTransfer: core.CanTransfer,
-				Transfer:    core.Transfer,
+				Transfer:    consensus.Transfer,
 				Coinbase:    test.Context.Miner,
 				BlockNumber: uint64(test.Context.Number),
 				Time:        uint64(test.Context.Time),
@@ -248,7 +249,7 @@ func benchTracer(b *testing.B, tracerName string, test *callTracerTest) {
 	}
 	context := evmtypes.BlockContext{
 		CanTransfer: core.CanTransfer,
-		Transfer:    core.Transfer,
+		Transfer:    consensus.Transfer,
 		Coinbase:    test.Context.Miner,
 		BlockNumber: uint64(test.Context.Number),
 		Time:        uint64(test.Context.Time),
@@ -308,7 +309,7 @@ func TestZeroValueToNotExitCall(t *testing.T) {
 	}
 	context := evmtypes.BlockContext{
 		CanTransfer: core.CanTransfer,
-		Transfer:    core.Transfer,
+		Transfer:    consensus.Transfer,
 		Coinbase:    libcommon.Address{},
 		BlockNumber: 8000000,
 		Time:        5,

@@ -28,7 +28,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/ledgerwatch/log/v3"
+	"github.com/erigontech/erigon-lib/log/v3"
 
 	"github.com/holiman/uint256"
 )
@@ -670,6 +670,11 @@ func NewListStream(r io.Reader, len uint64) *Stream {
 	s.kind = List
 	s.size = len
 	return s
+}
+
+// Remaining returns number of bytes remaining to be read
+func (s *Stream) Remaining() uint64 {
+	return s.remaining
 }
 
 // Bytes reads an RLP string and returns its contents as a byte slice.
