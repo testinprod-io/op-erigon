@@ -448,7 +448,7 @@ func TestCanEncodeAndDecodeBodyTransactions(t *testing.T) {
 	var resultBody Body
 	fromHex := libcommon.CopyBytes(common.FromHex(writer.String()))
 	bodyReader := bytes.NewReader(fromHex)
-	stream := rlp.NewStream(bodyReader, 0)
+	stream := rlp2.NewStream(bodyReader, 0)
 
 	err = resultBody.DecodeRLP(stream)
 	if err != nil {

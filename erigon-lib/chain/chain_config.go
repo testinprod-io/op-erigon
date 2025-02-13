@@ -69,7 +69,6 @@ type Config struct {
 	PragueTime   *big.Int `json:"pragueTime,omitempty"`
 	OsakaTime    *big.Int `json:"osakaTime,omitempty"`
 
-<<<<<<< HEAD
 	BedrockBlock *big.Int `json:"bedrockBlock,omitempty"` // Bedrock switch block (nil = no fork, 0 = already on optimism bedrock)
 	RegolithTime *big.Int `json:"regolithTime,omitempty"` // Regolith switch time (nil = no fork, 0 = already on optimism regolith)
 	CanyonTime   *big.Int `json:"canyonTime,omitempty"`   // Canyon switch time (nil = no fork, 0 = already on optimism canyon)
@@ -79,16 +78,9 @@ type Config struct {
 	GraniteTime  *big.Int `json:"graniteTime,omitempty"` // Granite switch time (nil = no fork, 0 = already on optimism granite)
 	HoloceneTime *big.Int `json:"holoceneTime,omitempty"`
 
-	// Optional EIP-4844 parameters
-	MinBlobGasPrice            *uint64 `json:"minBlobGasPrice,omitempty"`
-	MaxBlobGasPerBlock         *uint64 `json:"maxBlobGasPerBlock,omitempty"`
-	TargetBlobGasPerBlock      *uint64 `json:"targetBlobGasPerBlock,omitempty"`
-	BlobGasPriceUpdateFraction *uint64 `json:"blobGasPriceUpdateFraction,omitempty"`
-=======
 	// Optional EIP-4844 parameters (see also EIP-7691 & EIP-7840)
 	MinBlobGasPrice *uint64       `json:"minBlobGasPrice,omitempty"`
 	BlobSchedule    *BlobSchedule `json:"blobSchedule,omitempty"`
->>>>>>> v2.61.1
 
 	// (Optional) governance contract where EIP-1559 fees will be sent to, which otherwise would be burnt since the London fork.
 	// A key corresponds to the block number, starting from which the fees are sent to the address (map value).

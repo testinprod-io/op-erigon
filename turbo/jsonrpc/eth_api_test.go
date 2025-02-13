@@ -253,7 +253,7 @@ func TestNewRPCTransactionDepositTx(t *testing.T) {
 	nonce := uint64(12)
 	depositNonce := &nonce
 	receipt := &types.Receipt{DepositNonce: depositNonce}
-	got := NewRPCTransaction(tx, common.Hash{}, uint64(12), uint64(1), big.NewInt(0), receipt)
+	got := ethapi.NewRPCTransaction(tx, common.Hash{}, uint64(12), uint64(1), big.NewInt(0), receipt)
 	// Should provide zero values for unused fields that are required in other transactions
 	require.Equal(t, got.GasPrice, (*hexutil.Big)(big.NewInt(0)), "NewRPCTransaction().GasPrice = %v, want 0x0", got.GasPrice)
 	require.Equal(t, got.V, (*hexutil.Big)(big.NewInt(0)), "NewRPCTransaction().V = %v, want 0x0", got.V)
@@ -281,7 +281,8 @@ func TestNewRPCTransactionDepositTxWithVersion(t *testing.T) {
 		DepositNonce:          &nonce,
 		DepositReceiptVersion: &version,
 	}
-	got := NewRPCTransaction(tx, common.Hash{}, uint64(12), uint64(1), big.NewInt(0), receipt)
+
+	got := ethapi.NewRPCTransaction(tx, common.Hash{}, uint64(12), uint64(1), big.NewInt(0), receipt)
 	// Should provide zero values for unused fields that are required in other transactions
 	require.Equal(t, got.GasPrice, (*hexutil.Big)(big.NewInt(0)), "NewRPCTransaction().GasPrice = %v, want 0x0", got.GasPrice)
 	require.Equal(t, got.V, (*hexutil.Big)(big.NewInt(0)), "NewRPCTransaction().V = %v, want 0x0", got.V)
@@ -310,7 +311,7 @@ func TestNewRPCTransactionOmitIsSystemTxFalse(t *testing.T) {
 		From:                common.Address{1},
 		Value:               uint256.NewInt(1337),
 	}
-	got := NewRPCTransaction(tx, common.Hash{}, uint64(12), uint64(1), big.NewInt(0), nil)
+	got := ethapi.NewRPCTransaction(tx, common.Hash{}, uint64(12), uint64(1), big.NewInt(0), nil)
 
 	require.Nil(t, got.IsSystemTx, "should omit IsSystemTx when false")
 }
@@ -319,17 +320,17 @@ func TestUnmarshalRpcDepositTx(t *testing.T) {
 	version := hexutil.Uint64(types.CanyonDepositReceiptVersion)
 	tests := []struct {
 		name     string
-		modifier func(tx *RPCTransaction)
+		modifier func(tx *ethapi.RPCTransaction)
 		valid    bool
 	}{
 		{
 			name:     "Unmodified",
-			modifier: func(tx *RPCTransaction) {},
+			modifier: func(tx *ethapi.RPCTransaction) {},
 			valid:    true,
 		},
 		{
 			name: "Zero Values",
-			modifier: func(tx *RPCTransaction) {
+			modifier: func(tx *ethapi.RPCTransaction) {
 				tx.V = (*hexutil.Big)(common.Big0)
 				tx.R = (*hexutil.Big)(common.Big0)
 				tx.S = (*hexutil.Big)(common.Big0)
@@ -339,7 +340,7 @@ func TestUnmarshalRpcDepositTx(t *testing.T) {
 		},
 		{
 			name: "Nil Values",
-			modifier: func(tx *RPCTransaction) {
+			modifier: func(tx *ethapi.RPCTransaction) {
 				tx.V = nil
 				tx.R = nil
 				tx.S = nil
@@ -349,35 +350,35 @@ func TestUnmarshalRpcDepositTx(t *testing.T) {
 		},
 		{
 			name: "Non-Zero GasPrice",
-			modifier: func(tx *RPCTransaction) {
+			modifier: func(tx *ethapi.RPCTransaction) {
 				tx.GasPrice = (*hexutil.Big)(big.NewInt(43))
 			},
 			valid: false,
 		},
 		{
 			name: "Non-Zero V",
-			modifier: func(tx *RPCTransaction) {
+			modifier: func(tx *ethapi.RPCTransaction) {
 				tx.V = (*hexutil.Big)(big.NewInt(43))
 			},
 			valid: false,
 		},
 		{
 			name: "Non-Zero R",
-			modifier: func(tx *RPCTransaction) {
+			modifier: func(tx *ethapi.RPCTransaction) {
 				tx.R = (*hexutil.Big)(big.NewInt(43))
 			},
 			valid: false,
 		},
 		{
 			name: "Non-Zero S",
-			modifier: func(tx *RPCTransaction) {
+			modifier: func(tx *ethapi.RPCTransaction) {
 				tx.S = (*hexutil.Big)(big.NewInt(43))
 			},
 			valid: false,
 		},
 		{
 			name: "Non-nil deposit receipt version",
-			modifier: func(tx *RPCTransaction) {
+			modifier: func(tx *ethapi.RPCTransaction) {
 				tx.DepositReceiptVersion = &version
 			},
 			valid: true,
@@ -392,7 +393,7 @@ func TestUnmarshalRpcDepositTx(t *testing.T) {
 				Mint:                uint256.NewInt(34),
 				Value:               uint256.NewInt(1337),
 			}
-			rpcTx := NewRPCTransaction(tx, common.Hash{}, uint64(12), uint64(1), big.NewInt(0), nil)
+			rpcTx := ethapi.NewRPCTransaction(tx, common.Hash{}, uint64(12), uint64(1), big.NewInt(0), nil)
 			test.modifier(rpcTx)
 			json, err := json.Marshal(rpcTx)
 			require.NoError(t, err, "marshalling failed: %w", err)

@@ -103,12 +103,8 @@ func (api *OtterscanAPIImpl) traceBlock(dbtx kv.Tx, ctx context.Context, blockNu
 		msg, _ := tx.AsMessage(*signer, header.BaseFee, rules)
 
 		tracer := NewTouchTracer(searchAddr)
-<<<<<<< HEAD
-		BlockContext := core.NewEVMBlockContext(header, core.GetHashFn(header, getHeader), engine, nil)
-		BlockContext.L1CostFunc = opstack.NewL1CostFunc(chainConfig, ibs)
-=======
 		BlockContext := core.NewEVMBlockContext(header, core.GetHashFn(header, getHeader), engine, nil, chainConfig)
->>>>>>> v2.61.1
+		BlockContext.L1CostFunc = opstack.NewL1CostFunc(chainConfig, ibs)
 		TxContext := core.NewEVMTxContext(msg)
 
 		vmenv := vm.NewEVM(BlockContext, TxContext, ibs, chainConfig, vm.Config{Debug: true, Tracer: tracer})
@@ -130,11 +126,7 @@ func (api *OtterscanAPIImpl) traceBlock(dbtx kv.Tx, ctx context.Context, blockNu
 				}
 				return false, nil, fmt.Errorf("requested receipt idx %d, but have only %d", idx, len(blockReceipts)) // otherwise return some error for debugging
 			}
-<<<<<<< HEAD
-			rpcTx := NewRPCTransaction(tx, block.Hash(), blockNum, uint64(idx), block.BaseFee(), receipt)
-=======
-			rpcTx := ethapi.NewRPCTransaction(tx, block.Hash(), blockNum, uint64(idx), block.BaseFee())
->>>>>>> v2.61.1
+			rpcTx := ethapi.NewRPCTransaction(tx, block.Hash(), blockNum, uint64(idx), block.BaseFee(), receipt)
 			mReceipt := ethutils.MarshalReceipt(blockReceipts[idx], tx, chainConfig, block.HeaderNoCopy(), tx.Hash(), true)
 			mReceipt["timestamp"] = block.Time()
 			rpcTxs = append(rpcTxs, rpcTx)

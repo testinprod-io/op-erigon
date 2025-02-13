@@ -62,13 +62,7 @@ jobs:
           key: chocolatey-${{ matrix.os }}
       - name: Install dependencies
         run: |
-<<<<<<< HEAD
-          choco upgrade mingw -y --no-progress --allow-downgrade --version 13.2.0
-          choco install cmake -y --no-progress --allow-downgrade --version 3.31.0
-          
-=======
           choco upgrade mingw -y --no-progress --version 13.2.0
 
->>>>>>> v2.61.1
       - name: test-integration
         run: .\wmake.ps1 test-integration

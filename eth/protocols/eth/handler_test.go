@@ -97,13 +97,8 @@ func TestGetBlockReceipts(t *testing.T) {
 
 			hashes = append(hashes, block.Hash())
 			// If known, encode and queue for response packet
-<<<<<<< HEAD
 			r := rawdb.ReadReceipts(params.TestChainConfig, tx, block, nil)
-			encoded, err := rlp.EncodeToBytes(r)
-=======
-			r := rawdb.ReadReceipts(tx, block, nil)
 			encoded, err := rlp2.EncodeToBytes(r)
->>>>>>> v2.61.1
 			require.NoError(t, err)
 			receipts = append(receipts, encoded)
 		}

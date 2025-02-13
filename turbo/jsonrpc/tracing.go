@@ -515,12 +515,8 @@ func (api *PrivateDebugAPIImpl) TraceCallMany(ctx context.Context, bundles []Bun
 		return hash
 	}
 
-<<<<<<< HEAD
-	blockCtx = core.NewEVMBlockContext(header, getHash, api.engine(), nil /* author */)
-	blockCtx.L1CostFunc = opstack.NewL1CostFunc(chainConfig, st)
-=======
 	blockCtx = core.NewEVMBlockContext(header, getHash, api.engine(), nil /* author */, chainConfig)
->>>>>>> v2.61.1
+	blockCtx.L1CostFunc = opstack.NewL1CostFunc(chainConfig, st)
 	// Get a new instance of the EVM
 	evm = vm.NewEVM(blockCtx, txCtx, st, chainConfig, vm.Config{Debug: false})
 	signer := types.MakeSigner(chainConfig, blockNum, block.Time())

@@ -408,11 +408,6 @@ func BenchmarkPrecompiledP256Verify(b *testing.B) {
 
 func TestPrecompiledP256Verify(t *testing.T) {
 	t.Parallel()
-<<<<<<< HEAD
-
-	// test case from Polygon Napoli erigon
-=======
->>>>>>> v2.61.1
 	testJson("p256Verify", "100", t)
 	// test case from OP Stack Fjord geth
 	testJson("p256Verify2", "100", t)

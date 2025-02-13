@@ -6,12 +6,6 @@ import (
 	"math/big"
 	"time"
 
-<<<<<<< HEAD
-	"github.com/erigontech/erigon-lib/log/v3"
-	"github.com/erigontech/erigon-lib/opstack"
-
-=======
->>>>>>> v2.61.1
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/hexutil"
 	"github.com/erigontech/erigon-lib/common/hexutility"
@@ -19,6 +13,7 @@ import (
 	"github.com/erigontech/erigon-lib/crypto/cryptopool"
 	"github.com/erigontech/erigon-lib/kv"
 	"github.com/erigontech/erigon-lib/log/v3"
+	"github.com/erigontech/erigon-lib/opstack"
 	"github.com/erigontech/erigon/core"
 	"github.com/erigontech/erigon/core/rawdb"
 	"github.com/erigontech/erigon/core/state"
@@ -294,18 +289,9 @@ func (api *APIImpl) GetBlockByHash(ctx context.Context, numberOrHash rpc.BlockNu
 		}
 	}
 
-<<<<<<< HEAD
 	receipts := rawdb.ReadRawReceipts(tx, number)
 	response, err := ethapi.RPCMarshalBlockEx(block, true, fullTx, borTx, borTxHash, additionalFields, receipts)
 
-	if chainConfig.Bor != nil {
-		borConfig := chainConfig.Bor.(*borcfg.BorConfig)
-		response["miner"], _ = ecrecover(block.Header(), borConfig)
-	}
-
-=======
-	response, err := ethapi.RPCMarshalBlockEx(block, true, fullTx, borTx, borTxHash, additionalFields)
->>>>>>> v2.61.1
 	if err == nil && int64(number) == rpc.PendingBlockNumber.Int64() {
 		// Pending blocks need to nil out a few fields
 		for _, field := range []string{"hash", "nonce", "miner"} {
@@ -321,45 +307,6 @@ func (api *APIImpl) GetBlockByHash(ctx context.Context, numberOrHash rpc.BlockNu
 	return response, err
 }
 
-<<<<<<< HEAD
-func (api *APIImpl) GetBadBlocks(ctx context.Context) ([]map[string]interface{}, error) {
-	tx, err := api.db.BeginRo(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-
-	blocks, err := rawdb.GetLatestBadBlocks(tx)
-	if err != nil || len(blocks) == 0 {
-		return nil, err
-	}
-
-	results := make([]map[string]interface{}, 0, len(blocks))
-	for _, block := range blocks {
-		var blockRlp string
-		if rlpBytes, err := rlp.EncodeToBytes(block); err != nil {
-			blockRlp = err.Error() // hack
-		} else {
-			blockRlp = fmt.Sprintf("%#x", rlpBytes)
-		}
-
-		blockJson, err := ethapi.RPCMarshalBlock(block, true, true, nil, nil)
-		if err != nil {
-			log.Error("Failed to marshal block", "err", err)
-			blockJson = map[string]interface{}{}
-		}
-		results = append(results, map[string]interface{}{
-			"hash":  block.Hash(),
-			"block": blockRlp,
-			"rlp":   blockJson,
-		})
-	}
-
-	return results, nil
-}
-
-=======
->>>>>>> v2.61.1
 // GetBlockTransactionCountByNumber implements eth_getBlockTransactionCountByNumber. Returns the number of transactions in a block given the block's block number.
 func (api *APIImpl) GetBlockTransactionCountByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*hexutil.Uint, error) {
 	tx, err := api.db.BeginRo(ctx)

@@ -4,11 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-<<<<<<< HEAD
-	"github.com/erigontech/erigon/params"
-=======
 	"fmt"
->>>>>>> v2.61.1
 
 	"github.com/erigontech/erigon-lib/common/hexutil"
 
@@ -18,6 +14,7 @@ import (
 	"github.com/erigontech/erigon-lib/gointerfaces/execution"
 	types2 "github.com/erigontech/erigon-lib/gointerfaces/types"
 	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/params"
 )
 
 // ExecutionPayload represents an execution payload (aka block)

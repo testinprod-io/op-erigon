@@ -27,14 +27,9 @@ import (
 	libcommon "github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/hexutil"
 	"github.com/erigontech/erigon-lib/common/hexutility"
-<<<<<<< HEAD
-	"github.com/erigontech/erigon-lib/opstack"
-	"github.com/erigontech/erigon/crypto"
-	"github.com/erigontech/erigon/rlp"
-=======
 	"github.com/erigontech/erigon-lib/crypto"
+	"github.com/erigontech/erigon-lib/opstack"
 	rlp2 "github.com/erigontech/erigon-lib/rlp"
->>>>>>> v2.61.1
 )
 
 // go:generate gencodec -type Receipt -field-override receiptMarshaling -out gen_receipt_json.go
@@ -216,20 +211,15 @@ func (r Receipt) EncodeRLP(w io.Writer) error {
 	}
 	buf := new(bytes.Buffer)
 	buf.WriteByte(r.Type)
-<<<<<<< HEAD
 	if r.Type == DepositTxType {
 		withNonceAndReceiptVersion := &depositReceiptRlp{r.statusEncoding(), r.CumulativeGasUsed, r.Bloom, r.Logs, r.DepositNonce, r.DepositReceiptVersion}
-		if err := rlp.Encode(buf, withNonceAndReceiptVersion); err != nil {
+		if err := rlp2.Encode(buf, withNonceAndReceiptVersion); err != nil {
 			return err
 		}
 	} else {
-		if err := rlp.Encode(buf, data); err != nil {
+		if err := rlp2.Encode(buf, data); err != nil {
 			return err
 		}
-=======
-	if err := rlp2.Encode(buf, data); err != nil {
-		return err
->>>>>>> v2.61.1
 	}
 	return rlp2.Encode(w, buf.Bytes())
 }
@@ -305,7 +295,7 @@ func (r *Receipt) decodePayload(s *rlp2.Stream) error {
 	if r.Type == DepositTxType {
 		depositNonce, err := s.Uint()
 		if err != nil {
-			if !errors.Is(err, rlp.EOL) {
+			if !errors.Is(err, rlp2.EOL) {
 				return fmt.Errorf("read DepositNonce: %w", err)
 			}
 			return nil
@@ -314,7 +304,7 @@ func (r *Receipt) decodePayload(s *rlp2.Stream) error {
 		}
 		depositReceiptVersion, err := s.Uint()
 		if err != nil {
-			if !errors.Is(err, rlp.EOL) {
+			if !errors.Is(err, rlp2.EOL) {
 				return fmt.Errorf("read DepositReceiptVersion: %w", err)
 			}
 			return nil
@@ -570,11 +560,11 @@ func (rs Receipts) EncodeIndex(i int, w *bytes.Buffer) {
 		if r.DepositReceiptVersion != nil {
 			// post-canyon receipt hash computation update
 			depositData := &depositReceiptRlp{data.PostStateOrStatus, data.CumulativeGasUsed, r.Bloom, r.Logs, r.DepositNonce, r.DepositReceiptVersion}
-			if err := rlp.Encode(w, depositData); err != nil {
+			if err := rlp2.Encode(w, depositData); err != nil {
 				panic(err)
 			}
 		} else {
-			if err := rlp.Encode(w, data); err != nil {
+			if err := rlp2.Encode(w, data); err != nil {
 				panic(err)
 			}
 		}

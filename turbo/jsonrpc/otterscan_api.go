@@ -525,8 +525,7 @@ func (api *OtterscanAPIImpl) searchTransactionsBeforeV3(tx kv.TemporalTx, ctx co
 		if err != nil {
 			return nil, err
 		}
-<<<<<<< HEAD
-		var rpcTx *RPCTransaction
+
 		var receipt *types.Receipt
 		if chainConfig.IsOptimism() {
 			receipts := rawdb.ReadRawReceipts(tx, blockNum)
@@ -535,10 +534,7 @@ func (api *OtterscanAPIImpl) searchTransactionsBeforeV3(tx kv.TemporalTx, ctx co
 			}
 			receipt = receipts[txIndex]
 		}
-		rpcTx = NewRPCTransaction(txn, blockHash, blockNum, uint64(txIndex), header.BaseFee, receipt)
-=======
-		rpcTx := ethapi.NewRPCTransaction(txn, blockHash, blockNum, uint64(txIndex), header.BaseFee)
->>>>>>> v2.61.1
+		rpcTx := ethapi.NewRPCTransaction(txn, blockHash, blockNum, uint64(txIndex), header.BaseFee, receipt)
 		txs = append(txs, rpcTx)
 		receipt = &types.Receipt{
 			Type: txn.Type(), CumulativeGasUsed: res.UsedGas,

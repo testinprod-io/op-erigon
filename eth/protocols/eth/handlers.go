@@ -158,11 +158,7 @@ func AnswerGetBlockBodiesQuery(db kv.Tx, query GetBlockBodiesPacket, blockReader
 	return bodies
 }
 
-<<<<<<< HEAD
-func AnswerGetReceiptsQuery(chainCfg *chain.Config, br services.FullBlockReader, db kv.Tx, query GetReceiptsPacket) ([]rlp.RawValue, error) { //nolint:unparam
-=======
-func AnswerGetReceiptsQuery(br services.FullBlockReader, db kv.Tx, query GetReceiptsPacket) ([]rlp2.RawValue, error) { //nolint:unparam
->>>>>>> v2.61.1
+func AnswerGetReceiptsQuery(chainCfg *chain.Config, br services.FullBlockReader, db kv.Tx, query GetReceiptsPacket) ([]rlp2.RawValue, error) { //nolint:unparam
 	// Gather state data until the fetch or network limits is reached
 	var (
 		bytes    int

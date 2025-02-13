@@ -150,12 +150,8 @@ func AllComponents(ctx context.Context, cfg txpoolcfg.Config, cache kvcache.Cach
 	fjordTime := chainConfig.FjordTime
 
 	txPool, err := txpool.New(newTxs, chainDB, cfg, cache, *chainID, shanghaiTime, agraBlock, cancunTime, pragueTime,
-<<<<<<< HEAD
 		regolithTime, canyonTime, ecotoneTime, fjordTime,
-		maxBlobsPerBlock, feeCalculator, logger)
-=======
 		chainConfig.BlobSchedule, feeCalculator, logger)
->>>>>>> v2.61.1
 	if err != nil {
 		return nil, nil, nil, nil, nil, err
 	}

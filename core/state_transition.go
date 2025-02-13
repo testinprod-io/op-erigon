@@ -533,7 +533,6 @@ func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*ev
 		ret, st.gasRemaining, vmerr = st.evm.Call(sender, st.to(), st.data, st.gasRemaining, st.value, bailout)
 	}
 
-<<<<<<< HEAD
 	// if deposit: skip refunds, skip tipping coinbase
 	// Regolith changes this behaviour to report the actual gasUsed instead of always reporting all gas used.
 	if st.msg.IsDepositTx() && !rules.IsOptimismRegolith {
@@ -552,8 +551,6 @@ func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*ev
 	// Note for deposit tx there is no ETH refunded for unused gas, but that's taken care of by the fact that gasPrice
 	// is always 0 for deposit tx. So calling refundGas will ensure the gasUsed accounting is correct without actually
 	// changing the sender's balance
-=======
->>>>>>> v2.61.1
 	if refunds && !gasBailout {
 		refundQuotient := params.RefundQuotient
 		if rules.IsLondon {
@@ -570,7 +567,7 @@ func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*ev
 	} else if rules.IsPrague {
 		st.gasRemaining = st.initialGas - max(floorGas7623, st.gasUsed())
 	}
-<<<<<<< HEAD
+
 	if st.msg.IsDepositTx() && rules.IsOptimismRegolith {
 		// Skip coinbase payments for deposit tx in Regolith
 		return &evmtypes.ExecutionResult{
@@ -579,9 +576,7 @@ func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*ev
 			ReturnData: ret,
 		}, nil
 	}
-=======
 
->>>>>>> v2.61.1
 	effectiveTip := st.gasPrice
 	if rules.IsLondon {
 		if st.gasFeeCap.Gt(st.evm.Context.BaseFee) {

@@ -387,7 +387,7 @@ func (ctx *TxParseContext) parseTransactionBody(payload []byte, pos, p0 int, slo
 			return 0, fmt.Errorf("%w: depostTx sourchHash: %s", ErrParseTxn, err) //nolint
 		}
 		// From
-		dataPos, dataLen, err := rlp.String(payload, p)
+		dataPos, dataLen, err := rlp.ParseString(payload, p)
 		if err != nil {
 			return 0, fmt.Errorf("%w: depostTx from: %s", ErrParseTxn, err) //nolint
 		}
@@ -417,7 +417,7 @@ func (ctx *TxParseContext) parseTransactionBody(payload []byte, pos, p0 int, slo
 			return 0, fmt.Errorf("%w: depositTx gas: %s", ErrParseTxn, err) //nolint
 		}
 		// Data
-		dataPos, dataLen, err = rlp.String(payload, p)
+		dataPos, dataLen, err = rlp.ParseString(payload, p)
 		if err != nil {
 			return 0, fmt.Errorf("%w: depositTx data len: %s", ErrParseTxn, err) //nolint
 		}

@@ -238,7 +238,7 @@ func ParseHash(payload []byte, pos int, hashbuf []byte) (int, error) {
 }
 
 func SkipString(payload []byte, pos int) (nextPos, dataLen int, err error) {
-	dataPos, dataLen, err := String(payload, pos)
+	dataPos, dataLen, err := ParseString(payload, pos)
 	return dataPos + dataLen, dataLen, err
 }
 

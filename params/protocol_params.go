@@ -162,20 +162,15 @@ const (
 	Bn256PairingPerPointGasByzantium uint64 = 80000  // Byzantium per-point price for an elliptic curve pairing check
 	Bn256PairingPerPointGasIstanbul  uint64 = 34000  // Per-point price for an elliptic curve pairing check
 
-<<<<<<< HEAD
 	Bn256PairingMaxInputSizeGranite uint64 = 112687 // Maximum input size for an elliptic curve pairing check
-
-	Bls12381G1AddGas          uint64 = 500   // Price for BLS12-381 elliptic curve G1 point addition
-=======
-	Bls12381G1AddGas          uint64 = 375   // Price for BLS12-381 elliptic curve G1 point addition
->>>>>>> v2.61.1
-	Bls12381G1MulGas          uint64 = 12000 // Price for BLS12-381 elliptic curve G1 point scalar multiplication
-	Bls12381G2AddGas          uint64 = 600   // Price for BLS12-381 elliptic curve G2 point addition
-	Bls12381G2MulGas          uint64 = 22500 // Price for BLS12-381 elliptic curve G2 point scalar multiplication
-	Bls12381PairingBaseGas    uint64 = 37700 // Base gas price for BLS12-381 elliptic curve pairing check
-	Bls12381PairingPerPairGas uint64 = 32600 // Per-point pair gas price for BLS12-381 elliptic curve pairing check
-	Bls12381MapFpToG1Gas      uint64 = 5500  // Gas price for BLS12-381 mapping field element to G1 operation
-	Bls12381MapFp2ToG2Gas     uint64 = 23800 // Gas price for BLS12-381 mapping field element to G2 operation
+	Bls12381G1AddGas                uint64 = 375    // Price for BLS12-381 elliptic curve G1 point addition
+	Bls12381G1MulGas                uint64 = 12000  // Price for BLS12-381 elliptic curve G1 point scalar multiplication
+	Bls12381G2AddGas                uint64 = 600    // Price for BLS12-381 elliptic curve G2 point addition
+	Bls12381G2MulGas                uint64 = 22500  // Price for BLS12-381 elliptic curve G2 point scalar multiplication
+	Bls12381PairingBaseGas          uint64 = 37700  // Base gas price for BLS12-381 elliptic curve pairing check
+	Bls12381PairingPerPairGas       uint64 = 32600  // Per-point pair gas price for BLS12-381 elliptic curve pairing check
+	Bls12381MapFpToG1Gas            uint64 = 5500   // Gas price for BLS12-381 mapping field element to G1 operation
+	Bls12381MapFp2ToG2Gas           uint64 = 23800  // Gas price for BLS12-381 mapping field element to G2 operation
 
 	// The Refund Quotient is the cap on how much of the used gas can be refunded. Before EIP-3529,
 	// up to half the consumed gas could be refunded.

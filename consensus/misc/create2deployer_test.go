@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/erigontech/erigon-lib/chain"
+	"github.com/erigontech/erigon-lib/crypto"
 	"github.com/erigontech/erigon-lib/kv/memdb"
 	"github.com/erigontech/erigon/core/state"
-	"github.com/erigontech/erigon/crypto"
 	"github.com/erigontech/erigon/params"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

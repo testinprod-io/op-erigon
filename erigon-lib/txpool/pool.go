@@ -239,7 +239,8 @@ type TxPool struct {
 	blobSchedule            *chain.BlobSchedule
 	feeCalculator           FeeCalculator
 	logger                  log.Logger
-<<<<<<< HEAD
+
+	auths map[common.Address]*metaTx // All accounts with a pooled authorization
 
 	l1Cost         types.L1CostFn
 	regolithTime   *uint64
@@ -250,9 +251,6 @@ type TxPool struct {
 	isPostEcotone  atomic.Bool
 	fjordTime      *uint64
 	isPostFjord    atomic.Bool
-=======
-	auths                   map[common.Address]*metaTx // All accounts with a pooled authorization
->>>>>>> v2.61.1
 }
 
 type FeeCalculator interface {
@@ -260,14 +258,9 @@ type FeeCalculator interface {
 }
 
 func New(newTxs chan types.Announcements, coreDB kv.RoDB, cfg txpoolcfg.Config, cache kvcache.Cache,
-<<<<<<< HEAD
 	chainID uint256.Int, shanghaiTime, agraBlock, cancunTime, pragueTime *big.Int,
 	regolithTime, canyonTime, ecotoneTime, fjordTime *big.Int,
-	maxBlobsPerBlock uint64, feeCalculator FeeCalculator, logger log.Logger,
-=======
-	chainID uint256.Int, shanghaiTime, agraBlock, cancunTime, pragueTime *big.Int, blobSchedule *chain.BlobSchedule,
-	feeCalculator FeeCalculator, logger log.Logger,
->>>>>>> v2.61.1
+	blobSchedule *chain.BlobSchedule, feeCalculator FeeCalculator, logger log.Logger,
 ) (*TxPool, error) {
 	localsHistory, err := simplelru.NewLRU[string, struct{}](10_000, nil)
 	if err != nil {
@@ -379,7 +372,7 @@ func RawRLPTxToOptimismL1CostFn(payload []byte, isRegolith, isEcotone, isFjord b
 	if len(payload) == 0 {
 		return nil, fmt.Errorf("empty tx payload")
 	}
-	offset, _, err := rlp.String(payload, 0)
+	offset, _, err := rlp.ParseString(payload, 0)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse rlp string: %w", err)
 	}
@@ -394,7 +387,7 @@ func RawRLPTxToOptimismL1CostFn(payload []byte, isRegolith, isEcotone, isFjord b
 	if !isList {
 		return nil, fmt.Errorf("expected list")
 	}
-	dataPos, _, err := rlp.List(payload, pos)
+	dataPos, _, err := rlp.ParseList(payload, pos)
 	if err != nil {
 		return nil, fmt.Errorf("bad tx rlp list start: %w", err)
 	}
@@ -853,12 +846,8 @@ func (p *TxPool) best(n uint16, txs *types.TxsRlp, tx kv.Tx, onTopOf, availableG
 
 	best := p.pending.best
 
-<<<<<<< HEAD
 	isShanghai := p.isShanghai() || p.isAgra() || p.isCanyon()
-=======
-	isShanghai := p.isShanghai() || p.isAgra()
 	isPrague := p.isPrague()
->>>>>>> v2.61.1
 
 	txs.Resize(uint(cmp.Min(int(n), len(best.ms))))
 	var toRemove []*metaTx
@@ -1214,7 +1203,6 @@ func (p *TxPool) isPrague() bool {
 	return isTimeBasedForkActivated(&p.isPostPrague, p.pragueTime)
 }
 
-<<<<<<< HEAD
 func (p *TxPool) isRegolith() bool {
 	// once this flag has been set for the first time we no longer need to check the timestamp
 	set := p.isPostRegolith.Load()
@@ -1313,10 +1301,10 @@ func (p *TxPool) isFjord() bool {
 		p.isPostFjord.Swap(true)
 	}
 	return activated
-=======
+}
+
 func (p *TxPool) GetMaxBlobsPerBlock() uint64 {
 	return p.blobSchedule.MaxBlobsPerBlock(p.isPrague())
->>>>>>> v2.61.1
 }
 
 // Check that the serialized txn should not exceed a certain max size
