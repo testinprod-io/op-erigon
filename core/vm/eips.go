@@ -24,7 +24,6 @@ import (
 
 	libcommon "github.com/erigontech/erigon-lib/common"
 
-	"github.com/erigontech/erigon/consensus/misc"
 	"github.com/erigontech/erigon/params"
 )
 
@@ -303,11 +302,7 @@ func enable6780(jt *JumpTable) {
 
 // opBlobBaseFee implements the BLOBBASEFEE opcode
 func opBlobBaseFee(pc *uint64, interpreter *EVMInterpreter, callContext *ScopeContext) ([]byte, error) {
-	excessBlobGas := interpreter.evm.Context.ExcessBlobGas
-	blobBaseFee, err := misc.GetBlobGasPrice(interpreter.evm.ChainConfig(), *excessBlobGas)
-	if err != nil {
-		return nil, err
-	}
+	blobBaseFee := interpreter.evm.Context.BlobBaseFee
 	callContext.Stack.Push(blobBaseFee)
 	return nil, nil
 }
@@ -324,9 +319,6 @@ func enable7516(jt *JumpTable) {
 }
 
 func enable7702(jt *JumpTable) {
-	jt[EXTCODECOPY].dynamicGas = gasExtCodeCopyEIP7702
-	jt[EXTCODESIZE].dynamicGas = gasEip7702CodeCheck
-	jt[EXTCODEHASH].dynamicGas = gasEip7702CodeCheck
 	jt[CALL].dynamicGas = gasCallEIP7702
 	jt[CALLCODE].dynamicGas = gasCallCodeEIP7702
 	jt[STATICCALL].dynamicGas = gasStaticCallEIP7702

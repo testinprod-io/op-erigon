@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/c2h5oh/datasize"
-	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/holiman/uint256"
 
 	"github.com/erigontech/erigon-lib/chain"
@@ -31,6 +30,7 @@ import (
 	"github.com/erigontech/erigon-lib/kv"
 	"github.com/erigontech/erigon-lib/kv/kvcache"
 	"github.com/erigontech/erigon-lib/kv/mdbx"
+	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/erigontech/erigon-lib/txpool"
 	"github.com/erigontech/erigon-lib/txpool/txpoolcfg"
 	"github.com/erigontech/erigon-lib/types"
@@ -132,7 +132,6 @@ func AllComponents(ctx context.Context, cfg txpoolcfg.Config, cache kvcache.Cach
 	}
 
 	chainID, _ := uint256.FromBig(chainConfig.ChainID)
-	maxBlobsPerBlock := chainConfig.GetMaxBlobsPerBlock()
 
 	shanghaiTime := chainConfig.ShanghaiTime
 	var agraBlock *big.Int
@@ -151,8 +150,12 @@ func AllComponents(ctx context.Context, cfg txpoolcfg.Config, cache kvcache.Cach
 	fjordTime := chainConfig.FjordTime
 
 	txPool, err := txpool.New(newTxs, chainDB, cfg, cache, *chainID, shanghaiTime, agraBlock, cancunTime, pragueTime,
+<<<<<<< HEAD
 		regolithTime, canyonTime, ecotoneTime, fjordTime,
 		maxBlobsPerBlock, feeCalculator, logger)
+=======
+		chainConfig.BlobSchedule, feeCalculator, logger)
+>>>>>>> v2.61.1
 	if err != nil {
 		return nil, nil, nil, nil, nil, err
 	}

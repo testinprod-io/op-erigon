@@ -29,11 +29,14 @@ import (
 	"time"
 
 	"github.com/c2h5oh/datasize"
+
 	"github.com/erigontech/erigon-lib/log/v3"
+	rlp2 "github.com/erigontech/erigon-lib/rlp"
+
+	mdbx1 "github.com/erigontech/mdbx-go/mdbx"
 
 	"github.com/erigontech/erigon-lib/kv"
 	"github.com/erigontech/erigon-lib/kv/mdbx"
-	"github.com/erigontech/erigon/rlp"
 )
 
 // Keys in the node database.
@@ -122,6 +125,8 @@ func newPersistentDB(ctx context.Context, logger log.Logger, path string) (*DB, 
 		WithTableCfg(bucketsConfig).
 		MapSize(8 * datasize.GB).
 		GrowthStep(16 * datasize.MB).
+		Flags(func(f uint) uint { return f ^ mdbx1.Durable | mdbx1.SafeNoSync }).
+		SyncPeriod(2 * time.Second).
 		DirtySpace(uint64(64 * datasize.MB)).
 		Open(ctx)
 	if err != nil {
@@ -316,7 +321,7 @@ func (db *DB) Node(id ID) *Node {
 
 func mustDecodeNode(id, data []byte) *Node {
 	node := new(Node)
-	if err := rlp.DecodeBytes(data, &node.r); err != nil {
+	if err := rlp2.DecodeBytes(data, &node.r); err != nil {
 		panic(fmt.Errorf("p2p/enode: can't decode node %x in DB: %w", id, err))
 	}
 	// Restore node id cache.
@@ -329,7 +334,7 @@ func (db *DB) UpdateNode(node *Node) error {
 	if node.Seq() < db.NodeSeq(node.ID()) {
 		return nil
 	}
-	blob, err := rlp.EncodeToBytes(&node.r)
+	blob, err := rlp2.EncodeToBytes(&node.r)
 	if err != nil {
 		return err
 	}

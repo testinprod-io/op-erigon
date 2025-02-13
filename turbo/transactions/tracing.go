@@ -57,8 +57,12 @@ func ComputeTxEnv(ctx context.Context, engine consensus.EngineReader, block *typ
 	}
 	header := block.HeaderNoCopy()
 
+<<<<<<< HEAD
 	blockContext := core.NewEVMBlockContext(header, core.GetHashFn(header, getHeader), engine, nil)
 	blockContext.L1CostFunc = opstack.NewL1CostFunc(cfg, statedb)
+=======
+	blockContext := core.NewEVMBlockContext(header, core.GetHashFn(header, getHeader), engine, nil, cfg)
+>>>>>>> v2.61.1
 
 	// Recompute transactions up to the target index.
 	signer := types.MakeSigner(cfg, block.NumberU64(), block.Time())

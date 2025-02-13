@@ -9,10 +9,11 @@ import (
 	"testing"
 	"time"
 
-	libcommon "github.com/erigontech/erigon-lib/common"
-	types2 "github.com/erigontech/erigon-lib/types"
-	"github.com/erigontech/erigon/rlp"
 	"github.com/holiman/uint256"
+
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/rlp"
+	types2 "github.com/erigontech/erigon-lib/types"
 )
 
 const RUNS = 100 // for local tests increase this number
@@ -34,6 +35,11 @@ func (tr *TRand) RandIntInRange(min, max int) int {
 func (tr *TRand) RandUint64() *uint64 {
 	a := tr.rnd.Uint64()
 	return &a
+}
+
+func (tr *TRand) RandUint256() *uint256.Int {
+	a := new(uint256.Int).SetBytes(tr.RandBytes(tr.RandIntInRange(1, 32)))
+	return a
 }
 
 func (tr *TRand) RandBig() *big.Int {
@@ -120,7 +126,7 @@ func (tr *TRand) RandAuthorizations(size int) []Authorization {
 	auths := make([]Authorization, size)
 	for i := 0; i < size; i++ {
 		auths[i] = Authorization{
-			ChainID: *tr.RandUint64(),
+			ChainID: *tr.RandUint256(),
 			Address: tr.RandAddress(),
 			Nonce:   *tr.RandUint64(),
 			YParity: uint8(*tr.RandUint64()),

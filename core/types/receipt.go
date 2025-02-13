@@ -27,9 +27,14 @@ import (
 	libcommon "github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/hexutil"
 	"github.com/erigontech/erigon-lib/common/hexutility"
+<<<<<<< HEAD
 	"github.com/erigontech/erigon-lib/opstack"
 	"github.com/erigontech/erigon/crypto"
 	"github.com/erigontech/erigon/rlp"
+=======
+	"github.com/erigontech/erigon-lib/crypto"
+	rlp2 "github.com/erigontech/erigon-lib/rlp"
+>>>>>>> v2.61.1
 )
 
 // go:generate gencodec -type Receipt -field-override receiptMarshaling -out gen_receipt_json.go
@@ -207,10 +212,11 @@ func (r Receipt) IsDepositTxReceipt() bool {
 func (r Receipt) EncodeRLP(w io.Writer) error {
 	data := &receiptRLP{r.statusEncoding(), r.CumulativeGasUsed, r.Bloom, r.Logs}
 	if r.Type == LegacyTxType {
-		return rlp.Encode(w, data)
+		return rlp2.Encode(w, data)
 	}
 	buf := new(bytes.Buffer)
 	buf.WriteByte(r.Type)
+<<<<<<< HEAD
 	if r.Type == DepositTxType {
 		withNonceAndReceiptVersion := &depositReceiptRlp{r.statusEncoding(), r.CumulativeGasUsed, r.Bloom, r.Logs, r.DepositNonce, r.DepositReceiptVersion}
 		if err := rlp.Encode(buf, withNonceAndReceiptVersion); err != nil {
@@ -220,11 +226,15 @@ func (r Receipt) EncodeRLP(w io.Writer) error {
 		if err := rlp.Encode(buf, data); err != nil {
 			return err
 		}
+=======
+	if err := rlp2.Encode(buf, data); err != nil {
+		return err
+>>>>>>> v2.61.1
 	}
-	return rlp.Encode(w, buf.Bytes())
+	return rlp2.Encode(w, buf.Bytes())
 }
 
-func (r *Receipt) decodePayload(s *rlp.Stream) error {
+func (r *Receipt) decodePayload(s *rlp2.Stream) error {
 	_, err := s.List()
 	if err != nil {
 		return err
@@ -271,7 +281,7 @@ func (r *Receipt) decodePayload(s *rlp.Stream) error {
 			}
 			copy(log.Topics[len(log.Topics)-1][:], b)
 		}
-		if !errors.Is(err, rlp.EOL) {
+		if !errors.Is(err, rlp2.EOL) {
 			return fmt.Errorf("read Topic: %w", err)
 		}
 		// end of Topics list
@@ -286,7 +296,7 @@ func (r *Receipt) decodePayload(s *rlp.Stream) error {
 			return fmt.Errorf("close Log: %w", err)
 		}
 	}
-	if !errors.Is(err, rlp.EOL) {
+	if !errors.Is(err, rlp2.EOL) {
 		return fmt.Errorf("open Log: %w", err)
 	}
 	if err = s.ListEnd(); err != nil {
@@ -320,19 +330,19 @@ func (r *Receipt) decodePayload(s *rlp.Stream) error {
 
 // DecodeRLP implements rlp.Decoder, and loads the consensus fields of a receipt
 // from an RLP stream.
-func (r *Receipt) DecodeRLP(s *rlp.Stream) error {
+func (r *Receipt) DecodeRLP(s *rlp2.Stream) error {
 	kind, size, err := s.Kind()
 	if err != nil {
 		return err
 	}
 	switch kind {
-	case rlp.List:
+	case rlp2.List:
 		// It's a legacy receipt.
 		if err := r.decodePayload(s); err != nil {
 			return err
 		}
 		r.Type = LegacyTxType
-	case rlp.String:
+	case rlp2.String:
 		// It's an EIP-2718 typed tx receipt.
 		s.NewList(size) // Hack - convert String (envelope) into List
 		var b []byte
@@ -340,7 +350,7 @@ func (r *Receipt) DecodeRLP(s *rlp.Stream) error {
 			return fmt.Errorf("read TxType: %w", err)
 		}
 		if len(b) != 1 {
-			return fmt.Errorf("%w, got %d bytes", rlp.ErrWrongTxTypePrefix, len(b))
+			return fmt.Errorf("%w, got %d bytes", rlp2.ErrWrongTxTypePrefix, len(b))
 		}
 		r.Type = b[0]
 		switch r.Type {
@@ -355,7 +365,7 @@ func (r *Receipt) DecodeRLP(s *rlp.Stream) error {
 			return err
 		}
 	default:
-		return rlp.ErrExpectedList
+		return rlp2.ErrExpectedList
 	}
 	return nil
 }
@@ -441,12 +451,12 @@ func (r *ReceiptForStorage) EncodeRLP(w io.Writer) error {
 	for i, log := range r.Logs {
 		enc.Logs[i] = (*LogForStorage)(log)
 	}
-	return rlp.Encode(w, enc)
+	return rlp2.Encode(w, enc)
 }
 
 // DecodeRLP implements rlp.Decoder, and loads both consensus and implementation
 // fields of a receipt from an RLP stream.
-func (r *ReceiptForStorage) DecodeRLP(s *rlp.Stream) error {
+func (r *ReceiptForStorage) DecodeRLP(s *rlp2.Stream) error {
 	// Retrieve the entire receipt blob as we need to try multiple decoders
 	blob, err := s.Raw()
 	if err != nil {
@@ -466,7 +476,7 @@ func (r *ReceiptForStorage) DecodeRLP(s *rlp.Stream) error {
 
 func decodeStoredReceiptRLP(r *ReceiptForStorage, blob []byte) error {
 	var stored storedReceiptRLP
-	if err := rlp.DecodeBytes(blob, &stored); err != nil {
+	if err := rlp2.DecodeBytes(blob, &stored); err != nil {
 		return err
 	}
 	if err := (*Receipt)(r).setStatus(stored.PostStateOrStatus); err != nil {
@@ -489,7 +499,7 @@ func decodeStoredReceiptRLP(r *ReceiptForStorage, blob []byte) error {
 
 func decodeV4StoredReceiptRLP(r *ReceiptForStorage, blob []byte) error {
 	var stored v4StoredReceiptRLP
-	if err := rlp.DecodeBytes(blob, &stored); err != nil {
+	if err := rlp2.DecodeBytes(blob, &stored); err != nil {
 		return err
 	}
 	if err := (*Receipt)(r).setStatus(stored.PostStateOrStatus); err != nil {
@@ -510,7 +520,7 @@ func decodeV4StoredReceiptRLP(r *ReceiptForStorage, blob []byte) error {
 
 func decodeV3StoredReceiptRLP(r *ReceiptForStorage, blob []byte) error {
 	var stored v3StoredReceiptRLP
-	if err := rlp.DecodeBytes(blob, &stored); err != nil {
+	if err := rlp2.DecodeBytes(blob, &stored); err != nil {
 		return err
 	}
 	if err := (*Receipt)(r).setStatus(stored.PostStateOrStatus); err != nil {
@@ -541,18 +551,18 @@ func (rs Receipts) EncodeIndex(i int, w *bytes.Buffer) {
 	data := &receiptRLP{r.statusEncoding(), r.CumulativeGasUsed, r.Bloom, r.Logs}
 	switch r.Type {
 	case LegacyTxType:
-		if err := rlp.Encode(w, data); err != nil {
+		if err := rlp2.Encode(w, data); err != nil {
 			panic(err)
 		}
 	case AccessListTxType:
 		//nolint:errcheck
 		w.WriteByte(AccessListTxType)
-		if err := rlp.Encode(w, data); err != nil {
+		if err := rlp2.Encode(w, data); err != nil {
 			panic(err)
 		}
 	case DynamicFeeTxType:
 		w.WriteByte(DynamicFeeTxType)
-		if err := rlp.Encode(w, data); err != nil {
+		if err := rlp2.Encode(w, data); err != nil {
 			panic(err)
 		}
 	case DepositTxType:
@@ -570,12 +580,12 @@ func (rs Receipts) EncodeIndex(i int, w *bytes.Buffer) {
 		}
 	case BlobTxType:
 		w.WriteByte(BlobTxType)
-		if err := rlp.Encode(w, data); err != nil {
+		if err := rlp2.Encode(w, data); err != nil {
 			panic(err)
 		}
 	case SetCodeTxType:
 		w.WriteByte(SetCodeTxType)
-		if err := rlp.Encode(w, data); err != nil {
+		if err := rlp2.Encode(w, data); err != nil {
 			panic(err)
 		}
 	default:

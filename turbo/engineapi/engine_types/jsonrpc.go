@@ -4,7 +4,11 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
+<<<<<<< HEAD
 	"github.com/erigontech/erigon/params"
+=======
+	"fmt"
+>>>>>>> v2.61.1
 
 	"github.com/erigontech/erigon-lib/common/hexutil"
 
@@ -104,6 +108,17 @@ type GetPayloadResponse struct {
 type SuperchainSignal struct {
 	Recommended params.ProtocolVersion `json:"recommended"`
 	Required    params.ProtocolVersion `json:"required"`
+}
+
+type ClientVersionV1 struct {
+	Code    string `json:"code" gencodec:"required"`
+	Name    string `json:"name" gencodec:"required"`
+	Version string `json:"version" gencodec:"required"`
+	Commit  string `json:"commit" gencodec:"required"`
+}
+
+func (c ClientVersionV1) String() string {
+	return fmt.Sprintf("ClientCode: %s, %s-%s-%s", c.Code, c.Name, c.Version, c.Commit)
 }
 
 type StringifiedError struct{ err error }

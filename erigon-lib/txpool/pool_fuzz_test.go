@@ -8,19 +8,18 @@ import (
 	"encoding/binary"
 	"testing"
 
-	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/erigontech/erigon-lib/common"
-	"github.com/erigontech/erigon-lib/common/fixedgas"
 	"github.com/erigontech/erigon-lib/common/u256"
 	"github.com/erigontech/erigon-lib/gointerfaces"
 	"github.com/erigontech/erigon-lib/gointerfaces/remote"
 	"github.com/erigontech/erigon-lib/kv"
 	"github.com/erigontech/erigon-lib/kv/kvcache"
 	"github.com/erigontech/erigon-lib/kv/memdb"
+	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/erigontech/erigon-lib/rlp"
 	"github.com/erigontech/erigon-lib/txpool/txpoolcfg"
 	"github.com/erigontech/erigon-lib/types"
@@ -243,12 +242,12 @@ func fakeRlpTx(slot *types.TxSlot, data []byte) []byte {
 	bb = bytes.NewBuffer(buf[p:p])
 	_ = slot.FeeCap.EncodeRLP(bb)
 	p += rlp.U256Len(&slot.FeeCap)
-	p += rlp.EncodeU64(0, buf[p:])           //gas
-	p += rlp.EncodeString([]byte{}, buf[p:]) //destrination addr
+	p += rlp.EncodeU64(0, buf[p:])            //gas
+	p += rlp.EncodeString2([]byte{}, buf[p:]) //destrination addr
 	bb = bytes.NewBuffer(buf[p:p])
 	_ = slot.Value.EncodeRLP(bb)
 	p += rlp.U256Len(&slot.Value)
-	p += rlp.EncodeString(data, buf[p:])  //data
+	p += rlp.EncodeString2(data, buf[p:]) //data
 	p += rlp.EncodeListPrefix(0, buf[p:]) // access list
 	p += rlp.EncodeU64(1, buf[p:])        //v
 	p += rlp.EncodeU64(1, buf[p:])        //r
@@ -314,7 +313,11 @@ func FuzzOnNewBlocks(f *testing.F) {
 
 		cfg := txpoolcfg.DefaultConfig
 		sendersCache := kvcache.New(kvcache.DefaultCoherentConfig)
+<<<<<<< HEAD
 		pool, err := New(ch, coreDB, cfg, sendersCache, *u256.N1, nil, nil, nil, nil, nil, nil, nil, nil, fixedgas.DefaultMaxBlobsPerBlock, nil, log.New())
+=======
+		pool, err := New(ch, coreDB, cfg, sendersCache, *u256.N1, nil, nil, nil, nil, nil, nil, log.New())
+>>>>>>> v2.61.1
 		assert.NoError(err)
 
 		err = pool.Start(ctx, db)
@@ -540,7 +543,11 @@ func FuzzOnNewBlocks(f *testing.F) {
 		check(p2pReceived, types.TxSlots{}, "after_flush")
 		checkNotify(p2pReceived, types.TxSlots{}, "after_flush")
 
+<<<<<<< HEAD
 		p2, err := New(ch, coreDB, txpoolcfg.DefaultConfig, sendersCache, *u256.N1, nil, nil, nil, nil, nil, nil, nil, nil, fixedgas.DefaultMaxBlobsPerBlock, nil, log.New())
+=======
+		p2, err := New(ch, coreDB, txpoolcfg.DefaultConfig, sendersCache, *u256.N1, nil, nil, nil, nil, nil, nil, log.New())
+>>>>>>> v2.61.1
 		assert.NoError(err)
 
 		p2.senders = pool.senders // senders are not persisted

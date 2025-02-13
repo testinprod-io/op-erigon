@@ -3,7 +3,6 @@ package engineapi
 import (
 	"bytes"
 	"context"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"github.com/erigontech/erigon/consensus/misc"
@@ -29,10 +28,10 @@ import (
 	"github.com/erigontech/erigon-lib/kv/kvcache"
 	libstate "github.com/erigontech/erigon-lib/state"
 
+	"github.com/erigontech/erigon-lib/common/math"
 	"github.com/erigontech/erigon/cmd/rpcdaemon/cli"
 	"github.com/erigontech/erigon/cmd/rpcdaemon/cli/httpcfg"
 	"github.com/erigontech/erigon/common"
-	"github.com/erigontech/erigon/common/math"
 	"github.com/erigontech/erigon/consensus"
 	"github.com/erigontech/erigon/consensus/merge"
 	"github.com/erigontech/erigon/core/types"
@@ -136,11 +135,6 @@ func (s *EngineServer) checkRequestsPresence(time uint64, executionRequests []he
 			return &rpc.InvalidParamsError{Message: "requests before Prague"}
 		}
 	}
-	// if s.config.IsPrague(time) {
-	//   if len(executionRequests) < 3 {
-	// 		return &rpc.InvalidParamsError{Message: "missing requests list"}
-	// 	}
-	// }
 	return nil
 }
 
@@ -199,12 +193,14 @@ func (s *EngineServer) newPayload(ctx context.Context, req *engine_types.Executi
 		return nil, err
 	}
 	if version >= clparams.ElectraVersion {
-		requests = make(types.FlatRequests, len(types.KnownRequestTypes))
-		for i, r := range types.KnownRequestTypes {
-			if len(executionRequests) == i {
-				executionRequests = append(executionRequests, []byte{})
+		requests = make(types.FlatRequests, 0)
+		lastReqType := -1
+		for i, r := range executionRequests {
+			if len(r) <= 1 || lastReqType >= 0 && int(r[0]) <= lastReqType {
+				return nil, &rpc.InvalidParamsError{Message: fmt.Sprintf("Invalid Request at index %d", i)}
 			}
-			requests[i] = types.FlatRequest{Type: r, RequestData: executionRequests[i]}
+			lastReqType = int(r[0])
+			requests = append(requests, types.FlatRequest{Type: r[0], RequestData: r[1:]})
 		}
 		rh := requests.Hash()
 		header.RequestsHash = rh
@@ -264,7 +260,7 @@ func (s *EngineServer) newPayload(ctx context.Context, req *engine_types.Executi
 	}
 
 	if version >= clparams.DenebVersion {
-		err := ethutils.ValidateBlobs(req.BlobGasUsed.Uint64(), s.config.GetMaxBlobGasPerBlock(), s.config.GetMaxBlobsPerBlock(), expectedBlobHashes, &transactions)
+		err := ethutils.ValidateBlobs(req.BlobGasUsed.Uint64(), s.config.GetMaxBlobGasPerBlock(header.Time), s.config.GetMaxBlobsPerBlock(header.Time), expectedBlobHashes, &transactions)
 		if errors.Is(err, ethutils.ErrNilBlobHashes) {
 			return nil, &rpc.InvalidParamsError{Message: "nil blob hashes array"}
 		}
@@ -477,16 +473,9 @@ func (s *EngineServer) getPayload(ctx context.Context, payloadId uint64, version
 	data := resp.Data
 	var executionRequests []hexutility.Bytes
 	if version >= clparams.ElectraVersion {
-		executionRequests = make([]hexutility.Bytes, len(types.KnownRequestTypes))
-		if len(data.Requests.Requests) != 3 {
-			s.logger.Warn("Error in getPayload - data.Requests.Requests len not 3")
-		}
-		for i := 0; i < len(types.KnownRequestTypes); i++ {
-			if len(data.Requests.Requests) < i+1 || data.Requests.Requests[i] == nil {
-				executionRequests[i] = make(hexutility.Bytes, 0)
-			} else {
-				executionRequests[i] = data.Requests.Requests[i]
-			}
+		executionRequests = make([]hexutility.Bytes, 0)
+		for _, r := range data.Requests.Requests {
+			executionRequests = append(executionRequests, r)
 		}
 	}
 
@@ -699,6 +688,7 @@ func (s *EngineServer) getPayloadBodiesByRange(ctx context.Context, start, count
 	return resp, nil
 }
 
+<<<<<<< HEAD
 // Returns the most recent version of the payload(for the payloadID) at the time of receiving the call
 // See https://github.com/ethereum/execution-apis/blob/main/src/engine/paris.md#engine_getpayloadv1
 func (e *EngineServer) GetPayloadV1(ctx context.Context, payloadId hexutility.Bytes) (*engine_types.ExecutionPayload, error) {
@@ -921,6 +911,8 @@ func (e *EngineServer) ExchangeCapabilities(fromCl []string) []string {
 	return ourCapabilities
 }
 
+=======
+>>>>>>> v2.61.1
 func compareCapabilities(from []string, to []string) []string {
 	result := make([]string, 0)
 	for _, f := range from {

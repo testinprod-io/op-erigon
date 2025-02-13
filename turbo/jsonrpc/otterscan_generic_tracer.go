@@ -96,8 +96,12 @@ func (api *OtterscanAPIImpl) genericTracer(dbtx kv.Tx, ctx context.Context, bloc
 
 		msg, _ := tx.AsMessage(*signer, header.BaseFee, rules)
 
+<<<<<<< HEAD
 		BlockContext := core.NewEVMBlockContext(header, core.GetHashFn(header, getHeader), engine, nil)
 		BlockContext.L1CostFunc = opstack.NewL1CostFunc(chainConfig, ibs)
+=======
+		BlockContext := core.NewEVMBlockContext(header, core.GetHashFn(header, getHeader), engine, nil, chainConfig)
+>>>>>>> v2.61.1
 		TxContext := core.NewEVMTxContext(msg)
 
 		vmenv := vm.NewEVM(BlockContext, TxContext, ibs, chainConfig, vm.Config{Debug: true, Tracer: tracer})

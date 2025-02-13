@@ -34,10 +34,12 @@ var (
 const (
 	VersionMajor       = 2  // Major version component of the current release
 	VersionMinor       = 61 // Minor version component of the current release
-	VersionMicro       = 0  // Patch version component of the current release
+	VersionMicro       = 1  // Patch version component of the current release
 	VersionModifier    = "" // Modifier component of the current release
 	VersionKeyCreated  = "ErigonVersionCreated"
 	VersionKeyFinished = "ErigonVersionFinished"
+	ClientName         = "erigon"
+	ClientCode         = "EG"
 )
 
 // OPVersion is the version of op-erigon
