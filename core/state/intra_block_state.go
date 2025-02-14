@@ -25,11 +25,11 @@ import (
 
 	"github.com/erigontech/erigon-lib/chain"
 	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/crypto"
 	types2 "github.com/erigontech/erigon-lib/types"
 	"github.com/erigontech/erigon/common/u256"
 	"github.com/erigontech/erigon/core/types"
 	"github.com/erigontech/erigon/core/types/accounts"
-	"github.com/erigontech/erigon/crypto"
 	"github.com/erigontech/erigon/turbo/trie"
 )
 
@@ -276,17 +276,6 @@ func (sdb *IntraBlockState) ResolveCode(addr libcommon.Address) []byte {
 	}
 
 	return sdb.GetCode(addr)
-}
-
-func (sdb *IntraBlockState) ResolveCodeSize(addr libcommon.Address) int {
-	// eip-7702
-	size := sdb.GetCodeSize(addr)
-	if size == types.DelegateDesignationCodeSize {
-		// might be delegated designation
-		return len(sdb.ResolveCode(addr))
-	}
-
-	return size
 }
 
 func (sdb *IntraBlockState) GetDelegatedDesignation(addr libcommon.Address) (libcommon.Address, bool) {

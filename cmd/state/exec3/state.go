@@ -6,6 +6,8 @@ import (
 	"sync"
 
 	"github.com/erigontech/erigon-lib/log/v3"
+	"github.com/erigontech/erigon-lib/rlp"
+
 	"golang.org/x/sync/errgroup"
 
 	"github.com/erigontech/erigon-lib/chain"
@@ -20,7 +22,6 @@ import (
 	"github.com/erigontech/erigon/core/types"
 	"github.com/erigontech/erigon/core/vm"
 	"github.com/erigontech/erigon/core/vm/evmtypes"
-	"github.com/erigontech/erigon/rlp"
 	"github.com/erigontech/erigon/turbo/services"
 )
 
@@ -194,7 +195,7 @@ func (rw *Worker) RunTxTaskNoLock(txTask *exec22.TxTask) {
 		blockContext := txTask.EvmBlockContext
 		if !rw.background {
 			getHashFn := core.GetHashFn(header, rw.getHeader)
-			blockContext = core.NewEVMBlockContext(header, getHashFn, rw.engine, nil /* author */)
+			blockContext = core.NewEVMBlockContext(header, getHashFn, rw.engine, nil /* author */, rw.chainConfig)
 		}
 		rw.evm.ResetBetweenBlocks(blockContext, core.NewEVMTxContext(msg), ibs, vmConfig, rules)
 

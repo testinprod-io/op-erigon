@@ -23,15 +23,18 @@ import (
 	"slices"
 	"time"
 
-	"github.com/erigontech/erigon-lib/log/v3"
 	"golang.org/x/crypto/sha3"
+
+	math2 "github.com/erigontech/erigon-lib/common/math"
+	"github.com/erigontech/erigon-lib/log/v3"
+	"github.com/erigontech/erigon-lib/rlp"
 
 	"github.com/erigontech/erigon-lib/chain"
 	libcommon "github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/cmp"
 	"github.com/erigontech/erigon-lib/common/dbg"
+	"github.com/erigontech/erigon-lib/common/math"
 	"github.com/erigontech/erigon-lib/metrics"
-	"github.com/erigontech/erigon/common/math"
 	"github.com/erigontech/erigon/common/u256"
 	"github.com/erigontech/erigon/consensus"
 
@@ -41,7 +44,6 @@ import (
 	"github.com/erigontech/erigon/core/vm/evmtypes"
 	"github.com/erigontech/erigon/eth/ethutils"
 	bortypes "github.com/erigontech/erigon/polygon/bor/types"
-	"github.com/erigontech/erigon/rlp"
 )
 
 var (
@@ -65,16 +67,16 @@ type RejectedTx struct {
 type RejectedTxs []*RejectedTx
 
 type EphemeralExecResult struct {
-	StateRoot        libcommon.Hash        `json:"stateRoot"`
-	TxRoot           libcommon.Hash        `json:"txRoot"`
-	ReceiptRoot      libcommon.Hash        `json:"receiptsRoot"`
-	LogsHash         libcommon.Hash        `json:"logsHash"`
-	Bloom            types.Bloom           `json:"logsBloom"        gencodec:"required"`
-	Receipts         types.Receipts        `json:"receipts"`
-	Rejected         RejectedTxs           `json:"rejected,omitempty"`
-	Difficulty       *math.HexOrDecimal256 `json:"currentDifficulty" gencodec:"required"`
-	GasUsed          math.HexOrDecimal64   `json:"gasUsed"`
-	StateSyncReceipt *types.Receipt        `json:"-"`
+	StateRoot        libcommon.Hash         `json:"stateRoot"`
+	TxRoot           libcommon.Hash         `json:"txRoot"`
+	ReceiptRoot      libcommon.Hash         `json:"receiptsRoot"`
+	LogsHash         libcommon.Hash         `json:"logsHash"`
+	Bloom            types.Bloom            `json:"logsBloom"        gencodec:"required"`
+	Receipts         types.Receipts         `json:"receipts"`
+	Rejected         RejectedTxs            `json:"rejected,omitempty"`
+	Difficulty       *math2.HexOrDecimal256 `json:"currentDifficulty" gencodec:"required"`
+	GasUsed          math.HexOrDecimal64    `json:"gasUsed"`
+	StateSyncReceipt *types.Receipt         `json:"-"`
 }
 
 // ExecuteBlockEphemerally runs a block from provided stateReader and
@@ -96,7 +98,7 @@ func ExecuteBlockEphemerally(
 	usedGas := new(uint64)
 	usedBlobGas := new(uint64)
 	gp := new(GasPool)
-	gp.AddGas(block.GasLimit()).AddBlobGas(chainConfig.GetMaxBlobGasPerBlock())
+	gp.AddGas(block.GasLimit()).AddBlobGas(chainConfig.GetMaxBlobGasPerBlock(block.Time()))
 
 	if err := InitializeBlockExecution(engine, chainReader, block.Header(), chainConfig, ibs, logger); err != nil {
 		return nil, err
@@ -176,7 +178,7 @@ func ExecuteBlockEphemerally(
 		Bloom:       bloom,
 		LogsHash:    rlpHash(blockLogs),
 		Receipts:    receipts,
-		Difficulty:  (*math.HexOrDecimal256)(header.Difficulty),
+		Difficulty:  (*math2.HexOrDecimal256)(header.Difficulty),
 		GasUsed:     math.HexOrDecimal64(*usedGas),
 		Rejected:    rejectedTxs,
 	}
@@ -266,7 +268,7 @@ func SysCallContract(contract libcommon.Address, data []byte, chainConfig *chain
 		author = &state.SystemAddress
 		txContext = NewEVMTxContext(msg)
 	}
-	blockContext := NewEVMBlockContext(header, GetHashFn(header, nil), engine, author)
+	blockContext := NewEVMBlockContext(header, GetHashFn(header, nil), engine, author, chainConfig)
 	evm := vm.NewEVM(blockContext, txContext, ibs, chainConfig, vmConfig)
 
 	ret, _, err := evm.Call(
@@ -301,7 +303,7 @@ func SysCreate(contract libcommon.Address, data []byte, chainConfig chain.Config
 	// Create a new context to be used in the EVM environment
 	author := &contract
 	txContext := NewEVMTxContext(msg)
-	blockContext := NewEVMBlockContext(header, GetHashFn(header, nil), nil, author)
+	blockContext := NewEVMBlockContext(header, GetHashFn(header, nil), nil, author, &chainConfig)
 	evm := vm.NewEVM(blockContext, txContext, ibs, &chainConfig, vmConfig)
 
 	ret, _, err := evm.SysCreate(
@@ -329,7 +331,6 @@ func FinalizeBlockExecution(
 	if isMining {
 		newBlock, newTxs, newReceipt, retRequests, err = engine.FinalizeAndAssemble(cc, header, ibs, txs, uncles, receipts, withdrawals, chainReader, syscall, nil, logger)
 	} else {
-		// var rss types.Requests
 		newTxs, newReceipt, retRequests, err = engine.Finalize(cc, header, ibs, txs, uncles, receipts, withdrawals, chainReader, syscall, logger)
 	}
 	if err != nil {

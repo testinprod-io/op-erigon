@@ -17,6 +17,7 @@
 package vm
 
 import (
+	"errors"
 	"fmt"
 	"math"
 
@@ -374,7 +375,9 @@ func opReturnDataCopy(pc *uint64, interpreter *EVMInterpreter, scope *ScopeConte
 
 func opExtCodeSize(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
 	slot := scope.Stack.Peek()
-	slot.SetUint64(uint64(interpreter.evm.IntraBlockState().ResolveCodeSize(slot.Bytes20())))
+	addr := slot.Bytes20()
+	codeSize := interpreter.evm.IntraBlockState().GetCodeSize(addr)
+	slot.SetUint64(uint64(codeSize))
 	return nil, nil
 }
 
@@ -410,8 +413,8 @@ func opExtCodeCopy(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext)
 	)
 	addr := libcommon.Address(a.Bytes20())
 	len64 := length.Uint64()
-
-	codeCopy := getDataBig(interpreter.evm.IntraBlockState().ResolveCode(addr), &codeOffset, len64)
+	code := interpreter.evm.IntraBlockState().GetCode(addr)
+	codeCopy := getDataBig(code, &codeOffset, len64)
 	scope.Memory.Set(memOffset.Uint64(), len64, codeCopy)
 	return nil, nil
 }
@@ -460,7 +463,9 @@ func opExtCodeHash(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext)
 	if interpreter.evm.IntraBlockState().Empty(address) {
 		slot.Clear()
 	} else {
-		slot.SetBytes(interpreter.evm.IntraBlockState().ResolveCodeHash(address).Bytes())
+		var codeHash libcommon.Hash
+		codeHash = interpreter.evm.IntraBlockState().GetCodeHash(address)
+		slot.SetBytes(codeHash.Bytes())
 	}
 	return nil, nil
 }
@@ -519,7 +524,7 @@ func opDifficulty(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) 
 		var overflow bool
 		v, overflow = uint256.FromBig(interpreter.evm.Context.Difficulty)
 		if overflow {
-			return nil, fmt.Errorf("interpreter.evm.Context.Difficulty higher than 2^256-1")
+			return nil, errors.New("interpreter.evm.Context.Difficulty higher than 2^256-1")
 		}
 	}
 	scope.Stack.Push(v)

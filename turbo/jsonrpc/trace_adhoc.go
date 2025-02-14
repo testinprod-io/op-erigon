@@ -8,8 +8,10 @@ import (
 	"math"
 	"strings"
 
-	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/holiman/uint256"
+
+	math2 "github.com/erigontech/erigon-lib/common/math"
+	"github.com/erigontech/erigon-lib/log/v3"
 
 	libcommon "github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/hexutil"
@@ -18,7 +20,6 @@ import (
 	"github.com/erigontech/erigon-lib/opstack"
 	types2 "github.com/erigontech/erigon-lib/types"
 
-	math2 "github.com/erigontech/erigon/common/math"
 	"github.com/erigontech/erigon/core"
 	"github.com/erigontech/erigon/core/state"
 	"github.com/erigontech/erigon/core/types"
@@ -1002,7 +1003,7 @@ func (api *TraceAPIImpl) Call(ctx context.Context, args TraceCallParam, traceTyp
 		return nil, err
 	}
 
-	blockCtx := transactions.NewEVMBlockContext(engine, header, blockNrOrHash.RequireCanonical, tx, api._blockReader)
+	blockCtx := transactions.NewEVMBlockContext(engine, header, blockNrOrHash.RequireCanonical, tx, api._blockReader, chainConfig)
 	txCtx := core.NewEVMTxContext(msg)
 
 	blockCtx.GasLimit = math.MaxUint64
@@ -1242,7 +1243,7 @@ func (api *TraceAPIImpl) doCallMany(ctx context.Context, dbtx kv.Tx, stateReader
 			vmConfig.Tracer = &ot
 		}
 
-		blockCtx := transactions.NewEVMBlockContext(engine, header, parentNrOrHash.RequireCanonical, dbtx, api._blockReader)
+		blockCtx := transactions.NewEVMBlockContext(engine, header, parentNrOrHash.RequireCanonical, dbtx, api._blockReader, chainConfig)
 		if useParent {
 			blockCtx.GasLimit = math.MaxUint64
 			blockCtx.MaxGasLimit = true

@@ -6,23 +6,22 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/erigontech/erigon-lib/common/hexutil"
-
 	"github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/hexutil"
 	"github.com/erigontech/erigon-lib/common/hexutility"
 	"github.com/erigontech/erigon-lib/gointerfaces"
 	"github.com/erigontech/erigon-lib/gointerfaces/txpool"
 	"github.com/erigontech/erigon-lib/gointerfaces/types"
-	bortypes "github.com/erigontech/erigon/polygon/bor/types"
-
 	"github.com/erigontech/erigon/core/rawdb"
 	types2 "github.com/erigontech/erigon/core/types"
+	bortypes "github.com/erigontech/erigon/polygon/bor/types"
 	"github.com/erigontech/erigon/rpc"
+	"github.com/erigontech/erigon/turbo/adapter/ethapi"
 	"github.com/erigontech/erigon/turbo/rpchelper"
 )
 
 // GetTransactionByHash implements eth_getTransactionByHash. Returns information about a transaction given the transaction's hash.
-func (api *APIImpl) GetTransactionByHash(ctx context.Context, txnHash common.Hash) (*RPCTransaction, error) {
+func (api *APIImpl) GetTransactionByHash(ctx context.Context, txnHash common.Hash) (*ethapi.RPCTransaction, error) {
 	tx, err := api.db.BeginRo(ctx)
 	if err != nil {
 		return nil, err
@@ -76,7 +75,7 @@ func (api *APIImpl) GetTransactionByHash(ctx context.Context, txnHash common.Has
 				return nil, nil
 			}
 			borTx := bortypes.NewBorTransaction()
-			return newRPCBorTransaction(borTx, txnHash, blockHash, blockNum, uint64(len(block.Transactions())), baseFee, chainConfig.ChainID), nil
+			return ethapi.NewRPCBorTransaction(borTx, txnHash, blockHash, blockNum, uint64(len(block.Transactions())), chainConfig.ChainID), nil
 		}
 
 		if chainConfig.IsOptimism() {
@@ -84,9 +83,10 @@ func (api *APIImpl) GetTransactionByHash(ctx context.Context, txnHash common.Has
 			if len(receipts) <= int(txnIndex) {
 				return nil, fmt.Errorf("block has less receipts than expected: %d <= %d, block: %d", len(receipts), int(txnIndex), blockNum)
 			}
-			return NewRPCTransaction(txn, blockHash, blockNum, txnIndex, baseFee, receipts[txnIndex]), nil
+			return ethapi.NewRPCTransaction(txn, blockHash, blockNum, txnIndex, baseFee, receipts[txnIndex]), nil
 		}
-		return NewRPCTransaction(txn, blockHash, blockNum, txnIndex, baseFee, nil), nil
+
+		return ethapi.NewRPCTransaction(txn, blockHash, blockNum, txnIndex, baseFee, nil), nil
 	}
 
 	curHeader := rawdb.ReadCurrentHeader(tx)
@@ -166,7 +166,7 @@ func (api *APIImpl) GetRawTransactionByHash(ctx context.Context, hash common.Has
 }
 
 // GetTransactionByBlockHashAndIndex implements eth_getTransactionByBlockHashAndIndex. Returns information about a transaction given the block's hash and a transaction index.
-func (api *APIImpl) GetTransactionByBlockHashAndIndex(ctx context.Context, blockHash common.Hash, txIndex hexutil.Uint64) (*RPCTransaction, error) {
+func (api *APIImpl) GetTransactionByBlockHashAndIndex(ctx context.Context, blockHash common.Hash, txIndex hexutil.Uint64) (*ethapi.RPCTransaction, error) {
 	tx, err := api.db.BeginRo(ctx)
 	if err != nil {
 		return nil, err
@@ -198,7 +198,7 @@ func (api *APIImpl) GetTransactionByBlockHashAndIndex(ctx context.Context, block
 			return nil, nil // not error
 		}
 		derivedBorTxHash := bortypes.ComputeBorTxHash(block.NumberU64(), block.Hash())
-		return newRPCBorTransaction(borTx, derivedBorTxHash, block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), chainConfig.ChainID), nil
+		return ethapi.NewRPCBorTransaction(borTx, derivedBorTxHash, block.Hash(), block.NumberU64(), uint64(txIndex), chainConfig.ChainID), nil
 	}
 
 	if chainConfig.IsOptimism() {
@@ -206,9 +206,9 @@ func (api *APIImpl) GetTransactionByBlockHashAndIndex(ctx context.Context, block
 		if len(receipts) <= int(txIndex) {
 			return nil, fmt.Errorf("block has less receipts than expected: %d <= %d, block: %d", len(receipts), int(txIndex), block.NumberU64())
 		}
-		return NewRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), receipts[txIndex]), nil
+		return ethapi.NewRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), receipts[txIndex]), nil
 	}
-	return NewRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), nil), nil
+	return ethapi.NewRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), nil), nil
 }
 
 // GetRawTransactionByBlockHashAndIndex returns the bytes of the transaction for the given block hash and index.
@@ -232,7 +232,7 @@ func (api *APIImpl) GetRawTransactionByBlockHashAndIndex(ctx context.Context, bl
 }
 
 // GetTransactionByBlockNumberAndIndex implements eth_getTransactionByBlockNumberAndIndex. Returns information about a transaction given a block number and transaction index.
-func (api *APIImpl) GetTransactionByBlockNumberAndIndex(ctx context.Context, blockNr rpc.BlockNumber, txIndex hexutil.Uint) (*RPCTransaction, error) {
+func (api *APIImpl) GetTransactionByBlockNumberAndIndex(ctx context.Context, blockNr rpc.BlockNumber, txIndex hexutil.Uint) (*ethapi.RPCTransaction, error) {
 	tx, err := api.db.BeginRo(ctx)
 	if err != nil {
 		return nil, err
@@ -269,17 +269,17 @@ func (api *APIImpl) GetTransactionByBlockNumberAndIndex(ctx context.Context, blo
 			return nil, nil
 		}
 		derivedBorTxHash := bortypes.ComputeBorTxHash(blockNum, hash)
-		return newRPCBorTransaction(borTx, derivedBorTxHash, hash, blockNum, uint64(txIndex), block.BaseFee(), chainConfig.ChainID), nil
+		return ethapi.NewRPCBorTransaction(borTx, derivedBorTxHash, hash, blockNum, uint64(txIndex), chainConfig.ChainID), nil
 	}
 	if chainConfig.IsOptimism() {
 		receipts := rawdb.ReadRawReceipts(tx, block.NumberU64())
 		if len(receipts) <= int(txIndex) {
 			return nil, fmt.Errorf("block has less receipts than expected: %d <= %d, block: %d", len(receipts), int(txIndex), block.NumberU64())
 		}
-		return NewRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), receipts[txIndex]), nil
+		return ethapi.NewRPCTransaction(txs[txIndex], block.Hash(), block.NumberU64(), uint64(txIndex), block.BaseFee(), receipts[txIndex]), nil
 	}
 
-	return NewRPCTransaction(txs[txIndex], hash, blockNum, uint64(txIndex), block.BaseFee(), nil), nil
+	return ethapi.NewRPCTransaction(txs[txIndex], hash, blockNum, uint64(txIndex), block.BaseFee(), nil), nil
 }
 
 // GetRawTransactionByBlockNumberAndIndex returns the bytes of the transaction for the given block number and index.

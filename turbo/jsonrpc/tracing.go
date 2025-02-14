@@ -15,7 +15,7 @@ import (
 	"github.com/erigontech/erigon-lib/common/hexutil"
 	"github.com/erigontech/erigon-lib/opstack"
 
-	"github.com/erigontech/erigon/common/math"
+	"github.com/erigontech/erigon-lib/common/math"
 	"github.com/erigontech/erigon/core"
 	"github.com/erigontech/erigon/core/state"
 	"github.com/erigontech/erigon/core/types"
@@ -403,7 +403,7 @@ func (api *PrivateDebugAPIImpl) TraceCall(ctx context.Context, args ethapi.CallA
 		return fmt.Errorf("convert args to msg: %v", err)
 	}
 
-	blockCtx := transactions.NewEVMBlockContext(engine, header, blockNrOrHash.RequireCanonical, dbtx, api._blockReader)
+	blockCtx := transactions.NewEVMBlockContext(engine, header, blockNrOrHash.RequireCanonical, dbtx, api._blockReader, chainConfig)
 	txCtx := core.NewEVMTxContext(msg)
 	blockCtx.L1CostFunc = opstack.NewL1CostFunc(chainConfig, ibs)
 	// Trace the transaction and return
@@ -515,7 +515,7 @@ func (api *PrivateDebugAPIImpl) TraceCallMany(ctx context.Context, bundles []Bun
 		return hash
 	}
 
-	blockCtx = core.NewEVMBlockContext(header, getHash, api.engine(), nil /* author */)
+	blockCtx = core.NewEVMBlockContext(header, getHash, api.engine(), nil /* author */, chainConfig)
 	blockCtx.L1CostFunc = opstack.NewL1CostFunc(chainConfig, st)
 	// Get a new instance of the EVM
 	evm = vm.NewEVM(blockCtx, txCtx, st, chainConfig, vm.Config{Debug: false})

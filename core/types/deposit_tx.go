@@ -28,7 +28,7 @@ import (
 	libcommon "github.com/erigontech/erigon-lib/common"
 	types2 "github.com/erigontech/erigon-lib/types"
 
-	"github.com/erigontech/erigon/rlp"
+	"github.com/erigontech/erigon-lib/rlp"
 
 	"github.com/erigontech/erigon/common"
 	"github.com/holiman/uint256"

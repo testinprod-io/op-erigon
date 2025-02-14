@@ -11,9 +11,6 @@ import (
 	"time"
 
 	"github.com/c2h5oh/datasize"
-	"github.com/erigontech/erigon-lib/config3"
-	"github.com/erigontech/erigon-lib/kv/temporal/temporaltest"
-	"github.com/erigontech/erigon-lib/log/v3"
 	lru "github.com/hashicorp/golang-lru/arc/v2"
 	"github.com/holiman/uint256"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -21,6 +18,8 @@ import (
 	"github.com/erigontech/erigon-lib/chain"
 	libcommon "github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/datadir"
+	"github.com/erigontech/erigon-lib/config3"
+	"github.com/erigontech/erigon-lib/crypto"
 	"github.com/erigontech/erigon-lib/direct"
 	"github.com/erigontech/erigon-lib/gointerfaces"
 	proto_downloader "github.com/erigontech/erigon-lib/gointerfaces/downloader"
@@ -31,6 +30,9 @@ import (
 	"github.com/erigontech/erigon-lib/kv/kvcache"
 	"github.com/erigontech/erigon-lib/kv/memdb"
 	"github.com/erigontech/erigon-lib/kv/remotedbserver"
+	"github.com/erigontech/erigon-lib/kv/temporal/temporaltest"
+	"github.com/erigontech/erigon-lib/log/v3"
+	"github.com/erigontech/erigon-lib/rlp"
 	libstate "github.com/erigontech/erigon-lib/state"
 	"github.com/erigontech/erigon-lib/txpool"
 	"github.com/erigontech/erigon-lib/txpool/txpoolcfg"
@@ -44,7 +46,6 @@ import (
 	"github.com/erigontech/erigon/core/state"
 	"github.com/erigontech/erigon/core/types"
 	"github.com/erigontech/erigon/core/vm"
-	"github.com/erigontech/erigon/crypto"
 	"github.com/erigontech/erigon/eth/ethconfig"
 	"github.com/erigontech/erigon/eth/ethconsensusconfig"
 	"github.com/erigontech/erigon/eth/protocols/eth"
@@ -56,7 +57,6 @@ import (
 	"github.com/erigontech/erigon/p2p/sentry/sentry_multi_client"
 	"github.com/erigontech/erigon/params"
 	"github.com/erigontech/erigon/polygon/bor"
-	"github.com/erigontech/erigon/rlp"
 	"github.com/erigontech/erigon/turbo/builder"
 	"github.com/erigontech/erigon/turbo/engineapi/engine_helpers"
 	"github.com/erigontech/erigon/turbo/execution/eth1"
@@ -310,8 +310,8 @@ func MockWithEverything(tb testing.TB, gspec *types.Genesis, key *ecdsa.PrivateK
 		shanghaiTime := mock.ChainConfig.ShanghaiTime
 		cancunTime := mock.ChainConfig.CancunTime
 		pragueTime := mock.ChainConfig.PragueTime
-		maxBlobsPerBlock := mock.ChainConfig.GetMaxBlobsPerBlock()
-		mock.TxPool, err = txpool.New(newTxs, mock.DB, poolCfg, kvcache.NewDummy(), *chainID, shanghaiTime, nil /* agraBlock */, cancunTime, pragueTime, nil, nil, nil, nil, maxBlobsPerBlock, nil, logger)
+		blobSchedule := mock.ChainConfig.BlobSchedule
+		mock.TxPool, err = txpool.New(newTxs, mock.DB, poolCfg, kvcache.NewDummy(), *chainID, shanghaiTime, nil /* agraBlock */, cancunTime, pragueTime, nil, nil, nil, nil, blobSchedule, nil, logger)
 		if err != nil {
 			tb.Fatal(err)
 		}

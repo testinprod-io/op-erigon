@@ -21,12 +21,12 @@ import (
 	libcommon "github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/opstack"
 
+	"github.com/erigontech/erigon-lib/crypto"
 	"github.com/erigontech/erigon/consensus"
 	"github.com/erigontech/erigon/core/state"
 	"github.com/erigontech/erigon/core/types"
 	"github.com/erigontech/erigon/core/vm"
 	"github.com/erigontech/erigon/core/vm/evmtypes"
-	"github.com/erigontech/erigon/crypto"
 )
 
 // applyTransaction attempts to apply a transaction to the given state database
@@ -130,7 +130,7 @@ func ApplyTransaction(config *chain.Config, blockHashFunc func(n uint64) libcomm
 	// about the transaction and calling mechanisms.
 	cfg.SkipAnalysis = SkipAnalysis(config, header.Number.Uint64())
 
-	blockContext := NewEVMBlockContext(header, blockHashFunc, engine, author)
+	blockContext := NewEVMBlockContext(header, blockHashFunc, engine, author, config)
 	blockContext.L1CostFunc = opstack.NewL1CostFunc(config, ibs)
 	vmenv := vm.NewEVM(blockContext, evmtypes.TxContext{}, ibs, config, cfg)
 

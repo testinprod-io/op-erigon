@@ -27,14 +27,15 @@ import (
 	"testing"
 
 	libcommon "github.com/erigontech/erigon-lib/common"
+	rlp2 "github.com/erigontech/erigon-lib/rlp"
+
 	"github.com/holiman/uint256"
 
 	"github.com/erigontech/erigon-lib/chain"
+	"github.com/erigontech/erigon-lib/crypto"
 	"github.com/erigontech/erigon/common"
 	"github.com/erigontech/erigon/common/u256"
-	"github.com/erigontech/erigon/crypto"
 	"github.com/erigontech/erigon/params"
-	"github.com/erigontech/erigon/rlp"
 )
 
 var (
@@ -175,8 +176,8 @@ func TestDecodeEmptyTypedReceipt(t *testing.T) {
 	t.Parallel()
 	input := []byte{0x80}
 	var r Receipt
-	err := rlp.DecodeBytes(input, &r)
-	if !errors.Is(err, rlp.EOL) {
+	err := rlp2.DecodeBytes(input, &r)
+	if !errors.Is(err, rlp2.EOL) {
 		t.Fatal("wrong error:", err)
 	}
 }
@@ -225,7 +226,7 @@ func TestLegacyReceiptDecoding(t *testing.T) {
 				t.Fatalf("Error encoding receipt: %v", err)
 			}
 			var dec ReceiptForStorage
-			if err := rlp.DecodeBytes(enc, &dec); err != nil {
+			if err := rlp2.DecodeBytes(enc, &dec); err != nil {
 				t.Fatalf("Error decoding RLP receipt: %v", err)
 			}
 			// Check whether all consensus fields are correct.
@@ -262,7 +263,7 @@ func encodeAsStoredReceiptRLP(want *Receipt) ([]byte, error) {
 	for i, log := range want.Logs {
 		stored.Logs[i] = (*LogForStorage)(log)
 	}
-	return rlp.EncodeToBytes(stored)
+	return rlp2.EncodeToBytes(stored)
 }
 
 func diffDerivedFields(t *testing.T, receipts, derivedReceipts Receipts) {
@@ -493,7 +494,7 @@ func TestTypedReceiptEncodingDecoding(t *testing.T) {
 	}
 	{
 		var bundle []*Receipt
-		if err := rlp.DecodeBytes(payload, &bundle); err != nil {
+		if err := rlp2.DecodeBytes(payload, &bundle); err != nil {
 			t.Fatal(err)
 		}
 		check(bundle)
@@ -501,7 +502,7 @@ func TestTypedReceiptEncodingDecoding(t *testing.T) {
 	{
 		var bundle []*Receipt
 		r := bytes.NewReader(payload)
-		s := rlp.NewStream(r, uint64(len(payload)))
+		s := rlp2.NewStream(r, uint64(len(payload)))
 		if err := s.Decode(&bundle); err != nil {
 			t.Fatal(err)
 		}
@@ -575,13 +576,13 @@ func TestBedrockDepositReceiptUnchanged(t *testing.T) {
 		GasUsed:         4,
 	}
 
-	encodedRlp, err := rlp.EncodeToBytes(receipt)
+	encodedRlp, err := rlp2.EncodeToBytes(receipt)
 	require.NoError(t, err)
 	require.Equal(t, expectedRlp, encodedRlp)
 
 	// Consensus values should be unchanged after reparsing
 	parsed := new(Receipt)
-	err = rlp.DecodeBytes(encodedRlp, parsed)
+	err = rlp2.DecodeBytes(encodedRlp, parsed)
 	require.NoError(t, err)
 	require.Equal(t, receipt.Status, parsed.Status)
 	require.Equal(t, receipt.CumulativeGasUsed, parsed.CumulativeGasUsed)
@@ -656,11 +657,11 @@ func TestRoundTripReceipt(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			data, err := rlp.EncodeToBytes(test.rcpt)
+			data, err := rlp2.EncodeToBytes(test.rcpt)
 			require.NoError(t, err)
 
 			d := &Receipt{}
-			err = rlp.DecodeBytes(data, d)
+			err = rlp2.DecodeBytes(data, d)
 			require.NoError(t, err)
 			require.Equal(t, test.rcpt, d)
 			require.Equal(t, test.rcpt.DepositNonce, d.DepositNonce)
@@ -668,11 +669,11 @@ func TestRoundTripReceipt(t *testing.T) {
 		})
 
 		t.Run(fmt.Sprintf("%sRejectExtraData", test.name), func(t *testing.T) {
-			data, err := rlp.EncodeToBytes(test.rcpt)
+			data, err := rlp2.EncodeToBytes(test.rcpt)
 			require.NoError(t, err)
 			data = append(data, 1, 2, 3, 4)
 			d := &Receipt{}
-			err = rlp.DecodeBytes(data, d)
+			err = rlp2.DecodeBytes(data, d)
 			require.Error(t, err)
 		})
 	}
@@ -692,11 +693,11 @@ func TestRoundTripReceiptForStorage(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			data, err := rlp.EncodeToBytes((*ReceiptForStorage)(test.rcpt))
+			data, err := rlp2.EncodeToBytes((*ReceiptForStorage)(test.rcpt))
 			require.NoError(t, err)
 
 			d := &ReceiptForStorage{}
-			err = rlp.DecodeBytes(data, d)
+			err = rlp2.DecodeBytes(data, d)
 			require.NoError(t, err)
 			// Only check the stored fields - the others are derived later
 			require.Equal(t, test.rcpt.Status, d.Status)

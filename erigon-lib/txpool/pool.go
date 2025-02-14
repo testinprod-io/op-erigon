@@ -35,12 +35,14 @@ import (
 
 	gokzg4844 "github.com/crate-crypto/go-kzg-4844"
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/erigontech/erigon-lib/common/hexutility"
-	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/go-stack/stack"
 	"github.com/google/btree"
 	"github.com/hashicorp/golang-lru/v2/simplelru"
 	"github.com/holiman/uint256"
+
+	"github.com/erigontech/erigon-lib/common/hexutility"
+	"github.com/erigontech/erigon-lib/crypto"
+	"github.com/erigontech/erigon-lib/log/v3"
 
 	"github.com/erigontech/erigon-lib/chain"
 	"github.com/erigontech/erigon-lib/common"
@@ -234,9 +236,11 @@ type TxPool struct {
 	isPostCancun            atomic.Bool
 	pragueTime              *uint64
 	isPostPrague            atomic.Bool
-	maxBlobsPerBlock        uint64
+	blobSchedule            *chain.BlobSchedule
 	feeCalculator           FeeCalculator
 	logger                  log.Logger
+
+	auths map[common.Address]*metaTx // All accounts with a pooled authorization
 
 	l1Cost         types.L1CostFn
 	regolithTime   *uint64
@@ -256,7 +260,7 @@ type FeeCalculator interface {
 func New(newTxs chan types.Announcements, coreDB kv.RoDB, cfg txpoolcfg.Config, cache kvcache.Cache,
 	chainID uint256.Int, shanghaiTime, agraBlock, cancunTime, pragueTime *big.Int,
 	regolithTime, canyonTime, ecotoneTime, fjordTime *big.Int,
-	maxBlobsPerBlock uint64, feeCalculator FeeCalculator, logger log.Logger,
+	blobSchedule *chain.BlobSchedule, feeCalculator FeeCalculator, logger log.Logger,
 ) (*TxPool, error) {
 	localsHistory, err := simplelru.NewLRU[string, struct{}](10_000, nil)
 	if err != nil {
@@ -301,9 +305,12 @@ func New(newTxs chan types.Announcements, coreDB kv.RoDB, cfg txpoolcfg.Config, 
 		unprocessedRemoteByHash: map[string]int{},
 		minedBlobTxsByBlock:     map[uint64][]*metaTx{},
 		minedBlobTxsByHash:      map[string]*metaTx{},
-		maxBlobsPerBlock:        maxBlobsPerBlock,
+		blobSchedule:            blobSchedule,
 		feeCalculator:           feeCalculator,
-		logger:                  logger,
+		// builderNotifyNewTxns:    builderNotifyNewTxns,
+		// newSlotsStreams:         newSlotsStreams,
+		logger: logger,
+		auths:  map[common.Address]*metaTx{},
 	}
 
 	if shanghaiTime != nil {
@@ -365,7 +372,7 @@ func RawRLPTxToOptimismL1CostFn(payload []byte, isRegolith, isEcotone, isFjord b
 	if len(payload) == 0 {
 		return nil, fmt.Errorf("empty tx payload")
 	}
-	offset, _, err := rlp.String(payload, 0)
+	offset, _, err := rlp.ParseString(payload, 0)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse rlp string: %w", err)
 	}
@@ -380,7 +387,7 @@ func RawRLPTxToOptimismL1CostFn(payload []byte, isRegolith, isEcotone, isFjord b
 	if !isList {
 		return nil, fmt.Errorf("expected list")
 	}
-	dataPos, _, err := rlp.List(payload, pos)
+	dataPos, _, err := rlp.ParseList(payload, pos)
 	if err != nil {
 		return nil, fmt.Errorf("bad tx rlp list start: %w", err)
 	}
@@ -583,6 +590,22 @@ func (p *TxPool) OnNewBlock(ctx context.Context, stateChanges *remote.StateChang
 
 	if err = p.removeMined(p.all, minedTxs.Txs); err != nil {
 		return err
+	}
+
+	// remove auths from pool map
+	for _, mt := range minedTxs.Txs {
+		if mt.Type == types2.SetCodeTxType {
+			numAuths := len(mt.AuthRaw)
+			for i := range numAuths {
+				signature := mt.Authorizations[i]
+				signer, err := RecoverSignerFromRLP(mt.AuthRaw[i], uint8(signature.V.Uint64()), signature.R, signature.S)
+				if err != nil {
+					continue
+				}
+
+				delete(p.auths, *signer)
+			}
+		}
 	}
 
 	var announcements types.Announcements
@@ -824,6 +847,7 @@ func (p *TxPool) best(n uint16, txs *types.TxsRlp, tx kv.Tx, onTopOf, availableG
 	best := p.pending.best
 
 	isShanghai := p.isShanghai() || p.isAgra() || p.isCanyon()
+	isPrague := p.isPrague()
 
 	txs.Resize(uint(cmp.Min(int(n), len(best.ms))))
 	var toRemove []*metaTx
@@ -871,7 +895,10 @@ func (p *TxPool) best(n uint16, txs *types.TxsRlp, tx kv.Tx, onTopOf, availableG
 		// not an exact science using intrinsic gas but as close as we could hope for at
 		// this stage
 		authorizationLen := uint64(len(mt.Tx.Authorizations))
-		intrinsicGas, _ := txpoolcfg.CalcIntrinsicGas(uint64(mt.Tx.DataLen), uint64(mt.Tx.DataNonZeroLen), authorizationLen, nil, mt.Tx.Creation, true, true, isShanghai)
+		intrinsicGas, floorGas, _ := txpoolcfg.CalcIntrinsicGas(uint64(mt.Tx.DataLen), uint64(mt.Tx.DataNonZeroLen), authorizationLen, uint64(mt.Tx.AlAddrCount), uint64(mt.Tx.AlStorCount), mt.Tx.Creation, true, true, isShanghai, isPrague)
+		if isPrague && floorGas > intrinsicGas {
+			intrinsicGas = floorGas
+		}
 		if intrinsicGas > availableGas {
 			// we might find another TX with a low enough intrinsic gas to include so carry on
 			continue
@@ -967,7 +994,7 @@ func (p *TxPool) validateTx(txn *types.TxSlot, isLocal bool, stateCache kvcache.
 		if blobCount == 0 {
 			return txpoolcfg.NoBlobs
 		}
-		if blobCount > p.maxBlobsPerBlock {
+		if blobCount > p.GetMaxBlobsPerBlock() {
 			return txpoolcfg.TooManyBlobs
 		}
 		equalNumber := len(txn.BlobHashes) == len(txn.Blobs) &&
@@ -1025,7 +1052,11 @@ func (p *TxPool) validateTx(txn *types.TxSlot, isLocal bool, stateCache kvcache.
 		}
 		return txpoolcfg.UnderPriced
 	}
-	gas, reason := txpoolcfg.CalcIntrinsicGas(uint64(txn.DataLen), uint64(txn.DataNonZeroLen), uint64(authorizationLen), nil, txn.Creation, true, true, isShanghai)
+	gas, floorGas, reason := txpoolcfg.CalcIntrinsicGas(uint64(txn.DataLen), uint64(txn.DataNonZeroLen), uint64(authorizationLen), uint64(txn.AlAddrCount), uint64(txn.AlStorCount), txn.Creation, true, true, isShanghai, p.isPrague())
+	if p.isPrague() && floorGas > gas {
+		gas = floorGas
+	}
+
 	if txn.Traced {
 		p.logger.Info(fmt.Sprintf("TX TRACING: validateTx intrinsic gas idHash=%x gas=%d", txn.IDHash, gas))
 	}
@@ -1270,6 +1301,10 @@ func (p *TxPool) isFjord() bool {
 		p.isPostFjord.Swap(true)
 	}
 	return activated
+}
+
+func (p *TxPool) GetMaxBlobsPerBlock() uint64 {
+	return p.blobSchedule.MaxBlobsPerBlock(p.isPrague())
 }
 
 // Check that the serialized txn should not exceed a certain max size
@@ -1643,6 +1678,30 @@ func (p *TxPool) addLocked(mt *metaTx, announcements *types.Announcements) txpoo
 		return txpoolcfg.FeeTooLow
 	}
 
+	// Check if we have txn with same authorization in the pool
+	if mt.Tx.Type == types2.SetCodeTxType {
+		numAuths := len(mt.Tx.AuthRaw)
+		foundDuplicate := false
+		for i := range numAuths {
+			signature := mt.Tx.Authorizations[i]
+			signer, err := RecoverSignerFromRLP(mt.Tx.AuthRaw[i], uint8(signature.V.Uint64()), signature.R, signature.S)
+			if err != nil {
+				continue
+			}
+
+			if _, ok := p.auths[*signer]; ok {
+				foundDuplicate = true
+				break
+			}
+
+			p.auths[*signer] = mt
+		}
+
+		if foundDuplicate {
+			return txpoolcfg.ErrAuthorityReserved
+		}
+	}
+
 	hashStr := string(mt.Tx.IDHash[:])
 	p.byHash[hashStr] = mt
 
@@ -1678,6 +1737,18 @@ func (p *TxPool) discardLocked(mt *metaTx, reason txpoolcfg.DiscardReason) {
 	if mt.Tx.Type == types.BlobTxType {
 		t := p.totalBlobsInPool.Load()
 		p.totalBlobsInPool.Store(t - uint64(len(mt.Tx.BlobHashes)))
+	}
+	if mt.Tx.Type == types2.SetCodeTxType {
+		numAuths := len(mt.Tx.AuthRaw)
+		for i := range numAuths {
+			signature := mt.Tx.Authorizations[i]
+			signer, err := RecoverSignerFromRLP(mt.Tx.AuthRaw[i], uint8(signature.V.Uint64()), signature.R, signature.S)
+			if err != nil {
+				continue
+			}
+
+			delete(p.auths, *signer)
+		}
 	}
 }
 
@@ -3154,4 +3225,39 @@ func (p *WorstQueue) Pop() interface{} {
 	item.currentSubPool = 0 // for safety
 	p.ms = old[0 : n-1]
 	return item
+}
+
+func RecoverSignerFromRLP(rlp []byte, yParity uint8, r uint256.Int, s uint256.Int) (*common.Address, error) {
+	// from authorizations.go
+	hashData := []byte{byte(0x05)}
+	hashData = append(hashData, rlp...)
+	hash := crypto.Keccak256Hash(hashData)
+
+	var sig [65]byte
+	rBytes := r.Bytes()
+	sBytes := s.Bytes()
+	copy(sig[32-len(r):32], rBytes)
+	copy(sig[64-len(s):64], sBytes)
+
+	if yParity == 0 || yParity == 1 {
+		sig[64] = yParity
+	} else {
+		return nil, fmt.Errorf("invalid y parity value: %d", yParity)
+	}
+
+	if !crypto.TransactionSignatureIsValid(sig[64], &r, &s, false /* allowPreEip2s */) {
+		return nil, errors.New("invalid signature")
+	}
+
+	pubkey, err := crypto.Ecrecover(hash.Bytes(), sig[:])
+	if err != nil {
+		return nil, err
+	}
+	if len(pubkey) == 0 || pubkey[0] != 4 {
+		return nil, errors.New("invalid public key")
+	}
+
+	var authority common.Address
+	copy(authority[:], crypto.Keccak256(pubkey[1:])[12:])
+	return &authority, nil
 }

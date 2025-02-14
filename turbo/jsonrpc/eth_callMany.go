@@ -14,7 +14,7 @@ import (
 	"github.com/erigontech/erigon-lib/common/hexutil"
 	"github.com/erigontech/erigon-lib/opstack"
 
-	"github.com/erigontech/erigon/common/math"
+	"github.com/erigontech/erigon-lib/common/math"
 	"github.com/erigontech/erigon/core"
 	"github.com/erigontech/erigon/core/state"
 	"github.com/erigontech/erigon/core/types"
@@ -156,7 +156,7 @@ func (api *APIImpl) CallMany(ctx context.Context, bundles []Bundle, simulateCont
 		return hash
 	}
 
-	blockCtx = core.NewEVMBlockContext(header, getHash, api.engine(), nil /* author */)
+	blockCtx = core.NewEVMBlockContext(header, getHash, api.engine(), nil /* author */, chainConfig)
 	blockCtx.L1CostFunc = opstack.NewL1CostFunc(chainConfig, st)
 
 	// Get a new instance of the EVM

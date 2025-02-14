@@ -20,13 +20,13 @@ import (
 	"github.com/erigontech/erigon-lib/kv"
 	types2 "github.com/erigontech/erigon-lib/types"
 
+	"github.com/erigontech/erigon-lib/crypto"
 	"github.com/erigontech/erigon/core"
 	"github.com/erigontech/erigon/core/state"
 	"github.com/erigontech/erigon/core/types"
 	"github.com/erigontech/erigon/core/types/accounts"
 	"github.com/erigontech/erigon/core/vm"
 	"github.com/erigontech/erigon/core/vm/evmtypes"
-	"github.com/erigontech/erigon/crypto"
 	"github.com/erigontech/erigon/eth/stagedsync"
 	"github.com/erigontech/erigon/eth/tracers/logger"
 	"github.com/erigontech/erigon/params"
@@ -614,7 +614,7 @@ func (api *APIImpl) CreateAccessList(ctx context.Context, args ethapi2.CallArgs,
 		// Apply the transaction with the access list tracer
 		tracer := logger.NewAccessListTracer(accessList, excl, state)
 		config := vm.Config{Tracer: tracer, Debug: true, NoBaseFee: true}
-		blockCtx := transactions.NewEVMBlockContext(engine, header, bNrOrHash.RequireCanonical, tx, api._blockReader)
+		blockCtx := transactions.NewEVMBlockContext(engine, header, bNrOrHash.RequireCanonical, tx, api._blockReader, chainConfig)
 		txCtx := core.NewEVMTxContext(msg)
 		blockCtx.L1CostFunc = opstack.NewL1CostFunc(chainConfig, state)
 
