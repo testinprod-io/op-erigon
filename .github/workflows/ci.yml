@@ -68,6 +68,12 @@ jobs:
 
       - name: Test
         run: make test-short
+      
+      - name: Check superchain registry bundle diff
+        run: |
+          go install github.com/tomwright/dasel/v2/cmd/dasel@v2.8.1
+          bash ./sync-superchain.sh
+          git diff --exit-code
 
   win:
     concurrency:
