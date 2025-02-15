@@ -73,7 +73,7 @@ func ChainConfigByOpStackGenesisHash(genesisHash common.Hash) *chain.Config {
 	return LoadSuperChainConfig(opStackChainCfg)
 }
 
-// LoadSuperChainConfig loads superchain config from superchain registry for given chain, and builds erigon chain config.
+// LoadOPStackChainConfig loads superchain config from superchain registry for given chain, and builds erigon chain config.
 // This implementation is based on op-geth(https://github.com/ethereum-optimism/op-geth/blob/c7871bc4454ffc924eb128fa492975b30c9c46ad/params/superchain.go#L39)
 func LoadSuperChainConfig(chConfig *ChainConfig) *chain.Config {
 	hardforks := chConfig.Hardforks
