@@ -285,7 +285,7 @@ func GenesisHashByChainName(chain string) *libcommon.Hash {
 		return &OPMainnetGenesisHash
 	default:
 		if opStackChainCfg := OPStackChainConfigByName(chain); opStackChainCfg != nil {
-			genesisHash := libcommon.Hash(opStackChainCfg.Genesis.L2.Hash)
+			genesisHash := opStackChainCfg.Genesis.L2.Hash
 			return &genesisHash
 		}
 		return nil

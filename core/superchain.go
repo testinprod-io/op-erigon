@@ -11,8 +11,6 @@ import (
 	"github.com/erigontech/erigon/superchain"
 )
 
-// loadOPStackGenesisByChainName loads genesis block corresponding to the chain name from superchain regsitry.
-// This implementation is based on op-geth(https://github.com/ethereum-optimism/op-geth/blob/c7871bc4454ffc924eb128fa492975b30c9c46ad/core/superchain.go#L13)
 func loadOPStackGenesisByChainName(name string) (*types.Genesis, error) {
 	opStackChainCfg := params.OPStackChainConfigByName(name)
 	if opStackChainCfg == nil {
@@ -22,6 +20,8 @@ func loadOPStackGenesisByChainName(name string) (*types.Genesis, error) {
 	return LoadOPStackGenesis(opStackChainCfg.ChainID)
 }
 
+// loadOPStackGenesisByChainName loads genesis block corresponding to the chain name from superchain regsitry.
+// This implementation is based on op-geth(https://github.com/ethereum-optimism/op-geth/blob/acea1259d8ea2e74cf102463e4f5a7738bd5e102/core/superchain.go#L14)
 func LoadOPStackGenesis(chainID uint64) (*types.Genesis, error) {
 	chain, err := superchain.GetChain(chainID)
 	if err != nil {
@@ -34,7 +34,7 @@ func LoadOPStackGenesis(chainID uint64) (*types.Genesis, error) {
 	}
 
 	cfg := params.LoadOPStackChainConfig(chConfig)
-	gen, err := readSuperchainGenesis(chain)
+	gen, err := readOPStackGenesis(chain)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load genesis definition for chain %d: %w", chainID, err)
 	}
@@ -88,7 +88,7 @@ func LoadOPStackGenesis(chainID uint64) (*types.Genesis, error) {
 	return genesis, nil
 }
 
-func readSuperchainGenesis(chain *superchain.Chain) (*types.Genesis, error) {
+func readOPStackGenesis(chain *superchain.Chain) (*types.Genesis, error) {
 	genData, err := chain.GenesisData()
 	if err != nil {
 		return nil, fmt.Errorf("error getting genesis data from superchain: %w", err)

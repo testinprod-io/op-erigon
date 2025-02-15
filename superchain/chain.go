@@ -35,7 +35,7 @@ func ChainIDByName(name string) (uint64, error) {
 }
 
 func ChainNames() []string {
-	var out []string
+	out := make([]string, 0)
 	for _, ch := range Chains {
 		out = append(out, ch.Name+"-"+ch.Network)
 	}

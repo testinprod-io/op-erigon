@@ -284,8 +284,6 @@ github.com/erigontech/speedtest v0.0.2 h1:W9Cvky/8AMUtUONwkLA/dZjeQ2XfkBdYfJzvhM
 github.com/erigontech/speedtest v0.0.2/go.mod h1:vulsRNiM51BmSTbVtch4FWxKxx53pS2D35lZTtao0bw=
 github.com/erigontech/torrent v1.54.2-alpha-8 h1:MQobu6sUZCFbmWpsB7GqAh0IWs7VAZ370POaVxlApIk=
 github.com/erigontech/torrent v1.54.2-alpha-8/go.mod h1:nYNeuR4xPlEl4CturFD9/KRXBRJEcJGqjegDNWakwG4=
-github.com/ethereum-optimism/superchain-registry/superchain v0.0.0-20241210175229-327d7af91761 h1:sk8fDY7QJOhP/mOnEjMj9K8G+3dmPp5MVZsJu4lhZ2E=
-github.com/ethereum-optimism/superchain-registry/superchain v0.0.0-20241210175229-327d7af91761/go.mod h1:9feO8jcL5OZ1tvRjEfNAHz4Aggvd6373l+ZxmZZAyZs=
 github.com/fjl/gencodec v0.0.0-20220412091415-8bb9e558978c h1:CndMRAH4JIwxbW8KYq6Q+cGWcGHz0FjGR3QqcInWcW0=
 github.com/fjl/gencodec v0.0.0-20220412091415-8bb9e558978c/go.mod h1:AzA8Lj6YtixmJWL+wkKoBGsLWy9gFrAzi4g+5bCKwpY=
 github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568/go.mod h1:xEzjJPgXI435gkrCt3MPfRiAkVrwSbHsst4LCFVfpJc=
