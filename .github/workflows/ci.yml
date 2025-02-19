@@ -78,6 +78,12 @@ jobs:
       - name: Test
         run: make test
 
+      - name: Check superchain registry bundle diff
+        run: |
+          go install github.com/tomwright/dasel/v2/cmd/dasel@v2.8.1
+          bash ./sync-superchain.sh
+          git diff --exit-code
+
       - name: SonarCloud
         if: runner.os == 'Linux'
         uses: SonarSource/sonarcloud-github-action@v2.1.1
