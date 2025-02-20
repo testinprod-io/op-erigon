@@ -19,6 +19,7 @@ package dbg
 import (
 	"context"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"runtime/pprof"
@@ -412,7 +413,65 @@ func SaveHeapProfileNearOOM(opts ...SaveHeapOption) {
 	}
 }
 
+func SaveHeapProfile(opts ...SaveHeapOption) {
+	var options saveHeapOptions
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	var logger log.Logger
+	if options.logger != nil {
+		logger = *options.logger
+	}
+
+	var memStats runtime.MemStats
+	if options.memStats != nil {
+		memStats = *options.memStats
+	} else {
+		ReadMemStats(&memStats)
+	}
+
+	totalMemory := mmap.TotalMemory()
+	if logger != nil {
+		logger.Info(
+			"[Experiment] heap profile threshold check",
+			"alloc", libcommon.ByteCount(memStats.Alloc),
+			"total", libcommon.ByteCount(totalMemory),
+		)
+	}
+
+	var filePath string
+	if heapProfileFilePath == "" {
+		filePath = filepath.Join(os.TempDir(), "erigon-mem.prof")
+	} else {
+		filePath = heapProfileFilePath
+	}
+	if logger != nil {
+		logger.Info("[Experiment] saving heap profile as closing", "filePath", filePath)
+	}
+
+	f, err := os.Create(filePath)
+	if err != nil && logger != nil {
+		logger.Warn("[Experiment] could not create heap profile file", "err", err)
+	}
+
+	defer func() {
+		err := f.Close()
+		if err != nil && logger != nil {
+			logger.Warn("[Experiment] could not close heap profile file", "err", err)
+		}
+	}()
+
+	runtime.GC()
+	err = pprof.WriteHeapProfile(f)
+	if logger != nil {
+		logger.Warn("[Experiment] wrote heap profile file", "err", err)
+	}
+}
+
 func SaveHeapProfileNearOOMPeriodically(ctx context.Context, opts ...SaveHeapOption) {
+	log.Warn("[Experiment] Start Heap Profile Checking")
+
 	if !saveHeapProfile {
 		return
 	}
@@ -420,10 +479,18 @@ func SaveHeapProfileNearOOMPeriodically(ctx context.Context, opts ...SaveHeapOpt
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 
+	interruptCtx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
+	defer stop()
+
 	for {
 		select {
 		case <-ctx.Done():
+			SaveHeapProfile(opts...)
 			return
+		case <-interruptCtx.Done():
+			SaveHeapProfile(opts...)
+			return
+
 		case <-ticker.C:
 			SaveHeapProfileNearOOM(opts...)
 		}

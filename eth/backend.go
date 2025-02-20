@@ -357,6 +357,7 @@ func New(ctx context.Context, stack *node.Node, config *ethconfig.Config, logger
 	}
 
 	logger.Info("Initialised chain configuration", "config", chainConfig, "genesis", genesis.Hash())
+	go dbg.SaveHeapProfileNearOOMPeriodically(ctx, dbg.SaveHeapWithLogger(&logger))
 
 	// Check if we have an already initialized chain and fall back to
 	// that if so. Otherwise we need to generate a new genesis spec.
@@ -529,7 +530,6 @@ func New(ctx context.Context, stack *node.Node, config *ethconfig.Config, logger
 	// setup periodic logging and prometheus updates
 	go mem.LogMemStats(ctx, logger)
 	go disk.UpdateDiskStats(ctx, logger)
-	go dbg.SaveHeapProfileNearOOMPeriodically(ctx, dbg.SaveHeapWithLogger(&logger))
 
 	var currentBlock *types.Block
 	if err := chainKv.View(context.Background(), func(tx kv.Tx) error {
