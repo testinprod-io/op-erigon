@@ -18,6 +18,7 @@ package dbg
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -451,11 +452,18 @@ func SaveHeapProfile(opts ...SaveHeapOption) {
 	}
 
 	f, err := os.Create(filePath)
+	memF, memErr := os.Create(filePath + ".json")
+
 	if err != nil && logger != nil {
 		logger.Warn("[Experiment] could not create heap profile file", "err", err)
 	}
 
+	if memErr != nil {
+		logger.Warn("[Experiment] could not close memstat", "err", memErr)
+	}
+
 	defer func() {
+		memF.Close()
 		err := f.Close()
 		if err != nil && logger != nil {
 			logger.Warn("[Experiment] could not close heap profile file", "err", err)
@@ -464,6 +472,11 @@ func SaveHeapProfile(opts ...SaveHeapOption) {
 
 	runtime.GC()
 	err = pprof.WriteHeapProfile(f)
+
+	encoder := json.NewEncoder(memF)
+	encoder.SetIndent("", "  ")
+	encoder.Encode(memStats)
+
 	if logger != nil {
 		logger.Warn("[Experiment] wrote heap profile file", "err", err)
 	}
