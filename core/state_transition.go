@@ -32,6 +32,7 @@ import (
 	"github.com/erigontech/erigon-lib/common/math"
 	"github.com/erigontech/erigon-lib/common/u256"
 	"github.com/erigontech/erigon-lib/crypto"
+	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/erigontech/erigon/core/tracing"
 	"github.com/erigontech/erigon/core/types"
 	"github.com/erigontech/erigon/core/vm"
@@ -103,7 +104,6 @@ type Message interface {
 	Authorizations() []types.Authorization
 
 	IsFree() bool
-	SetIsFree(bool)
 
 	Mint() *uint256.Int
 	IsOptimismDepositTx() bool
