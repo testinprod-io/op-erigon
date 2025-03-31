@@ -529,7 +529,7 @@ func (tx *OptimismDepositTx) UnmarshalJSON(input []byte) error {
 	if err := json.Unmarshal(input, &dec); err != nil {
 		return err
 	}
-	if dec.AccessList != nil || dec.MaxPriorityFeePerGas != nil || dec.MaxFeePerGas != nil {
+	if dec.AccessList != nil || dec.Tip != nil || dec.FeeCap != nil {
 		return errors.New("unexpected field(s) in deposit transaction")
 	}
 	if dec.GasPrice != nil && dec.GasPrice.ToInt().Cmp(libcommon.Big0) != 0 {

@@ -451,8 +451,8 @@ func (tx OptimismDepositTx) copy() *OptimismDepositTx {
 }
 
 // AsMessage returns the transaction as a core.Message.
-func (tx OptimismDepositTx) AsMessage(s Signer, baseFee *big.Int, rules *chain.Rules) (*Message, error) {
-	return &Message{
+func (tx OptimismDepositTx) AsMessage(s Signer, baseFee *big.Int, rules *chain.Rules) (Message, error) {
+	return Message{
 		nonce:               0,
 		gasLimit:            tx.Gas,
 		gasPrice:            *uint256.NewInt(0),

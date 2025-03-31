@@ -69,7 +69,7 @@ func applyTransaction(config *chain.Config, engine consensus.EngineReader, gp *G
 		}
 	}
 
-	result, err := ApplyMessage(evm, msg, gp, true /* refunds */, false /* gasBailout */, engine)
+	result, err := ApplyMessage(evm, msg, gp, true /* refunds */, false /* gasBailout */)
 	if err != nil {
 		return nil, nil, err
 	}
