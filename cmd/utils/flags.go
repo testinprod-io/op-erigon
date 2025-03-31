@@ -31,10 +31,6 @@ import (
 	"time"
 
 	"github.com/c2h5oh/datasize"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-	"github.com/urfave/cli/v2"
-
 	"github.com/erigontech/erigon-lib/chain/networkid"
 	"github.com/erigontech/erigon-lib/chain/networkname"
 	"github.com/erigontech/erigon-lib/chain/snapcfg"
@@ -46,7 +42,6 @@ import (
 	libkzg "github.com/erigontech/erigon-lib/crypto/kzg"
 	"github.com/erigontech/erigon-lib/direct"
 	downloadercfg2 "github.com/erigontech/erigon-lib/downloader/downloadercfg"
-	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/erigontech/erigon/cl/clparams"
 	"github.com/erigontech/erigon/cmd/downloader/downloadernat"
 	"github.com/erigontech/erigon/cmd/utils/flags"
@@ -66,6 +61,8 @@ import (
 	"github.com/erigontech/erigon/turbo/logging"
 	"github.com/erigontech/erigon/txnprovider/shutter"
 	"github.com/erigontech/erigon/txnprovider/txpool/txpoolcfg"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // These are all the command line flags we support.
@@ -1720,7 +1717,11 @@ func setBorConfig(ctx *cli.Context, cfg *ethconfig.Config, nodeConfig *nodecfg.C
 	heimdall.RecordWayPoints(cfg.WithHeimdallWaypointRecording || cfg.PolygonSync || cfg.PolygonSyncStage)
 
 	chainConfig := params.ChainConfigByChainName(ctx.String(ChainFlag.Name))
-	if chainConfig.Bor != nil && !ctx.IsSet(MaxPeersFlag.Name) {
+	if chainConfig == nil {
+		chainConfig = params.ChainConfigByOpStackChainName(ctx.String(ChainFlag.Name))
+	}
+
+	if chainConfig != nil && chainConfig.Bor != nil && !ctx.IsSet(MaxPeersFlag.Name) {
 		// override default max devp2p peers for polygon as per
 		// https://forum.polygon.technology/t/introducing-our-new-dns-discovery-for-polygon-pos-faster-smarter-more-connected/19871
 		// which encourages high peer count
