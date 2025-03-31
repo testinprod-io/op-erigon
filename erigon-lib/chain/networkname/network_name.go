@@ -29,6 +29,11 @@ const (
 	BorE2ETestChain2Val = "bor-e2e-test-2Val"
 	Chiado              = "chiado"
 	Test                = "test"
+
+	OPMainnetChainName   = "op-mainnet"
+	BaseMainnetChainName = "base-mainnet"
+
+	LegacyOPMainnetChainName = "optimism-mainnet"
 )
 
 var All = []string{
@@ -42,4 +47,6 @@ var All = []string{
 	Gnosis,
 	Chiado,
 	Test,
+	OPMainnetChainName,
+	BaseMainnetChainName,
 }

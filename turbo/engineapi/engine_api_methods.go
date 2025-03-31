@@ -28,6 +28,7 @@ var ourCapabilities = []string{
 	"engine_getPayloadBodiesByHashV1",
 	"engine_getPayloadBodiesByRangeV1",
 	"engine_getClientVersionV1",
+	"engine_signalSuperchainV1",
 }
 
 // Returns the most recent version of the payload(for the payloadID) at the time of receiving the call
@@ -166,4 +167,23 @@ func (e *EngineServer) ExchangeCapabilities(fromCl []string) []string {
 	}
 
 	return ourCapabilities
+}
+
+func (e *EngineServer) SignalSuperchainV1(ctx context.Context, signal *engine_types.SuperchainSignal) (params.ProtocolVersion, error) {
+	if signal == nil {
+		e.logger.Info("Received empty superchain version signal", "local", params.OPStackSupport)
+		return params.OPStackSupport, nil
+	}
+
+	// log any warnings/info
+	logger := log.New("local", params.OPStackSupport, "required", signal.Required, "recommended", signal.Recommended)
+	LogProtocolVersionSupport(logger, params.OPStackSupport, signal.Recommended, "recommended")
+	LogProtocolVersionSupport(logger, params.OPStackSupport, signal.Required, "required")
+
+	if err := e.HandleRequiredProtocolVersion(signal.Required); err != nil {
+		e.logger.Error("Failed to handle required protocol version", "err", err, "required", signal.Required)
+		return params.OPStackSupport, err
+	}
+
+	return params.OPStackSupport, nil
 }
