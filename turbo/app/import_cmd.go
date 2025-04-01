@@ -737,7 +737,7 @@ func InsertTotalDifficulty(ethereum *eth.Ethereum, difficultyList []*big.Int, nu
 			return fmt.Errorf("header not found")
 		}
 		block := rawdb.ReadBlock(tx, header.Hash(), blockNum)
-		if block != nil {
+		if block == nil {
 			return errors.New("block not readable")
 		}
 		err = rawdb.WriteTd(tx, block.Hash(), blockNum, difficulty)
