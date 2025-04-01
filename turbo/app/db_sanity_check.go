@@ -72,9 +72,11 @@ func dbSanityCheck(ctx *cli.Context) error {
 	}
 
 	if err := DbSanityCheck(ctx.Context, ethCfg.Dirs, ethereum, uint64(blockNum), false); err != nil {
+		logger.Info("Failed", "err", err)
 		return err
 	}
 
+	logger.Info("Complete")
 	return nil
 }
 
