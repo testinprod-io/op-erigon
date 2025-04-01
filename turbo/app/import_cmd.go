@@ -366,7 +366,7 @@ func InsertChainWithoutExecution(ethereum *eth.Ethereum, chain *core.ChainPack, 
 		return err
 	}
 
-	return nil
+	return insertPosChain(ethereum, chain, logger)
 }
 
 // may rename to without execution
@@ -405,7 +405,6 @@ func WriteBlockWithoutExecution(ethereum *eth.Ethereum, tx kv.RwTx, block *types
 		return errors.New("tx trie root mismatch. aborting")
 	}
 
-	return nil
 }
 
 //func importReceipts(ctx *cli.Context) error {
