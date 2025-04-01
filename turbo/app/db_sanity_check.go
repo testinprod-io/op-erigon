@@ -5,11 +5,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/erigontech/erigon-lib/common/datadir"
-	"github.com/erigontech/erigon-lib/config3"
 	"github.com/erigontech/erigon-lib/kv/order"
 	"github.com/erigontech/erigon-lib/kv/rawdbv3"
-	"github.com/erigontech/erigon-lib/kv/temporal"
-	state3 "github.com/erigontech/erigon-lib/state"
 	"github.com/erigontech/erigon/turbo/debug"
 	"strconv"
 	"time"
@@ -86,14 +83,14 @@ func DbSanityCheck(ctx context.Context, dirs datadir.Dirs, ethereum *eth.Ethereu
 
 	startAddress := libcommon.Address{}
 
-	db := ethereum.ChainDB()
+	db := ethereum.ChainDB().(kv.TemporalRwDB)
 
-	agg, err := state3.NewAggregator2(ctx, dirs, config3.DefaultStepSize, db, log.New())
-	tdb, err := temporal.New(db, agg)
-	if err != nil {
-		return err
-	}
-	ttx, err := tdb.BeginTemporalRw(ctx)
+	//agg, err := state3.NewAggregator2(ctx, dirs, config3.DefaultStepSize, db, log.New())
+	//tdb, err := temporal.New(db, agg)
+	//if err != nil {
+	//	return err
+	//}
+	ttx, err := db.BeginTemporalRw(ctx)
 	if err != nil {
 		return err
 	}

@@ -26,9 +26,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/erigontech/erigon-lib/common/datadir"
-	"github.com/erigontech/erigon-lib/config3"
 	"github.com/erigontech/erigon-lib/kv/order"
-	"github.com/erigontech/erigon-lib/kv/temporal"
 	libstate "github.com/erigontech/erigon-lib/state"
 	"github.com/erigontech/erigon/core/tracing"
 	"io"
@@ -977,14 +975,14 @@ func SanityCheckStorageTrie(ctx context.Context, dirs datadir.Dirs, ethereum *et
 	}
 	defer fh.Close()
 
-	db := ethereum.ChainDB()
+	db := ethereum.ChainDB().(kv.TemporalRwDB)
 
-	agg, err := libstate.NewAggregator2(ctx, dirs, config3.DefaultStepSize, db, log.New())
-	tdb, err := temporal.New(db, agg)
-	if err != nil {
-		return err
-	}
-	tx, err := tdb.BeginTemporalRw(ctx)
+	//agg, err := libstate.NewAggregator2(ctx, dirs, config3.DefaultStepSize, db, log.New())
+	//tdb, err := temporal.New(db, agg)
+	//if err != nil {
+	//	return err
+	//}
+	tx, err := db.BeginTemporalRw(ctx)
 	if err != nil {
 		return err
 	}
