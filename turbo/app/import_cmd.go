@@ -405,6 +405,7 @@ func WriteBlockWithoutExecution(ethereum *eth.Ethereum, tx kv.RwTx, block *types
 		return errors.New("tx trie root mismatch. aborting")
 	}
 
+	return nil
 }
 
 //func importReceipts(ctx *cli.Context) error {
