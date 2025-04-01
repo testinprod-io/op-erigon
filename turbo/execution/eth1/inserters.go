@@ -19,8 +19,6 @@ package eth1
 import (
 	"context"
 	"fmt"
-	"math/big"
-
 	"github.com/erigontech/erigon-lib/common/metrics"
 	execution "github.com/erigontech/erigon-lib/gointerfaces/executionproto"
 	"github.com/erigontech/erigon/core/rawdb"
@@ -57,7 +55,7 @@ func (e *EthereumExecutionModule) InsertBlocks(ctx context.Context, req *executi
 		if err != nil {
 			return nil, fmt.Errorf("ethereumExecutionModule.InsertBlocks: cannot convert body: %s", err)
 		}
-		var parentTd *big.Int
+		//var parentTd *big.Int
 		height := header.Number.Uint64()
 		//if height > 0 {
 		//	// Parent's total difficulty
