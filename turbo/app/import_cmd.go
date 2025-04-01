@@ -150,6 +150,7 @@ func importChain(cliCtx *cli.Context) error {
 	}
 
 	if err := ImportChain(ethereum, ethereum.ChainDB(), cliCtx.Args().First(), logger); err != nil {
+		logger.Info("Failed", "err", err)
 		return err
 	}
 

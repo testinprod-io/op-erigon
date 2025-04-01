@@ -124,6 +124,7 @@ func recoverSenders(ctx *cli.Context) error {
 	}
 
 	if err := RecoverSenders(ethereum, uint64(first), uint64(last)); err != nil {
+		logger.Info("Failed", "err", err)
 		return err
 	}
 
@@ -399,6 +400,7 @@ func recoverRegenesis(ctx *cli.Context) error {
 	}
 
 	if err := RecoverRegenesis(ethereum); err != nil {
+		logger.Info("Failed", "err", err)
 		return err
 	}
 
@@ -489,6 +491,7 @@ func recoverIntermediateHash(ctx *cli.Context) error {
 	fn := ctx.Args().First()
 
 	if err := RecoverIntermediateHash(ethereum, fn); err != nil {
+		logger.Info("Failed", "err", err)
 		return err
 	}
 
