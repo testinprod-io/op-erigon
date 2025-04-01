@@ -152,6 +152,7 @@ func importChain(cliCtx *cli.Context) error {
 		return err
 	}
 
+	logger.Info("Complete")
 	return nil
 }
 
@@ -464,9 +465,11 @@ func importTotalDifficulty(ctx *cli.Context) error {
 	}
 
 	if err := ImportTotalDifficulty(ethereum, ethereum.ChainDB(), ctx.Args().First()); err != nil {
+		logger.Info("Failed", "err", err)
 		return err
 	}
 
+	logger.Info("Complete")
 	return nil
 }
 
@@ -503,9 +506,11 @@ func importState(ctx *cli.Context) error {
 
 	// make sure state trie is empty before import
 	if err := DbSanityCheck(ctx.Context, ethCfg.Dirs, ethereum, uint64(blockNum), true); err != nil {
+		logger.Info("Failed DbSanityCheck", "err", err)
 		return err
 	}
 	if err := ImportState(ethereum, fn, uint64(blockNum), true, logger); err != nil {
+		logger.Info("Failed ImportState", "err", err)
 		return err
 	}
 	// storage trie sanity check will manually done using sanity-check command
@@ -513,6 +518,7 @@ func importState(ctx *cli.Context) error {
 	// 	return err
 	// }
 
+	logger.Info("Complete")
 	return nil
 }
 
