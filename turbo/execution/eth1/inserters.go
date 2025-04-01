@@ -59,27 +59,27 @@ func (e *EthereumExecutionModule) InsertBlocks(ctx context.Context, req *executi
 		}
 		var parentTd *big.Int
 		height := header.Number.Uint64()
-		if height > 0 {
-			// Parent's total difficulty
-			parentTd, err = rawdb.ReadTd(tx, header.ParentHash, height-1)
-			if err != nil || parentTd == nil {
-				return nil, fmt.Errorf("parent's total difficulty not found with hash %x and height %d: %v", header.ParentHash, height-1, err)
-			}
-		} else {
-			parentTd = big.NewInt(0)
-		}
+		//if height > 0 {
+		//	// Parent's total difficulty
+		//	parentTd, err = rawdb.ReadTd(tx, header.ParentHash, height-1)
+		//	if err != nil || parentTd == nil {
+		//		return nil, fmt.Errorf("parent's total difficulty not found with hash %x and height %d: %v", header.ParentHash, height-1, err)
+		//	}
+		//} else {
+		//	parentTd = big.NewInt(0)
+		//}
 
 		metrics.UpdateBlockConsumerHeaderDownloadDelay(header.Time, height, e.logger)
 		metrics.UpdateBlockConsumerBodyDownloadDelay(header.Time, height, e.logger)
 
 		// Sum TDs.
-		td := parentTd.Add(parentTd, header.Difficulty)
+		//td := parentTd.Add(parentTd, header.Difficulty)
 		if err := rawdb.WriteHeader(tx, header); err != nil {
 			return nil, fmt.Errorf("ethereumExecutionModule.InsertHeaders: writeHeader: %s", err)
 		}
-		if err := rawdb.WriteTd(tx, header.Hash(), height, td); err != nil {
-			return nil, fmt.Errorf("ethereumExecutionModule.InsertHeaders: writeTd: %s", err)
-		}
+		//if err := rawdb.WriteTd(tx, header.Hash(), height, td); err != nil {
+		//	return nil, fmt.Errorf("ethereumExecutionModule.InsertHeaders: writeTd: %s", err)
+		//}
 		if _, err := rawdb.WriteRawBodyIfNotExists(tx, header.Hash(), height, body); err != nil {
 			return nil, fmt.Errorf("ethereumExecutionModule.InsertBlocks: writeBody: %s", err)
 		}
