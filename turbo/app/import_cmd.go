@@ -961,9 +961,9 @@ func ImportState(ctx context.Context, ethereum *eth.Ethereum, fn string, blockNu
 	}
 
 	// first bedrock block does not have tx, so no tx receipt
-	if err != rawdb.WriteReceipts(tx, blockNumber, nil) {
-		return err
-	}
+	//if err != rawdb.WriteReceipts(tx, blockNumber, nil) {
+	//	return err
+	//}
 	if err := tx.Commit(); err != nil {
 		return err
 	}
