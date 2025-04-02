@@ -509,7 +509,7 @@ func importState(ctx *cli.Context) error {
 		logger.Info("Failed DbSanityCheck", "err", err)
 		return err
 	}
-	if err := ImportState(ethereum, fn, uint64(blockNum), true, logger); err != nil {
+	if err := ImportState(ctx.Context, ethereum, fn, uint64(blockNum), true, logger); err != nil {
 		logger.Info("Failed ImportState", "err", err)
 		return err
 	}
@@ -843,7 +843,7 @@ func storeAccount(statedb *state.IntraBlockState, account *ImportAccount) error 
 	return nil
 }
 
-func ImportState(ethereum *eth.Ethereum, fn string, blockNumber uint64, stream bool, logger log.Logger) error {
+func ImportState(ctx context.Context, ethereum *eth.Ethereum, fn string, blockNumber uint64, stream bool, logger log.Logger) error {
 	logger.Info("Importing state", "file", fn, "stream", stream)
 	logger.Info("Importing state for block number", "blockNumber", blockNumber)
 	fh, err := os.Open(fn)
@@ -920,9 +920,8 @@ func ImportState(ethereum *eth.Ethereum, fn string, blockNumber uint64, stream b
 		return err
 	}
 
-	loader := trie.NewFlatDBTrieLoader("regenesis", trie.NewRetainList(0), nil, nil, false)
-
-	root, err := loader.CalcTrieRoot(tx, nil)
+	broot, err := domains.ComputeCommitment(ctx, false, blockNumber, "import")
+	root := libcommon.BytesToHash(broot)
 	if err != nil {
 		log.Info("root calculation failed")
 		return err
