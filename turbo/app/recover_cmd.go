@@ -128,6 +128,8 @@ func recoverSenders(ctx *cli.Context) error {
 		return err
 	}
 
+	logger.Info("Complete")
+
 	return nil
 }
 

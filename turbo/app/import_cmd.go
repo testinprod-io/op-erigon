@@ -920,7 +920,7 @@ func ImportState(ctx context.Context, ethereum *eth.Ethereum, fn string, blockNu
 		return err
 	}
 
-	broot, err := domains.ComputeCommitment(ctx, false, blockNumber, "import")
+	broot, err := domains.ComputeCommitment(ctx, true, blockNumber, "import")
 	root := libcommon.BytesToHash(broot)
 	if err != nil {
 		log.Info("root calculation failed")
