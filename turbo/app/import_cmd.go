@@ -928,6 +928,10 @@ func ImportState(ctx context.Context, ethereum *eth.Ethereum, fn string, blockNu
 	}
 	log.Info("newly calculated root", "root", root.Hex())
 
+	if err = domains.Flush(ctx, tx); err != nil {
+		return err
+	}
+
 	startTime := time.Now()
 	if err := statedb.CommitBlock(&chain.Rules{}, w); err != nil {
 		return fmt.Errorf("cannot write state: %w", err)
