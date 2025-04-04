@@ -20,6 +20,7 @@ require (
 require (
 	gfx.cafe/util/go/generic v0.0.0-20230721185457-c559e86c829c
 	github.com/99designs/gqlgen v0.17.63
+	github.com/BurntSushi/toml v1.4.0
 	github.com/Giulio2002/bls v0.0.0-20250218151206-daa74641714d
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/RoaringBitmap/roaring/v2 v2.4.3
@@ -37,7 +38,6 @@ require (
 	github.com/edsrzf/mmap-go v1.1.0
 	github.com/emicklei/dot v1.6.2
 	github.com/erigontech/erigon-lib v0.0.0-00010101000000-000000000000
-	github.com/ethereum-optimism/superchain-registry/superchain v0.0.0-20250107155734-c08331ab44a3
 	github.com/fjl/gencodec v0.0.0-20220412091415-8bb9e558978c
 	github.com/gballet/go-verkle v0.0.0-20221121182333-31427a1f2d35
 	github.com/go-chi/chi/v5 v5.1.0
@@ -68,6 +68,7 @@ require (
 	github.com/libp2p/go-libp2p-pubsub v0.11.0
 	github.com/maticnetwork/crand v1.0.2
 	github.com/multiformats/go-multiaddr v0.13.0
+	github.com/naoina/toml v0.1.1
 	github.com/nxadm/tail v1.4.11
 	github.com/pelletier/go-toml v1.9.5
 	github.com/pelletier/go-toml/v2 v2.2.3
@@ -111,7 +112,6 @@ require (
 )
 
 require (
-	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/RoaringBitmap/roaring v1.9.4 // indirect
 	github.com/alecthomas/atomic v0.1.0-alpha2 // indirect
 	github.com/benesch/cgosymbolizer v0.0.0-20190515212042-bec6fe6e597b // indirect
@@ -125,6 +125,7 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.7 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/naoina/go-stringutil v0.1.0 // indirect
 	github.com/nyaosorg/go-windows-shortcut v0.0.0-20220529122037-8b0c89bca4c4 // indirect
 	github.com/tklauser/go-sysconf v0.3.14 // indirect
 	github.com/tklauser/numcpus v0.8.0 // indirect

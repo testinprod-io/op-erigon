@@ -267,10 +267,13 @@ func GenesisHashByChainName(chain string) *libcommon.Hash {
 	case networkname.Test:
 		return &TestGenesisHash
 	case networkname.OPMainnetChainName:
+		// cannot use genesis has from superchain registry because of pre-bedrock blocks
 		return &OPMainnetGenesisHash
-	case networkname.BaseMainnetChainName:
-		return &BaseMainnetGenesisHash
 	default:
+		if opStackChainCfg := OPStackChainConfigByName(chain); opStackChainCfg != nil {
+			genesisHash := opStackChainCfg.Genesis.L2.Hash
+			return &genesisHash
+		}
 		return nil
 	}
 }

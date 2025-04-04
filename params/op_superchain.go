@@ -9,24 +9,11 @@ import (
 
 	"github.com/erigontech/erigon-lib/chain"
 	"github.com/erigontech/erigon-lib/common"
-	"github.com/ethereum-optimism/superchain-registry/superchain"
+	"github.com/erigontech/erigon/superchain"
 )
 
 const (
-	OPMainnetChainID   = 10
-	BaseMainnetChainID = 8453
-	baseSepoliaChainID = 84532
-	pgnSepoliaChainID  = 58008
-	devnetChainID      = 997
-	chaosnetChainID    = 888
-)
-
-// OP Stack chain config
-var (
-	// March 17, 2023 @ 7:00:00 pm UTC
-	OptimismGoerliRegolithTime = big.NewInt(1679079600)
-	// May 4, 2023 @ 5:00:00 pm UTC
-	BaseGoerliRegolithTime = big.NewInt(1683219600)
+	OPMainnetChainID = 10
 )
 
 var OPStackSupport = ProtocolVersionV0{Build: [8]byte{}, Major: 9, Minor: 0, Patch: 0, PreRelease: 0}.Encode()
@@ -34,9 +21,13 @@ var OPStackSupport = ProtocolVersionV0{Build: [8]byte{}, Major: 9, Minor: 0, Pat
 // OPStackChainConfigByName loads chain config corresponding to the chain name from superchain registry.
 // This implementation is based on optimism monorepo(https://github.com/ethereum-optimism/optimism/blob/op-node/v1.4.1/op-node/chaincfg/chains.go#L59)
 func OPStackChainConfigByName(name string) *superchain.ChainConfig {
-	for _, chainCfg := range superchain.OPChains {
-		if strings.EqualFold(chainCfg.Chain+"-"+chainCfg.Superchain, name) {
-			return chainCfg
+	// Handle legacy name aliases
+	for _, chain := range superchain.Chains {
+		if strings.EqualFold(chain.Name+"-"+chain.Network, name) {
+			chainCfg, err := chain.Config()
+			if err == nil {
+				return chainCfg
+			}
 		}
 	}
 	return nil
@@ -45,14 +36,17 @@ func OPStackChainConfigByName(name string) *superchain.ChainConfig {
 // OPStackChainConfigByGenesisHash loads chain config corresponding to the genesis hash from superchain registry.
 func OPStackChainConfigByGenesisHash(genesisHash common.Hash) *superchain.ChainConfig {
 	if bytes.Equal(genesisHash.Bytes(), OPMainnetGenesisHash.Bytes()) {
-		return superchain.OPChains[OPMainnetChainID]
-	}
-	if bytes.Equal(genesisHash.Bytes(), BaseMainnetGenesisHash.Bytes()) {
-		return superchain.OPChains[BaseMainnetChainID]
-	}
-	for _, chainCfg := range superchain.OPChains {
-		if bytes.Equal(chainCfg.Genesis.L2.Hash[:], genesisHash.Bytes()) {
+		chainCfg, err := superchain.Chains[OPMainnetChainID].Config()
+		if err == nil {
 			return chainCfg
+		}
+	}
+	for _, chain := range superchain.Chains {
+		chainCfg, err := chain.Config()
+		if err == nil {
+			if bytes.Equal(chainCfg.Genesis.L2.Hash[:], genesisHash.Bytes()) {
+				return chainCfg
+			}
 		}
 	}
 	return nil
@@ -78,14 +72,11 @@ func ChainConfigByOpStackGenesisHash(genesisHash common.Hash) *chain.Config {
 
 // LoadSuperChainConfig loads superchain config from superchain registry for given chain, and builds erigon chain config.
 // This implementation is based on op-geth(https://github.com/ethereum-optimism/op-geth/blob/c7871bc4454ffc924eb128fa492975b30c9c46ad/params/superchain.go#L39)
-func LoadSuperChainConfig(opStackChainCfg *superchain.ChainConfig) *chain.Config {
-	chConfig, ok := superchain.OPChains[opStackChainCfg.ChainID]
-	if !ok {
-		panic(fmt.Sprintf("LoadSuperChainConfig: unknown chain ID: %d", opStackChainCfg.ChainID))
-	}
+func LoadSuperChainConfig(chConfig *superchain.ChainConfig) *chain.Config {
+	hardforks := chConfig.Hardforks
 	out := &chain.Config{
-		ChainName:                     opStackChainCfg.Name,
-		ChainID:                       new(big.Int).SetUint64(opStackChainCfg.ChainID),
+		ChainName:                     chConfig.Name,
+		ChainID:                       new(big.Int).SetUint64(chConfig.ChainID),
 		HomesteadBlock:                common.Big0,
 		DAOForkBlock:                  nil,
 		TangerineWhistleBlock:         common.Big0,
@@ -117,22 +108,22 @@ func LoadSuperChainConfig(opStackChainCfg *superchain.ChainConfig) *chain.Config
 		Optimism:                      nil,
 	}
 
-	if chConfig.CanyonTime != nil {
-		out.ShanghaiTime = new(big.Int).SetUint64(*chConfig.CanyonTime) // Shanghai activates with Canyon
-		out.CanyonTime = new(big.Int).SetUint64(*chConfig.CanyonTime)
+	if hardforks.CanyonTime != nil {
+		out.ShanghaiTime = new(big.Int).SetUint64(*hardforks.CanyonTime) // Shanghai activates with Canyon
+		out.CanyonTime = new(big.Int).SetUint64(*hardforks.CanyonTime)
 	}
-	if chConfig.EcotoneTime != nil {
-		out.CancunTime = new(big.Int).SetUint64(*chConfig.EcotoneTime) // CancunTime activates with Ecotone
-		out.EcotoneTime = new(big.Int).SetUint64(*chConfig.EcotoneTime)
+	if hardforks.EcotoneTime != nil {
+		out.CancunTime = new(big.Int).SetUint64(*hardforks.EcotoneTime) // CancunTime activates with Ecotone
+		out.EcotoneTime = new(big.Int).SetUint64(*hardforks.EcotoneTime)
 	}
-	if chConfig.FjordTime != nil {
-		out.FjordTime = new(big.Int).SetUint64(*chConfig.FjordTime)
+	if hardforks.FjordTime != nil {
+		out.FjordTime = new(big.Int).SetUint64(*hardforks.FjordTime)
 	}
-	if chConfig.GraniteTime != nil {
-		out.GraniteTime = new(big.Int).SetUint64(*chConfig.GraniteTime)
+	if hardforks.GraniteTime != nil {
+		out.GraniteTime = new(big.Int).SetUint64(*hardforks.GraniteTime)
 	}
-	if chConfig.HoloceneTime != nil {
-		out.HoloceneTime = new(big.Int).SetUint64(*chConfig.HoloceneTime)
+	if hardforks.HoloceneTime != nil {
+		out.HoloceneTime = new(big.Int).SetUint64(*hardforks.HoloceneTime)
 	}
 
 	if chConfig.Optimism != nil {
@@ -146,7 +137,7 @@ func LoadSuperChainConfig(opStackChainCfg *superchain.ChainConfig) *chain.Config
 	}
 
 	// special overrides for OP-Stack chains with pre-Regolith upgrade history
-	switch opStackChainCfg.ChainID {
+	switch chConfig.ChainID {
 	case OPMainnetChainID:
 		out.BerlinBlock = big.NewInt(3950000)
 		out.LondonBlock = big.NewInt(105235063)

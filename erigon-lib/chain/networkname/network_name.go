@@ -32,8 +32,6 @@ const (
 
 	OPMainnetChainName   = "op-mainnet"
 	BaseMainnetChainName = "base-mainnet"
-
-	LegacyOPMainnetChainName = "optimism-mainnet"
 )
 
 var All = []string{
