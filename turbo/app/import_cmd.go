@@ -394,7 +394,8 @@ func WriteBlockWithoutExecution(ethereum *eth.Ethereum, tx kv.RwTx, block *types
 	}
 	rawdb.WriteTxLookupEntries(tx, block, txNumMin)
 
-	if err := rawdbv3.TxNums.Append(tx, block.NumberU64(), uint64(block.Transactions().Len()+1)); err != nil {
+	err = rawdb.AppendCanonicalTxNums(tx, block.NumberU64())
+	if err != nil {
 		return err
 	}
 
@@ -870,6 +871,11 @@ func ImportState(ctx context.Context, ethereum *eth.Ethereum, fn string, blockNu
 		return err
 	}
 	domains.SetBlockNum(blockNumber)
+	txNum, err := rawdbv3.TxNums.Max(tx, blockNumber)
+	if err != nil {
+		return err
+	}
+	domains.SetTxNum(txNum)
 	r, w := state.NewReaderV3(domains), state.NewWriterV4(domains)
 	statedb := state.New(r)
 
