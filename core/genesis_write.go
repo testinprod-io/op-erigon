@@ -31,7 +31,6 @@ import (
 	"slices"
 
 	"github.com/c2h5oh/datasize"
-	"github.com/ethereum-optimism/superchain-registry/superchain"
 	"github.com/holiman/uint256"
 	"golang.org/x/sync/errgroup"
 
@@ -688,99 +687,4 @@ func GenesisBlockByChainName(chain string) *types.Genesis {
 	default:
 		return nil
 	}
-}
-
-// loadOPStackGenesisByChainName loads genesis block corresponding to the chain name from superchain regsitry.
-// This implementation is based on op-geth(https://github.com/ethereum-optimism/op-geth/blob/c7871bc4454ffc924eb128fa492975b30c9c46ad/core/superchain.go#L13)
-func loadOPStackGenesisByChainName(name string) (*types.Genesis, error) {
-	opStackChainCfg := params.OPStackChainConfigByName(name)
-	if opStackChainCfg == nil {
-		return nil, nil
-	}
-
-	cfg := params.LoadSuperChainConfig(opStackChainCfg)
-	if cfg == nil {
-		return nil, nil
-	}
-
-	gen, err := superchain.LoadGenesis(opStackChainCfg.ChainID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load genesis definition for chain %d: %w", opStackChainCfg.ChainID, err)
-	}
-
-	genesis := &types.Genesis{
-		Config:     cfg,
-		Nonce:      gen.Nonce,
-		Timestamp:  gen.Timestamp,
-		ExtraData:  gen.ExtraData,
-		GasLimit:   gen.GasLimit,
-		Difficulty: (*big.Int)(gen.Difficulty),
-		Mixhash:    libcommon.Hash(gen.Mixhash),
-		Coinbase:   libcommon.Address(gen.Coinbase),
-		Alloc:      make(types.GenesisAlloc),
-		Number:     gen.Number,
-		GasUsed:    gen.GasUsed,
-		ParentHash: libcommon.Hash(gen.ParentHash),
-		BaseFee:    (*big.Int)(gen.BaseFee),
-	}
-	fmt.Println(len(gen.Alloc), gen.Number)
-
-	for addr, acc := range gen.Alloc {
-		var code []byte
-		if acc.CodeHash != ([32]byte{}) {
-			dat, err := superchain.LoadContractBytecode(acc.CodeHash)
-			if err != nil {
-				return nil, fmt.Errorf("failed to load bytecode %s of address %s in chain %d: %w", acc.CodeHash, addr, opStackChainCfg.ChainID, err)
-			}
-			code = dat
-		}
-		var storage map[libcommon.Hash]libcommon.Hash
-		if len(acc.Storage) > 0 {
-			storage = make(map[libcommon.Hash]libcommon.Hash)
-			for k, v := range acc.Storage {
-				storage[libcommon.Hash(k)] = libcommon.Hash(v)
-			}
-		}
-		bal := libcommon.Big0
-		if acc.Balance != nil {
-			bal = (*big.Int)(acc.Balance)
-		}
-		genesis.Alloc[libcommon.Address(addr)] = types.GenesisAccount{
-			Code:    code,
-			Storage: storage,
-			Balance: bal,
-			Nonce:   acc.Nonce,
-		}
-	}
-
-	if gen.StateHash != nil {
-		if len(gen.Alloc) > 0 {
-			return nil, fmt.Errorf("chain definition unexpectedly contains both allocation (%d) and state-hash %s", len(gen.Alloc), *gen.StateHash)
-		}
-		genesis.StateHash = (*libcommon.Hash)(gen.StateHash)
-	}
-
-	genesisBlock, _, err := GenesisToBlock(genesis, datadir.New("/tmp/lol"), log.Root())
-	if err != nil {
-		return nil, fmt.Errorf("failed to build genesis block: %w", err)
-	}
-	s, _ := genesisBlock.Header().MarshalJSON()
-	fmt.Println(string(s))
-	genesisBlockHash := genesisBlock.Hash()
-	expectedHash := libcommon.Hash([32]byte(opStackChainCfg.Genesis.L2.Hash))
-
-	// Verify we correctly produced the genesis config by recomputing the genesis-block-hash,
-	// and check the genesis matches the chain genesis definition.
-	if opStackChainCfg.Genesis.L2.Number != genesisBlock.NumberU64() {
-		switch opStackChainCfg.ChainID {
-		case params.OPMainnetChainID:
-			expectedHash = params.OPMainnetGenesisHash
-		default:
-			return nil, fmt.Errorf("unknown stateless genesis definition for chain %d", opStackChainCfg.ChainID)
-		}
-	}
-	if expectedHash != genesisBlockHash {
-		return nil, fmt.Errorf("produced genesis with hash %s but expected %s", genesisBlockHash, expectedHash)
-	}
-	return genesis, nil
 }
