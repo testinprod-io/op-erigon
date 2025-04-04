@@ -392,6 +392,10 @@ func WriteBlockWithoutExecution(ethereum *eth.Ethereum, tx kv.RwTx, block *types
 	}
 	rawdb.WriteTxLookupEntries(tx, block, txNumMin)
 
+	if err := rawdbv3.TxNums.Append(tx, block.NumberU64(), uint64(block.Transactions().Len()+1)); err != nil {
+		return err
+	}
+
 	// mark every stage as done
 	for _, stage := range stages2.AllStages {
 		if err := stages2.SaveStageProgress(tx, stage, block.NumberU64()); err != nil {
