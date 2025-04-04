@@ -199,6 +199,7 @@ func ImportChain(ethereum *eth.Ethereum, chainDB kv.RwDB, fn string, logger log.
 	// Run actual the import.
 	blocks := make(types.Blocks, importBatchSize)
 	n := 0
+	quit := StatusReporter("Import blocks", &n)
 	for batch := 0; ; batch++ {
 		// Load a batch of RLP blocks.
 		if checkInterrupt() {
@@ -245,6 +246,7 @@ func ImportChain(ethereum *eth.Ethereum, chainDB kv.RwDB, fn string, logger log.
 			return err
 		}
 	}
+	close(quit)
 	return nil
 }
 
