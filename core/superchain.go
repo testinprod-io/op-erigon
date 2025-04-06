@@ -67,6 +67,11 @@ func LoadOPStackGenesis(chainID uint64) (*types.Genesis, error) {
 		genesis.Alloc = nil
 	}
 
+	if chainID == params.OPMainnetChainID {
+		opmStateHash := libcommon.HexToHash("0xeddb4c1786789419153a27c4c80ff44a2226b6eda04f7e22ce5bae892ea568eb")
+		genesis.StateHash = &opmStateHash
+	}
+
 	tmpdir := os.TempDir()
 	dirs := datadir.New(tmpdir)
 	genesisBlock, _, err := GenesisToBlock(genesis, dirs, log.Root())
