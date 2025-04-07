@@ -278,6 +278,9 @@ func GenesisHashByChainName(chain string) *libcommon.Hash {
 }
 
 func ChainConfigByGenesisHash(genesisHash libcommon.Hash) *chain.Config {
+	if cfg := ChainConfigByOpStackGenesisHash(genesisHash); cfg != nil {
+		return cfg
+	}
 	switch {
 	case genesisHash == MainnetGenesisHash:
 		return MainnetChainConfig
