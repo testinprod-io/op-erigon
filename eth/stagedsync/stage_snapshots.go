@@ -66,6 +66,7 @@ import (
 	"github.com/erigontech/erigon/eth/ethconfig/estimate"
 	"github.com/erigontech/erigon/eth/stagedsync/stages"
 	"github.com/erigontech/erigon/ethdb/prune"
+	"github.com/erigontech/erigon/params"
 	"github.com/erigontech/erigon/polygon/heimdall"
 	"github.com/erigontech/erigon/rpc"
 	"github.com/erigontech/erigon/turbo/services"
@@ -564,6 +565,10 @@ func pruneCanonicalMarkers(ctx context.Context, tx kv.RwTx, blockReader services
 // snapshots pruning sections works more as a retiring of blocks
 // retiring blocks means moving block data from db into snapshots
 func SnapshotsPrune(s *PruneState, cfg SnapshotsCfg, ctx context.Context, tx kv.RwTx, logger log.Logger) (err error) {
+	if cfg.chainConfig.ChainID.Uint64() == params.OPMainnetChainID {
+		logger.Debug("Snapshot is not supported on op-mainnet. Skip SnapshotsPrune")
+		return nil
+	}
 	useExternalTx := tx != nil
 	if !useExternalTx {
 		tx, err = cfg.db.BeginRw(ctx)
