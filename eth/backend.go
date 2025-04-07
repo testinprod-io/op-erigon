@@ -339,6 +339,13 @@ func New(ctx context.Context, stack *node.Node, config *ethconfig.Config, logger
 
 	segmentsBuildLimiter := semaphore.NewWeighted(int64(dbg.BuildSnapshotAllowance))
 
+	if chainConfig.ChainID.Uint64() == params.OPMainnetChainID {
+		logger.Info("Snapshot is not supported on op-mainnet. Disabled snapshot feature")
+		config.Snapshot.ProduceE2 = false
+		config.Snapshot.ProduceE3 = false
+		config.Snapshot.NoDownloader = true
+	}
+
 	// Check if we have an already initialized chain and fall back to
 	// that if so. Otherwise we need to generate a new genesis spec.
 	blockReader, blockWriter, allSnapshots, allBorSnapshots, bridgeStore, heimdallStore, agg, err := setUpBlockReader(ctx, rawChainDB, config.Dirs, config, chainConfig, stack.Config(), logger, segmentsBuildLimiter)
