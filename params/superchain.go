@@ -122,6 +122,7 @@ func LoadOPStackChainConfig(chConfig *superchain.ChainConfig) *chain.Config {
 		FjordTime:                     nil,
 		GraniteTime:                   nil,
 		HoloceneTime:                  nil,
+		IsthmusTime:                   nil,
 		TerminalTotalDifficulty:       common.Big0,
 		TerminalTotalDifficultyPassed: true,
 		Ethash:                        nil,
@@ -145,6 +146,9 @@ func LoadOPStackChainConfig(chConfig *superchain.ChainConfig) *chain.Config {
 	}
 	if hardforks.HoloceneTime != nil {
 		out.HoloceneTime = new(big.Int).SetUint64(*hardforks.HoloceneTime)
+	}
+	if hardforks.IsthmusTime != nil {
+		out.IsthmusTime = new(big.Int).SetUint64(*hardforks.IsthmusTime)
 	}
 
 	if chConfig.Optimism != nil {
