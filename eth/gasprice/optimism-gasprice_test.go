@@ -116,7 +116,7 @@ func newOpTestBackend(t *testing.T, txs []testTxData) *opTestBackend {
 		nonce++
 	}
 	// hasher := trie.NewStackTrie(nil)
-	b := types.NewBlock(&header, ts, nil, nil, nil)
+	b := types.NewBlock(&header, ts, nil, nil, nil, false)
 	return &opTestBackend{block: b, receipts: rs}
 }
 

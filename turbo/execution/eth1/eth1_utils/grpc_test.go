@@ -67,7 +67,7 @@ func makeBlock(txCount, uncleCount, withdrawalCount int) *types.Block {
 			Amount:    uint64(10 * i),
 		}
 	}
-	return types.NewBlock(header, txs, uncles, receipts, withdrawals)
+	return types.NewBlock(header, txs, uncles, receipts, withdrawals, false)
 }
 
 func TestBlockRpcConversion(t *testing.T) {
