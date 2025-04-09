@@ -184,6 +184,10 @@ func (s *EngineServer) newPayload(ctx context.Context, req *engine_types.Executi
 		header.WithdrawalsHash = &wh
 	}
 
+	if s.config.IsIsthmus(req.Timestamp.Uint64()) {
+		header.WithdrawalsHash = req.WithdrawalsRoot
+	}
+
 	var requests types.FlatRequests
 	if err := s.checkRequestsPresence(header.Time, executionRequests); err != nil {
 		return nil, err
@@ -229,7 +233,7 @@ func (s *EngineServer) newPayload(ctx context.Context, req *engine_types.Executi
 
 	blockHash := req.BlockHash
 	if header.Hash() != blockHash {
-		s.logger.Error("[NewPayload] invalid block hash", "stated", blockHash, "actual", header.Hash())
+		s.logger.Error("[NewPayload] invalid block hash", "stated", blockHash, "actual", header.Hash(), "w", header.WithdrawalsHash)
 		return &engine_types.PayloadStatus{
 			Status:          engine_types.InvalidStatus,
 			ValidationError: engine_types.NewStringifiedErrorFromString("invalid block hash"),

@@ -220,6 +220,10 @@ func ConvertPayloadFromRpc(payload *types2.ExecutionPayload) *ExecutionPayload {
 		excessBlobGas := *payload.ExcessBlobGas
 		res.ExcessBlobGas = (*hexutil.Uint64)(&excessBlobGas)
 	}
+	if payload.WithdrawlsRoot != nil {
+		root := common.Hash(gointerfaces.ConvertH256ToHash(payload.WithdrawlsRoot))
+		res.WithdrawalsRoot = &root
+	}
 	return res
 }
 

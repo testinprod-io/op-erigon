@@ -251,6 +251,8 @@ type TxPool struct {
 	isPostEcotone  atomic.Bool
 	fjordTime      *uint64
 	isPostFjord    atomic.Bool
+	isthmusTime    *uint64
+	isPostIsthmus  atomic.Bool
 }
 
 type FeeCalculator interface {
@@ -259,7 +261,7 @@ type FeeCalculator interface {
 
 func New(newTxs chan types.Announcements, coreDB kv.RoDB, cfg txpoolcfg.Config, cache kvcache.Cache,
 	chainID uint256.Int, shanghaiTime, agraBlock, cancunTime, pragueTime *big.Int,
-	regolithTime, canyonTime, ecotoneTime, fjordTime *big.Int,
+	regolithTime, canyonTime, ecotoneTime, fjordTime, isthmusTime *big.Int,
 	blobSchedule *chain.BlobSchedule, feeCalculator FeeCalculator, logger log.Logger,
 ) (*TxPool, error) {
 	localsHistory, err := simplelru.NewLRU[string, struct{}](10_000, nil)
@@ -363,11 +365,18 @@ func New(newTxs chan types.Announcements, coreDB kv.RoDB, cfg txpoolcfg.Config, 
 		fjordTimeU64 := fjordTime.Uint64()
 		res.fjordTime = &fjordTimeU64
 	}
+	if isthmusTime != nil {
+		if !isthmusTime.IsUint64() {
+			return nil, errors.New("isthmusTime overflow")
+		}
+		isthmusTime := isthmusTime.Uint64()
+		res.isthmusTime = &isthmusTime
+	}
 
 	return res, nil
 }
 
-func RawRLPTxToOptimismL1CostFn(payload []byte, isRegolith, isEcotone, isFjord bool) (types.L1CostFn, error) {
+func RawRLPTxToOptimismL1CostFn(payload []byte, isRegolith, isEcotone, isFjord, isIsthmus bool) (types.L1CostFn, error) {
 	// skip prefix byte
 	if len(payload) == 0 {
 		return nil, fmt.Errorf("empty tx payload")
@@ -414,7 +423,7 @@ func RawRLPTxToOptimismL1CostFn(payload []byte, isRegolith, isEcotone, isFjord b
 		return nil, fmt.Errorf("failed to read tx data entry rlp prefix: %w", err)
 	}
 	txCalldata := payload[dataPos : dataPos+dataLen]
-	return opstack.L1CostFnForTxPool(txCalldata, isRegolith, isEcotone, isFjord)
+	return opstack.L1CostFnForTxPool(txCalldata, isRegolith, isEcotone, isFjord, isIsthmus)
 }
 
 func (p *TxPool) Start(ctx context.Context, db kv.RwDB) error {
@@ -495,11 +504,11 @@ func (p *TxPool) OnNewBlock(ctx context.Context, stateChanges *remote.StateChang
 	if p.cfg.Optimism {
 		lastChangeBatch := stateChanges.ChangeBatch[len(stateChanges.ChangeBatch)-1]
 		if len(lastChangeBatch.Txs) > 0 {
-			l1CostFn, err := RawRLPTxToOptimismL1CostFn(lastChangeBatch.Txs[0], p.isRegolith(), p.isEcotone(), p.isFjord())
+			l1CostFn, err := RawRLPTxToOptimismL1CostFn(lastChangeBatch.Txs[0], p.isRegolith(), p.isEcotone(), p.isFjord(), p.isIsthmus())
 			if err == nil {
 				p.l1Cost = l1CostFn
 			} else {
-				log.Error("Tx pool failed to prepare Optimism L1 cost function", "err", err, "block_number", lastChangeBatch.BlockHeight)
+				log.Warn("Tx pool failed to prepare Optimism L1 cost function. (can be ignored during full sync)", "err", err, "block_number", lastChangeBatch.BlockHeight)
 			}
 		}
 	}
@@ -1299,6 +1308,31 @@ func (p *TxPool) isFjord() bool {
 	activated := uint64(now) >= fjordTime
 	if activated {
 		p.isPostFjord.Swap(true)
+	}
+	return activated
+}
+
+func (p *TxPool) isIsthmus() bool {
+	// once this flag has been set for the first time we no longer need to check the timestamp
+	set := p.isPostIsthmus.Load()
+	if set {
+		return true
+	}
+	if p.isthmusTime == nil {
+		return false
+	}
+	isthmusTime := *p.isthmusTime
+
+	// a zero here means isthmus is always active
+	if isthmusTime == 0 {
+		p.isPostIsthmus.Swap(true)
+		return true
+	}
+
+	now := time.Now().Unix()
+	activated := uint64(now) >= isthmusTime
+	if activated {
+		p.isPostIsthmus.Swap(true)
 	}
 	return activated
 }

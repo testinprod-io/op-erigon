@@ -341,11 +341,9 @@ func extractL1GasParamsPostEcotone(data []byte) (gasParams, error) {
 	}, nil
 }
 
-// extractL1GasParamsPostIsthmus extracts the gas parameters necessary to compute gas from L1 attribute
-// info calldata after the Isthmus upgrade, but not for the very first Isthmus block.
-func extractL1GasParamsPostIsthmus(data []byte) (gasParams, error) {
+func extractL1InfoPostIsthmus(data []byte) (l1BaseFee, l1BlobBaseFee *uint256.Int, l1BaseFeeScalar, l1BlobBaseFeeScalar, operatorFeeScalar uint32, operatorFeeConstant uint64, err error) {
 	if len(data) != 176 {
-		return gasParams{}, fmt.Errorf("expected 176 L1 info bytes, got %d", len(data))
+		return nil, nil, 0, 0, 0, 0, fmt.Errorf("expected 176 L1 info bytes, got %d", len(data))
 	}
 	// data layout assumed for Isthmus:
 	// offset type varname
@@ -361,12 +359,22 @@ func extractL1GasParamsPostIsthmus(data []byte) (gasParams, error) {
 	// 132   bytes32 _batcherHash,
 	// 164   uint32  _operatorFeeScalar
 	// 168   uint64  _operatorFeeConstant
-	l1BaseFee := new(uint256.Int).SetBytes(data[36:68])
-	l1BlobBaseFee := new(uint256.Int).SetBytes(data[68:100])
-	l1BaseFeeScalar := binary.BigEndian.Uint32(data[4:8])
-	l1BlobBaseFeeScalar := binary.BigEndian.Uint32(data[8:12])
-	operatorFeeScalar := binary.BigEndian.Uint32(data[164:168])
-	operatorFeeConstant := binary.BigEndian.Uint64(data[168:176])
+	l1BaseFee = new(uint256.Int).SetBytes(data[36:68])
+	l1BlobBaseFee = new(uint256.Int).SetBytes(data[68:100])
+	l1BaseFeeScalar = binary.BigEndian.Uint32(data[4:8])
+	l1BlobBaseFeeScalar = binary.BigEndian.Uint32(data[8:12])
+	operatorFeeScalar = binary.BigEndian.Uint32(data[164:168])
+	operatorFeeConstant = binary.BigEndian.Uint64(data[168:176])
+	return
+}
+
+// extractL1GasParamsPostIsthmus extracts the gas parameters necessary to compute gas from L1 attribute
+// info calldata after the Isthmus upgrade, but not for the very first Isthmus block.
+func extractL1GasParamsPostIsthmus(data []byte) (gasParams, error) {
+	l1BaseFee, l1BlobBaseFee, l1BaseFeeScalar, l1BlobBaseFeeScalar, operatorFeeScalar, operatorFeeConstant, err := extractL1InfoPostIsthmus(data)
+	if err != nil {
+		return gasParams{}, err
+	}
 
 	return gasParams{
 		L1BaseFee:           l1BaseFee,
@@ -410,10 +418,17 @@ func l1CostPreEcotoneHelper(gasWithOverhead, l1BaseFee, scalar *uint256.Int) *ui
 	return fee
 }
 
-func L1CostFnForTxPool(data []byte, isRegolith, isEcotone, isFjord bool) (types.L1CostFn, error) {
+func L1CostFnForTxPool(data []byte, isRegolith, isEcotone, isFjord, isIsthmus bool) (types.L1CostFn, error) {
 	var costFunc l1CostFunc = nil
 	if isEcotone && len(data) >= 4 && !bytes.Equal(data[0:4], BedrockL1AttributesSelector) {
-		l1BaseFee, l1BlobBaseFee, l1BaseFeeScalar, l1BlobBaseFeeScalar, err := extractL1InfoPostEcotone(data)
+		var l1BaseFee, l1BlobBaseFee *uint256.Int
+		var l1BaseFeeScalar, l1BlobBaseFeeScalar uint32
+		var err error
+		if isIsthmus {
+			l1BaseFee, l1BlobBaseFee, l1BaseFeeScalar, l1BlobBaseFeeScalar, _, _, err = extractL1InfoPostIsthmus(data)
+		} else {
+			l1BaseFee, l1BlobBaseFee, l1BaseFeeScalar, l1BlobBaseFeeScalar, err = extractL1InfoPostEcotone(data)
+		}
 		if err != nil {
 			return nil, fmt.Errorf("L1CostFnForTxPool error: %w", err)
 		}
