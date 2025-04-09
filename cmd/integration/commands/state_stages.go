@@ -480,7 +480,7 @@ func loopIh(db kv.RwDB, ctx context.Context, unwind uint64, logger log.Logger) e
 	u = &stagedsync.UnwindState{ID: stages.IntermediateHashes, UnwindPoint: to}
 	br, _ := blocksIO(db, logger)
 	if err = stagedsync.UnwindIntermediateHashesStage(u, stage(sync, tx, nil, stages.IntermediateHashes), tx, stagedsync.StageTrieCfg(db, true, true, false, dirs.Tmp,
-		br, nil, historyV3, agg), ctx, logger); err != nil {
+		br, nil, historyV3, agg, nil), ctx, logger); err != nil {
 		return err
 	}
 	must(tx.Commit())
