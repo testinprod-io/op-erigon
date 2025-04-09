@@ -634,7 +634,7 @@ func GenesisToBlock(g *types.Genesis, tmpDir string, logger log.Logger) (*types.
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
-	isIsthmus := g.Config.IsIsthmus(head.Time)
+	isIsthmus := g.Config.IsOptimismIsthmus(head.Time)
 
 	var err error
 	go func() { // we may run inside write tx, can't open 2nd write tx in same goroutine

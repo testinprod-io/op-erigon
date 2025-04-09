@@ -279,7 +279,7 @@ func Main(ctx *cli.Context) error {
 		ommerN.SetUint64(header.Number.Uint64() - ommer.Delta)
 		ommerHeaders[i] = &types.Header{Coinbase: ommer.Address, Number: &ommerN}
 	}
-	block := types.NewBlock(header, txs, ommerHeaders, nil /* receipts */, prestate.Env.Withdrawals, chainConfig.IsIsthmus(header.Time))
+	block := types.NewBlock(header, txs, ommerHeaders, nil /* receipts */, prestate.Env.Withdrawals, chainConfig.IsOptimismIsthmus(header.Time))
 
 	var hashError error
 	getHash := func(num uint64) libcommon.Hash {

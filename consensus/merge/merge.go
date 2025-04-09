@@ -161,7 +161,7 @@ func (s *Merge) Finalize(config *chain.Config, header *types.Header, state *stat
 	}
 
 	var rs types.FlatRequests
-	if config.IsPrague(header.Time) && !config.IsIsthmus(header.Time) {
+	if config.IsPrague(header.Time) && !config.IsOptimismIsthmus(header.Time) {
 		rs = make(types.FlatRequests, 0)
 		allLogs := make(types.Logs, 0)
 		for _, rec := range receipts {
@@ -208,7 +208,7 @@ func (s *Merge) FinalizeAndAssemble(config *chain.Config, header *types.Header, 
 	if config.IsPrague(header.Time) {
 		header.RequestsHash = outRequests.Hash()
 	}
-	return types.NewBlockForAsembling(header, outTxs, uncles, outReceipts, withdrawals, config.IsIsthmus(header.Time)), outTxs, outReceipts, outRequests, nil
+	return types.NewBlockForAsembling(header, outTxs, uncles, outReceipts, withdrawals, config.IsOptimismIsthmus(header.Time)), outTxs, outReceipts, outRequests, nil
 }
 
 func (s *Merge) SealHash(header *types.Header) (hash libcommon.Hash) {

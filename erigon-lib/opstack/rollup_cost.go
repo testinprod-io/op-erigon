@@ -232,7 +232,7 @@ func newL1CostFuncEcotone(l1BaseFee, l1BlobBaseFee, l1BaseFeeScalar, l1BlobBaseF
 
 // extractL1GasParams extracts the gas parameters necessary to compute gas costs from L1 block info
 func ExtractL1GasParams(config *chain.Config, time uint64, data []byte) (gasParams, error) {
-	if config.IsIsthmus(time) && len(data) >= 4 && !bytes.Equal(data[0:4], EcotoneL1AttributesSelector) {
+	if config.IsOptimismIsthmus(time) && len(data) >= 4 && !bytes.Equal(data[0:4], EcotoneL1AttributesSelector) {
 		// edge case: for the very first Isthmus block we still need to use the Ecotone
 		// function. We detect this edge case by seeing if the function selector is the old one
 		// If so, fall through to the pre-isthmus format

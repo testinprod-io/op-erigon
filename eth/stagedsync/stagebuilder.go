@@ -99,7 +99,7 @@ func MiningStages(
 				}
 				header := createBlockCfg.miner.MiningBlock.Header
 				header.Root = stateRoot
-				if trieCfg.chainCfg != nil && trieCfg.chainCfg.IsIsthmus(header.Time) {
+				if trieCfg.chainCfg != nil && trieCfg.chainCfg.IsOptimismIsthmus(header.Time) {
 					header.WithdrawalsHash = &storageRootMessagePasser
 				}
 				return nil

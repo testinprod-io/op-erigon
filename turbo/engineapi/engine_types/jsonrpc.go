@@ -36,6 +36,11 @@ type ExecutionPayload struct {
 	Withdrawals   []*types.Withdrawal `json:"withdrawals"`
 	BlobGasUsed   *hexutil.Uint64     `json:"blobGasUsed"`
 	ExcessBlobGas *hexutil.Uint64     `json:"excessBlobGas"`
+
+	// OP-Stack Isthmus specific field:
+	// instead of computing the root from a withdrawals list, set it directly.
+	// The "withdrawals" list attribute must be non-nil but empty.
+	WithdrawalsRoot *common.Hash `json:"withdrawalsRoot,omitempty"`
 }
 
 // PayloadAttributes represent the attributes required to start assembling a payload

@@ -457,6 +457,10 @@ func (c *Config) IsOptimismHolocene(time uint64) bool {
 	return c.IsOptimism() && c.IsHolocene(time)
 }
 
+func (c *Config) IsOptimismIsthmus(time uint64) bool {
+	return c.IsOptimism() && c.IsIsthmus(time)
+}
+
 // IsOptimismPreBedrock returns true iff this is an optimism node & bedrock is not yet active
 func (c *Config) IsOptimismPreBedrock(num uint64) bool {
 	return c.IsOptimism() && !c.IsBedrock(num)

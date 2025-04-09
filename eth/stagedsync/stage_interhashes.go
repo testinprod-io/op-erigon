@@ -615,7 +615,7 @@ func IncrementIntermediateHashes(logPrefix string, s *StageState, db kv.RwTx, to
 	loader := trie.NewFlatDBTrieLoader(logPrefix, rl, accTrieCollectorFunc, stTrieCollectorFunc, false)
 
 	var pr *trie.ProofRetainer
-	if cfg.chainCfg != nil && cfg.chainCfg.IsIsthmus(s.BlockTimestamp) {
+	if cfg.chainCfg != nil && cfg.chainCfg.IsOptimismIsthmus(s.BlockTimestamp) {
 		var err error
 		pr, err = trie.NewProofRetainer(params.OptimismL2ToL1MessagePasser, &accounts.Account{}, []libcommon.Hash{}, rl)
 		if err != nil {
