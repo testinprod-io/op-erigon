@@ -710,7 +710,7 @@ func GenesisToBlock(g *types.Genesis, tmpDir string, logger log.Logger) (*types.
 	}
 	head.Root = root
 
-	return types.NewBlock(head, nil, nil, nil, withdrawals), statedb, nil
+	return types.NewBlock(head, nil, nil, nil, withdrawals, g.Config.IsIsthmus(head.Time)), statedb, nil
 }
 
 func sortedAllocKeys(m types.GenesisAlloc) []string {

@@ -82,7 +82,7 @@ func TestAccountAndStorageTrie(t *testing.T) {
 
 	historyV3 := false
 	blockReader := freezeblocks.NewBlockReader(freezeblocks.NewRoSnapshots(ethconfig.BlocksFreezing{Enabled: false}, t.TempDir(), 0, log.New()), freezeblocks.NewBorRoSnapshots(ethconfig.BlocksFreezing{Enabled: false}, t.TempDir(), 0, log.New()))
-	cfg := stagedsync.StageTrieCfg(db, false, true, false, t.TempDir(), blockReader, nil, historyV3, nil)
+	cfg := stagedsync.StageTrieCfg(db, false, true, false, t.TempDir(), blockReader, nil, historyV3, nil, nil)
 	_, err := stagedsync.RegenerateIntermediateHashes("IH", tx, cfg, libcommon.Hash{} /* expectedRootHash */, ctx, log.New())
 	assert.Nil(t, err)
 
@@ -204,7 +204,7 @@ func TestAccountTrieAroundExtensionNode(t *testing.T) {
 	assert.Nil(t, tx.Put(kv.HashedAccounts, hash6[:], encoded))
 
 	blockReader := freezeblocks.NewBlockReader(freezeblocks.NewRoSnapshots(ethconfig.BlocksFreezing{Enabled: false}, t.TempDir(), 0, log.New()), freezeblocks.NewBorRoSnapshots(ethconfig.BlocksFreezing{Enabled: false}, t.TempDir(), 0, log.New()))
-	_, err := stagedsync.RegenerateIntermediateHashes("IH", tx, stagedsync.StageTrieCfg(db, false, true, false, t.TempDir(), blockReader, nil, historyV3, nil), libcommon.Hash{} /* expectedRootHash */, ctx, log.New())
+	_, err := stagedsync.RegenerateIntermediateHashes("IH", tx, stagedsync.StageTrieCfg(db, false, true, false, t.TempDir(), blockReader, nil, historyV3, nil, nil), libcommon.Hash{} /* expectedRootHash */, ctx, log.New())
 	assert.Nil(t, err)
 
 	accountTrie := make(map[string][]byte)
@@ -267,7 +267,7 @@ func TestStorageDeletion(t *testing.T) {
 	// ----------------------------------------------------------------
 	historyV3 := false
 	blockReader := freezeblocks.NewBlockReader(freezeblocks.NewRoSnapshots(ethconfig.BlocksFreezing{Enabled: false}, t.TempDir(), 0, log.New()), freezeblocks.NewBorRoSnapshots(ethconfig.BlocksFreezing{Enabled: false}, t.TempDir(), 0, log.New()))
-	cfg := stagedsync.StageTrieCfg(db, false, true, false, t.TempDir(), blockReader, nil, historyV3, nil)
+	cfg := stagedsync.StageTrieCfg(db, false, true, false, t.TempDir(), blockReader, nil, historyV3, nil, nil)
 	_, err = stagedsync.RegenerateIntermediateHashes("IH", tx, cfg, libcommon.Hash{} /* expectedRootHash */, ctx, log.New())
 	assert.Nil(t, err)
 
@@ -386,7 +386,7 @@ func TestHiveTrieRoot(t *testing.T) {
 
 	historyV3 := false
 	blockReader := freezeblocks.NewBlockReader(freezeblocks.NewRoSnapshots(ethconfig.BlocksFreezing{Enabled: false}, t.TempDir(), 0, log.New()), freezeblocks.NewBorRoSnapshots(ethconfig.BlocksFreezing{Enabled: false}, t.TempDir(), 0, log.New()))
-	cfg := stagedsync.StageTrieCfg(db, false, true, false, t.TempDir(), blockReader, nil, historyV3, nil)
+	cfg := stagedsync.StageTrieCfg(db, false, true, false, t.TempDir(), blockReader, nil, historyV3, nil, nil)
 	logger := log.New()
 	_, err := stagedsync.RegenerateIntermediateHashes("IH", tx, cfg, libcommon.Hash{} /* expectedRootHash */, ctx, logger)
 	require.Nil(t, err)

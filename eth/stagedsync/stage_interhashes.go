@@ -5,12 +5,14 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"github.com/erigontech/erigon/params"
 	"math/bits"
 	"slices"
 	"sync/atomic"
 
 	"github.com/erigontech/erigon-lib/kv/dbutils"
 
+	"github.com/erigontech/erigon-lib/chain"
 	libcommon "github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/hexutility"
 	"github.com/erigontech/erigon-lib/common/length"
@@ -42,9 +44,11 @@ type TrieCfg struct {
 
 	historyV3 bool
 	agg       *state.Aggregator
+
+	chainCfg *chain.Config
 }
 
-func StageTrieCfg(db kv.RwDB, checkRoot, saveNewHashesToDB, badBlockHalt bool, tmpDir string, blockReader services.FullBlockReader, hd *headerdownload.HeaderDownload, historyV3 bool, agg *state.Aggregator) TrieCfg {
+func StageTrieCfg(db kv.RwDB, checkRoot, saveNewHashesToDB, badBlockHalt bool, tmpDir string, blockReader services.FullBlockReader, hd *headerdownload.HeaderDownload, historyV3 bool, agg *state.Aggregator, chainCfg *chain.Config) TrieCfg {
 	return TrieCfg{
 		db:                db,
 		checkRoot:         checkRoot,
@@ -56,33 +60,35 @@ func StageTrieCfg(db kv.RwDB, checkRoot, saveNewHashesToDB, badBlockHalt bool, t
 
 		historyV3: historyV3,
 		agg:       agg,
+
+		chainCfg: chainCfg,
 	}
 }
 
-func SpawnIntermediateHashesStage(s *StageState, u Unwinder, tx kv.RwTx, cfg TrieCfg, ctx context.Context, logger log.Logger) (libcommon.Hash, error) {
+func SpawnIntermediateHashesStage(s *StageState, u Unwinder, tx kv.RwTx, cfg TrieCfg, ctx context.Context, logger log.Logger) (libcommon.Hash, libcommon.Hash, error) {
 	quit := ctx.Done()
 	useExternalTx := tx != nil
 	if !useExternalTx {
 		var err error
 		tx, err = cfg.db.BeginRw(context.Background())
 		if err != nil {
-			return trie.EmptyRoot, err
+			return trie.EmptyRoot, trie.EmptyRoot, err
 		}
 		defer tx.Rollback()
 	}
 
 	to, err := s.ExecutionAt(tx)
 	if err != nil {
-		return trie.EmptyRoot, err
+		return trie.EmptyRoot, trie.EmptyRoot, err
 	}
 	if s.BlockNumber > to { // Erigon will self-heal (download missed blocks) eventually
-		return trie.EmptyRoot, nil
+		return trie.EmptyRoot, trie.EmptyRoot, nil
 	}
 
 	if s.BlockNumber == to {
 		// we already did hash check for this block
 		// we don't do the obvious `if s.BlockNumber > to` to support reorgs more naturally
-		return trie.EmptyRoot, nil
+		return trie.EmptyRoot, trie.EmptyRoot, nil
 	}
 
 	var expectedRootHash libcommon.Hash
@@ -91,10 +97,10 @@ func SpawnIntermediateHashesStage(s *StageState, u Unwinder, tx kv.RwTx, cfg Tri
 	if cfg.checkRoot {
 		syncHeadHeader, err = cfg.blockReader.HeaderByNumber(ctx, tx, to)
 		if err != nil {
-			return trie.EmptyRoot, err
+			return trie.EmptyRoot, trie.EmptyRoot, err
 		}
 		if syncHeadHeader == nil {
-			return trie.EmptyRoot, fmt.Errorf("no header found with number %d", to)
+			return trie.EmptyRoot, trie.EmptyRoot, fmt.Errorf("no header found with number %d", to)
 		}
 		expectedRootHash = syncHeadHeader.Root
 		headerHash = syncHeadHeader.Hash()
@@ -104,30 +110,30 @@ func SpawnIntermediateHashesStage(s *StageState, u Unwinder, tx kv.RwTx, cfg Tri
 		logger.Info(fmt.Sprintf("[%s] Generating intermediate hashes", logPrefix), "from", s.BlockNumber, "to", to)
 	}
 
-	var root libcommon.Hash
+	var root, storageRootMessagePasser libcommon.Hash
 	tooBigJump := to > s.BlockNumber && to-s.BlockNumber > 100_000 // RetainList is in-memory structure and it will OOM if jump is too big, such big jump anyway invalidate most of existing Intermediate hashes
 	if !tooBigJump && cfg.historyV3 && to-s.BlockNumber > 10 {
 		//incremental can work only on DB data, not on snapshots
 		_, n, err := rawdbv3.TxNums.FindBlockNum(tx, cfg.agg.EndTxNumMinimax())
 		if err != nil {
-			return trie.EmptyRoot, err
+			return trie.EmptyRoot, trie.EmptyRoot, err
 		}
 		tooBigJump = s.BlockNumber < n
 	}
 	if s.BlockNumber == 0 || tooBigJump {
 		if root, err = RegenerateIntermediateHashes(logPrefix, tx, cfg, expectedRootHash, ctx, logger); err != nil {
-			return trie.EmptyRoot, err
+			return trie.EmptyRoot, trie.EmptyRoot, err
 		}
 	} else {
-		if root, err = IncrementIntermediateHashes(logPrefix, s, tx, to, cfg, expectedRootHash, quit, logger); err != nil {
-			return trie.EmptyRoot, err
+		if root, storageRootMessagePasser, err = IncrementIntermediateHashes(logPrefix, s, tx, to, cfg, expectedRootHash, quit, logger); err != nil {
+			return trie.EmptyRoot, trie.EmptyRoot, err
 		}
 	}
 
 	if cfg.checkRoot && root != expectedRootHash {
 		logger.Error(fmt.Sprintf("[%s] Wrong trie root of block %d: %x, expected (from header): %x. Block hash: %x", logPrefix, to, root, expectedRootHash, headerHash))
 		if cfg.badBlockHalt {
-			return trie.EmptyRoot, fmt.Errorf("%w: wrong trie root", consensus.ErrInvalidBlock)
+			return trie.EmptyRoot, trie.EmptyRoot, fmt.Errorf("%w: wrong trie root", consensus.ErrInvalidBlock)
 		}
 		if cfg.hd != nil {
 			cfg.hd.ReportBadHeaderPoS(headerHash, syncHeadHeader.ParentHash)
@@ -139,16 +145,16 @@ func SpawnIntermediateHashesStage(s *StageState, u Unwinder, tx kv.RwTx, cfg Tri
 			u.UnwindTo(unwindTo, BadBlock(headerHash, fmt.Errorf("incorrect root hash")))
 		}
 	} else if err = s.Update(tx, to); err != nil {
-		return trie.EmptyRoot, err
+		return trie.EmptyRoot, trie.EmptyRoot, err
 	}
 
 	if !useExternalTx {
 		if err := tx.Commit(); err != nil {
-			return trie.EmptyRoot, err
+			return trie.EmptyRoot, trie.EmptyRoot, err
 		}
 	}
 
-	return root, err
+	return root, storageRootMessagePasser, err
 }
 
 func RegenerateIntermediateHashes(logPrefix string, db kv.RwTx, cfg TrieCfg, expectedRootHash libcommon.Hash, ctx context.Context, logger log.Logger) (libcommon.Hash, error) {
@@ -550,7 +556,7 @@ func (p *HashPromoter) Unwind(logPrefix string, s *StageState, u *UnwindState, s
 	return nil
 }
 
-func IncrementIntermediateHashes(logPrefix string, s *StageState, db kv.RwTx, to uint64, cfg TrieCfg, expectedRootHash libcommon.Hash, quit <-chan struct{}, logger log.Logger) (libcommon.Hash, error) {
+func IncrementIntermediateHashes(logPrefix string, s *StageState, db kv.RwTx, to uint64, cfg TrieCfg, expectedRootHash libcommon.Hash, quit <-chan struct{}, logger log.Logger) (libcommon.Hash, libcommon.Hash, error) {
 	p := NewHashPromoter(db, cfg.tmpDir, quit, logPrefix, logger)
 	rl := trie.NewRetainList(0)
 	if cfg.historyV3 {
@@ -581,10 +587,10 @@ func IncrementIntermediateHashes(logPrefix string, s *StageState, db kv.RwTx, to
 			return nil
 		}
 		if err := p.PromoteOnHistoryV3(logPrefix, s.BlockNumber, to, false, collect); err != nil {
-			return trie.EmptyRoot, err
+			return trie.EmptyRoot, trie.EmptyRoot, err
 		}
 		if err := p.PromoteOnHistoryV3(logPrefix, s.BlockNumber, to, true, collect); err != nil {
-			return trie.EmptyRoot, err
+			return trie.EmptyRoot, trie.EmptyRoot, err
 		}
 	} else {
 		collect := func(k, v []byte, _ etl.CurrentTableReader, _ etl.LoadNextFunc) error {
@@ -592,10 +598,10 @@ func IncrementIntermediateHashes(logPrefix string, s *StageState, db kv.RwTx, to
 			return nil
 		}
 		if err := p.Promote(logPrefix, s.BlockNumber, to, false, collect); err != nil {
-			return trie.EmptyRoot, err
+			return trie.EmptyRoot, trie.EmptyRoot, err
 		}
 		if err := p.Promote(logPrefix, s.BlockNumber, to, true, collect); err != nil {
-			return trie.EmptyRoot, err
+			return trie.EmptyRoot, trie.EmptyRoot, err
 		}
 	}
 	accTrieCollector := etl.NewCollector(logPrefix, cfg.tmpDir, etl.NewSortableBuffer(etl.BufferOptimalSize), logger)
@@ -607,22 +613,42 @@ func IncrementIntermediateHashes(logPrefix string, s *StageState, db kv.RwTx, to
 	stTrieCollectorFunc := storageTrieCollector(stTrieCollector)
 
 	loader := trie.NewFlatDBTrieLoader(logPrefix, rl, accTrieCollectorFunc, stTrieCollectorFunc, false)
+
+	var pr *trie.ProofRetainer
+	if cfg.chainCfg != nil && cfg.chainCfg.IsIsthmus(s.BlockTimestamp) {
+		var err error
+		pr, err = trie.NewProofRetainer(params.OptimismL2ToL1MessagePasser, &accounts.Account{}, []libcommon.Hash{}, rl)
+		if err != nil {
+			return trie.EmptyRoot, trie.EmptyRoot, err
+		}
+		loader.SetProofRetainer(pr)
+	}
+
 	hash, err := loader.CalcTrieRoot(db, quit)
 	if err != nil {
-		return trie.EmptyRoot, err
+		return trie.EmptyRoot, trie.EmptyRoot, err
+	}
+
+	storageRootMessagePasser := trie.EmptyRoot
+	if pr != nil {
+		res, err := pr.ProofResult()
+		if err != nil {
+			return trie.EmptyRoot, trie.EmptyRoot, err
+		}
+		storageRootMessagePasser = res.StorageHash
 	}
 
 	if cfg.checkRoot && hash != expectedRootHash {
-		return hash, nil
+		return hash, storageRootMessagePasser, nil
 	}
 
 	if err := accTrieCollector.Load(db, kv.TrieOfAccounts, etl.IdentityLoadFunc, etl.TransformArgs{Quit: quit}); err != nil {
-		return trie.EmptyRoot, err
+		return trie.EmptyRoot, trie.EmptyRoot, err
 	}
 	if err := stTrieCollector.Load(db, kv.TrieOfStorage, etl.IdentityLoadFunc, etl.TransformArgs{Quit: quit}); err != nil {
-		return trie.EmptyRoot, err
+		return trie.EmptyRoot, trie.EmptyRoot, err
 	}
-	return hash, nil
+	return hash, storageRootMessagePasser, nil
 }
 
 func UnwindIntermediateHashesStage(u *UnwindState, s *StageState, tx kv.RwTx, cfg TrieCfg, ctx context.Context, logger log.Logger) (err error) {

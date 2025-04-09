@@ -999,7 +999,7 @@ func NewBlock(header *Header, txs []Transaction, uncles []*Header, receipts []*R
 
 	if isIsthmus {
 		if withdrawals == nil || len(withdrawals) > 0 {
-			panic(fmt.Sprintf("expected non-nil empty withdrawals operation list in Isthmus, but got: %v", body.Withdrawals))
+			panic(fmt.Sprintf("expected non-nil empty withdrawals operation list in Isthmus, but got: %v", withdrawals))
 		}
 		b.header.WithdrawalsHash = header.WithdrawalsHash
 		b.withdrawals = make(Withdrawals, 0)
