@@ -153,7 +153,7 @@ func TestAccountAndStorageTrie(t *testing.T) {
 
 	var s stagedsync.StageState
 	s.BlockNumber = 0
-	_, err = stagedsync.IncrementIntermediateHashes("IH", &s, tx, 1 /* to */, cfg, libcommon.Hash{} /* expectedRootHash */, nil /* quit */, log.New())
+	_, _, err = stagedsync.IncrementIntermediateHashes("IH", &s, tx, 1 /* to */, cfg, libcommon.Hash{} /* expectedRootHash */, nil /* quit */, log.New())
 	assert.Nil(t, err)
 
 	accountTrieB := make(map[string][]byte)
@@ -303,7 +303,7 @@ func TestStorageDeletion(t *testing.T) {
 
 	var s stagedsync.StageState
 	s.BlockNumber = 0
-	_, err = stagedsync.IncrementIntermediateHashes("IH", &s, tx, 1 /* to */, cfg, libcommon.Hash{} /* expectedRootHash */, nil /* quit */, log.New())
+	_, _, err = stagedsync.IncrementIntermediateHashes("IH", &s, tx, 1 /* to */, cfg, libcommon.Hash{} /* expectedRootHash */, nil /* quit */, log.New())
 	assert.Nil(t, err)
 
 	storageTrieB := make(map[string][]byte)
@@ -401,7 +401,7 @@ func TestHiveTrieRoot(t *testing.T) {
 
 	var s stagedsync.StageState
 	s.BlockNumber = 0
-	incrementalRoot, err := stagedsync.IncrementIntermediateHashes("IH", &s, tx, 1 /* to */, cfg, libcommon.Hash{} /* expectedRootHash */, nil /* quit */, logger)
+	incrementalRoot, _, err := stagedsync.IncrementIntermediateHashes("IH", &s, tx, 1 /* to */, cfg, libcommon.Hash{} /* expectedRootHash */, nil /* quit */, logger)
 	require.Nil(t, err)
 
 	regeneratedRoot, err := stagedsync.RegenerateIntermediateHashes("IH", tx, cfg, libcommon.Hash{} /* expectedRootHash */, ctx, logger)
