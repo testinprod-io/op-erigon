@@ -45,8 +45,6 @@ type StageState struct {
 	state       *Sync
 	ID          stages.SyncStage
 	BlockNumber uint64 // BlockNumber is the current block number of the stage at the beginning of the state execution.
-
-	BlockTimestamp uint64
 }
 
 func (s *StageState) LogPrefix() string { return s.state.LogPrefix() }

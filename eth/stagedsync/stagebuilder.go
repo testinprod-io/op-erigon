@@ -93,6 +93,7 @@ func MiningStages(
 			ID:          stages.IntermediateHashes,
 			Description: "Generate intermediate hashes and computing state root",
 			Forward: func(firstCycle bool, badBlockUnwind bool, s *StageState, u Unwinder, txc wrap.TxContainer, logger log.Logger) error {
+				trieCfg.miningBlock = createBlockCfg.miner.MiningBlock
 				stateRoot, storageRootMessagePasser, err := SpawnIntermediateHashesStage(s, u, txc.Tx, trieCfg, ctx, logger)
 				if err != nil {
 					return err

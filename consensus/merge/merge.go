@@ -160,9 +160,8 @@ func (s *Merge) Finalize(config *chain.Config, header *types.Header, state *stat
 		}
 	}
 
-	var rs types.FlatRequests
+	rs := make(types.FlatRequests, 0)
 	if config.IsPrague(header.Time) && !config.IsOptimismIsthmus(header.Time) {
-		rs = make(types.FlatRequests, 0)
 		allLogs := make(types.Logs, 0)
 		for _, rec := range receipts {
 			allLogs = append(allLogs, rec.Logs...)

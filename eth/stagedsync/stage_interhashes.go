@@ -45,7 +45,8 @@ type TrieCfg struct {
 	historyV3 bool
 	agg       *state.Aggregator
 
-	chainCfg *chain.Config
+	chainCfg    *chain.Config
+	miningBlock *MiningBlock
 }
 
 func StageTrieCfg(db kv.RwDB, checkRoot, saveNewHashesToDB, badBlockHalt bool, tmpDir string, blockReader services.FullBlockReader, hd *headerdownload.HeaderDownload, historyV3 bool, agg *state.Aggregator, chainCfg *chain.Config) TrieCfg {
@@ -615,7 +616,7 @@ func IncrementIntermediateHashes(logPrefix string, s *StageState, db kv.RwTx, to
 	loader := trie.NewFlatDBTrieLoader(logPrefix, rl, accTrieCollectorFunc, stTrieCollectorFunc, false)
 
 	var pr *trie.ProofRetainer
-	if cfg.chainCfg != nil && cfg.chainCfg.IsOptimismIsthmus(s.BlockTimestamp) {
+	if cfg.chainCfg != nil && cfg.miningBlock != nil && cfg.chainCfg.IsOptimismIsthmus(cfg.miningBlock.Header.Time) {
 		var err error
 		pr, err = trie.NewProofRetainer(params.OptimismL2ToL1MessagePasser, &accounts.Account{}, []libcommon.Hash{}, rl)
 		if err != nil {

@@ -181,7 +181,6 @@ func SpawnMiningCreateBlockStage(s *StageState, tx kv.RwTx, cfg MiningCreateBloc
 		// If we are on proof-of-stake timestamp should be already set for us
 		timestamp = cfg.blockBuilderParameters.Timestamp
 	}
-	s.BlockTimestamp = timestamp
 
 	targetGasLimit := &cfg.miner.MiningConfig.GasLimit
 	if cfg.chainConfig.IsOptimism() {
