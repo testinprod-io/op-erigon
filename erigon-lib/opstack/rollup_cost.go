@@ -232,11 +232,26 @@ func newL1CostFuncEcotone(l1BaseFee, l1BlobBaseFee, l1BaseFeeScalar, l1BlobBaseF
 
 // extractL1GasParams extracts the gas parameters necessary to compute gas costs from L1 block info
 func ExtractL1GasParams(config *chain.Config, time uint64, data []byte) (gasParams, error) {
-	// edge case: for the very first Ecotone block we still need to use the Bedrock
-	// function. We detect this edge case by seeing if the function selector is the old one
-	// If so, fall through to the pre-ecotone format
-	// Both Ecotone and Fjord use the same function selector
-	if config.IsEcotone(time) && len(data) >= 4 && !bytes.Equal(data[0:4], BedrockL1AttributesSelector) {
+	if config.IsIsthmus(time) && len(data) >= 4 && !bytes.Equal(data[0:4], EcotoneL1AttributesSelector) {
+		// edge case: for the very first Isthmus block we still need to use the Ecotone
+		// function. We detect this edge case by seeing if the function selector is the old one
+		// If so, fall through to the pre-isthmus format
+		p, err := extractL1GasParamsPostIsthmus(data)
+		if err != nil {
+			return gasParams{}, err
+		}
+		p.CostFunc = NewL1CostFuncFjord(
+			p.L1BaseFee,
+			p.L1BlobBaseFee,
+			new(uint256.Int).SetUint64(uint64(*p.L1BaseFeeScalar)),
+			new(uint256.Int).SetUint64(uint64(*p.L1BlobBaseFeeScalar)),
+		)
+		return p, nil
+	} else if config.IsEcotone(time) && len(data) >= 4 && !bytes.Equal(data[0:4], BedrockL1AttributesSelector) {
+		// edge case: for the very first Ecotone block we still need to use the Bedrock
+		// function. We detect this edge case by seeing if the function selector is the old one
+		// If so, fall through to the pre-ecotone format
+		// Both Ecotone and Fjord use the same function selector
 		p, err := extractL1GasParamsPostEcotone(data)
 		if err != nil {
 			return gasParams{}, err
@@ -326,6 +341,43 @@ func extractL1GasParamsPostEcotone(data []byte) (gasParams, error) {
 	}, nil
 }
 
+// extractL1GasParamsPostIsthmus extracts the gas parameters necessary to compute gas from L1 attribute
+// info calldata after the Isthmus upgrade, but not for the very first Isthmus block.
+func extractL1GasParamsPostIsthmus(data []byte) (gasParams, error) {
+	if len(data) != 176 {
+		return gasParams{}, fmt.Errorf("expected 176 L1 info bytes, got %d", len(data))
+	}
+	// data layout assumed for Isthmus:
+	// offset type varname
+	// 0     <selector>
+	// 4     uint32 _basefeeScalar
+	// 8     uint32 _blobBaseFeeScalar
+	// 12    uint64 _sequenceNumber,
+	// 20    uint64 _timestamp,
+	// 28    uint64 _l1BlockNumber
+	// 36    uint256 _basefee,
+	// 68    uint256 _blobBaseFee,
+	// 100   bytes32 _hash,
+	// 132   bytes32 _batcherHash,
+	// 164   uint32  _operatorFeeScalar
+	// 168   uint64  _operatorFeeConstant
+	l1BaseFee := new(uint256.Int).SetBytes(data[36:68])
+	l1BlobBaseFee := new(uint256.Int).SetBytes(data[68:100])
+	l1BaseFeeScalar := binary.BigEndian.Uint32(data[4:8])
+	l1BlobBaseFeeScalar := binary.BigEndian.Uint32(data[8:12])
+	operatorFeeScalar := binary.BigEndian.Uint32(data[164:168])
+	operatorFeeConstant := binary.BigEndian.Uint64(data[168:176])
+
+	return gasParams{
+		L1BaseFee:           l1BaseFee,
+		L1BlobBaseFee:       l1BlobBaseFee,
+		L1BaseFeeScalar:     &l1BaseFeeScalar,
+		L1BlobBaseFeeScalar: &l1BlobBaseFeeScalar,
+		operatorFeeScalar:   &operatorFeeScalar,
+		operatorFeeConstant: &operatorFeeConstant,
+	}, nil
+}
+
 type gasParams struct {
 	L1BaseFee           *uint256.Int
 	L1BlobBaseFee       *uint256.Int
@@ -333,6 +385,8 @@ type gasParams struct {
 	FeeScalar           *big.Float // pre-ecotone
 	L1BaseFeeScalar     *uint32    // post-ecotone
 	L1BlobBaseFeeScalar *uint32    // post-ecotone
+	operatorFeeScalar   *uint32    // post-Isthmus
+	operatorFeeConstant *uint64    // post-Isthmus
 }
 
 // intToScaledFloat returns scalar/10e6 as a float
