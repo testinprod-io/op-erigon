@@ -181,9 +181,31 @@ var PrecompiledContractsPrague = map[libcommon.Address]PrecompiledContract{
 	libcommon.BytesToAddress([]byte{0x11}): &bls12381MapFp2ToG2{},
 }
 
+var PrecompiledContractsIsthmus = map[libcommon.Address]PrecompiledContract{
+	libcommon.BytesToAddress([]byte{1}):          &ecrecover{},
+	libcommon.BytesToAddress([]byte{2}):          &sha256hash{},
+	libcommon.BytesToAddress([]byte{3}):          &ripemd160hash{},
+	libcommon.BytesToAddress([]byte{4}):          &dataCopy{},
+	libcommon.BytesToAddress([]byte{5}):          &bigModExp{eip2565: true},
+	libcommon.BytesToAddress([]byte{6}):          &bn256AddIstanbul{},
+	libcommon.BytesToAddress([]byte{7}):          &bn256ScalarMulIstanbul{},
+	libcommon.BytesToAddress([]byte{8}):          &bn256PairingGranite{},
+	libcommon.BytesToAddress([]byte{9}):          &blake2F{},
+	libcommon.BytesToAddress([]byte{0x0a}):       &pointEvaluation{},
+	libcommon.BytesToAddress([]byte{0x0b}):       &bls12381G1Add{},
+	libcommon.BytesToAddress([]byte{0x0c}):       &bls12381G1MultiExpIsthmus{},
+	libcommon.BytesToAddress([]byte{0x0d}):       &bls12381G2Add{},
+	libcommon.BytesToAddress([]byte{0x0e}):       &bls12381G2MultiExpIsthmus{},
+	libcommon.BytesToAddress([]byte{0x0f}):       &bls12381PairingIsthmus{},
+	libcommon.BytesToAddress([]byte{0x10}):       &bls12381MapFpToG1{},
+	libcommon.BytesToAddress([]byte{0x11}):       &bls12381MapFp2ToG2{},
+	libcommon.BytesToAddress([]byte{0x01, 0x00}): &p256Verify{},
+}
+
 var (
 	PrecompiledAddressesGranite   []libcommon.Address
 	PrecompiledAddressesFjord     []libcommon.Address
+	PrecompiledAddressesIsthmus   []libcommon.Address
 	PrecompiledAddressesPrague    []libcommon.Address
 	PrecompiledAddressesNapoli    []libcommon.Address
 	PrecompiledAddressesCancun    []libcommon.Address
@@ -215,6 +237,9 @@ func init() {
 	for k := range PrecompiledContractsGranite {
 		PrecompiledAddressesGranite = append(PrecompiledAddressesGranite, k)
 	}
+	for k := range PrecompiledContractsIsthmus {
+		PrecompiledAddressesIsthmus = append(PrecompiledAddressesIsthmus, k)
+	}
 	for k := range PrecompiledContractsNapoli {
 		PrecompiledAddressesNapoli = append(PrecompiledAddressesNapoli, k)
 	}
@@ -226,6 +251,8 @@ func init() {
 // ActivePrecompiles returns the precompiles enabled with the current configuration.
 func ActivePrecompiles(rules *chain.Rules) []libcommon.Address {
 	switch {
+	case rules.IsOptimismIsthmus:
+		return PrecompiledAddressesIsthmus
 	case rules.IsOptimismGranite:
 		return PrecompiledAddressesGranite
 	case rules.IsOptimismFjord:
@@ -760,6 +787,9 @@ var (
 	errBLS12381InvalidFieldElementTopBytes = errors.New("invalid field element top bytes")
 	errBLS12381G1PointSubgroup             = errors.New("g1 point is not on correct subgroup")
 	errBLS12381G2PointSubgroup             = errors.New("g2 point is not on correct subgroup")
+	errBLS12381MaxG1Size                   = errors.New("g1 msm input size exceeds maximum")
+	errBLS12381MaxG2Size                   = errors.New("g2 msm input size exceeds maximum")
+	errBLS12381MaxPairingSize              = errors.New("pairing input size exceeds maximum")
 )
 
 // bls12381G1Add implements EIP-2537 G1Add precompile.
@@ -855,6 +885,21 @@ func (c *bls12381G1MultiExp) Run(input []byte) ([]byte, error) {
 	return encodePointG1(r), nil
 }
 
+type bls12381G1MultiExpIsthmus struct {
+}
+
+func (c *bls12381G1MultiExpIsthmus) RequiredGas(input []byte) uint64 {
+	return new(bls12381G1MultiExp).RequiredGas(input)
+}
+
+func (c *bls12381G1MultiExpIsthmus) Run(input []byte) ([]byte, error) {
+	if len(input) > int(params.Bls12381G1MulMaxInputSizeIsthmus) {
+		return nil, errBLS12381MaxG1Size
+	}
+
+	return new(bls12381G1MultiExp).Run(input)
+}
+
 // bls12381G2Add implements EIP-2537 G2Add precompile.
 type bls12381G2Add struct{}
 
@@ -947,6 +992,21 @@ func (c *bls12381G2MultiExp) Run(input []byte) ([]byte, error) {
 
 	// Encode the G2 point to 256 bytes.
 	return encodePointG2(r), nil
+}
+
+type bls12381G2MultiExpIsthmus struct {
+}
+
+func (c *bls12381G2MultiExpIsthmus) RequiredGas(input []byte) uint64 {
+	return new(bls12381G2MultiExp).RequiredGas(input)
+}
+
+func (c *bls12381G2MultiExpIsthmus) Run(input []byte) ([]byte, error) {
+	if len(input) > int(params.Bls12381G2MulMaxInputSizeIsthmus) {
+		return nil, errBLS12381MaxG2Size
+	}
+
+	return new(bls12381G2MultiExp).Run(input)
 }
 
 // bls12381Pairing implements EIP-2537 Pairing precompile.
@@ -1099,6 +1159,21 @@ func encodePointG2(p *bls12381.G2Affine) []byte {
 	fp.BigEndian.PutElement((*[fp.Bytes]byte)(out[144:144+48]), p.Y.A0)
 	fp.BigEndian.PutElement((*[fp.Bytes]byte)(out[208:208+48]), p.Y.A1)
 	return out
+}
+
+type bls12381PairingIsthmus struct {
+}
+
+func (c *bls12381PairingIsthmus) RequiredGas(input []byte) uint64 {
+	return new(bls12381Pairing).RequiredGas(input)
+}
+
+func (c *bls12381PairingIsthmus) Run(input []byte) ([]byte, error) {
+	if len(input) > int(params.Bls12381PairingMaxInputSizeIsthmus) {
+		return nil, errBLS12381MaxPairingSize
+	}
+
+	return new(bls12381Pairing).Run(input)
 }
 
 // bls12381MapFpToG1 implements EIP-2537 MapG1 precompile.

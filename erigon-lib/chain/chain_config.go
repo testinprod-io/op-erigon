@@ -715,6 +715,7 @@ type Rules struct {
 	IsOptimismBedrock, IsOptimismRegolith                bool
 	IsOptimismCanyon, IsOptimismEcotone, IsOptimismFjord bool
 	IsOptimismGranite, IsOptimismHolocene                bool
+	IsOptimismIsthmus                                    bool
 }
 
 // Rules ensures c's ChainID is not nil and returns a new Rules instance
@@ -748,6 +749,7 @@ func (c *Config) Rules(num uint64, time uint64) *Rules {
 		IsOptimismFjord:    c.IsOptimismFjord(time),
 		IsOptimismGranite:  c.IsOptimismGranite(time),
 		IsOptimismHolocene: c.IsOptimismHolocene(time),
+		IsOptimismIsthmus:  c.IsOptimismIsthmus(time),
 	}
 }
 

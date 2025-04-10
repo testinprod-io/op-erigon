@@ -176,6 +176,10 @@ const (
 	Bls12381MapFpToG1Gas            uint64 = 5500   // Gas price for BLS12-381 mapping field element to G1 operation
 	Bls12381MapFp2ToG2Gas           uint64 = 23800  // Gas price for BLS12-381 mapping field element to G2 operation
 
+	Bls12381G1MulMaxInputSizeIsthmus   uint64 = 513760 // Maximum input size for BLS12-381 G1 multiple-scalar-multiply operation
+	Bls12381G2MulMaxInputSizeIsthmus   uint64 = 488448 // Maximum input size for BLS12-381 G2 multiple-scalar-multiply operation
+	Bls12381PairingMaxInputSizeIsthmus uint64 = 235008 // Maximum input size for BLS12-381 pairing check
+
 	// The Refund Quotient is the cap on how much of the used gas can be refunded. Before EIP-3529,
 	// up to half the consumed gas could be refunded.
 	RefundQuotient        uint64 = 2
