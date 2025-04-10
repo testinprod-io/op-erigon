@@ -122,6 +122,7 @@ func (api *APIImpl) CallBundle(ctx context.Context, txHashes []common.Hash, stat
 	blockCtx := transactions.NewEVMBlockContext(engine, header, stateBlockNumberOrHash.RequireCanonical, tx, api._blockReader, chainConfig)
 	txCtx := core.NewEVMTxContext(firstMsg)
 	blockCtx.L1CostFunc = opstack.NewL1CostFunc(chainConfig, ibs)
+	blockCtx.OperatorCostFunc = opstack.NewOperatorCostFunc(chainConfig, ibs)
 	// Get a new instance of the EVM
 	evm := vm.NewEVM(blockCtx, txCtx, ibs, chainConfig, vm.Config{Debug: false})
 

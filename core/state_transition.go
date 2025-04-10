@@ -176,12 +176,18 @@ func (st *StateTransition) buyGas(gasBailout bool) error {
 	if overflow {
 		return fmt.Errorf("%w: address %v", ErrInsufficientFunds, st.msg.From().Hex())
 	}
-	var l1Cost *uint256.Int
+	var l1Cost, operatorCost *uint256.Int
 	if fn := st.evm.Context.L1CostFunc; fn != nil && !st.msg.IsFake() {
 		l1Cost = fn(st.msg.RollupCostData(), st.evm.Context.Time)
 	}
 	if l1Cost != nil {
 		gasVal = gasVal.Add(gasVal, l1Cost)
+	}
+	if fn := st.evm.Context.OperatorCostFunc; fn != nil && !st.msg.IsFake() {
+		operatorCost = fn(st.msg.Gas(), st.evm.Context.Time)
+	}
+	if operatorCost != nil {
+		gasVal = gasVal.Add(gasVal, operatorCost)
 	}
 
 	// compute blob fee for eip-4844 data blobs if any
@@ -616,6 +622,19 @@ func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*ev
 		}
 		if cost := st.evm.Context.L1CostFunc(st.msg.RollupCostData(), st.evm.Context.Time); cost != nil {
 			st.state.AddBalance(params.OptimismL1FeeRecipient, cost)
+		}
+		if st.evm.ChainConfig().IsIsthmus(st.evm.Context.Time) {
+			// Return ETH to transaction sender for operator cost overcharge.
+			operatorCostGasLimit := st.evm.Context.OperatorCostFunc(st.msg.Gas(), st.evm.Context.Time)
+			operatorCostGasUsed := st.evm.Context.OperatorCostFunc(st.gasUsed(), st.evm.Context.Time)
+
+			if operatorCostGasUsed.Cmp(operatorCostGasLimit) > 0 { // Sanity check.
+				panic(fmt.Sprintf("operator cost gas used (%d) > operator cost gas limit (%d)", operatorCostGasUsed, operatorCostGasLimit))
+			}
+
+			st.state.AddBalance(st.msg.From(), new(uint256.Int).Sub(operatorCostGasLimit, operatorCostGasUsed))
+
+			st.state.AddBalance(params.OptimismOperatorFeeRecipient, operatorCostGasUsed)
 		}
 	}
 

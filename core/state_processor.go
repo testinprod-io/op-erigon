@@ -132,6 +132,8 @@ func ApplyTransaction(config *chain.Config, blockHashFunc func(n uint64) libcomm
 
 	blockContext := NewEVMBlockContext(header, blockHashFunc, engine, author, config)
 	blockContext.L1CostFunc = opstack.NewL1CostFunc(config, ibs)
+	blockContext.OperatorCostFunc = opstack.NewOperatorCostFunc(config, ibs)
+
 	vmenv := vm.NewEVM(blockContext, evmtypes.TxContext{}, ibs, config, cfg)
 
 	return applyTransaction(config, engine, gp, ibs, stateWriter, header, tx, usedGas, usedBlobGas, vmenv, cfg)
