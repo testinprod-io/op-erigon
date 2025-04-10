@@ -559,12 +559,12 @@ func NewOperatorCostFunc(config *chain.Config, statedb StateGetter) OperatorCost
 		}
 		var operatorFeeParamsInt uint256.Int
 		statedb.GetState(L1BlockAddr, &OperatorFeeParamsSlot, &operatorFeeParamsInt)
-		operatorFeeParams := libcommon.Hash(operatorFeeParamsInt.Bytes())
-		if operatorFeeParams == (libcommon.Hash{}) {
+		if operatorFeeParamsInt.IsZero() {
 			return func(gas uint64) *uint256.Int {
 				return uint256.NewInt(0)
 			}
 		}
+		operatorFeeParams := libcommon.Hash(operatorFeeParamsInt.Bytes32())
 		operatorFeeScalar, operatorFeeConstant := ExtractOperatorFeeParams(operatorFeeParams)
 
 		return newOperatorCostFunc(operatorFeeScalar, operatorFeeConstant)

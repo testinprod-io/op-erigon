@@ -298,6 +298,7 @@ func (sg *testStateGetter) GetState(addr common.Address, key *common.Hash, value
 		// fetch operator fee scalars
 		binary.BigEndian.PutUint32(buf[20:24], sg.operatorFeeScalar)
 		binary.BigEndian.PutUint64(buf[24:32], sg.operatorFeeConstant)
+		value.SetBytes(buf.Bytes())
 	default:
 		panic("unknown slot")
 	}
