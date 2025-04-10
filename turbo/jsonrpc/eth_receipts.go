@@ -100,7 +100,7 @@ func (api *BaseAPI) getReceipts(ctx context.Context, tx kv.Tx, block *types.Bloc
 					receipt.L1BlobBaseFeeScalar = &l1BlobBaseFeeScalar
 				}
 				if gasParams.OperatorFeeScalar != nil {
-					operatorFeeScalar := uint64(*gasParams.OperatorFeeConstant)
+					operatorFeeScalar := *gasParams.OperatorFeeConstant
 					receipt.L1BaseFeeScalar = &operatorFeeScalar
 				}
 				if gasParams.OperatorFeeConstant != nil {
