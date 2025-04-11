@@ -351,3 +351,7 @@ func ParseDelegation(code []byte) (libcommon.Address, bool) {
 func AddressToDelegation(addr libcommon.Address) []byte {
 	return append(params.DelegatedDesignationPrefix, addr.Bytes()...)
 }
+
+func (tx *SetCodeTransaction) RollupCostData() types2.RollupCostData {
+	return tx.computeRollupGas(tx)
+}
