@@ -187,7 +187,7 @@ var (
 	TxPoolDisableFlag = cli.BoolFlag{
 		Name:  "txpool.disable",
 		Usage: "Experimental external pool and block producer, see ./cmd/txpool/readme.md for more info. Disabling internal txpool and block producer.",
-		Value: true,
+		Value: false,
 	}
 	TxPoolGossipDisableFlag = cli.BoolFlag{
 		Name:  "txpool.gossip.disable",
