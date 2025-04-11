@@ -49,6 +49,7 @@ import (
 	"github.com/erigontech/erigon/core/rawdb"
 	"github.com/erigontech/erigon/core/state"
 	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon/core/types/accounts"
 	"github.com/erigontech/erigon/params"
 	"github.com/erigontech/erigon/turbo/trie"
 )
@@ -67,16 +68,16 @@ import (
 //
 // The returned chain configuration is never nil.
 func CommitGenesisBlock(db kv.RwDB, genesis *types.Genesis, tmpDir string, logger log.Logger) (*chain.Config, *types.Block, error) {
-	return CommitGenesisBlockWithOverride(db, genesis, nil, nil, nil, nil, nil, nil, nil, nil, tmpDir, logger)
+	return CommitGenesisBlockWithOverride(db, genesis, nil, nil, nil, nil, nil, nil, nil, nil, nil, tmpDir, logger)
 }
 
-func CommitGenesisBlockWithOverride(db kv.RwDB, genesis *types.Genesis, overrideCancunTime, overrideShanghaiTime, overrideOptimismCanyonTime, overrideOptimismEcotoneTime, overrideOptimismFjordTime, overrideOptimismGraniteTime, overrideOptimismHoloceneTime, overridePragueTime *big.Int, tmpDir string, logger log.Logger) (*chain.Config, *types.Block, error) {
+func CommitGenesisBlockWithOverride(db kv.RwDB, genesis *types.Genesis, overrideCancunTime, overrideShanghaiTime, overrideOptimismCanyonTime, overrideOptimismEcotoneTime, overrideOptimismFjordTime, overrideOptimismGraniteTime, overrideOptimismHoloceneTime, overrideOptimismIsthmusTime, overridePragueTime *big.Int, tmpDir string, logger log.Logger) (*chain.Config, *types.Block, error) {
 	tx, err := db.BeginRw(context.Background())
 	if err != nil {
 		return nil, nil, err
 	}
 	defer tx.Rollback()
-	c, b, err := WriteGenesisBlock(tx, genesis, overrideCancunTime, overrideShanghaiTime, overrideOptimismCanyonTime, overrideOptimismEcotoneTime, overrideOptimismFjordTime, overrideOptimismGraniteTime, overrideOptimismHoloceneTime, overridePragueTime, tmpDir, logger)
+	c, b, err := WriteGenesisBlock(tx, genesis, overrideCancunTime, overrideShanghaiTime, overrideOptimismCanyonTime, overrideOptimismEcotoneTime, overrideOptimismFjordTime, overrideOptimismGraniteTime, overrideOptimismHoloceneTime, overrideOptimismIsthmusTime, overridePragueTime, tmpDir, logger)
 	if err != nil {
 		return c, b, err
 	}
@@ -87,7 +88,7 @@ func CommitGenesisBlockWithOverride(db kv.RwDB, genesis *types.Genesis, override
 	return c, b, nil
 }
 
-func WriteGenesisBlock(tx kv.RwTx, genesis *types.Genesis, overrideCancunTime, overrideShanghaiTime, overrideOptimismCanyonTime, overrideOptimismEcotoneTime, overrideOptimismFjordTime, overrideOptimismGraniteTime, overrideOptimismHoloceneTime, overridePragueTime *big.Int, tmpDir string, logger log.Logger) (*chain.Config, *types.Block, error) {
+func WriteGenesisBlock(tx kv.RwTx, genesis *types.Genesis, overrideCancunTime, overrideShanghaiTime, overrideOptimismCanyonTime, overrideOptimismEcotoneTime, overrideOptimismFjordTime, overrideOptimismGraniteTime, overrideOptimismHoloceneTime, overrideOptimismIsthmusTime, overridePragueTime *big.Int, tmpDir string, logger log.Logger) (*chain.Config, *types.Block, error) {
 	var storedBlock *types.Block
 	if genesis != nil && genesis.Config == nil {
 		return params.AllProtocolChanges, nil, types.ErrGenesisNoConfig
@@ -142,6 +143,10 @@ func WriteGenesisBlock(tx kv.RwTx, genesis *types.Genesis, overrideCancunTime, o
 		}
 		if config.IsOptimism() && overrideOptimismHoloceneTime != nil {
 			config.HoloceneTime = overrideOptimismHoloceneTime
+		}
+		if config.IsOptimism() && overrideOptimismIsthmusTime != nil {
+			config.IsthmusTime = overrideOptimismIsthmusTime
+			config.PragueTime = overrideOptimismIsthmusTime
 		}
 	}
 
@@ -624,10 +629,12 @@ func GenesisToBlock(g *types.Genesis, tmpDir string, logger log.Logger) (*types.
 		}
 	}
 
-	var root libcommon.Hash
+	var root, storageRootMessagePasser libcommon.Hash
 	var statedb *state.IntraBlockState
 	wg := sync.WaitGroup{}
 	wg.Add(1)
+
+	isIsthmus := g.Config.IsOptimismIsthmus(head.Time)
 
 	var err error
 	go func() { // we may run inside write tx, can't open 2nd write tx in same goroutine
@@ -688,10 +695,32 @@ func GenesisToBlock(g *types.Genesis, tmpDir string, logger log.Logger) (*types.
 		if err = statedb.FinalizeTx(&chain.Rules{}, w); err != nil {
 			return
 		}
-		if root, err = trie.CalcRoot("genesis", tx); err != nil {
+
+		rl := trie.NewRetainList(0)
+		loader := trie.NewFlatDBTrieLoader("genesis", rl, nil, nil, false)
+
+		var pr *trie.ProofRetainer
+		if isIsthmus {
+			pr, err = trie.NewProofRetainer(params.OptimismL2ToL1MessagePasser, &accounts.Account{}, []libcommon.Hash{}, rl)
+			if err != nil {
+				return
+			}
+			loader.SetProofRetainer(pr)
+		}
+
+		root, err = loader.CalcTrieRoot(tx, nil)
+		if err != nil {
 			return
 		}
+		if pr != nil {
+			res, err := pr.ProofResult()
+			if err != nil {
+				return
+			}
+			storageRootMessagePasser = res.StorageHash
+		}
 	}()
+
 	wg.Wait()
 	if err != nil {
 		return nil, nil, err
@@ -702,11 +731,17 @@ func GenesisToBlock(g *types.Genesis, tmpDir string, logger log.Logger) (*types.
 			panic(fmt.Errorf("cannot both have genesis hash %s "+
 				"and non-empty state-allocation", *g.StateHash))
 		}
+		if g.Config.IsIsthmus(g.Timestamp) {
+			panic(fmt.Errorf("stateHash usage disallowed in chain with isthmus active at genesis"))
+		}
 		root = *g.StateHash
 	}
 	head.Root = root
+	if isIsthmus {
+		head.WithdrawalsHash = &storageRootMessagePasser
+	}
 
-	return types.NewBlock(head, nil, nil, nil, withdrawals), statedb, nil
+	return types.NewBlock(head, nil, nil, nil, withdrawals, isIsthmus), statedb, nil
 }
 
 func sortedAllocKeys(m types.GenesisAlloc) []string {

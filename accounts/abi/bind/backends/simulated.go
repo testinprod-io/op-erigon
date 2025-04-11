@@ -727,6 +727,7 @@ func (b *SimulatedBackend) callContract(_ context.Context, call ethereum.CallMsg
 	header := block.Header()
 	evmContext := core.NewEVMBlockContext(header, core.GetHashFn(header, b.getHeader), b.m.Engine, nil, b.m.ChainConfig)
 	evmContext.L1CostFunc = opstack.NewL1CostFunc(b.m.ChainConfig, statedb)
+	evmContext.OperatorCostFunc = opstack.NewOperatorCostFunc(b.m.ChainConfig, statedb)
 	// Create a new environment which holds all relevant information
 	// about the transaction and calling mechanisms.
 	vmEnv := vm.NewEVM(evmContext, txContext, statedb, b.m.ChainConfig, vm.Config{})

@@ -153,7 +153,7 @@ func DefaultStages(ctx context.Context,
 					_, err := SpawnVerkleTrie(s, u, txc.Tx, trieCfg, ctx, logger)
 					return err
 				}
-				_, err := SpawnIntermediateHashesStage(s, u, txc.Tx, trieCfg, ctx, logger)
+				_, _, err := SpawnIntermediateHashesStage(s, u, txc.Tx, trieCfg, ctx, logger)
 				return err
 			},
 			Unwind: func(firstCycle bool, u *UnwindState, s *StageState, txc wrap.TxContainer, logger log.Logger) error {
@@ -333,7 +333,7 @@ func PipelineStages(ctx context.Context, snapshots SnapshotsCfg, blockHashCfg Bl
 					_, err := SpawnVerkleTrie(s, u, txc.Tx, trieCfg, ctx, logger)
 					return err
 				}
-				_, err := SpawnIntermediateHashesStage(s, u, txc.Tx, trieCfg, ctx, logger)
+				_, _, err := SpawnIntermediateHashesStage(s, u, txc.Tx, trieCfg, ctx, logger)
 				return err
 			},
 			Unwind: func(firstCycle bool, u *UnwindState, s *StageState, txc wrap.TxContainer, logger log.Logger) error {
@@ -542,7 +542,7 @@ func UploaderPipelineStages(ctx context.Context, snapshots SnapshotsCfg, headers
 					_, err := SpawnVerkleTrie(s, u, txc.Tx, trieCfg, ctx, logger)
 					return err
 				}
-				_, err := SpawnIntermediateHashesStage(s, u, txc.Tx, trieCfg, ctx, logger)
+				_, _, err := SpawnIntermediateHashesStage(s, u, txc.Tx, trieCfg, ctx, logger)
 				return err
 			},
 			Unwind: func(firstCycle bool, u *UnwindState, s *StageState, txc wrap.TxContainer, logger log.Logger) error {
@@ -708,7 +708,7 @@ func StateStages(ctx context.Context, headers HeadersCfg, bodies BodiesCfg, bloc
 			ID:          stages.IntermediateHashes,
 			Description: "Generate intermediate hashes and computing state root",
 			Forward: func(firstCycle bool, badBlockUnwind bool, s *StageState, u Unwinder, txc wrap.TxContainer, logger log.Logger) error {
-				_, err := SpawnIntermediateHashesStage(s, u, txc.Tx, trieCfg, ctx, logger)
+				_, _, err := SpawnIntermediateHashesStage(s, u, txc.Tx, trieCfg, ctx, logger)
 				return err
 			},
 			Unwind: func(firstCycle bool, u *UnwindState, s *StageState, txc wrap.TxContainer, logger log.Logger) error {

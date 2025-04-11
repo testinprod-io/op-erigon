@@ -33,7 +33,7 @@ func initialFlatDBTrieBuild(t *testing.T, db kv.RwDB) libcommon.Hash {
 	tx, err := db.BeginRw(context.Background())
 	require.NoError(t, err)
 	defer tx.Rollback()
-	stageTrieCfg := stagedsync.StageTrieCfg(db, false, false, false, t.TempDir(), nil, nil, false, nil)
+	stageTrieCfg := stagedsync.StageTrieCfg(db, false, false, false, t.TempDir(), nil, nil, false, nil, nil)
 	hash, err := stagedsync.RegenerateIntermediateHashes("test", tx, stageTrieCfg, libcommon.Hash{}, context.Background(), log.New())
 	require.NoError(t, err)
 	tx.Commit()

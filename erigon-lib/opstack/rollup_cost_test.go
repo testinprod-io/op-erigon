@@ -24,9 +24,11 @@ var (
 	overhead = uint256.NewInt(50)
 	scalar   = uint256.NewInt(7 * 1e6)
 
-	blobBasefee       = uint256.NewInt(10 * 1e6)
-	basefeeScalar     = uint256.NewInt(2)
-	blobBasefeeScalar = uint256.NewInt(3)
+	blobBasefee         = uint256.NewInt(10 * 1e6)
+	basefeeScalar       = uint256.NewInt(2)
+	blobBasefeeScalar   = uint256.NewInt(3)
+	operatorFeeScalar   = uint256.NewInt(1439103868)
+	operatorFeeConstant = uint256.NewInt(1256417826609331460)
 
 	// below are the expected cost func outcomes for the above parameter settings on the emptyTx
 	// which is defined in transaction_test.go
@@ -34,7 +36,8 @@ var (
 	regolithFee = uint256.NewInt(3710000000000)
 	ecotoneFee  = uint256.NewInt(960900) // (480/16)*(2*16*1000 + 3*10) == 960900
 	// the emptyTx is out of bounds for the linear regression so it uses the minimum size
-	fjordFee = uint256.NewInt(3203000) // 100_000_000 * (2 * 1000 * 1e6 * 16 + 3 * 10 * 1e6) / 1e12
+	fjordFee          = uint256.NewInt(3203000)             // 100_000_000 * (2 * 1000 * 1e6 * 16 + 3 * 10 * 1e6) / 1e12
+	ithmusOperatorFee = uint256.NewInt(1256417826611659930) // 1618 * 1439103868 / 1e6 + 1256417826609331460
 
 	bedrockGas      = uint256.NewInt(1618)
 	regolithGas     = uint256.NewInt(530) // 530  = 1618 - (16*68)
@@ -269,6 +272,8 @@ func getEcotoneL1Attributes(basefee, blobBasefee, basefeeScalar, blobBasefeeScal
 type testStateGetter struct {
 	basefee, blobBasefee, overhead, scalar *uint256.Int
 	basefeeScalar, blobBasefeeScalar       uint32
+	operatorFeeScalar                      uint32
+	operatorFeeConstant                    uint64
 }
 
 func (sg *testStateGetter) GetState(addr common.Address, key *common.Hash, value *uint256.Int) {
@@ -287,6 +292,12 @@ func (sg *testStateGetter) GetState(addr common.Address, key *common.Hash, value
 		buf := common.Hash{}
 		binary.BigEndian.PutUint32(buf[offset:offset+4], sg.basefeeScalar)
 		binary.BigEndian.PutUint32(buf[offset+4:offset+8], sg.blobBasefeeScalar)
+		value.SetBytes(buf.Bytes())
+	case OperatorFeeParamsSlot:
+		buf := common.Hash{}
+		// fetch operator fee scalars
+		binary.BigEndian.PutUint32(buf[20:24], sg.operatorFeeScalar)
+		binary.BigEndian.PutUint64(buf[24:32], sg.operatorFeeConstant)
 		value.SetBytes(buf.Bytes())
 	default:
 		panic("unknown slot")
@@ -417,4 +428,92 @@ func TestFlzCompressLen(t *testing.T) {
 		output := fastlz.FlzCompressLen(tc.input)
 		require.Equal(t, tc.expectedLen, output)
 	}
+}
+
+func getIsthmusL1Attributes(baseFee, blobBaseFee, baseFeeScalar, blobBaseFeeScalar, operatorFeeScalar, operatorFeeConstant *uint256.Int) []byte {
+	ignored := big.NewInt(1234)
+	data := []byte{}
+	uint256Slice := make([]byte, 32)
+	uint64Slice := make([]byte, 8)
+	uint32Slice := make([]byte, 4)
+	data = append(data, IsthmusL1AttributesSelector...)
+	data = append(data, baseFeeScalar.ToBig().FillBytes(uint32Slice)...)
+	data = append(data, blobBaseFeeScalar.ToBig().FillBytes(uint32Slice)...)
+	data = append(data, ignored.FillBytes(uint64Slice)...)
+	data = append(data, ignored.FillBytes(uint64Slice)...)
+	data = append(data, ignored.FillBytes(uint64Slice)...)
+	data = append(data, baseFee.ToBig().FillBytes(uint256Slice)...)
+	data = append(data, blobBaseFee.ToBig().FillBytes(uint256Slice)...)
+	data = append(data, ignored.FillBytes(uint256Slice)...)
+	data = append(data, ignored.FillBytes(uint256Slice)...)
+	data = append(data, operatorFeeScalar.ToBig().FillBytes(uint32Slice)...)
+	data = append(data, operatorFeeConstant.ToBig().FillBytes(uint64Slice)...)
+	return data
+}
+
+func TestExtractIsthmusGasParams(t *testing.T) {
+	zeroTime := big.NewInt(0)
+	// create a config where isthmus is active
+	config := &chain.Config{
+		Optimism:     OptimismTestConfig,
+		RegolithTime: zeroTime,
+		EcotoneTime:  zeroTime,
+		FjordTime:    zeroTime,
+		HoloceneTime: zeroTime,
+		IsthmusTime:  zeroTime,
+	}
+	require.True(t, config.IsOptimismIsthmus(zeroTime.Uint64()))
+
+	data := getIsthmusL1Attributes(
+		basefee,
+		blobBasefee,
+		basefeeScalar,
+		blobBasefeeScalar,
+		operatorFeeScalar,
+		operatorFeeConstant,
+	)
+
+	gasparams, err := ExtractL1GasParams(config, zeroTime.Uint64(), data)
+	require.NoError(t, err)
+	costFunc := gasparams.CostFunc
+
+	c, g := costFunc(emptyTxRollupCostData)
+
+	require.Equal(t, minimumFjordGas, g)
+	require.Equal(t, fjordFee, c)
+	require.Equal(t, operatorFeeScalar.Uint64(), uint64(*gasparams.OperatorFeeScalar))
+	require.Equal(t, operatorFeeConstant.Uint64(), *gasparams.OperatorFeeConstant)
+}
+
+// TestNewL1CostFunc tests that the appropriate cost function is selected based on the
+// configuration and statedb values.
+func TestNewOperatorCostFunc(t *testing.T) {
+	time := big.NewInt(10)
+	config := &chain.Config{
+		Optimism: OptimismTestConfig,
+	}
+	statedb := &testStateGetter{
+		basefee:             basefee,
+		overhead:            overhead,
+		scalar:              scalar,
+		blobBasefee:         blobBasefee,
+		basefeeScalar:       uint32(basefeeScalar.Uint64()),
+		blobBasefeeScalar:   uint32(blobBasefeeScalar.Uint64()),
+		operatorFeeScalar:   uint32(operatorFeeScalar.Uint64()),
+		operatorFeeConstant: operatorFeeConstant.Uint64(),
+	}
+
+	// emptyTx fee w/ fjord config, operator fee should be 0
+	config.FjordTime = time
+	costFunc := NewOperatorCostFunc(config, statedb)
+	fee := costFunc(bedrockGas.Uint64(), time.Uint64())
+	require.NotNil(t, fee)
+	require.Equal(t, uint256.NewInt(0), fee)
+
+	// emptyTx fee w/ isthmus config should be not 0
+	config.IsthmusTime = time
+	costFunc = NewOperatorCostFunc(config, statedb)
+	fee = costFunc(bedrockGas.Uint64(), time.Uint64())
+	require.NotNil(t, fee)
+	require.Equal(t, ithmusOperatorFee, fee)
 }

@@ -107,6 +107,7 @@ func (tx *SetCodeTransaction) AsMessage(s Signer, baseFee *big.Int, rules *chain
 		data:       tx.Data,
 		accessList: tx.AccessList,
 		checkNonce: true,
+		l1CostGas:  tx.RollupCostData(),
 	}
 	if !rules.IsPrague {
 		return msg, errors.New("SetCodeTransaction is only supported in Prague")
@@ -350,4 +351,8 @@ func ParseDelegation(code []byte) (libcommon.Address, bool) {
 // AddressToDelegation adds the delegation prefix to the specified address.
 func AddressToDelegation(addr libcommon.Address) []byte {
 	return append(params.DelegatedDesignationPrefix, addr.Bytes()...)
+}
+
+func (tx *SetCodeTransaction) RollupCostData() types2.RollupCostData {
+	return tx.computeRollupGas(tx)
 }

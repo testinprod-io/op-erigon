@@ -64,6 +64,8 @@ var (
 	BedrockL1AttributesSelector = []byte{0x01, 0x5d, 0x8e, 0xb9}
 	// EcotoneL1AttributesSelector is the selector indicating Ecotone style L1 gas attributes.
 	EcotoneL1AttributesSelector = []byte{0x44, 0x0a, 0x5e, 0x20}
+	// IsthmusL1AttributesSelector is the selector indicating Isthmus style L1 gas attributes.
+	IsthmusL1AttributesSelector = []byte{0x09, 0x89, 0x99, 0xbe}
 
 	// L1BlockAddr is the address of the L1Block contract which stores the L1 gas attributes.
 	L1BlockAddr = libcommon.HexToAddress("0x4200000000000000000000000000000000000015")
@@ -93,6 +95,10 @@ var (
 	MinTransactionSizeScaled = new(uint256.Int).Mul(MinTransactionSize, uint256.NewInt(1e6))
 
 	emptyScalars = make([]byte, 8)
+
+	// OperatorFeeParamsSlot stores the operatorFeeScalar and operatorFeeConstant L1 gas
+	// attributes
+	OperatorFeeParamsSlot = libcommon.BigToHash(big.NewInt(8))
 )
 
 type StateGetter interface {
@@ -106,6 +112,23 @@ type L1CostFunc func(rcd types.RollupCostData, blockTime uint64) *uint256.Int
 // l1CostFunc is an internal version of L1CostFunc that also returns the gasUsed for use in
 // receipts.
 type l1CostFunc func(rcd types.RollupCostData) (fee, gasUsed *uint256.Int)
+
+// OperatorCostFunc is used in the state transition to determine the operator fee charged to the
+// sender of non-Deposit transactions. It returns 0 if no operator fee is charged.
+type OperatorCostFunc func(gasUsed uint64, blockTime uint64) *uint256.Int
+
+// operatorCostFunc is an internal version of OperatorCostFunc that is used for caching.
+type operatorCostFunc func(gasUsed uint64) *uint256.Int
+
+// A RollupTransaction provides all the input data needed to compute the total rollup cost.
+type RollupTransaction interface {
+	RollupCostData() types.RollupCostData
+	Gas() uint64
+}
+
+// TotalRollupCostFunc is used in the transaction pool to determine the total rollup cost,
+// including both the data availability fee and the operator fee. It returns nil if both costs are nil.
+type TotalRollupCostFunc func(tx RollupTransaction, blockTime uint64) *uint256.Int
 
 // NewL1CostFunc returns a function used for calculating data availability fees, or nil if this is
 // not an op-stack chain.
@@ -232,11 +255,26 @@ func newL1CostFuncEcotone(l1BaseFee, l1BlobBaseFee, l1BaseFeeScalar, l1BlobBaseF
 
 // extractL1GasParams extracts the gas parameters necessary to compute gas costs from L1 block info
 func ExtractL1GasParams(config *chain.Config, time uint64, data []byte) (gasParams, error) {
-	// edge case: for the very first Ecotone block we still need to use the Bedrock
-	// function. We detect this edge case by seeing if the function selector is the old one
-	// If so, fall through to the pre-ecotone format
-	// Both Ecotone and Fjord use the same function selector
-	if config.IsEcotone(time) && len(data) >= 4 && !bytes.Equal(data[0:4], BedrockL1AttributesSelector) {
+	if config.IsOptimismIsthmus(time) && len(data) >= 4 && !bytes.Equal(data[0:4], EcotoneL1AttributesSelector) {
+		// edge case: for the very first Isthmus block we still need to use the Ecotone
+		// function. We detect this edge case by seeing if the function selector is the old one
+		// If so, fall through to the pre-isthmus format
+		p, err := extractL1GasParamsPostIsthmus(data)
+		if err != nil {
+			return gasParams{}, err
+		}
+		p.CostFunc = NewL1CostFuncFjord(
+			p.L1BaseFee,
+			p.L1BlobBaseFee,
+			new(uint256.Int).SetUint64(uint64(*p.L1BaseFeeScalar)),
+			new(uint256.Int).SetUint64(uint64(*p.L1BlobBaseFeeScalar)),
+		)
+		return p, nil
+	} else if config.IsEcotone(time) && len(data) >= 4 && !bytes.Equal(data[0:4], BedrockL1AttributesSelector) {
+		// edge case: for the very first Ecotone block we still need to use the Bedrock
+		// function. We detect this edge case by seeing if the function selector is the old one
+		// If so, fall through to the pre-ecotone format
+		// Both Ecotone and Fjord use the same function selector
 		p, err := extractL1GasParamsPostEcotone(data)
 		if err != nil {
 			return gasParams{}, err
@@ -326,6 +364,51 @@ func extractL1GasParamsPostEcotone(data []byte) (gasParams, error) {
 	}, nil
 }
 
+func extractL1InfoPostIsthmus(data []byte) (l1BaseFee, l1BlobBaseFee *uint256.Int, l1BaseFeeScalar, l1BlobBaseFeeScalar, operatorFeeScalar uint32, operatorFeeConstant uint64, err error) {
+	if len(data) != 176 {
+		return nil, nil, 0, 0, 0, 0, fmt.Errorf("expected 176 L1 info bytes, got %d", len(data))
+	}
+	// data layout assumed for Isthmus:
+	// offset type varname
+	// 0     <selector>
+	// 4     uint32 _basefeeScalar
+	// 8     uint32 _blobBaseFeeScalar
+	// 12    uint64 _sequenceNumber,
+	// 20    uint64 _timestamp,
+	// 28    uint64 _l1BlockNumber
+	// 36    uint256 _basefee,
+	// 68    uint256 _blobBaseFee,
+	// 100   bytes32 _hash,
+	// 132   bytes32 _batcherHash,
+	// 164   uint32  _operatorFeeScalar
+	// 168   uint64  _operatorFeeConstant
+	l1BaseFee = new(uint256.Int).SetBytes(data[36:68])
+	l1BlobBaseFee = new(uint256.Int).SetBytes(data[68:100])
+	l1BaseFeeScalar = binary.BigEndian.Uint32(data[4:8])
+	l1BlobBaseFeeScalar = binary.BigEndian.Uint32(data[8:12])
+	operatorFeeScalar = binary.BigEndian.Uint32(data[164:168])
+	operatorFeeConstant = binary.BigEndian.Uint64(data[168:176])
+	return
+}
+
+// extractL1GasParamsPostIsthmus extracts the gas parameters necessary to compute gas from L1 attribute
+// info calldata after the Isthmus upgrade, but not for the very first Isthmus block.
+func extractL1GasParamsPostIsthmus(data []byte) (gasParams, error) {
+	l1BaseFee, l1BlobBaseFee, l1BaseFeeScalar, l1BlobBaseFeeScalar, operatorFeeScalar, operatorFeeConstant, err := extractL1InfoPostIsthmus(data)
+	if err != nil {
+		return gasParams{}, err
+	}
+
+	return gasParams{
+		L1BaseFee:           l1BaseFee,
+		L1BlobBaseFee:       l1BlobBaseFee,
+		L1BaseFeeScalar:     &l1BaseFeeScalar,
+		L1BlobBaseFeeScalar: &l1BlobBaseFeeScalar,
+		OperatorFeeScalar:   &operatorFeeScalar,
+		OperatorFeeConstant: &operatorFeeConstant,
+	}, nil
+}
+
 type gasParams struct {
 	L1BaseFee           *uint256.Int
 	L1BlobBaseFee       *uint256.Int
@@ -333,6 +416,8 @@ type gasParams struct {
 	FeeScalar           *big.Float // pre-ecotone
 	L1BaseFeeScalar     *uint32    // post-ecotone
 	L1BlobBaseFeeScalar *uint32    // post-ecotone
+	OperatorFeeScalar   *uint32    // post-Isthmus
+	OperatorFeeConstant *uint64    // post-Isthmus
 }
 
 // intToScaledFloat returns scalar/10e6 as a float
@@ -356,10 +441,17 @@ func l1CostPreEcotoneHelper(gasWithOverhead, l1BaseFee, scalar *uint256.Int) *ui
 	return fee
 }
 
-func L1CostFnForTxPool(data []byte, isRegolith, isEcotone, isFjord bool) (types.L1CostFn, error) {
+func L1CostFnForTxPool(data []byte, isRegolith, isEcotone, isFjord, isIsthmus bool) (types.L1CostFn, error) {
 	var costFunc l1CostFunc = nil
 	if isEcotone && len(data) >= 4 && !bytes.Equal(data[0:4], BedrockL1AttributesSelector) {
-		l1BaseFee, l1BlobBaseFee, l1BaseFeeScalar, l1BlobBaseFeeScalar, err := extractL1InfoPostEcotone(data)
+		var l1BaseFee, l1BlobBaseFee *uint256.Int
+		var l1BaseFeeScalar, l1BlobBaseFeeScalar uint32
+		var err error
+		if isIsthmus {
+			l1BaseFee, l1BlobBaseFee, l1BaseFeeScalar, l1BlobBaseFeeScalar, _, _, err = extractL1InfoPostIsthmus(data)
+		} else {
+			l1BaseFee, l1BlobBaseFee, l1BaseFeeScalar, l1BlobBaseFeeScalar, err = extractL1InfoPostEcotone(data)
+		}
 		if err != nil {
 			return nil, fmt.Errorf("L1CostFnForTxPool error: %w", err)
 		}
@@ -442,4 +534,96 @@ func extractEcotoneFeeParams(l1FeeParams []byte) (l1BaseFeeScalar, l1BlobBaseFee
 func bedrockCalldataGasUsed(costData types.RollupCostData) (calldataGasUsed *uint256.Int) {
 	calldataGas := (costData.Zeroes * fixedgas.TxDataZeroGas) + (costData.Ones * fixedgas.TxDataNonZeroGasEIP2028)
 	return new(uint256.Int).SetUint64(calldataGas)
+}
+
+func ExtractOperatorFeeParams(operatorFeeParams libcommon.Hash) (operatorFeeScalar, operatorFeeConstant *uint256.Int) {
+	operatorFeeScalar = new(uint256.Int).SetBytes(operatorFeeParams[20:24])
+	operatorFeeConstant = new(uint256.Int).SetBytes(operatorFeeParams[24:32])
+	return
+}
+
+// NewOperatorCostFunc returns a function used for calculating operator fees, or nil if this is
+// not an op-stack chain.
+func NewOperatorCostFunc(config *chain.Config, statedb StateGetter) OperatorCostFunc {
+	if config.Optimism == nil {
+		return nil
+	}
+	forBlock := ^uint64(0)
+	var cachedFunc operatorCostFunc
+
+	selectFunc := func(blockTime uint64) operatorCostFunc {
+		if !config.IsOptimismIsthmus(blockTime) {
+			return func(gas uint64) *uint256.Int {
+				return uint256.NewInt(0)
+			}
+		}
+		var operatorFeeParamsInt uint256.Int
+		statedb.GetState(L1BlockAddr, &OperatorFeeParamsSlot, &operatorFeeParamsInt)
+		if operatorFeeParamsInt.IsZero() {
+			return func(gas uint64) *uint256.Int {
+				return uint256.NewInt(0)
+			}
+		}
+		operatorFeeParams := libcommon.Hash(operatorFeeParamsInt.Bytes32())
+		operatorFeeScalar, operatorFeeConstant := ExtractOperatorFeeParams(operatorFeeParams)
+
+		return newOperatorCostFunc(operatorFeeScalar, operatorFeeConstant)
+	}
+
+	return func(gas uint64, blockTime uint64) *uint256.Int {
+		if forBlock != blockTime {
+			forBlock = blockTime
+			cachedFunc = selectFunc(blockTime)
+		}
+
+		return cachedFunc(gas)
+	}
+}
+
+func newOperatorCostFunc(operatorFeeScalar *uint256.Int, operatorFeeConstant *uint256.Int) operatorCostFunc {
+	return func(gas uint64) *uint256.Int {
+		fee := new(uint256.Int).SetUint64(gas)
+		fee = fee.Mul(fee, operatorFeeScalar)
+		fee = fee.Div(fee, oneMillion)
+		fee = fee.Add(fee, operatorFeeConstant)
+
+		return fee
+	}
+}
+
+// NewTotalRollupCostFunc return a TotalRollupCostFunc that computes the total rollup cost, consisting
+// of both, the data availability cost and the operator cost.
+func NewTotalRollupCostFunc(config *chain.Config, statedb StateGetter) TotalRollupCostFunc {
+	if !config.IsOptimism() {
+		return nil
+	}
+	l1CostFunc := NewL1CostFunc(config, statedb)
+	operatorCostFunc := NewOperatorCostFunc(config, statedb)
+
+	return func(tx RollupTransaction, blockTime uint64) *uint256.Int {
+		// proper caching is happening inside the individual cost functions
+		l1Cost := l1CostFunc(tx.RollupCostData(), blockTime)
+		operatorCost := operatorCostFunc(tx.Gas(), blockTime)
+		if l1Cost == nil && operatorCost == nil {
+			return nil
+		}
+
+		var totalCost *uint256.Int
+		var overflow bool
+		if l1Cost != nil {
+			totalCost = l1Cost
+		} else {
+			totalCost = new(uint256.Int)
+		}
+
+		// Note, the operator cost currently always returns a non-nil value, so we wouldn't
+		// need the nil-check here. But we keep it for future-proofing.
+		if operatorCost != nil {
+			_, overflow = totalCost.AddOverflow(totalCost, operatorCost)
+			if overflow {
+				panic("overflow in total rollup cost: operatorCost")
+			}
+		}
+		return totalCost
+	}
 }

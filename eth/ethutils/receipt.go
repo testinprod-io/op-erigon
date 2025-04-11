@@ -92,6 +92,12 @@ func MarshalReceipt(
 			if receipt.L1BlobBaseFeeScalar != nil {
 				fields["l1BlobBaseFeeScalar"] = hexutil.Uint64(*receipt.L1BlobBaseFeeScalar)
 			}
+			if receipt.OperatorFeeScalar != nil {
+				fields["operatorFeeScalar"] = hexutil.Uint64(*receipt.OperatorFeeScalar)
+			}
+			if receipt.OperatorFeeConstant != nil {
+				fields["operatorFeeConstant"] = hexutil.Uint64(*receipt.OperatorFeeConstant)
+			}
 		} else {
 			if receipt.DepositNonce != nil {
 				fields["depositNonce"] = hexutil.Uint64(*receipt.DepositNonce)

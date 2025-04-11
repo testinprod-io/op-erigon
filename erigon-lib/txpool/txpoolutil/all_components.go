@@ -148,9 +148,10 @@ func AllComponents(ctx context.Context, cfg txpoolcfg.Config, cache kvcache.Cach
 	canyonTime := chainConfig.CanyonTime
 	ecotoneTime := chainConfig.EcotoneTime
 	fjordTime := chainConfig.FjordTime
+	isthmusTime := chainConfig.IsthmusTime
 
 	txPool, err := txpool.New(newTxs, chainDB, cfg, cache, *chainID, shanghaiTime, agraBlock, cancunTime, pragueTime,
-		regolithTime, canyonTime, ecotoneTime, fjordTime,
+		regolithTime, canyonTime, ecotoneTime, fjordTime, isthmusTime,
 		chainConfig.BlobSchedule, feeCalculator, logger)
 	if err != nil {
 		return nil, nil, nil, nil, nil, err

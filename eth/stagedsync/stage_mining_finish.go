@@ -52,7 +52,7 @@ func SpawnMiningFinishStage(s *StageState, tx kv.RwTx, cfg MiningFinishCfg, quit
 	//	continue
 	//}
 
-	block := types.NewBlockForAsembling(current.Header, current.Txs, current.Uncles, current.Receipts, current.Withdrawals)
+	block := types.NewBlockForAsembling(current.Header, current.Txs, current.Uncles, current.Receipts, current.Withdrawals, cfg.chainConfig.IsOptimismIsthmus(current.Header.Time))
 	blockWithReceipts := &types.BlockWithReceipts{Block: block, Receipts: current.Receipts, Requests: current.Requests}
 	*current = MiningBlock{} // hack to clean global data
 

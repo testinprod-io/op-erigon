@@ -54,6 +54,8 @@ type BlockContext struct {
 
 	// L1CostFunc returns the L1 cost of the rollup message, the function may be nil, or return nil
 	L1CostFunc opstack.L1CostFunc
+	// OperatorCostFunc returns the operator cost. The function may be nil
+	OperatorCostFunc opstack.OperatorCostFunc
 }
 
 // TxContext provides the EVM with information about a transaction.

@@ -84,6 +84,7 @@ func DoCall(
 	blockCtx := NewEVMBlockContext(engine, header, blockNrOrHash.RequireCanonical, tx, headerReader, chainConfig)
 	txCtx := core.NewEVMTxContext(msg)
 	blockCtx.L1CostFunc = opstack.NewL1CostFunc(chainConfig, state)
+	blockCtx.OperatorCostFunc = opstack.NewOperatorCostFunc(chainConfig, state)
 
 	evm := vm.NewEVM(blockCtx, txCtx, state, chainConfig, vm.Config{NoBaseFee: true})
 
@@ -216,6 +217,7 @@ func NewReusableCaller(
 
 	blockCtx := NewEVMBlockContext(engine, header, blockNrOrHash.RequireCanonical, tx, headerReader, chainConfig)
 	blockCtx.L1CostFunc = opstack.NewL1CostFunc(chainConfig, ibs)
+	blockCtx.OperatorCostFunc = opstack.NewOperatorCostFunc(chainConfig, ibs)
 	txCtx := core.NewEVMTxContext(msg)
 
 	evm := vm.NewEVM(blockCtx, txCtx, ibs, chainConfig, vm.Config{NoBaseFee: true})

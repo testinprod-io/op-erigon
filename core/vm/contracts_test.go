@@ -68,6 +68,9 @@ var allPrecompiles = map[libcommon.Address]PrecompiledContract{
 	libcommon.BytesToAddress([]byte{18}):         &bls12381MapFp2ToG2{},
 	libcommon.BytesToAddress([]byte{20}):         &pointEvaluation{},
 	libcommon.BytesToAddress([]byte{0x01, 0x00}): &p256Verify{},
+	libcommon.BytesToAddress([]byte{0x1f, 0x0b}): &bls12381G1MultiExpIsthmus{},
+	libcommon.BytesToAddress([]byte{0x1f, 0x0d}): &bls12381G2MultiExpIsthmus{},
+	libcommon.BytesToAddress([]byte{0x1f, 0x0e}): &bls12381PairingIsthmus{},
 }
 
 // EIP-152 test vectors
@@ -419,5 +422,28 @@ func TestPrecompileBn256PairingTooLargeInput(t *testing.T) {
 		Input:         common.Bytes2Hex(big),
 		ExpectedError: "bad elliptic curve pairing input size",
 		Name:          "bn256Pairing_input_too_big",
+	}, t)
+}
+
+func TestPrecompileBlsInputSize(t *testing.T) {
+	big := make([]byte, params.Bls12381G1MulMaxInputSizeIsthmus+1)
+	testPrecompiledFailure("1f0b", precompiledFailureTest{
+		Input:         common.Bytes2Hex(big),
+		ExpectedError: "g1 msm input size exceeds maximum",
+		Name:          "bls12381G1MSM_input_too_big",
+	}, t)
+
+	big = make([]byte, params.Bls12381G2MulMaxInputSizeIsthmus+1)
+	testPrecompiledFailure("1f0d", precompiledFailureTest{
+		Input:         common.Bytes2Hex(big),
+		ExpectedError: "g2 msm input size exceeds maximum",
+		Name:          "bls12381G2MSM_input_too_big",
+	}, t)
+
+	big = make([]byte, params.Bls12381PairingMaxInputSizeIsthmus+1)
+	testPrecompiledFailure("1f0e", precompiledFailureTest{
+		Input:         common.Bytes2Hex(big),
+		ExpectedError: "pairing input size exceeds maximum",
+		Name:          "bls12381Pairing_input_too_big",
 	}, t)
 }
