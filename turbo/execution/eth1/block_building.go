@@ -205,6 +205,10 @@ func (e *EthereumExecutionModule) GetAssembledBlock(ctx context.Context, req *ex
 		payload.ExcessBlobGas = header.ExcessBlobGas
 	}
 
+	if header.WithdrawalsHash != nil {
+		payload.WithdrawlsRoot = gointerfaces.ConvertHashToH256(*header.WithdrawalsHash)
+	}
+
 	blockValue := blockValue(blockWithReceipts, baseFee)
 
 	blobsBundle := &types2.BlobsBundleV1{}
