@@ -522,6 +522,8 @@ func GenesisToBlock(g *types.Genesis, dirs datadir.Dirs, logger log.Logger) (*ty
 	var root, messageParserRoot libcommon.Hash
 	var statedb *state.IntraBlockState // reader behind this statedb is dead at the moment of return, tx is rolled back
 
+	isIsthmus := g.Config.IsOptimismIsthmus(g.Timestamp)
+
 	ctx := context.Background()
 	wg, ctx := errgroup.WithContext(ctx)
 	// we may run inside write tx, can't open 2nd write tx in same goroutine
@@ -609,7 +611,7 @@ func GenesisToBlock(g *types.Genesis, dirs datadir.Dirs, logger log.Logger) (*ty
 		}
 		root = libcommon.BytesToHash(rh)
 
-		if g.Config.IsOptimismIsthmus(g.Timestamp) {
+		if isIsthmus {
 			messageParserRootBytes, err := sd.GetAccountStateRoot(params.OptimismL2ToL1MessagePasser)
 			if err != nil {
 				return err
@@ -636,11 +638,11 @@ func GenesisToBlock(g *types.Genesis, dirs datadir.Dirs, logger log.Logger) (*ty
 
 	head.Root = root
 
-	if g.Config.IsOptimismIsthmus(g.Timestamp) {
+	if isIsthmus {
 		head.WithdrawalsHash = &messageParserRoot
 	}
 
-	return types.NewBlock(head, nil, nil, nil, withdrawals), statedb, nil
+	return types.NewBlock(head, nil, nil, nil, withdrawals, isIsthmus), statedb, nil
 }
 
 func sortedAllocKeys(m types.GenesisAlloc) []string {

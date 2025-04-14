@@ -70,7 +70,7 @@ func (o *OpLegacy) Finalize(config *chain.Config, header *types.Header, state *s
 func (o *OpLegacy) FinalizeAndAssemble(config *chain.Config, header *types.Header, state *state.IntraBlockState,
 	txs types.Transactions, uncles []*types.Header, receipts types.Receipts, withdrawals []*types.Withdrawal, chain consensus.ChainReader, syscall consensus.SystemCall, call consensus.Call, logger log.Logger,
 ) (*types.Block, types.Transactions, types.Receipts, types.FlatRequests, error) {
-	return types.NewBlock(header, txs, uncles, receipts, withdrawals), txs, receipts, nil, nil
+	return types.NewBlock(header, txs, uncles, receipts, withdrawals, false), txs, receipts, nil, nil
 }
 
 func (o *OpLegacy) SealHash(header *types.Header) common.Hash {

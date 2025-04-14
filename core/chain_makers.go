@@ -402,7 +402,7 @@ func GenerateChain(config *chain.Config, parent *types.Block, engine consensus.E
 			b.header.Root = libcommon.BytesToHash(stateRoot)
 
 			// Recreating block to make sure Root makes it into the header
-			block := types.NewBlockForAsembling(b.header, b.txs, b.uncles, b.receipts, nil /* withdrawals */)
+			block := types.NewBlockForAsembling(b.header, b.txs, b.uncles, b.receipts, nil /* withdrawals */, config.IsOptimismIsthmus(b.header.Time))
 			return block, b.receipts, nil
 		}
 		return nil, nil, errors.New("no engine to generate blocks")

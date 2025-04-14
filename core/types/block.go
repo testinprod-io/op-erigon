@@ -1009,7 +1009,7 @@ func (bb *Body) DecodeRLP(s *rlp.Stream) error {
 // The values of TxHash, UncleHash, ReceiptHash, Bloom, and WithdrawalHash
 // in the header are ignored and set to the values derived from
 // the given txs, uncles, receipts, and withdrawals.
-func NewBlock(header *Header, txs []Transaction, uncles []*Header, receipts []*Receipt, withdrawals []*Withdrawal) *Block {
+func NewBlock(header *Header, txs []Transaction, uncles []*Header, receipts []*Receipt, withdrawals []*Withdrawal, isIsthmus bool) *Block {
 	b := &Block{header: CopyHeader(header)}
 
 	// TODO: panic if len(txs) != len(receipts)
@@ -1039,7 +1039,13 @@ func NewBlock(header *Header, txs []Transaction, uncles []*Header, receipts []*R
 		}
 	}
 
-	if withdrawals == nil {
+	if isIsthmus {
+		if withdrawals == nil || len(withdrawals) > 0 {
+			panic(fmt.Sprintf("expected non-nil empty withdrawals operation list in Isthmus, but got: %v", withdrawals))
+		}
+		b.header.WithdrawalsHash = header.WithdrawalsHash
+		b.withdrawals = make(Withdrawals, 0)
+	} else if withdrawals == nil {
 		b.header.WithdrawalsHash = nil
 	} else if len(withdrawals) == 0 {
 		b.header.WithdrawalsHash = &EmptyRootHash
@@ -1060,8 +1066,8 @@ func NewBlock(header *Header, txs []Transaction, uncles []*Header, receipts []*R
 }
 
 // NewBlockForAsembling - creating new block - which allow mutation of fileds. Use it for block-assembly
-func NewBlockForAsembling(header *Header, txs []Transaction, uncles []*Header, receipts []*Receipt, withdrawals []*Withdrawal) *Block {
-	b := NewBlock(header, txs, uncles, receipts, withdrawals)
+func NewBlockForAsembling(header *Header, txs []Transaction, uncles []*Header, receipts []*Receipt, withdrawals []*Withdrawal, isIsthmus bool) *Block {
+	b := NewBlock(header, txs, uncles, receipts, withdrawals, isIsthmus)
 	b.header.mutable = true
 	return b
 }
