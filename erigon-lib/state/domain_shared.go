@@ -23,6 +23,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"github.com/erigontech/erigon-lib/crypto"
 	"github.com/erigontech/erigon-lib/types/accounts"
 	"math"
 	"path/filepath"
@@ -727,8 +728,19 @@ func (sd *SharedDomains) ComputeCommitment(ctx context.Context, saveStateAfter b
 	return
 }
 
-func (sd *SharedDomains) GetAccountStateRoot(addr common.Address) ([]byte, error) {
-	return sd.sdCtx.GetAccountStateRoot(addr)
+func (sd *SharedDomains) GetAccountStateRoot(ctx context.Context, expectedRoot []byte, addr common.Address) ([]byte, error) {
+	proofTrie, _, err := sd.sdCtx.Witness(ctx, expectedRoot, "getAccountStateRoot")
+	if err != nil {
+		return nil, err
+	}
+	_, err = proofTrie.Prove(crypto.Keccak256(addr.Bytes()), 0, false)
+	if err != nil {
+		return nil, err
+	}
+
+	// get account data from the trie
+	acc, _ := proofTrie.GetAccount(crypto.Keccak256(addr.Bytes()))
+	return acc.Root.Bytes(), nil
 }
 
 // IterateStoragePrefix iterates over key-value pairs of the storage domain that start with given prefix
