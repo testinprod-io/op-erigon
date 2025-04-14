@@ -40,6 +40,8 @@ var emptyHash = libcommon.Hash{}
 func (evm *EVM) precompile(addr libcommon.Address) (PrecompiledContract, bool) {
 	var precompiles map[libcommon.Address]PrecompiledContract
 	switch {
+	case evm.chainRules.IsOptimismIsthmus:
+		precompiles = PrecompiledContractsIsthmus
 	case evm.chainRules.IsOptimismGranite:
 		precompiles = PrecompiledContractsGranite
 	case evm.chainRules.IsOptimismFjord:
