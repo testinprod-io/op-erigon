@@ -727,6 +727,10 @@ func (sd *SharedDomains) ComputeCommitment(ctx context.Context, saveStateAfter b
 	return
 }
 
+func (sd *SharedDomains) GetAccountStateRoot(addr common.Address) ([]byte, error) {
+	return sd.sdCtx.GetAccountStateRoot(addr)
+}
+
 // IterateStoragePrefix iterates over key-value pairs of the storage domain that start with given prefix
 // Such iteration is not intended to be used in public API, therefore it uses read-write transaction
 // inside the domain. Another version of this for public API use needs to be created, that uses
@@ -1365,6 +1369,19 @@ func (sdc *SharedDomainsCommitmentContext) ComputeCommitment(ctx context.Context
 	}
 
 	return rootHash, err
+}
+
+func (sdc *SharedDomainsCommitmentContext) GetAccountStateRoot(addr common.Address) ([]byte, error) {
+	encAccount, err := sdc.readAccount(addr.Bytes())
+	if err != nil {
+		return nil, err
+	}
+	acc := accounts.Account{}
+	err = accounts.DeserialiseV3(&acc, encAccount)
+	if err != nil {
+		return nil, err
+	}
+	return acc.Root.Bytes(), nil
 }
 
 func (sdc *SharedDomainsCommitmentContext) storeCommitmentState(blockNum uint64, rootHash []byte) error {
