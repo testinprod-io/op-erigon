@@ -614,6 +614,7 @@ func GenesisToBlock(g *types.Genesis, dirs datadir.Dirs, logger log.Logger) (*ty
 			if err != nil {
 				return err
 			}
+			messageParserRoot = libcommon.BytesToHash(messageParserRootBytes)
 		}
 		return nil
 	})
@@ -631,6 +632,10 @@ func GenesisToBlock(g *types.Genesis, dirs datadir.Dirs, logger log.Logger) (*ty
 	}
 
 	head.Root = root
+
+	if g.Config.IsOptimismIsthmus(g.Timestamp) {
+		head.WithdrawalsHash = &messageParserRoot
+	}
 
 	return types.NewBlock(head, nil, nil, nil, withdrawals), statedb, nil
 }
