@@ -729,6 +729,7 @@ func (sd *SharedDomains) ComputeCommitment(ctx context.Context, saveStateAfter b
 }
 
 func (sd *SharedDomains) GetAccountStateRoot(ctx context.Context, expectedRoot []byte, addr common.Address) ([]byte, error) {
+	sd.sdCtx.TouchKey(kv.AccountsDomain, string(addr.Bytes()), nil)
 	proofTrie, _, err := sd.sdCtx.Witness(ctx, expectedRoot, "getAccountStateRoot")
 	if err != nil {
 		return nil, err
@@ -1381,19 +1382,6 @@ func (sdc *SharedDomainsCommitmentContext) ComputeCommitment(ctx context.Context
 	}
 
 	return rootHash, err
-}
-
-func (sdc *SharedDomainsCommitmentContext) GetAccountStateRoot(addr common.Address) ([]byte, error) {
-	encAccount, err := sdc.readAccount(addr.Bytes())
-	if err != nil {
-		return nil, err
-	}
-	acc := accounts.Account{}
-	err = accounts.DeserialiseV3(&acc, encAccount)
-	if err != nil {
-		return nil, err
-	}
-	return acc.Root.Bytes(), nil
 }
 
 func (sdc *SharedDomainsCommitmentContext) storeCommitmentState(blockNum uint64, rootHash []byte) error {
