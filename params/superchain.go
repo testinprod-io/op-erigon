@@ -148,6 +148,7 @@ func LoadOPStackChainConfig(chConfig *superchain.ChainConfig) *chain.Config {
 		out.HoloceneTime = new(big.Int).SetUint64(*hardforks.HoloceneTime)
 	}
 	if hardforks.IsthmusTime != nil {
+		out.PragueTime = new(big.Int).SetUint64(*hardforks.IsthmusTime) // Prague activates with Isthmus
 		out.IsthmusTime = new(big.Int).SetUint64(*hardforks.IsthmusTime)
 	}
 
