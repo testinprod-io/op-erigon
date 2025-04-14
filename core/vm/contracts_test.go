@@ -69,6 +69,9 @@ var allPrecompiles = map[libcommon.Address]PrecompiledContract{
 	libcommon.BytesToAddress([]byte{18}):         &bls12381MapFp2ToG2{},
 	libcommon.BytesToAddress([]byte{20}):         &pointEvaluation{},
 	libcommon.BytesToAddress([]byte{0x01, 0x00}): &p256Verify{},
+	libcommon.BytesToAddress([]byte{0x1f, 0x0b}): &bls12381G1MultiExpIsthmus{},
+	libcommon.BytesToAddress([]byte{0x1f, 0x0d}): &bls12381G2MultiExpIsthmus{},
+	libcommon.BytesToAddress([]byte{0x1f, 0x0e}): &bls12381PairingIsthmus{},
 }
 
 // EIP-152 test vectors
