@@ -257,7 +257,7 @@ func SpawnMiningExecStage(s *StageState, txc wrap.TxContainer, cfg MiningExecCfg
 	current.Header.Root = libcommon.BytesToHash(rh)
 
 	if cfg.chainConfig.IsOptimismIsthmus(current.Header.Time) {
-		messagePasserRootBytes, err := txc.Doms.GetAccountStateRoot(params.OptimismL2ToL1MessagePasser)
+		messagePasserRootBytes, err := txc.Doms.GetAccountStateRoot(ctx, rh, params.OptimismL2ToL1MessagePasser)
 		if err != nil {
 			return fmt.Errorf("cannot read messagePasserRoot: %w", err)
 		}
