@@ -228,6 +228,10 @@ func (s *EngineServer) newPayload(ctx context.Context, req *engine_types.Executi
 		header.WithdrawalsHash = &wh
 	}
 
+	if s.config.IsIsthmus(req.Timestamp.Uint64()) {
+		header.WithdrawalsHash = req.WithdrawalsRoot
+	}
+
 	var requests types.FlatRequests
 	if err := s.checkRequestsPresence(version, executionRequests); err != nil {
 		return nil, err

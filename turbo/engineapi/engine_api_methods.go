@@ -9,6 +9,7 @@ import (
 	"github.com/erigontech/erigon-lib/common/hexutility"
 	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/erigontech/erigon/params"
+	"github.com/erigontech/erigon/rpc"
 
 	"github.com/erigontech/erigon/cl/clparams"
 	"github.com/erigontech/erigon/turbo/engineapi/engine_types"
@@ -122,6 +123,9 @@ func (e *EngineServer) NewPayloadV4(ctx context.Context, payload *engine_types.E
 	expectedBlobHashes []libcommon.Hash, parentBeaconBlockRoot *libcommon.Hash, executionRequests []hexutility.Bytes) (*engine_types.PayloadStatus, error) {
 	// TODO(racytech): add proper version or refactor this part
 	// add all version ralated checks here so the newpayload doesn't have to deal with checks
+	if e.config.IsOptimismIsthmus(payload.Timestamp.Uint64()) && payload.WithdrawalsRoot == nil {
+		return nil, &rpc.InvalidParamsError{Message: "nil withdrawalsRoot post-isthmus"}
+	}
 	return e.newPayload(ctx, payload, expectedBlobHashes, parentBeaconBlockRoot, executionRequests, clparams.ElectraVersion)
 }
 
