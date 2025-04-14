@@ -159,15 +159,21 @@ func (st *StateTransition) buyGas(gasBailout bool) error {
 		return fmt.Errorf("%w: address %v", ErrInsufficientFunds, st.msg.From().Hex())
 	}
 
-	var l1Cost *uint256.Int
+	var l1Cost, operatorCost *uint256.Int
 
 	if st.evm.ChainConfig().IsOptimism() {
-		fn := opstack.NewL1CostFunc(st.evm.ChainConfig(), st.evm.IntraBlockState())
-		l1Cost = fn(st.msg.RollupCostData(), st.evm.Context.Time)
+		l1CostFunc := opstack.NewL1CostFunc(st.evm.ChainConfig(), st.evm.IntraBlockState())
+		l1Cost = l1CostFunc(st.msg.RollupCostData(), st.evm.Context.Time)
+
+		operatorCostFunc := opstack.NewOperatorCostFunc(st.evm.ChainConfig(), st.evm.IntraBlockState())
+		operatorCost = operatorCostFunc(st.msg.Gas(), st.evm.Context.Time)
 	}
 
 	if l1Cost != nil {
 		gasVal = gasVal.Add(gasVal, l1Cost)
+	}
+	if operatorCost != nil {
+		gasVal = gasVal.Add(gasVal, operatorCost)
 	}
 
 	// compute blob fee for eip-4844 data blobs if any
@@ -655,6 +661,20 @@ func (st *StateTransition) innerTransitionDB(refunds bool, gasBailout bool) (*ev
 		}
 		if cost := l1CostFn(st.msg.RollupCostData(), st.evm.Context.Time); cost != nil {
 			st.state.AddBalance(params.OptimismL1FeeRecipient, cost, tracing.BalanceIncreaseRewardTransactionFee)
+		}
+		if st.evm.ChainConfig().IsIsthmus(st.evm.Context.Time) {
+			// Return ETH to transaction sender for operator cost overcharge.
+			operatorCostFunc := opstack.NewOperatorCostFunc(st.evm.ChainConfig(), st.state)
+			operatorCostGasLimit := operatorCostFunc(st.msg.Gas(), st.evm.Context.Time)
+			operatorCostGasUsed := operatorCostFunc(st.gasUsed(), st.evm.Context.Time)
+
+			if operatorCostGasUsed.Cmp(operatorCostGasLimit) > 0 { // Sanity check.
+				panic(fmt.Sprintf("operator cost gas used (%d) > operator cost gas limit (%d)", operatorCostGasUsed, operatorCostGasLimit))
+			}
+
+			st.state.AddBalance(st.msg.From(), new(uint256.Int).Sub(operatorCostGasLimit, operatorCostGasUsed), tracing.BalanceIncreaseRewardTransactionFee)
+
+			st.state.AddBalance(params.OptimismOperatorFeeRecipient, operatorCostGasUsed, tracing.BalanceIncreaseRewardTransactionFee)
 		}
 	}
 
