@@ -207,6 +207,7 @@ func SpawnMiningExecStage(s *StageState, txc wrap.TxContainer, cfg MiningExecCfg
 
 	var err error
 	var block *types.Block
+	current.Header.WithdrawalsHash = &types.EmptyRootHash
 	block, current.Txns, current.Receipts, current.Requests, err = core.FinalizeBlockExecution(cfg.engine, stateReader, current.Header, current.Txns, current.Uncles, &state.NoopWriter{}, &cfg.chainConfig, ibs, current.Receipts, current.Withdrawals, chainReader, true, logger)
 	if err != nil {
 		return fmt.Errorf("cannot finalize block execution: %s", err)
@@ -256,12 +257,12 @@ func SpawnMiningExecStage(s *StageState, txc wrap.TxContainer, cfg MiningExecCfg
 	current.Header.Root = libcommon.BytesToHash(rh)
 
 	if cfg.chainConfig.IsOptimismIsthmus(current.Header.Time) {
-		messageParserRootBytes, err := txc.Doms.GetAccountStateRoot(params.OptimismL1FeeRecipient)
+		messagePasserRootBytes, err := txc.Doms.GetAccountStateRoot(params.OptimismL2ToL1MessagePasser)
 		if err != nil {
-			return fmt.Errorf("cannot read messageParserRoot: %w", err)
+			return fmt.Errorf("cannot read messagePasserRoot: %w", err)
 		}
-		messageParserRoot := libcommon.BytesToHash(messageParserRootBytes)
-		current.Header.WithdrawalsHash = &messageParserRoot
+		messagePasserRoot := libcommon.BytesToHash(messagePasserRootBytes)
+		current.Header.WithdrawalsHash = &messagePasserRoot
 	}
 
 	logger.Info("FinalizeBlockExecution", "block", current.Header.Number, "txn", current.Txns.Len(), "gas", current.Header.GasUsed, "receipt", current.Receipts.Len(), "payload", cfg.payloadId)

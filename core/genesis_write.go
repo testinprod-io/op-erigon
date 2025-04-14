@@ -519,7 +519,7 @@ func GenesisToBlock(g *types.Genesis, dirs datadir.Dirs, logger log.Logger) (*ty
 		}
 	}
 
-	var root, messageParserRoot libcommon.Hash
+	var root, messagePasserRoot libcommon.Hash
 	var statedb *state.IntraBlockState // reader behind this statedb is dead at the moment of return, tx is rolled back
 
 	isIsthmus := g.Config.IsOptimismIsthmus(g.Timestamp)
@@ -612,11 +612,11 @@ func GenesisToBlock(g *types.Genesis, dirs datadir.Dirs, logger log.Logger) (*ty
 		root = libcommon.BytesToHash(rh)
 
 		if isIsthmus {
-			messageParserRootBytes, err := sd.GetAccountStateRoot(params.OptimismL2ToL1MessagePasser)
+			messagePasserRootBytes, err := sd.GetAccountStateRoot(params.OptimismL2ToL1MessagePasser)
 			if err != nil {
 				return err
 			}
-			messageParserRoot = libcommon.BytesToHash(messageParserRootBytes)
+			messagePasserRoot = libcommon.BytesToHash(messagePasserRootBytes)
 		}
 		return nil
 	})
@@ -639,7 +639,7 @@ func GenesisToBlock(g *types.Genesis, dirs datadir.Dirs, logger log.Logger) (*ty
 	head.Root = root
 
 	if isIsthmus {
-		head.WithdrawalsHash = &messageParserRoot
+		head.WithdrawalsHash = &messagePasserRoot
 	}
 
 	return types.NewBlock(head, nil, nil, nil, withdrawals, isIsthmus), statedb, nil
