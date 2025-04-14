@@ -2,7 +2,7 @@ name: CI
 on:
   push:
     branches:
-      - main
+      - op-erigon3
       - 'release/**'
   pull_request:
     branches:

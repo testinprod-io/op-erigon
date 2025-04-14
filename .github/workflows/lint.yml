@@ -2,11 +2,11 @@ name: Lint
 on:
   push:
     branches:
-      - main
+      - op-erigon3
       - 'release/**'
   pull_request:
     branches:
-      - main
+      - op-erigon3
       - 'release/**'
     types:
       - opened
