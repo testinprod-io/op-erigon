@@ -154,8 +154,6 @@ github.com/erigontech/erigon-snapshot v1.3.1-0.20250121111444-6cc4c0c1fb89 h1:7N
 github.com/erigontech/erigon-snapshot v1.3.1-0.20250121111444-6cc4c0c1fb89/go.mod h1:ooHlCl+eEYzebiPu+FP6Q6SpPUeMADn8Jxabv3IKb9M=
 github.com/erigontech/go-kzg-4844 v0.0.0-20250130131058-ce13be60bc86 h1:UKcIbFZUGIKzK4aQbkv/dYiOVxZSUuD3zKadhmfwdwU=
 github.com/erigontech/go-kzg-4844 v0.0.0-20250130131058-ce13be60bc86/go.mod h1:JolLjpSff1tCCJKaJx4psrlEdlXuJEC996PL3tTAFks=
-github.com/erigontech/interfaces v0.0.0-20250316105744-4939b62e4f21 h1:KLBlN7PJmb8QyUIKnuOMmYonbNmDk0G8VUhFczGpPxs=
-github.com/erigontech/interfaces v0.0.0-20250316105744-4939b62e4f21/go.mod h1:N7OUkhkcagp9+7yb4ycHsG2VWCOmuJ1ONBecJshxtLE=
 github.com/erigontech/mdbx-go v0.38.10 h1:Nxqxu9QNOU9Bvgs9pq6SKkNYysbjt6b9n929daVNfcU=
 github.com/erigontech/mdbx-go v0.38.10/go.mod h1:lkqHAZqXtFaIPlvTaGAx3VUDuGYZcuhve1l4JVVN1Z0=
 github.com/erigontech/secp256k1 v1.1.0 h1:mO3YJMUSoASE15Ya//SoHiisptUhdXExuMUN1M0X9qY=
@@ -469,6 +467,8 @@ github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/stretchr/testify v1.10.0 h1:Xv5erBjTwe/5IxqUQTdXv5kgmIvbHo3QQyRwhJsOfJA=
 github.com/stretchr/testify v1.10.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
+github.com/testinprod-io/erigon-interfaces v0.0.0-20250414151936-eccf02c7fe44 h1:cSA8QkC00MXU/oRlB/CCB2KFBJS/ei5AqEBwxIEYSy4=
+github.com/testinprod-io/erigon-interfaces v0.0.0-20250414151936-eccf02c7fe44/go.mod h1:N7OUkhkcagp9+7yb4ycHsG2VWCOmuJ1ONBecJshxtLE=
 github.com/tidwall/btree v1.6.0 h1:LDZfKfQIBHGHWSwckhXI0RPSXzlo+KYdjK7FWSqOzzg=
 github.com/tidwall/btree v1.6.0/go.mod h1:twD9XRA5jj9VUQGELzDO4HPQTNJsoWWfYEL+EUQ2cKY=
 github.com/tinylib/msgp v1.0.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
