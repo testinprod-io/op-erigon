@@ -232,7 +232,7 @@ func (s *Merge) FinalizeAndAssemble(config *chain.Config, header *types.Header, 
 	if config.IsPrague(header.Time) {
 		header.RequestsHash = outRequests.Hash()
 	}
-	return types.NewBlockForAsembling(header, outTxs, uncles, outReceipts, withdrawals), outTxs, outReceipts, outRequests, nil
+	return types.NewBlockForAsembling(header, outTxs, uncles, outReceipts, withdrawals, config.IsOptimismIsthmus(header.Time)), outTxs, outReceipts, outRequests, nil
 }
 
 func (s *Merge) SealHash(header *types.Header) (hash libcommon.Hash) {
