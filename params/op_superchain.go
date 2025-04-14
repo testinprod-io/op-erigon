@@ -125,6 +125,10 @@ func LoadSuperChainConfig(chConfig *superchain.ChainConfig) *chain.Config {
 	if hardforks.HoloceneTime != nil {
 		out.HoloceneTime = new(big.Int).SetUint64(*hardforks.HoloceneTime)
 	}
+	if hardforks.IsthmusTime != nil {
+		out.PragueTime = new(big.Int).SetUint64(*hardforks.IsthmusTime) // Prague activates with Isthmus
+		out.IsthmusTime = new(big.Int).SetUint64(*hardforks.IsthmusTime)
+	}
 
 	if chConfig.Optimism != nil {
 		out.Optimism = &chain.OptimismConfig{

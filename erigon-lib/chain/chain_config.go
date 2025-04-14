@@ -102,6 +102,7 @@ type Config struct {
 	FjordTime    *big.Int `json:"fjordTime,omitempty"`    // Fjord switch time (nil = no fork, 0 = already on optimism fjord)
 	GraniteTime  *big.Int `json:"graniteTime,omitempty"`  // Granite switch time (nil = no fork, 0 = already on optimism granite)
 	HoloceneTime *big.Int `json:"holoceneTime,omitempty"`
+	IsthmusTime  *big.Int `json:"isthmusTime,omitempty"` // Isthmus switch time (nil = no fork, 0 = already on Optimism Isthmus)
 }
 
 // OptimismConfig is the optimism config.
@@ -148,6 +149,10 @@ func (c *Config) IsHolocene(time uint64) bool {
 	return isForked(c.HoloceneTime, time)
 }
 
+func (c *Config) IsIsthmus(time uint64) bool {
+	return isForked(c.IsthmusTime, time)
+}
+
 func (c *Config) IsOptimism() bool {
 	return c.Optimism != nil
 }
@@ -179,6 +184,10 @@ func (c *Config) IsOptimismGranite(time uint64) bool {
 
 func (c *Config) IsOptimismHolocene(time uint64) bool {
 	return c.IsOptimism() && c.IsHolocene(time)
+}
+
+func (c *Config) IsOptimismIsthmus(time uint64) bool {
+	return c.IsOptimism() && c.IsIsthmus(time)
 }
 
 // IsOptimismPreBedrock returns true iff this is an optimism node & bedrock is not yet active
@@ -686,6 +695,7 @@ type Rules struct {
 	IsOptimismBedrock, IsOptimismRegolith                bool
 	IsOptimismCanyon, IsOptimismEcotone, IsOptimismFjord bool
 	IsOptimismGranite, IsOptimismHolocene                bool
+	IsOptimismIsthmus                                    bool
 }
 
 // Rules ensures c's ChainID is not nil and returns a new Rules instance
@@ -720,6 +730,7 @@ func (c *Config) Rules(num uint64, time uint64) *Rules {
 		IsOptimismFjord:    c.IsOptimismFjord(time),
 		IsOptimismGranite:  c.IsOptimismGranite(time),
 		IsOptimismHolocene: c.IsOptimismHolocene(time),
+		IsOptimismIsthmus:  c.IsOptimismIsthmus(time),
 	}
 }
 
