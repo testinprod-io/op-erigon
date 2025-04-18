@@ -271,7 +271,7 @@ type testStateGetter struct {
 	basefeeScalar, blobBasefeeScalar       uint32
 }
 
-func (sg *testStateGetter) GetState(addr common.Address, key *common.Hash, value *uint256.Int) {
+func (sg *testStateGetter) GetState(addr common.Address, key *common.Hash, value *uint256.Int) error {
 	switch *key {
 	case L1BaseFeeSlot:
 		value.Set(sg.basefee)
@@ -291,6 +291,7 @@ func (sg *testStateGetter) GetState(addr common.Address, key *common.Hash, value
 	default:
 		panic("unknown slot")
 	}
+	return nil
 }
 
 // TestNewL1CostFunc tests that the appropriate cost function is selected based on the

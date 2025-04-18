@@ -37,6 +37,7 @@ import (
 	"github.com/erigontech/erigon-lib/common/math"
 	"github.com/erigontech/erigon-lib/common/u256"
 	"github.com/erigontech/erigon-lib/kv"
+	"github.com/erigontech/erigon-lib/log/v3"
 	state2 "github.com/erigontech/erigon-lib/state"
 	"github.com/erigontech/erigon/accounts/abi"
 	"github.com/erigontech/erigon/accounts/abi/bind"
@@ -859,7 +860,7 @@ func (m callMsg) IsFree() bool                          { return false }
 
 func (m callMsg) BlobGas() uint64                        { return misc.GetBlobGasUsed(len(m.CallMsg.BlobHashes)) }
 func (m callMsg) MaxFeePerBlobGas() *uint256.Int         { return m.CallMsg.MaxFeePerBlobGas }
-func (m callMsg) BlobHashes() []common.Hash              { return m.CallMsg.BlobHashes }
+func (m callMsg) BlobHashes() []libcommon.Hash           { return m.CallMsg.BlobHashes }
 func (m callMsg) IsOptimismDepositTx() bool              { return false }
 func (m callMsg) IsOptimismSystemTx() bool               { return false }
 func (m callMsg) Mint() *uint256.Int                     { return nil }

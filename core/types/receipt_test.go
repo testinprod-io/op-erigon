@@ -22,6 +22,7 @@ package types
 import (
 	"bytes"
 	"errors"
+	"github.com/erigontech/erigon-lib/chain"
 	"math"
 	"math/big"
 	"reflect"
@@ -214,7 +215,8 @@ func TestDeriveFields(t *testing.T) {
 
 	t.Run("DeriveV1", func(t *testing.T) {
 		clearComputedFieldsOnReceipts(t, receipts)
-		if err := receipts.DeriveFields(hash, number.Uint64(), txs, []libcommon.Address{libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0})}); err != nil {
+		cfg := chain.Config{}
+		if err := receipts.DeriveFields(&cfg, hash, number.Uint64(), 0, txs, []libcommon.Address{libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0}), libcommon.BytesToAddress([]byte{0x0})}); err != nil {
 			t.Fatalf("DeriveFields(...) = %v, want <nil>", err)
 		}
 		// Iterate over all the computed fields and check that they're correct

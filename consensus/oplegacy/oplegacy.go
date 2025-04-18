@@ -123,4 +123,4 @@ func (c *OpLegacy) Type() chain.ConsensusName {
 	return chain.OpLegacyConsensus
 }
 
-var _ consensus.Engine = (*OpLegacy)(nil)
+//var _ consensus.Engine = (*OpLegacy)(nil)

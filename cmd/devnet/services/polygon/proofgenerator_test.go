@@ -115,7 +115,7 @@ func (rg *requestGenerator) GetBlockByNumber(ctx context.Context, blockNum rpc.B
 
 		for i, txn := range block.Transactions() {
 			rg.txBlockMap[txn.Hash()] = block
-			transactions[i] = ethapi.NewRPCTransaction(txn, block.Hash(), blockNum.Uint64(), uint64(i), block.BaseFee())
+			transactions[i] = ethapi.NewRPCTransaction(txn, block.Hash(), blockNum.Uint64(), uint64(i), block.BaseFee(), nil)
 		}
 
 		return &requests.Block{
