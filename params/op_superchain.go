@@ -190,7 +190,7 @@ func (p ProtocolVersion) String() string {
 	}
 	if build != ([8]byte{}) {
 		if humanBuildTag(build) {
-			ver += fmt.Sprintf("+%s", strings.TrimRight(string(build[:]), "\x00"))
+			ver += "+" + strings.TrimRight(string(build[:]), "\x00")
 		} else {
 			ver += fmt.Sprintf("+0x%x", build)
 		}

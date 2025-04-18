@@ -350,7 +350,7 @@ func (txw *BlobTxWrapper) IsContractDeploy() bool { return txw.Tx.IsContractDepl
 func (txw *BlobTxWrapper) Unwrap() Transaction { return &txw.Tx }
 
 func (txw *BlobTxWrapper) RollupCostData() opstack.RollupCostData {
-	return txw.RollupCostData()
+	return opstack.RollupCostData{}
 }
 
 func (txw *BlobTxWrapper) DecodeRLP(s *rlp.Stream) error {

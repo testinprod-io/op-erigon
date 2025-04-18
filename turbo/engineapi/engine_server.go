@@ -530,13 +530,13 @@ func (s *EngineServer) getPayload(ctx context.Context, payloadId uint64, version
 	}
 
 	data := resp.Data
-	var executionRequests []hexutility.Bytes
-	if version >= clparams.ElectraVersion {
-		executionRequests = make([]hexutility.Bytes, 0)
-		for _, r := range data.Requests.Requests {
-			executionRequests = append(executionRequests, r)
-		}
-	}
+	//var executionRequests []hexutility.Bytes
+	//if version >= clparams.ElectraVersion {
+	//	executionRequests = make([]hexutility.Bytes, 0)
+	//	for _, r := range data.Requests.Requests {
+	//		executionRequests = append(executionRequests, r)
+	//	}
+	//}
 
 	ts := data.ExecutionPayload.Timestamp
 	if (!s.config.IsCancun(ts) && version >= clparams.DenebVersion) ||

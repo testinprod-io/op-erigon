@@ -169,7 +169,7 @@ func ValidateHolocene1559Params(params []byte) error {
 	}
 	d, e := DecodeHolocene1559Params(params)
 	if e != 0 && d == 0 {
-		return fmt.Errorf("holocene params cannot have a 0 denominator unless elasticity is also 0")
+		return errors.New("holocene params cannot have a 0 denominator unless elasticity is also 0")
 	}
 	return nil
 }

@@ -631,7 +631,7 @@ func GenesisToBlock(g *types.Genesis, dirs datadir.Dirs, logger log.Logger) (*ty
 				"and non-empty state-allocation", *g.StateHash))
 		}
 		if g.Config.IsIsthmus(g.Timestamp) {
-			panic(fmt.Errorf("stateHash usage disallowed in chain with isthmus active at genesis"))
+			panic(errors.New("stateHash usage disallowed in chain with isthmus active at genesis"))
 		}
 		root = *g.StateHash
 	}

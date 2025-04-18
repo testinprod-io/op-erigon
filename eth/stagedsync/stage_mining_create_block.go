@@ -233,7 +233,7 @@ func SpawnMiningCreateBlockStage(s *StageState, txc wrap.TxContainer, cfg Mining
 
 	if cfg.chainConfig.IsHolocene(header.Time) {
 		if cfg.blockBuilderParameters == nil {
-			return fmt.Errorf("expected eip1559 params, got none")
+			return errors.New("expected eip1559 params, got none")
 		}
 		if err := misc.ValidateHolocene1559Params(cfg.blockBuilderParameters.HoloceneEIP1559Params); err != nil {
 			return err
@@ -247,7 +247,7 @@ func SpawnMiningCreateBlockStage(s *StageState, txc wrap.TxContainer, cfg Mining
 		}
 		header.Extra = misc.EncodeHoloceneExtraData(uint32(d), uint32(e))
 	} else if cfg.blockBuilderParameters != nil && cfg.blockBuilderParameters.HoloceneEIP1559Params != nil {
-		return fmt.Errorf("got eip1559 params, expected none")
+		return errors.New("got eip1559 params, expected none")
 	}
 
 	if err = cfg.engine.Prepare(chain, header, ibs); err != nil {
