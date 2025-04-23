@@ -435,13 +435,16 @@ func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*ev
 	// set code tx
 	auths := msg.Authorizations()
 	verifiedAuthorities := make([]libcommon.Address, 0)
+	log.Debug("-1", "auths", auths)
 	if len(auths) > 0 {
+		log.Debug("0")
 		if contractCreation {
 			return nil, errors.New("contract creation not allowed with type4 txs")
 		}
 		var b [32]byte
 		data := bytes.NewBuffer(nil)
 		for i, auth := range auths {
+			log.Debug("1")
 			data.Reset()
 
 			// 1. chainId check
@@ -449,7 +452,7 @@ func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*ev
 				log.Debug("invalid chainID, skipping", "chainId", auth.ChainID, "auth index", i)
 				continue
 			}
-
+			log.Debug("2")
 			// 2. authority recover
 			authorityPtr, err := auth.RecoverSigner(data, b[:])
 			if err != nil {
@@ -457,7 +460,7 @@ func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*ev
 				continue
 			}
 			authority := *authorityPtr
-
+			log.Debug("3")
 			// 3. add authority account to accesses_addresses
 			verifiedAuthorities = append(verifiedAuthorities, authority)
 			// authority is added to accessed_address in prepare step
@@ -465,14 +468,16 @@ func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*ev
 			// 4. authority code should be empty or already delegated
 			if codeHash := st.state.GetCodeHash(authority); codeHash != emptyCodeHash && codeHash != (libcommon.Hash{}) {
 				// check for delegation
+				log.Debug("4")
 				if _, ok := st.state.GetDelegatedDesignation(authority); ok {
 					// noop: has delegated designation
+					log.Debug("5")
 				} else {
 					log.Debug("authority code is not empty or not delegated, skipping", "auth index", i)
 					continue
 				}
 			}
-
+			log.Debug("6")
 			// 5. nonce check
 			authorityNonce := st.state.GetNonce(authority)
 			if authorityNonce != auth.Nonce {
@@ -482,13 +487,16 @@ func (st *StateTransition) innerTransitionDb(refunds bool, gasBailout bool) (*ev
 
 			// 6. Add PER_EMPTY_ACCOUNT_COST - PER_AUTH_BASE_COST gas to the global refund counter if authority exists in the trie.
 			if st.state.Exist(authority) {
+				log.Debug("7")
 				st.state.AddRefund(fixedgas.PerEmptyAccountCost - fixedgas.PerAuthBaseCost)
 			}
-
+			log.Debug("8")
 			// 7. set authority code
 			if auth.Address == (libcommon.Address{}) {
+				log.Debug("9")
 				st.state.SetCode(authority, nil)
 			} else {
+				log.Debug("10")
 				st.state.SetCode(authority, types.AddressToDelegation(auth.Address))
 			}
 
