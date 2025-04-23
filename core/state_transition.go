@@ -116,11 +116,13 @@ func IntrinsicGas(data []byte, accessList types2.AccessList, isContractCreation 
 	// Zero and non-zero bytes are priced differently
 	dataLen := uint64(len(data))
 	dataNonZeroLen := uint64(0)
+	log.Debug("Gas len: ", "dataLen", dataLen)
 	for _, byt := range data {
 		if byt != 0 {
 			dataNonZeroLen++
 		}
 	}
+	log.Debug("Gas len: ", "dataNonzeroLen", dataNonZeroLen)
 
 	gas, floorGas7623, status := txpoolcfg.CalcIntrinsicGas(dataLen, dataNonZeroLen, authorizationsLen, uint64(len(accessList)), uint64(accessList.StorageKeys()), isContractCreation, isHomestead, isEIP2028, isEIP3860, isPrague)
 	if status != txpoolcfg.Success {
