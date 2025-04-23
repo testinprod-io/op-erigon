@@ -427,6 +427,19 @@ func SepoliaGenesisBlock() *types.Genesis {
 	}
 }
 
+// HoodiGenesisBlock returns the Hoodi network genesis block.
+func HoodiGenesisBlock() *types.Genesis {
+	return &types.Genesis{
+		Config:     params.HoodiChainConfig,
+		Nonce:      0x1234,
+		ExtraData:  []byte(""),
+		GasLimit:   0x2255100, // 36M
+		Difficulty: big.NewInt(1),
+		Timestamp:  1742212800,
+		Alloc:      readPrealloc("allocs/hoodi.json"),
+	}
+}
+
 // GoerliGenesisBlock returns the Görli network genesis block.
 func GoerliGenesisBlock() *types.Genesis {
 	return &types.Genesis{
@@ -788,6 +801,8 @@ func GenesisBlockByChainName(chain string) *types.Genesis {
 		return HoleskyGenesisBlock()
 	case networkname.SepoliaChainName:
 		return SepoliaGenesisBlock()
+	case networkname.HoodiChainName:
+		return HoodiGenesisBlock()
 	case networkname.GoerliChainName:
 		return GoerliGenesisBlock()
 	case networkname.MumbaiChainName:
