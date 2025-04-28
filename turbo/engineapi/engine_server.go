@@ -53,6 +53,7 @@ import (
 	"github.com/erigontech/erigon/turbo/engineapi/engine_helpers"
 	"github.com/erigontech/erigon/turbo/engineapi/engine_logs_spammer"
 	"github.com/erigontech/erigon/turbo/engineapi/engine_types"
+	"github.com/erigontech/erigon/turbo/execution/eth1"
 	"github.com/erigontech/erigon/turbo/execution/eth1/eth1_chain_reader"
 	"github.com/erigontech/erigon/turbo/jsonrpc"
 	"github.com/erigontech/erigon/turbo/rpchelper"
@@ -823,6 +824,17 @@ func (e *EngineServer) HandleNewPayload(
 			}
 			status, _, latestValidHash, err := e.chainRW.ValidateChain(ctx, headerHash, headerNumber)
 			if err != nil {
+				missingBlkHash, isMissingChainErr := eth1.GetBlockHashFromMissingSegmentError(err)
+				if isMissingChainErr {
+					e.logger.Debug(fmt.Sprintf("[%s] New payload: need to download missing segment", logPrefix), "height", headerNumber, "hash", headerHash, "missingBlkHash", missingBlkHash)
+					if e.test {
+						return &engine_types.PayloadStatus{Status: engine_types.SyncingStatus}, nil
+					}
+					if e.blockDownloader.StartDownloading(ctx, 0, missingBlkHash, block) {
+						e.logger.Warn(fmt.Sprintf("[%s] New payload: need to recover missing segment", logPrefix), "height", headerNumber, "hash", headerHash, "missingBlkHash", missingBlkHash)
+					}
+					return &engine_types.PayloadStatus{Status: engine_types.SyncingStatus}, nil
+				}
 				return nil, err
 			}
 
@@ -849,6 +861,17 @@ func (e *EngineServer) HandleNewPayload(
 	status, validationErr, latestValidHash, err := e.chainRW.ValidateChain(ctx, headerHash, headerNumber)
 	e.logger.Debug(fmt.Sprintf("[%s] New payload verification ended", logPrefix), "status", status.String(), "err", err)
 	if err != nil {
+		missingBlkHash, isMissingChainErr := eth1.GetBlockHashFromMissingSegmentError(err)
+		if isMissingChainErr {
+			e.logger.Debug(fmt.Sprintf("[%s] New payload: need to download missing segment", logPrefix), "height", headerNumber, "hash", headerHash, "missingBlkHash", missingBlkHash)
+			if e.test {
+				return &engine_types.PayloadStatus{Status: engine_types.SyncingStatus}, nil
+			}
+			if e.blockDownloader.StartDownloading(ctx, 0, missingBlkHash, block) {
+				e.logger.Warn(fmt.Sprintf("[%s] New payload: need to recover missing segment", logPrefix), "height", headerNumber, "hash", headerHash, "missingBlkHash", missingBlkHash)
+			}
+			return &engine_types.PayloadStatus{Status: engine_types.SyncingStatus}, nil
+		}
 		return nil, err
 	}
 

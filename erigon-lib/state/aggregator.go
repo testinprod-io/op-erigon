@@ -25,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -683,7 +684,6 @@ func (a *Aggregator) mergeLoopStep(ctx context.Context, toTxNum uint64) (somethi
 	mxRunningMerges.Inc()
 	defer mxRunningMerges.Dec()
 
-	closeAll := true
 	maxSpan := config3.StepsInFrozenFile * a.StepSize()
 	r := aggTx.findMergeRange(toTxNum, maxSpan)
 	if !r.any() {
@@ -691,34 +691,28 @@ func (a *Aggregator) mergeLoopStep(ctx context.Context, toTxNum uint64) (somethi
 	}
 
 	outs, err := aggTx.staticFilesInRange(r)
-	defer func() {
-		if closeAll {
-			outs.Close()
-		}
-	}()
 	if err != nil {
 		return false, err
 	}
 
 	in, err := aggTx.mergeFiles(ctx, outs, r)
 	if err != nil {
+		in.Close()
 		return true, err
 	}
-	defer func() {
-		if closeAll {
-			in.Close()
-		}
-	}()
 	a.IntegrateMergedDirtyFiles(outs, in)
 	a.cleanAfterMerge(in)
 
 	a.onFreeze(in.FrozenList())
-	closeAll = false
 	return true, nil
 }
 
-// TODO: merge must have own semphore
-func (a *Aggregator) MergeLoop(ctx context.Context) error {
+func (a *Aggregator) RemoveOverlapsAfterMerge(ctx context.Context) (err error) {
+	a.cleanAfterMerge(nil)
+	return nil
+}
+
+func (a *Aggregator) MergeLoop(ctx context.Context) (err error) {
 	if dbg.NoMerge() || !a.mergingFiles.CompareAndSwap(false, true) {
 		return nil // currently merging or merge is prohibited
 	}
@@ -1292,6 +1286,9 @@ func (ac *AggregatorRoTx) findMergeRange(maxEndTxNum, maxSpan uint64) *RangesV3 
 		restorePrevRange := false
 		for k, dr := range &r.domain {
 			kd := kv.Domain(k)
+			if !slices.Contains(kv.StateDomains, kd) {
+				continue
+			}
 			if kd == kv.CommitmentDomain || cr.values.Equal(&dr.values) {
 				continue
 			}
@@ -1430,10 +1427,18 @@ func (a *Aggregator) cleanAfterMerge(in *MergedFilesV3) {
 	defer a.dirtyFilesLock.Unlock()
 
 	for id, d := range at.d {
-		d.cleanAfterMerge(in.d[id], in.dHist[id], in.dIdx[id])
+		if in == nil {
+			d.cleanAfterMerge(nil, nil, nil)
+		} else {
+			d.cleanAfterMerge(in.d[id], in.dHist[id], in.dIdx[id])
+		}
 	}
 	for id, ii := range at.iis {
-		ii.cleanAfterMerge(in.iis[id])
+		if in == nil {
+			ii.cleanAfterMerge(nil)
+		} else {
+			ii.cleanAfterMerge(in.iis[id])
+		}
 	}
 }
 

@@ -126,6 +126,8 @@ const (
 	CallFromIndex = "CallFromIndex"
 	CallToIndex   = "CallToIndex"
 
+	ReceiptsCache = "ReceiptCache" // block_num_u64 + block_hash + txn_index_u32 -> rlp(receipt)
+
 	TxLookup = "BlockTransactionLookup" // hash -> transaction/receipt lookup metadata
 
 	ConfigTable = "Config" // config prefix for the db
@@ -315,6 +317,9 @@ const (
 
 // Keys
 var (
+	// ExperimentalGetProofsLayout is used to keep track whether we store indecies to facilitate eth_getProof
+	CommitmentLayoutFlagKey = []byte("CommitmentLayoutFlag")
+
 	PruneTypeOlder = []byte("older")
 	PruneHistory   = []byte("pruneHistory")
 	PruneBlocks    = []byte("pruneBlocks")
@@ -332,6 +337,12 @@ var (
 	MinimumPrunableStepDomainKey = []byte("MinimumPrunableStepDomainKey")
 )
 
+// Vals
+var (
+	CommitmentLayoutFlagEnabledVal  = []byte{1}
+	CommitmentLayoutFlagDisabledVal = []byte{2}
+)
+
 // ChaindataTables - list of all buckets. App will panic if some bucket is not in this list.
 // This list will be sorted in `init` method.
 // ChaindataTablesCfg - can be used to find index in sorted version of ChaindataTables list by name
@@ -343,7 +354,7 @@ var ChaindataTables = []string{
 	HeaderNumber,
 	BadHeaderNumber,
 	BlockBody,
-	Receipts,
+	ReceiptsCache,
 	TxLookup,
 	ConfigTable,
 	DatabaseInfo,

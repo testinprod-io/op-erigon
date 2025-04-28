@@ -307,6 +307,8 @@ func (rw *Worker) RunTxTaskNoLock(txTask *state.TxTask, isMining, skipPostEvalua
 				txTask.OptimismDepositNonce = new(uint64)
 				*txTask.OptimismDepositNonce = nonce
 			}
+
+			txTask.CreateReceipt(rw.Tx())
 		}
 
 	}
