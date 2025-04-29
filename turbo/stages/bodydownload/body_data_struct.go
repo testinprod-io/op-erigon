@@ -30,7 +30,7 @@ import (
 )
 
 // BodyHashes is to be used for the mapping between TxHash, UncleHash, and WithdrawalsHash to the block header
-type BodyHashes [3 * length.Hash]byte
+type BodyHashes [2 * length.Hash]byte
 
 const MaxBodiesInRequest = 1024
 
@@ -51,25 +51,26 @@ type BodyTreeItem struct {
 
 // BodyDownload represents the state of body downloading process
 type BodyDownload struct {
-	peerMap          map[[64]byte]int
-	requestedMap     map[BodyHashes]uint64
-	DeliveryNotify   chan struct{}
-	deliveryCh       chan Delivery
-	Engine           consensus.Engine
-	delivered        *roaring64.Bitmap
-	prefetchedBlocks *PrefetchedBlocks
-	deliveriesH      map[uint64]*types.Header
-	requests         map[uint64]*BodyRequest
-	maxProgress      uint64
-	requestedLow     uint64 // Lower bound of block number for outstanding requests
-	deliveredCount   float64
-	wastedCount      float64
-	bodyCache        *btree.BTreeG[BodyTreeItem]
-	bodyCacheSize    int
-	bodyCacheLimit   int // Limit of body Cache size
-	blockBufferSize  int
-	br               services.FullBlockReader
-	logger           log.Logger
+	peerMap            map[[64]byte]int
+	requestedMap       map[BodyHashes]uint64
+	withdrawalsHashMap map[BodyHashes][]byte
+	DeliveryNotify     chan struct{}
+	deliveryCh         chan Delivery
+	Engine             consensus.Engine
+	delivered          *roaring64.Bitmap
+	prefetchedBlocks   *PrefetchedBlocks
+	deliveriesH        map[uint64]*types.Header
+	requests           map[uint64]*BodyRequest
+	maxProgress        uint64
+	requestedLow       uint64 // Lower bound of block number for outstanding requests
+	deliveredCount     float64
+	wastedCount        float64
+	bodyCache          *btree.BTreeG[BodyTreeItem]
+	bodyCacheSize      int
+	bodyCacheLimit     int // Limit of body Cache size
+	blockBufferSize    int
+	br                 services.FullBlockReader
+	logger             log.Logger
 }
 
 // BodyRequest is a sketch of the request for block bodies, meaning that access to the database is required to convert it to the actual BlockBodies request (look up hashes of canonical blocks)
@@ -83,13 +84,14 @@ type BodyRequest struct {
 // NewBodyDownload create a new body download state object
 func NewBodyDownload(engine consensus.Engine, blockBufferSize, bodyCacheLimit int, br services.FullBlockReader, logger log.Logger) *BodyDownload {
 	bd := &BodyDownload{
-		requestedMap:     make(map[BodyHashes]uint64),
-		bodyCacheLimit:   bodyCacheLimit,
-		delivered:        roaring64.New(),
-		deliveriesH:      make(map[uint64]*types.Header),
-		requests:         make(map[uint64]*BodyRequest),
-		peerMap:          make(map[[64]byte]int),
-		prefetchedBlocks: NewPrefetchedBlocks(),
+		requestedMap:       make(map[BodyHashes]uint64),
+		bodyCacheLimit:     bodyCacheLimit,
+		delivered:          roaring64.New(),
+		deliveriesH:        make(map[uint64]*types.Header),
+		requests:           make(map[uint64]*BodyRequest),
+		withdrawalsHashMap: make(map[BodyHashes][]byte),
+		peerMap:            make(map[[64]byte]int),
+		prefetchedBlocks:   NewPrefetchedBlocks(),
 		// DeliveryNotify has capacity 1, and it is also used so that senders never block
 		// This makes this channel a mailbox with no more than one letter in it, meaning
 		// that there is something to collect

@@ -92,7 +92,7 @@ func (e *EngineBlockDownloader) downloadAndLoadBodiesSyncronously(ctx context.Co
 		for loopCount := 0; loopCount == 0 || (req != nil && sentToPeer && loopCount < requestLoopCutOff); loopCount++ {
 			start := time.Now()
 			currentTime := uint64(time.Now().Unix())
-			req, err = e.bd.RequestMoreBodies(tx, e.blockReader, currentTime, e.blockPropagator)
+			req, err = e.bd.RequestMoreBodies(tx, e.blockReader, currentTime, e.blockPropagator, e.config)
 			if err != nil {
 				return false, fmt.Errorf("request more bodies: %w", err)
 			}

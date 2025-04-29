@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/erigontech/erigon-lib/chain"
 	"math/big"
 
 	libcommon "github.com/erigontech/erigon-lib/common"
@@ -49,6 +50,7 @@ func (bd *BodyDownload) UpdateFromDb(db kv.Tx) (err error) {
 	// Resetting for requesting a new range of blocks
 	bd.requestedLow = bodyProgress + 1
 	bd.requestedMap = make(map[BodyHashes]uint64)
+	bd.withdrawalsHashMap = make(map[BodyHashes][]byte)
 	bd.delivered.Clear()
 	bd.deliveredCount = 0
 	bd.wastedCount = 0
@@ -60,7 +62,7 @@ func (bd *BodyDownload) UpdateFromDb(db kv.Tx) (err error) {
 }
 
 // RequestMoreBodies - returns nil if nothing to request
-func (bd *BodyDownload) RequestMoreBodies(tx kv.RwTx, blockReader services.FullBlockReader, currentTime uint64, blockPropagator adapter.BlockPropagator) (*BodyRequest, error) {
+func (bd *BodyDownload) RequestMoreBodies(tx kv.RwTx, blockReader services.FullBlockReader, currentTime uint64, blockPropagator adapter.BlockPropagator, chainCfg *chain.Config) (*BodyRequest, error) {
 	var bodyReq *BodyRequest
 	blockNums := make([]uint64, 0, bd.blockBufferSize)
 	hashes := make([]libcommon.Hash, 0, bd.blockBufferSize)
@@ -131,8 +133,13 @@ func (bd *BodyDownload) RequestMoreBodies(tx kv.RwTx, blockReader services.FullB
 			}
 		}
 		if request {
-			if header.UncleHash == types.EmptyUncleHash && header.TxHash == types.EmptyRootHash &&
-				(header.WithdrawalsHash == nil || *header.WithdrawalsHash == types.EmptyRootHash) {
+			invalidUncleHash := header.UncleHash == types.EmptyUncleHash
+			invalidTxHash := header.TxHash == types.EmptyRootHash
+			emptyWithdrawalsHash := header.WithdrawalsHash != nil && *header.WithdrawalsHash == types.EmptyRootHash
+			skipCheckOnIsthmus := chainCfg != nil && chainCfg.IsOptimismIsthmus(header.Time)
+			if invalidUncleHash &&
+				invalidTxHash &&
+				(header.WithdrawalsHash == nil || (emptyWithdrawalsHash && !skipCheckOnIsthmus)) {
 				// Empty block body
 				body := &types.RawBody{}
 				if header.WithdrawalsHash != nil {
@@ -156,8 +163,9 @@ func (bd *BodyDownload) RequestMoreBodies(tx kv.RwTx, blockReader services.FullB
 			var bodyHashes BodyHashes
 			copy(bodyHashes[:], header.UncleHash.Bytes())
 			copy(bodyHashes[length.Hash:], header.TxHash.Bytes())
-			if header.WithdrawalsHash != nil {
-				copy(bodyHashes[2*length.Hash:], header.WithdrawalsHash.Bytes())
+			if header.WithdrawalsHash != nil && (chainCfg == nil || !chainCfg.IsOptimismIsthmus(header.Time)) {
+				withdrawalsHash := header.WithdrawalsHash.Bytes()
+				bd.withdrawalsHashMap[bodyHashes] = withdrawalsHash
 			}
 			bd.requestedMap[bodyHashes] = blockNum
 			blockNums = append(blockNums, blockNum)
@@ -293,10 +301,6 @@ Loop:
 			copy(bodyHashes[:], uncleHash.Bytes())
 			txHash := types.DeriveSha(RawTransactions(txs[i]))
 			copy(bodyHashes[length.Hash:], txHash.Bytes())
-			if withdrawals[i] != nil {
-				withdrawalsHash := types.DeriveSha(withdrawals[i])
-				copy(bodyHashes[2*length.Hash:], withdrawalsHash.Bytes())
-			}
 
 			// Block numbers are added to the bd.delivered bitmap here, only for blocks for which the body has been received, and their double hashes are present in the bd.requestedMap
 			// Also, block numbers can be added to bd.delivered for empty blocks, above
@@ -305,13 +309,25 @@ Loop:
 				undelivered++
 				continue
 			}
+
+			if withdrawals[i] != nil {
+				if requestedHash, ok := bd.withdrawalsHashMap[bodyHashes]; ok {
+					withdrawalsHash := types.DeriveSha(withdrawals[i])
+					if !bytes.Equal(requestedHash, withdrawalsHash.Bytes()) {
+						undelivered++
+						continue
+					}
+				}
+			}
+
 			//deliveredNums = append(deliveredNums, blockNum)
 			if req, ok := bd.requests[blockNum]; ok {
 				for _, blockNum := range req.BlockNums {
 					toClean[blockNum] = struct{}{}
 				}
 			}
-			delete(bd.requestedMap, bodyHashes) // Delivered, cleaning up
+			delete(bd.requestedMap, bodyHashes)       // Delivered, cleaning up
+			delete(bd.withdrawalsHashMap, bodyHashes) // Delivered, cleaning up
 
 			bd.addBodyToCache(blockNum, &types.RawBody{Transactions: txs[i], Uncles: uncles[i], Withdrawals: withdrawals[i]})
 			bd.delivered.Add(blockNum)
