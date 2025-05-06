@@ -146,6 +146,11 @@ func ExecuteBlockEphemerally(
 	receiptSha := types.DeriveSha(receipts)
 	if !vmConfig.StatelessExec && chainConfig.IsByzantium(header.Number.Uint64()) && !vmConfig.NoReceipts && receiptSha != block.ReceiptHash() {
 		if dbg.LogHashMismatchReason() {
+			for i, tx := range block.Transactions() {
+				logger.Info("transaction details: ", "I", i, "tx.hash", tx.Hash(), "tx.type", tx.Type())
+			}
+			logger.Info("Number of receipts: ", "Receipts", len(receipts))
+			logger.Info("Number of tx: ", "tx", len(block.Transactions()))
 			logReceipts(receipts, includedTxs, chainConfig, header, logger)
 		}
 

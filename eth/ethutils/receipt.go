@@ -45,7 +45,9 @@ func MarshalReceipt(
 			chainId = types.DeriveChainId(&t.V).ToBig()
 		}
 	default:
-		chainId = txn.GetChainID().ToBig()
+		if txn.Type() != types.DepositTxType {
+			chainId = txn.GetChainID().ToBig()
+		}
 	}
 
 	var from common.Address
