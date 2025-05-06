@@ -44,10 +44,10 @@ func MarshalReceipt(
 		if t.Protected() {
 			chainId = types.DeriveChainId(&t.V).ToBig()
 		}
+	case *types.OptimismDepositTx:
+		// Deposit TX does not have chain ID
 	default:
-		if txn.Type() != types.DepositTxType {
-			chainId = txn.GetChainID().ToBig()
-		}
+		chainId = txn.GetChainID().ToBig()
 	}
 
 	var from common.Address
