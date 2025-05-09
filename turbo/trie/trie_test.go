@@ -280,7 +280,7 @@ func TestDeepHash(t *testing.T) {
 			t.Errorf("Expected DeepHash returning true, got false, testcase %d", i)
 		}
 		if hash1 != hash2 {
-			t.Errorf("DeepHash mistmatch: %x, expected %x, testcase %d", hash2, hash1, i)
+			t.Errorf("DeepHash mismatch: %x, expected %x, testcase %d", hash2, hash1, i)
 		}
 	}
 }
