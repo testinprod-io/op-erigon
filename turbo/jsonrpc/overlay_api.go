@@ -20,6 +20,7 @@ import (
 	"github.com/erigontech/erigon-lib/crypto"
 	"github.com/erigontech/erigon-lib/kv"
 	"github.com/erigontech/erigon-lib/kv/bitmapdb"
+	"github.com/erigontech/erigon-lib/opstack"
 	"github.com/erigontech/erigon/consensus"
 	"github.com/erigontech/erigon/core"
 	"github.com/erigontech/erigon/core/state"
@@ -514,7 +515,7 @@ func (api *OverlayAPIImpl) replayBlock(ctx context.Context, blockNum uint64, sta
 		statedb.SetTxContext(txn.Hash(), block.Hash(), idx)
 		txCtx = core.NewEVMTxContext(msg)
 		evm.TxContext = txCtx
-
+		evm.Context.L1CostFunc = opstack.NewL1CostFunc(chainConfig, statedb)
 		// Execute the transaction message
 		res, err := core.ApplyMessage(evm, msg, gp, true /* refunds */, true /* gasBailout */)
 		if err != nil {
