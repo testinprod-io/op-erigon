@@ -516,6 +516,8 @@ func (api *OverlayAPIImpl) replayBlock(ctx context.Context, blockNum uint64, sta
 		txCtx = core.NewEVMTxContext(msg)
 		evm.TxContext = txCtx
 		evm.Context.L1CostFunc = opstack.NewL1CostFunc(chainConfig, statedb)
+		evm.Context.OperatorCostFunc = opstack.NewOperatorCostFunc(chainConfig, statedb)
+		
 		// Execute the transaction message
 		res, err := core.ApplyMessage(evm, msg, gp, true /* refunds */, true /* gasBailout */)
 		if err != nil {
