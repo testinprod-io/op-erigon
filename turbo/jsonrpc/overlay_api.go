@@ -20,6 +20,7 @@ import (
 	"github.com/erigontech/erigon-lib/crypto"
 	"github.com/erigontech/erigon-lib/kv"
 	"github.com/erigontech/erigon-lib/kv/bitmapdb"
+	"github.com/erigontech/erigon-lib/opstack"
 	"github.com/erigontech/erigon/consensus"
 	"github.com/erigontech/erigon/core"
 	"github.com/erigontech/erigon/core/state"
@@ -165,15 +166,17 @@ func (api *OverlayAPIImpl) CallConstructor(ctx context.Context, address common.A
 	}
 
 	blockCtx = evmtypes.BlockContext{
-		CanTransfer: core.CanTransfer,
-		Transfer:    consensus.Transfer,
-		GetHash:     getHash,
-		Coinbase:    parent.Coinbase,
-		BlockNumber: parent.Number.Uint64(),
-		Time:        parent.Time,
-		Difficulty:  new(big.Int).Set(parent.Difficulty),
-		GasLimit:    parent.GasLimit,
-		BaseFee:     &baseFee,
+		CanTransfer:      core.CanTransfer,
+		Transfer:         consensus.Transfer,
+		GetHash:          getHash,
+		Coinbase:         parent.Coinbase,
+		BlockNumber:      parent.Number.Uint64(),
+		Time:             parent.Time,
+		Difficulty:       new(big.Int).Set(parent.Difficulty),
+		GasLimit:         parent.GasLimit,
+		BaseFee:          &baseFee,
+		L1CostFunc:       opstack.NewL1CostFunc(chainConfig, statedb),
+		OperatorCostFunc: opstack.NewOperatorCostFunc(chainConfig, statedb),
 	}
 
 	// Get a new instance of the EVM
@@ -220,7 +223,6 @@ func (api *OverlayAPIImpl) CallConstructor(ctx context.Context, address common.A
 	txCtx = core.NewEVMTxContext(msg)
 	ct := OverlayCreateTracer{contractAddress: address, code: *code, gasCap: api.GasCap}
 	evm = vm.NewEVM(blockCtx, txCtx, evm.IntraBlockState(), chainConfig, vm.Config{Debug: true, Tracer: &ct})
-
 	// Execute the transaction message
 	_, err = core.ApplyMessage(evm, msg, gp, true /* refunds */, true /* gasBailout */)
 	if ct.err != nil {
@@ -514,6 +516,8 @@ func (api *OverlayAPIImpl) replayBlock(ctx context.Context, blockNum uint64, sta
 		statedb.SetTxContext(txn.Hash(), block.Hash(), idx)
 		txCtx = core.NewEVMTxContext(msg)
 		evm.TxContext = txCtx
+		evm.Context.L1CostFunc = opstack.NewL1CostFunc(chainConfig, statedb)
+		evm.Context.OperatorCostFunc = opstack.NewOperatorCostFunc(chainConfig, statedb)
 
 		// Execute the transaction message
 		res, err := core.ApplyMessage(evm, msg, gp, true /* refunds */, true /* gasBailout */)
