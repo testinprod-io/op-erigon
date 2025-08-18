@@ -214,22 +214,37 @@ func (api *OverlayAPIImpl) CallConstructor(ctx context.Context, address common.A
 	}
 
 	contractAddr := crypto.CreateAddress(msg.From(), msg.Nonce())
-	if creationTx.GetTo() == nil && contractAddr == address {
+	isCreateTx := creationTx.GetTo() == nil && contractAddr == address
+	
+	if isCreateTx {
 		// CREATE: adapt message with new code so it's replaced instantly
 		msg = types.NewMessage(msg.From(), msg.To(), msg.Nonce(), msg.Value(), api.GasCap, msg.GasPrice(), msg.FeeCap(), msg.Tip(), *code, msg.AccessList(), msg.CheckNonce(), msg.IsFree(), true, msg.MaxFeePerBlobGas())
 	} else {
 		msg.ChangeGas(api.GasCap, api.GasCap)
 	}
+	
 	txCtx = core.NewEVMTxContext(msg)
 	ct := OverlayCreateTracer{contractAddress: address, code: *code, gasCap: api.GasCap}
 	evm = vm.NewEVM(blockCtx, txCtx, evm.IntraBlockState(), chainConfig, vm.Config{Debug: true, Tracer: &ct})
 	// Execute the transaction message
 	_, err = core.ApplyMessage(evm, msg, gp, true /* refunds */, true /* gasBailout */)
 	if ct.err != nil {
-		return nil, err
+		return nil, ct.err
 	}
 
 	resultCode := &CreationCode{}
+	
+	// For CREATE transactions, get the deployed code directly
+	if isCreateTx {
+		deployedCode := evm.IntraBlockState().GetCode(address)
+		if len(deployedCode) > 0 {
+			c := hexutility.Bytes(deployedCode)
+			resultCode.Code = &c
+			return resultCode, nil
+		}
+	}
+	
+	// For CREATE2 or when tracer captured code
 	if ct.resultCode != nil && len(ct.resultCode) > 0 {
 		c := hexutility.Bytes(ct.resultCode)
 		resultCode.Code = &c
@@ -341,9 +356,15 @@ func (api *OverlayAPIImpl) GetLogs(ctx context.Context, crit filters.FilterCrite
 	}
 
 	hasOverrides := false
+	hasCodeOverrides := false
 	allBlocks := roaring64.New()
-	for overlayAddress := range *stateOverride {
+	for overlayAddress, account := range *stateOverride {
 		hasOverrides = true
+		// Check if this override contains code changes
+		if account.Code != nil {
+			hasCodeOverrides = true
+		}
+		
 		fromB, err := bitmapdb.Get64(tx, kv.CallFromIndex, overlayAddress.Bytes(), begin, end+1)
 		if err != nil {
 			log.Error(err.Error())
@@ -364,7 +385,8 @@ func (api *OverlayAPIImpl) GetLogs(ctx context.Context, crit filters.FilterCrite
 	idx := 0
 blockLoop:
 	for blockNumber := begin; blockNumber <= end; blockNumber++ {
-		if hasOverrides && !allBlocks.Contains(blockNumber) {
+		// Don't skip blocks when code overrides are present, as new code might emit different events
+		if hasOverrides && !hasCodeOverrides && !allBlocks.Contains(blockNumber) {
 			log.Debug("skipping untouched blocked", "blockNumber", blockNumber)
 			continue
 		}
