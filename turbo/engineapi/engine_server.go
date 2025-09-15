@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/erigontech/erigon/consensus/misc"
 	"github.com/erigontech/erigon/eth/ethconfig"
 	"math/big"
 	"sync"
@@ -165,10 +164,9 @@ func (s *EngineServer) newPayload(ctx context.Context, req *engine_types.Executi
 		TxHash:      types.DeriveSha(types.BinaryTransactions(txs)),
 	}
 
-	// Payload must have eip-1559 params in ExtraData after Holocene
-	if s.config.IsHolocene(req.Timestamp.Uint64()) {
-		if err := misc.ValidateHoloceneExtraData(req.ExtraData); err != nil {
-			return nil, &rpc.InvalidParamsError{Message: "holocene payloads must have eip-1559 params, got none"}
+	if s.config.IsOptimism() {
+		if err := checkOptimismPayload(req, s.config); err != nil {
+			return nil, &rpc.InvalidParamsError{Message: err.Error()}
 		}
 	}
 
@@ -596,16 +594,12 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 	}
 
 	if s.config.Optimism != nil {
-		if payloadAttributes.GasLimit == nil {
+		if err := checkOptimismPayloadAttributes(payloadAttributes, s.config); err != nil {
 			return nil, &engine_helpers.InvalidPayloadAttributesErr
 		}
+
 		if s.config.IsHolocene(payloadAttributes.Timestamp.Uint64()) {
-			if err := misc.ValidateHolocene1559Params(payloadAttributes.EIP1559Params); err != nil {
-				return nil, err
-			}
 			req.Eip_1559Params = bytes.Clone(payloadAttributes.EIP1559Params)
-		} else if len(payloadAttributes.EIP1559Params) != 0 {
-			return nil, &engine_helpers.InvalidPayloadAttributesErr
 		}
 	}
 

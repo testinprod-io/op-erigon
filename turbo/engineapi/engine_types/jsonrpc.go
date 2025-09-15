@@ -222,7 +222,9 @@ func ConvertPayloadFromRpc(payload *types2.ExecutionPayload) *ExecutionPayload {
 	}
 	if payload.WithdrawlsRoot != nil {
 		root := common.Hash(gointerfaces.ConvertH256ToHash(payload.WithdrawlsRoot))
-		res.WithdrawalsRoot = &root
+		if root != types.EmptyRootHash {
+			res.WithdrawalsRoot = &root
+		}
 	}
 	return res
 }
