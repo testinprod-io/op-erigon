@@ -22,7 +22,7 @@ package core
 import (
 	"errors"
 
-	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon-lib/types"
 )
 
 var (
@@ -113,4 +113,8 @@ var (
 
 	// ErrSystemTxNotSupported is returned for any deposit tx with IsSystemTx=true after the Regolith fork
 	ErrSystemTxNotSupported = errors.New("system tx not supported")
+
+	// ErrGasLimitTooHigh is returned if the gas limit of a transaction exceeds MaxTxnGasLimit.
+	// See EIP-7825: Transaction Gas Limit Cap.
+	ErrGasLimitTooHigh = errors.New("gas limit too high")
 )

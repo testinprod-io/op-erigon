@@ -30,18 +30,18 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/erigontech/erigon-lib/log/v3"
-
 	ethereum "github.com/erigontech/erigon"
 	"github.com/erigontech/erigon-lib/chain"
-	libcommon "github.com/erigontech/erigon-lib/common"
-	"github.com/erigontech/erigon/accounts/abi/bind"
+	"github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/erigontech/erigon/cmd/devnet/accounts"
 	"github.com/erigontech/erigon/cmd/devnet/blocks"
 	"github.com/erigontech/erigon/cmd/devnet/contracts"
 	"github.com/erigontech/erigon/cmd/devnet/devnet"
+	"github.com/erigontech/erigon/execution/abi/bind"
 	"github.com/erigontech/erigon/polygon/bor/borcfg"
-	"github.com/erigontech/erigon/polygon/bor/valset"
+
+	"github.com/erigontech/erigon/polygon/bridge"
 	"github.com/erigontech/erigon/polygon/heimdall"
 )
 
@@ -60,7 +60,7 @@ var BridgeEvents = struct {
 }
 
 type syncRecordKey struct {
-	hash  libcommon.Hash
+	hash  common.Hash
 	index uint64
 }
 
@@ -90,7 +90,7 @@ type Heimdall struct {
 	chainConfig        *chain.Config
 	borConfig          *borcfg.BorConfig
 	listenAddr         string
-	validatorSet       *valset.ValidatorSet
+	validatorSet       *heimdall.ValidatorSet
 	pendingCheckpoint  *heimdall.Checkpoint
 	latestCheckpoint   *CheckpointAck
 	ackWaiter          *sync.Cond
@@ -98,9 +98,9 @@ type Heimdall struct {
 	spans              map[heimdall.SpanId]*heimdall.Span
 	logger             log.Logger
 	cancelFunc         context.CancelFunc
-	syncSenderAddress  libcommon.Address
+	syncSenderAddress  common.Address
 	syncSenderBinding  *contracts.TestStateSender
-	rootChainAddress   libcommon.Address
+	rootChainAddress   common.Address
 	rootChainBinding   *contracts.TestRootChain
 	syncSubscription   ethereum.Subscription
 	rootHeaderBlockSub ethereum.Subscription
@@ -187,7 +187,7 @@ func (h *Heimdall) FetchSpan(ctx context.Context, spanID uint64) (*heimdall.Span
 
 	// TODO we should use a subset here - see: https://wiki.polygon.technology/docs/pos/bor/
 
-	nextSpan.SelectedProducers = make([]valset.Validator, len(h.validatorSet.Validators))
+	nextSpan.SelectedProducers = make([]heimdall.Validator, len(h.validatorSet.Validators))
 
 	for i, v := range h.validatorSet.Validators {
 		nextSpan.SelectedProducers[i] = *v
@@ -261,11 +261,7 @@ func (h *Heimdall) FetchMilestoneID(ctx context.Context, milestoneID string) err
 	return errors.New("TODO")
 }
 
-func (h *Heimdall) FetchStateSyncEvents(ctx context.Context, fromID uint64, to time.Time, limit int) ([]*heimdall.EventRecordWithTime, error) {
-	return nil, errors.New("TODO")
-}
-
-func (h *Heimdall) FetchStateSyncEvent(ctx context.Context, id uint64) (*heimdall.EventRecordWithTime, error) {
+func (h *Heimdall) FetchStateSyncEvents(ctx context.Context, fromID uint64, to time.Time, limit int) ([]*bridge.EventRecordWithTime, error) {
 	return nil, errors.New("TODO")
 }
 
@@ -296,7 +292,7 @@ func (h *Heimdall) unsubscribe() {
 	}
 }
 
-func (h *Heimdall) StateSenderAddress() libcommon.Address {
+func (h *Heimdall) StateSenderAddress() common.Address {
 	return h.syncSenderAddress
 }
 
@@ -304,7 +300,7 @@ func (f *Heimdall) StateSenderContract() *contracts.TestStateSender {
 	return f.syncSenderBinding
 }
 
-func (h *Heimdall) RootChainAddress() libcommon.Address {
+func (h *Heimdall) RootChainAddress() common.Address {
 	return h.rootChainAddress
 }
 
@@ -389,10 +385,10 @@ func (h *Heimdall) NodeStarted(ctx context.Context, node devnet.Node) {
 	}
 }
 
-func (h *Heimdall) addValidator(validatorAddress libcommon.Address, votingPower int64, proposerPriority int64) {
+func (h *Heimdall) addValidator(validatorAddress common.Address, votingPower int64, proposerPriority int64) {
 
 	if h.validatorSet == nil {
-		h.validatorSet = valset.NewValidatorSet([]*valset.Validator{
+		h.validatorSet = heimdall.NewValidatorSet([]*heimdall.Validator{
 			{
 				ID:               1,
 				Address:          validatorAddress,
@@ -401,7 +397,7 @@ func (h *Heimdall) addValidator(validatorAddress libcommon.Address, votingPower 
 			},
 		})
 	} else {
-		h.validatorSet.UpdateWithChangeSet([]*valset.Validator{
+		h.validatorSet.UpdateWithChangeSet([]*heimdall.Validator{
 			{
 				ID:               uint64(len(h.validatorSet.Validators) + 1),
 				Address:          validatorAddress,
@@ -424,11 +420,11 @@ func (h *Heimdall) Start(ctx context.Context) error {
 	// if this is a restart
 	h.unsubscribe()
 
-	server := &http.Server{Addr: h.listenAddr, Handler: makeHeimdallRouter(ctx, h)}
+	server := &http.Server{Addr: h.listenAddr, Handler: makeHeimdallRouter(ctx, h, h)}
 	return startHTTPServer(ctx, server, "devnet Heimdall service", h.logger)
 }
 
-func makeHeimdallRouter(ctx context.Context, client heimdall.Client) *chi.Mux {
+func makeHeimdallRouter(ctx context.Context, heimdallClient heimdall.Client, bridgeClient bridge.Client) *chi.Mux {
 	router := chi.NewRouter()
 
 	writeResponse := func(w http.ResponseWriter, result any, err error) {
@@ -474,7 +470,7 @@ func makeHeimdallRouter(ctx context.Context, client heimdall.Client) *chi.Mux {
 			return
 		}
 
-		result, err := client.FetchStateSyncEvents(ctx, fromId, time.Unix(toTime, 0), 0)
+		result, err := bridgeClient.FetchStateSyncEvents(ctx, fromId, time.Unix(toTime, 0), 0)
 		writeResponse(w, result, err)
 	})
 
@@ -485,7 +481,7 @@ func makeHeimdallRouter(ctx context.Context, client heimdall.Client) *chi.Mux {
 			http.Error(w, http.StatusText(400), 400)
 			return
 		}
-		result, err := client.FetchSpan(ctx, id)
+		result, err := heimdallClient.FetchSpan(ctx, id)
 		writeResponse(w, result, err)
 	})
 
@@ -496,17 +492,17 @@ func makeHeimdallRouter(ctx context.Context, client heimdall.Client) *chi.Mux {
 			http.Error(w, http.StatusText(400), 400)
 			return
 		}
-		result, err := client.FetchCheckpoint(ctx, number)
+		result, err := heimdallClient.FetchCheckpoint(ctx, number)
 		writeResponse(w, result, err)
 	})
 
 	router.Get("/checkpoints/latest", func(w http.ResponseWriter, r *http.Request) {
-		result, err := client.FetchCheckpoint(ctx, -1)
+		result, err := heimdallClient.FetchCheckpoint(ctx, -1)
 		writeResponse(w, result, err)
 	})
 
 	router.Get("/checkpoints/count", func(w http.ResponseWriter, r *http.Request) {
-		result, err := client.FetchCheckpointCount(ctx)
+		result, err := heimdallClient.FetchCheckpointCount(ctx)
 		writeResponse(w, wrapResult(result), err)
 	})
 
@@ -525,7 +521,7 @@ func makeHeimdallRouter(ctx context.Context, client heimdall.Client) *chi.Mux {
 			return
 		}
 
-		result, err := client.FetchCheckpoints(ctx, page, limit)
+		result, err := heimdallClient.FetchCheckpoints(ctx, page, limit)
 		writeResponse(w, wrapResult(result), err)
 	})
 
@@ -536,35 +532,35 @@ func makeHeimdallRouter(ctx context.Context, client heimdall.Client) *chi.Mux {
 			http.Error(w, http.StatusText(400), 400)
 			return
 		}
-		result, err := client.FetchMilestone(ctx, number)
+		result, err := heimdallClient.FetchMilestone(ctx, number)
 		writeResponse(w, result, err)
 	})
 
 	router.Get("/milestone/latest", func(w http.ResponseWriter, r *http.Request) {
-		result, err := client.FetchMilestone(ctx, -1)
+		result, err := heimdallClient.FetchMilestone(ctx, -1)
 		writeResponse(w, result, err)
 	})
 
 	router.Get("/milestone/count", func(w http.ResponseWriter, r *http.Request) {
-		result, err := client.FetchMilestoneCount(ctx)
+		result, err := heimdallClient.FetchMilestoneCount(ctx)
 		writeResponse(w, heimdall.MilestoneCount{Count: result}, err)
 	})
 
 	router.Get("/milestone/noAck/{id}", func(w http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
-		err := client.FetchNoAckMilestone(ctx, id)
+		err := heimdallClient.FetchNoAckMilestone(ctx, id)
 		result := err == nil
 		writeResponse(w, wrapResult(result), err)
 	})
 
 	router.Get("/milestone/lastNoAck", func(w http.ResponseWriter, r *http.Request) {
-		result, err := client.FetchLastNoAckMilestone(ctx)
+		result, err := heimdallClient.FetchLastNoAckMilestone(ctx)
 		writeResponse(w, wrapResult(result), err)
 	})
 
 	router.Get("/milestone/ID/{id}", func(w http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
-		err := client.FetchMilestoneID(ctx, id)
+		err := heimdallClient.FetchMilestoneID(ctx, id)
 		result := err == nil
 		writeResponse(w, wrapResult(result), err)
 	})
@@ -631,7 +627,7 @@ func (h *Heimdall) AwaitCheckpoint(ctx context.Context, blockNumber *big.Int) er
 	return nil
 }
 
-func (h *Heimdall) isOldTx(txHash libcommon.Hash, logIndex uint64, eventType BridgeEvent, event interface{}) (bool, error) {
+func (h *Heimdall) isOldTx(txHash common.Hash, logIndex uint64, eventType BridgeEvent, event interface{}) (bool, error) {
 
 	// define the endpoint based on the type of event
 	var status bool

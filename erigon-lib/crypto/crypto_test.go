@@ -24,6 +24,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"errors"
+	"github.com/erigontech/erigon-lib/common/dir"
 	"os"
 	"reflect"
 	"testing"
@@ -33,7 +34,6 @@ import (
 
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/hexutil"
-	"github.com/erigontech/erigon-lib/common/hexutility"
 	"github.com/erigontech/erigon-lib/common/u256"
 )
 
@@ -264,7 +264,7 @@ func TestSaveECDSA(t *testing.T) {
 	}
 	file := f.Name()
 	f.Close()
-	defer os.Remove(file)
+	defer dir.RemoveFile(file)
 
 	key, _ := HexToECDSA(testPrivHex)
 	if e := SaveECDSA(file, key); e != nil {
@@ -349,7 +349,7 @@ func TestPythonIntegration(t *testing.T) {
 	msg0 := Keccak256([]byte("foo"))
 	sig0, _ := Sign(msg0, k0)
 
-	msg1 := hexutility.FromHex("00000000000000000000000000000000")
+	msg1 := hexutil.FromHex("00000000000000000000000000000000")
 	sig1, _ := Sign(msg0, k0)
 
 	t.Logf("msg: %x, privkey: %s sig: %x\n", msg0, kh, sig0)

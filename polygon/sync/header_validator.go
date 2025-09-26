@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/erigontech/erigon-lib/chain"
-	"github.com/erigontech/erigon/core/types"
+	"github.com/erigontech/erigon-lib/types"
 	"github.com/erigontech/erigon/polygon/bor"
 	"github.com/erigontech/erigon/polygon/bor/borcfg"
 )
@@ -59,4 +59,8 @@ func (hv *HeaderValidator) ValidateHeader(
 	}
 
 	return nil
+}
+
+func (hv *HeaderValidator) UpdateLatestVerifiedHeader(header *types.Header) {
+	hv.headerTimeValidator.UpdateLatestVerifiedHeader(header)
 }

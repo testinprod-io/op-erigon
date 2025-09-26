@@ -12,7 +12,6 @@ package heimdall
 import (
 	context "context"
 	reflect "reflect"
-	time "time"
 
 	gomock "go.uber.org/mock/gomock"
 )
@@ -543,80 +542,41 @@ func (c *MockClientFetchSpansCall) DoAndReturn(f func(context.Context, uint64, u
 	return c
 }
 
-// FetchStateSyncEvent mocks base method.
-func (m *MockClient) FetchStateSyncEvent(ctx context.Context, id uint64) (*EventRecordWithTime, error) {
+// FetchStatus mocks base method.
+func (m *MockClient) FetchStatus(ctx context.Context) (*Status, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FetchStateSyncEvent", ctx, id)
-	ret0, _ := ret[0].(*EventRecordWithTime)
+	ret := m.ctrl.Call(m, "FetchStatus", ctx)
+	ret0, _ := ret[0].(*Status)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// FetchStateSyncEvent indicates an expected call of FetchStateSyncEvent.
-func (mr *MockClientMockRecorder) FetchStateSyncEvent(ctx, id any) *MockClientFetchStateSyncEventCall {
+// FetchStatus indicates an expected call of FetchStatus.
+func (mr *MockClientMockRecorder) FetchStatus(ctx any) *MockClientFetchStatusCall {
 	mr.mock.ctrl.T.Helper()
-	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchStateSyncEvent", reflect.TypeOf((*MockClient)(nil).FetchStateSyncEvent), ctx, id)
-	return &MockClientFetchStateSyncEventCall{Call: call}
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchStatus", reflect.TypeOf((*MockClient)(nil).FetchStatus), ctx)
+	return &MockClientFetchStatusCall{Call: call}
 }
 
-// MockClientFetchStateSyncEventCall wrap *gomock.Call
-type MockClientFetchStateSyncEventCall struct {
+// MockClientFetchStatusCall wrap *gomock.Call
+type MockClientFetchStatusCall struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *MockClientFetchStateSyncEventCall) Return(arg0 *EventRecordWithTime, arg1 error) *MockClientFetchStateSyncEventCall {
+func (c *MockClientFetchStatusCall) Return(arg0 *Status, arg1 error) *MockClientFetchStatusCall {
 	c.Call = c.Call.Return(arg0, arg1)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *MockClientFetchStateSyncEventCall) Do(f func(context.Context, uint64) (*EventRecordWithTime, error)) *MockClientFetchStateSyncEventCall {
+func (c *MockClientFetchStatusCall) Do(f func(context.Context) (*Status, error)) *MockClientFetchStatusCall {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *MockClientFetchStateSyncEventCall) DoAndReturn(f func(context.Context, uint64) (*EventRecordWithTime, error)) *MockClientFetchStateSyncEventCall {
-	c.Call = c.Call.DoAndReturn(f)
-	return c
-}
-
-// FetchStateSyncEvents mocks base method.
-func (m *MockClient) FetchStateSyncEvents(ctx context.Context, fromId uint64, to time.Time, limit int) ([]*EventRecordWithTime, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FetchStateSyncEvents", ctx, fromId, to, limit)
-	ret0, _ := ret[0].([]*EventRecordWithTime)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// FetchStateSyncEvents indicates an expected call of FetchStateSyncEvents.
-func (mr *MockClientMockRecorder) FetchStateSyncEvents(ctx, fromId, to, limit any) *MockClientFetchStateSyncEventsCall {
-	mr.mock.ctrl.T.Helper()
-	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchStateSyncEvents", reflect.TypeOf((*MockClient)(nil).FetchStateSyncEvents), ctx, fromId, to, limit)
-	return &MockClientFetchStateSyncEventsCall{Call: call}
-}
-
-// MockClientFetchStateSyncEventsCall wrap *gomock.Call
-type MockClientFetchStateSyncEventsCall struct {
-	*gomock.Call
-}
-
-// Return rewrite *gomock.Call.Return
-func (c *MockClientFetchStateSyncEventsCall) Return(arg0 []*EventRecordWithTime, arg1 error) *MockClientFetchStateSyncEventsCall {
-	c.Call = c.Call.Return(arg0, arg1)
-	return c
-}
-
-// Do rewrite *gomock.Call.Do
-func (c *MockClientFetchStateSyncEventsCall) Do(f func(context.Context, uint64, time.Time, int) ([]*EventRecordWithTime, error)) *MockClientFetchStateSyncEventsCall {
-	c.Call = c.Call.Do(f)
-	return c
-}
-
-// DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *MockClientFetchStateSyncEventsCall) DoAndReturn(f func(context.Context, uint64, time.Time, int) ([]*EventRecordWithTime, error)) *MockClientFetchStateSyncEventsCall {
+func (c *MockClientFetchStatusCall) DoAndReturn(f func(context.Context) (*Status, error)) *MockClientFetchStatusCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }

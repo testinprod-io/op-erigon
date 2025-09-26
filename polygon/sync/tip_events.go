@@ -26,8 +26,8 @@ import (
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/event"
 	"github.com/erigontech/erigon-lib/log/v3"
-	"github.com/erigontech/erigon/core/types"
-	"github.com/erigontech/erigon/eth/protocols/eth"
+	"github.com/erigontech/erigon-lib/types"
+	"github.com/erigontech/erigon/p2p/protocols/eth"
 	"github.com/erigontech/erigon/polygon/heimdall"
 	"github.com/erigontech/erigon/polygon/p2p"
 )
@@ -35,6 +35,7 @@ import (
 type EventType string
 
 const EventTypeNewBlock EventType = "new-block"
+const EventTypeNewBlockBatch EventType = "new-block-batch"
 const EventTypeNewBlockHashes EventType = "new-block-hashes"
 const EventTypeNewMilestone EventType = "new-milestone"
 
@@ -42,6 +43,7 @@ type EventSource string
 
 const EventSourceP2PNewBlockHashes EventSource = "p2p-new-block-hashes-source"
 const EventSourceP2PNewBlock EventSource = "p2p-new-block-source"
+const EventSourceBlockProducer EventSource = "mined-block-producer"
 
 type EventTopic string
 
@@ -58,6 +60,12 @@ type EventNewBlock struct {
 	Source   EventSource
 }
 
+type EventNewBlockBatch struct { // new batch of blocks from peer
+	NewBlocks []*types.Block
+	PeerId    *p2p.PeerId
+	Source    EventSource
+}
+
 type EventNewBlockHashes struct {
 	NewBlockHashes eth.NewBlockHashesPacket
 	PeerId         *p2p.PeerId
@@ -69,6 +77,7 @@ type Event struct {
 	Type EventType
 
 	newBlock       EventNewBlock
+	newBlockBatch  EventNewBlockBatch
 	newBlockHashes EventNewBlockHashes
 	newMilestone   EventNewMilestone
 }
@@ -77,7 +86,7 @@ func (e Event) Topic() EventTopic {
 	switch e.Type {
 	case EventTypeNewMilestone:
 		return EventTopicHeimdall
-	case EventTypeNewBlock, EventTypeNewBlockHashes:
+	case EventTypeNewBlock, EventTypeNewBlockBatch, EventTypeNewBlockHashes:
 		return EventTopicP2P
 	default:
 		panic(fmt.Sprintf("unknown event type: %s", e.Type))
@@ -89,6 +98,13 @@ func (e Event) AsNewBlock() EventNewBlock {
 		panic("Event type mismatch")
 	}
 	return e.newBlock
+}
+
+func (e Event) AsNewBlockBatch() EventNewBlockBatch {
+	if e.Type != EventTypeNewBlockBatch {
+		panic("Event type mismatch")
+	}
+	return e.newBlockBatch
 }
 
 func (e Event) AsNewBlockHashes() EventNewBlockHashes {
@@ -114,25 +130,31 @@ type heimdallObserverRegistrar interface {
 	RegisterMilestoneObserver(callback func(*heimdall.Milestone), opts ...heimdall.ObserverOption) event.UnregisterFunc
 }
 
-func NewTipEvents(logger log.Logger, p2pReg p2pObserverRegistrar, heimdallReg heimdallObserverRegistrar) *TipEvents {
+type MinedBlockObserverRegistrar interface {
+	RegisterMinedBlockObserver(callback func(*types.Block)) event.UnregisterFunc
+}
+
+func NewTipEvents(logger log.Logger, p2pReg p2pObserverRegistrar, heimdallReg heimdallObserverRegistrar, minedBlockReg MinedBlockObserverRegistrar) *TipEvents {
 	heimdallEventsChannel := NewEventChannel[Event](10, WithEventChannelLogging(logger, log.LvlTrace, EventTopicHeimdall.String()))
 	p2pEventsChannel := NewEventChannel[Event](1000, WithEventChannelLogging(logger, log.LvlTrace, EventTopicP2P.String()))
 	compositeEventsChannel := NewTipEventsCompositeChannel(heimdallEventsChannel, p2pEventsChannel)
 	return &TipEvents{
-		logger:                    logger,
-		events:                    compositeEventsChannel,
-		p2pObserverRegistrar:      p2pReg,
-		heimdallObserverRegistrar: heimdallReg,
-		blockEventsSpamGuard:      newBlockEventsSpamGuard(logger),
+		logger:                      logger,
+		events:                      compositeEventsChannel,
+		p2pObserverRegistrar:        p2pReg,
+		heimdallObserverRegistrar:   heimdallReg,
+		minedBlockObserverRegistrar: minedBlockReg,
+		blockEventsSpamGuard:        newBlockEventsSpamGuard(logger),
 	}
 }
 
 type TipEvents struct {
-	logger                    log.Logger
-	events                    *TipEventsCompositeChannel
-	p2pObserverRegistrar      p2pObserverRegistrar
-	heimdallObserverRegistrar heimdallObserverRegistrar
-	blockEventsSpamGuard      blockEventsSpamGuard
+	logger                      log.Logger
+	events                      *TipEventsCompositeChannel
+	p2pObserverRegistrar        p2pObserverRegistrar
+	heimdallObserverRegistrar   heimdallObserverRegistrar
+	minedBlockObserverRegistrar MinedBlockObserverRegistrar
+	blockEventsSpamGuard        blockEventsSpamGuard
 }
 
 func (te *TipEvents) Events() <-chan Event {
@@ -141,6 +163,23 @@ func (te *TipEvents) Events() <-chan Event {
 
 func (te *TipEvents) Run(ctx context.Context) error {
 	te.logger.Info(syncLogPrefix("running tip events component"))
+
+	newMinedBlockObserverCancel := te.minedBlockObserverRegistrar.RegisterMinedBlockObserver(func(msg *types.Block) {
+		te.logger.Trace(
+			"[tip-events] mined block event received from block producer",
+			"hash", msg.Hash(),
+			"number", msg.NumberU64(),
+		)
+
+		te.events.PushEvent(Event{
+			Type: EventTypeNewBlock,
+			newBlock: EventNewBlock{
+				NewBlock: msg,
+				Source:   EventSourceBlockProducer,
+			},
+		})
+	})
+	defer newMinedBlockObserverCancel()
 
 	newBlockObserverCancel := te.p2pObserverRegistrar.RegisterNewBlockObserver(func(message *p2p.DecodedInboundMessage[*eth.NewBlockPacket]) {
 		block := message.Decoded.Block

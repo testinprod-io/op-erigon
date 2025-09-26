@@ -11,13 +11,13 @@ import (
 
 	"github.com/c2h5oh/datasize"
 
+	"github.com/erigontech/erigon-db/downloader/downloadercfg"
 	"github.com/erigontech/erigon-lib/common/datadir"
 	"github.com/erigontech/erigon-lib/crypto"
 	"github.com/erigontech/erigon-lib/direct"
-	"github.com/erigontech/erigon-lib/downloader/downloadercfg"
 	"github.com/erigontech/erigon-lib/log/v3"
+	"github.com/erigontech/erigon-lib/types"
 	"github.com/erigontech/erigon/cmd/utils"
-	"github.com/erigontech/erigon/core/types"
 	"github.com/erigontech/erigon/eth"
 	"github.com/erigontech/erigon/eth/ethconfig"
 	"github.com/erigontech/erigon/node"
@@ -77,21 +77,28 @@ func NewNodeConfig() *nodecfg.Config {
 }
 
 // InitNode initializes a node with the given genesis file and config
-func InitMiner(ctx context.Context, dirName string, genesis *types.Genesis, privKey *ecdsa.PrivateKey, withoutHeimdall bool, minerID int) (*node.Node, *eth.Ethereum, error) {
+func InitMiner(
+	ctx context.Context,
+	logger log.Logger,
+	dirName string,
+	genesis *types.Genesis,
+	privKey *ecdsa.PrivateKey,
+	withoutHeimdall bool,
+) (_ *node.Node, _ *eth.Ethereum, err error) {
 	// Define the basic configurations for the Ethereum node
-
-	logger := log.New()
 
 	nodeCfg := &nodecfg.Config{
 		Name:    "erigon",
 		Version: params.Version,
 		Dirs:    datadir.New(dirName),
 		P2P: p2p.Config{
-			ListenAddr:      ":30303",
-			ProtocolVersion: []uint{direct.ETH68, direct.ETH67},
-			MaxPeers:        100,
-			MaxPendingPeers: 1000,
-			AllowedPorts:    []uint{30303, 30304, 30305, 30306, 30307, 30308, 30309, 30310},
+			ListenAddr:      ":0",
+			ProtocolVersion: []uint{direct.ETH68},
+			AllowedPorts:    []uint{0},
+			NoDiscovery:     true,
+			NoDial:          true,
+			MaxPeers:        1,
+			MaxPendingPeers: 1,
 			PrivateKey:      privKey,
 			NAT:             nat.Any(),
 		},
@@ -108,22 +115,36 @@ func InitMiner(ctx context.Context, dirName string, genesis *types.Genesis, priv
 		return nil, nil, err
 	}
 
-	downloadRate, err := datasize.ParseString("16mb")
+	downloadRate, err := utils.GetStringFlagRateLimit("16mb")
+	if err != nil {
+		return
+	}
+
+	uploadRate, err := utils.GetStringFlagRateLimit("4mb")
+	if err != nil {
+		return
+	}
+
+	torrentLogLevel, err := downloadercfg.Int2LogLevel(3)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	uploadRate, err := datasize.ParseString("4mb")
-	if err != nil {
-		return nil, nil, err
-	}
-
-	torrentLogLevel, _, err := downloadercfg.Int2LogLevel(3)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	downloaderConfig, err := downloadercfg.New(ctx, datadir.New(dirName), nodeCfg.Version, torrentLogLevel, downloadRate, uploadRate, utils.TorrentPortFlag.Value, utils.TorrentConnsPerFileFlag.Value, utils.TorrentDownloadSlotsFlag.Value, []string{}, []string{}, "", true, utils.DbWriteMapFlag.Value)
+	downloaderConfig, err := downloadercfg.New(
+		ctx,
+		datadir.New(dirName),
+		nodeCfg.Version,
+		torrentLogLevel,
+		0,
+		utils.TorrentConnsPerFileFlag.Value,
+		[]string{},
+		"",
+		utils.DbWriteMapFlag.Value,
+		downloadercfg.NewCfgOpts{
+			DownloadRateLimit: downloadRate.TorrentRateLimit(),
+			UploadRateLimit:   uploadRate.TorrentRateLimit(),
+		},
+	)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -136,9 +157,9 @@ func InitMiner(ctx context.Context, dirName string, genesis *types.Genesis, priv
 		GPO:       ethconfig.Defaults.GPO,
 		Miner: params.MiningConfig{
 			Etherbase:  crypto.PubkeyToAddress(privKey.PublicKey),
-			GasLimit:   genesis.GasLimit,
+			GasLimit:   &genesis.GasLimit,
 			GasPrice:   big.NewInt(1),
-			Recommit:   125 * time.Second,
+			Recommit:   ethconfig.Defaults.Miner.Recommit,
 			SigKey:     privKey,
 			Enabled:    true,
 			EnabledPOS: true,
@@ -154,11 +175,11 @@ func InitMiner(ctx context.Context, dirName string, genesis *types.Genesis, priv
 	}
 	ethCfg.TxPool.DBDir = nodeCfg.Dirs.TxPool
 	ethCfg.TxPool.CommitEvery = 15 * time.Second
-	ethCfg.Downloader.ClientConfig.ListenPort = utils.TorrentPortFlag.Value + minerID
+	ethCfg.Downloader.ClientConfig.ListenPort = 0
 	ethCfg.TxPool.AccountSlots = 1000000
 	ethCfg.TxPool.PendingSubPoolLimit = 1000000
 
-	ethBackend, err := eth.New(ctx, stack, ethCfg, logger)
+	ethBackend, err := eth.New(ctx, stack, ethCfg, logger, nil)
 	if err != nil {
 		return nil, nil, err
 	}

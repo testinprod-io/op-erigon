@@ -43,6 +43,8 @@ var (
 	transactionTestDir = filepath.Join(baseDir, "TransactionTests")
 	rlpTestDir         = filepath.Join(baseDir, "RLPTests")
 	difficultyTestDir  = filepath.Join(baseDir, "DifficultyTests")
+
+	cornersDir = filepath.Join(".", "test-corners")
 )
 
 func readJSON(reader io.Reader, value interface{}) error {
@@ -99,7 +101,7 @@ type testMatcher struct {
 
 type testConfig struct {
 	p      *regexp.Regexp
-	config chain.Config
+	config *chain.Config
 }
 
 type testFailure struct {
@@ -130,7 +132,7 @@ func (tm *testMatcher) whitelist(pattern string) {
 }
 
 // config defines chain config for tests matching the pattern.
-func (tm *testMatcher) config(pattern string, cfg chain.Config) {
+func (tm *testMatcher) config(pattern string, cfg *chain.Config) {
 	tm.configpat = append(tm.configpat, testConfig{regexp.MustCompile(pattern), cfg})
 }
 
@@ -153,17 +155,6 @@ func (tm *testMatcher) findSkip(name string) (reason string, skipload bool) {
 		}
 	}
 	return "", false
-}
-
-// findConfig returns the chain config matching defined patterns.
-func (tm *testMatcher) findConfig(name string) *chain.Config {
-	// TODO(fjl): name can be derived from testing.T when min Go version is 1.8
-	for _, m := range tm.configpat {
-		if m.p.MatchString(name) {
-			return &m.config
-		}
-	}
-	return new(chain.Config)
 }
 
 func (tm *testMatcher) checkFailure(t *testing.T, err error) error {
@@ -202,6 +193,12 @@ func (tm *testMatcher) walk(t *testing.T, dir string, runTest interface{}) {
 		t.Skip("missing test files")
 	}
 	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			if os.IsNotExist(err) { //skip magically disappeared files
+				return nil
+			}
+			return err
+		}
 		name := filepath.ToSlash(strings.TrimPrefix(path, dir+string(filepath.Separator)))
 		if info.IsDir() {
 			if _, skipload := tm.findSkip(name + "/"); skipload {

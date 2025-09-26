@@ -4,20 +4,20 @@ import (
 	"cmp"
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"time"
 
+	coresnaptype "github.com/erigontech/erigon-db/snaptype"
 	"github.com/erigontech/erigon-lib/chain"
 	"github.com/erigontech/erigon-lib/chain/snapcfg"
 	"github.com/erigontech/erigon-lib/common/background"
-	"github.com/erigontech/erigon-lib/downloader/snaptype"
+	"github.com/erigontech/erigon-lib/common/dir"
 	"github.com/erigontech/erigon-lib/kv"
 	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/erigontech/erigon-lib/seg"
-	coresnaptype "github.com/erigontech/erigon/core/snaptype"
+	"github.com/erigontech/erigon-lib/snaptype"
 )
 
 type Merger struct {
@@ -36,7 +36,7 @@ func NewMerger(tmpDir string, compressWorkers int, lvl log.Lvl, chainDB kv.RoDB,
 func (m *Merger) DisableFsync() { m.noFsync = true }
 
 func (m *Merger) FindMergeRanges(currentRanges []Range, maxBlockNum uint64) (toMerge []Range) {
-	cfg := snapcfg.KnownCfg(m.chainConfig.ChainName)
+	cfg, _ := snapcfg.KnownCfg(m.chainConfig.ChainName)
 	for i := len(currentRanges) - 1; i > 0; i-- {
 		r := currentRanges[i]
 		mergeLimit := cfg.MergeLimit(snaptype.Unknown, r.From())
@@ -52,7 +52,7 @@ func (m *Merger) FindMergeRanges(currentRanges []Range, maxBlockNum uint64) (toM
 			}
 			aggFrom := r.To() - span
 			toMerge = append(toMerge, NewRange(aggFrom, r.To()))
-			for currentRanges[i].From() > aggFrom {
+			for i >= 0 && currentRanges[i].From() > aggFrom {
 				i--
 			}
 			break
@@ -94,14 +94,16 @@ func (m *Merger) mergeSubSegment(ctx context.Context, v *View, sn snaptype.FileI
 		}
 		if err != nil {
 			f := sn.Path
-			_ = os.Remove(f)
-			_ = os.Remove(f + ".torrent")
+			_ = dir.RemoveFile(f)
+			_ = dir.RemoveFile(f + ".torrent")
 			ext := filepath.Ext(f)
 			withoutExt := f[:len(f)-len(ext)]
-			_ = os.Remove(withoutExt + ".idx")
+			_ = dir.RemoveFile(withoutExt + ".idx")
+			_ = dir.RemoveFile(withoutExt + ".idx.torrent")
 			isTxnType := strings.HasSuffix(withoutExt, coresnaptype.Transactions.Name())
 			if isTxnType {
-				_ = os.Remove(withoutExt + "-to-block.idx")
+				_ = dir.RemoveFile(withoutExt + "-to-block.idx")
+				_ = dir.RemoveFile(withoutExt + "-to-block.idx.torrent")
 			}
 		}
 	}()
@@ -145,6 +147,7 @@ func (m *Merger) Merge(ctx context.Context, snapshots *RoSnapshots, snapTypes []
 	if len(mergeRanges) == 0 {
 		return nil
 	}
+
 	logEvery := time.NewTicker(30 * time.Second)
 	defer logEvery.Stop()
 
@@ -182,18 +185,16 @@ func (m *Merger) Merge(ctx context.Context, snapshots *RoSnapshots, snapTypes []
 			}
 		}
 
-		for _, t := range snapTypes {
-			if len(toMerge[t.Enum()]) == 0 {
-				continue
+		//TODO: or move it inside `integrateMergedDirtyFiles`, or move `integrateMergedDirtyFiles` here. Merge can be long - means call `integrateMergedDirtyFiles` earliear can make sense.
+		toMergeFileNames := make([]string, 0, 16)
+		for _, segments := range toMerge {
+			for _, segment := range segments {
+				toMergeFileNames = append(toMergeFileNames, segment.FilePaths(snapDir)...)
 			}
-			toMergeFilePaths := make([]string, 0, len(toMerge[t.Enum()]))
-			for _, f := range toMerge[t.Enum()] {
-				toMergeFilePaths = append(toMergeFilePaths, f.FilePath())
-			}
-			if onDelete != nil {
-				if err := onDelete(toMergeFilePaths); err != nil {
-					return err
-				}
+		}
+		if onDelete != nil {
+			if err := onDelete(toMergeFileNames); err != nil {
+				return fmt.Errorf("merger.Merge: onDelete: %w", err)
 			}
 		}
 	}
@@ -203,7 +204,7 @@ func (m *Merger) Merge(ctx context.Context, snapshots *RoSnapshots, snapTypes []
 }
 
 func (m *Merger) integrateMergedDirtyFiles(snapshots *RoSnapshots, in, out map[snaptype.Enum][]*DirtySegment) {
-	defer snapshots.recalcVisibleFiles()
+	defer snapshots.recalcVisibleFiles(snapshots.alignMin)
 
 	snapshots.dirtyLock.Lock()
 	defer snapshots.dirtyLock.Unlock()
@@ -233,7 +234,20 @@ func (m *Merger) integrateMergedDirtyFiles(snapshots *RoSnapshots, in, out map[s
 	// delete old sub segments
 	for enum, delSegs := range out {
 		dirtySegments := snapshots.dirty[enum]
+		inDirtySegments := in[enum]
+
 		for _, delSeg := range delSegs {
+			skip := false
+			for _, inDSeg := range inDirtySegments {
+				if inDSeg.from == delSeg.from && inDSeg.to == delSeg.to {
+					skip = true
+					break
+				}
+			}
+			if skip {
+				continue
+			}
+
 			dirtySegments.Delete(delSeg)
 			delSeg.canDelete.Store(true)
 		}

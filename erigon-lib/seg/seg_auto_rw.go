@@ -48,7 +48,7 @@ func ParseFileCompression(s string) (FileCompression, error) {
 		return 0, fmt.Errorf("invalid file compression type: %s", s)
 	}
 }
-
+func (c FileCompression) Has(flag FileCompression) bool { return c&flag != 0 }
 func (c FileCompression) String() string {
 	switch c {
 	case CompressNone:
@@ -75,19 +75,25 @@ func NewReader(g *Getter, c FileCompression) *Reader {
 }
 
 func (g *Reader) MatchPrefix(prefix []byte) bool {
-	if g.c&CompressKeys != 0 {
+	if g.c.Has(CompressKeys) {
 		return g.Getter.MatchPrefix(prefix)
 	}
 	return g.Getter.MatchPrefixUncompressed(prefix)
 }
 
 func (g *Reader) MatchCmp(prefix []byte) int {
-	if g.c&CompressKeys != 0 {
+	if g.c.Has(CompressKeys) {
 		return g.Getter.MatchCmp(prefix)
 	}
 	return g.Getter.MatchCmpUncompressed(prefix)
 }
 
+func (g *Reader) MadvNormal() MadvDisabler {
+	g.d.MadvNormal()
+	return g
+}
+func (g *Reader) DisableReadAhead() { g.d.DisableReadAhead() }
+func (g *Reader) FileName() string  { return g.Getter.FileName() }
 func (g *Reader) Next(buf []byte) ([]byte, uint64) {
 	fl := CompressKeys
 	if g.nextValue {
@@ -97,7 +103,7 @@ func (g *Reader) Next(buf []byte) ([]byte, uint64) {
 		g.nextValue = true
 	}
 
-	if g.c&fl != 0 {
+	if g.c.Has(fl) {
 		return g.Getter.Next(buf)
 	}
 	return g.Getter.NextUncompressed()
@@ -116,13 +122,28 @@ func (g *Reader) Skip() (uint64, int) {
 		g.nextValue = true
 	}
 
-	if g.c&fl != 0 {
+	if g.c.Has(fl) {
 		return g.Getter.Skip()
 	}
 	return g.Getter.SkipUncompressed()
 
 }
 
+type ReaderI interface {
+	Next(buf []byte) ([]byte, uint64)
+	Size() int
+	Count() int
+	Reset(offset uint64)
+	HasNext() bool
+	Skip() (uint64, int)
+	FileName() string
+	BinarySearch(seek []byte, count int, getOffset func(i uint64) (offset uint64)) (foundOffset uint64, ok bool)
+	MadvNormal() MadvDisabler
+	DisableReadAhead()
+}
+type MadvDisabler interface {
+	DisableReadAhead()
+}
 type Writer struct {
 	*Compressor
 	keyWritten bool
@@ -143,9 +164,9 @@ func (c *Writer) Write(word []byte) (n int, err error) {
 	}
 
 	if c.c&fl != 0 {
-		return n, c.Compressor.AddWord(word)
+		return len(word), c.Compressor.AddWord(word)
 	}
-	return n, c.Compressor.AddUncompressedWord(word)
+	return len(word), c.Compressor.AddUncompressedWord(word)
 }
 
 func (c *Writer) ReadFrom(r *Reader) error {

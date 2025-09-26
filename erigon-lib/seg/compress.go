@@ -34,7 +34,9 @@ import (
 	"time"
 
 	"github.com/c2h5oh/datasize"
+
 	"github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common/dir"
 	dir2 "github.com/erigontech/erigon-lib/common/dir"
 	"github.com/erigontech/erigon-lib/etl"
 	"github.com/erigontech/erigon-lib/log/v3"
@@ -82,8 +84,7 @@ var DefaultCfg = Cfg{
 	MaxDictPatterns: 64 * 1024,
 
 	DictReducerSoftLimit: 1_000_000,
-
-	Workers: 1,
+	Workers:              1,
 }
 
 // Compressor is the main operating type for performing per-word compression
@@ -102,8 +103,9 @@ type Compressor struct {
 	uncompressedFile *RawWordsFile
 	tmpDir           string // temporary directory to use for ETL when building dictionary
 	logPrefix        string
+
+	outputFileName   string
 	outputFile       string // File where to output the dictionary and compressed data
-	tmpOutFilePath   string // File where to output the dictionary and compressed data
 	suffixCollectors []*etl.Collector
 	// Buffer for "superstring" - transformation of superstrings where each byte of a word, say b,
 	// is turned into 2 bytes, 0x01 and b, and two zero bytes 0x00 0x00 are inserted after each word
@@ -112,7 +114,6 @@ type Compressor struct {
 	superstring      []byte
 	wordsCount       uint64
 	superstringCount uint64
-	superstringLen   int
 	Ratio            CompressionRatio
 	lvl              log.Lvl
 	trace            bool
@@ -123,11 +124,7 @@ type Compressor struct {
 func NewCompressor(ctx context.Context, logPrefix, outputFile, tmpDir string, cfg Cfg, lvl log.Lvl, logger log.Logger) (*Compressor, error) {
 	workers := cfg.Workers
 	dir2.MustExist(tmpDir)
-	dir, fileName := filepath.Split(outputFile)
-
-	// tmpOutFilePath is a ".seg.tmp" file which will be renamed to ".seg" if everything succeeds.
-	// It allows to atomically create a ".seg" file (the downloader will not see partial ".seg" files).
-	tmpOutFilePath := filepath.Join(dir, fileName) + ".tmp"
+	_, fileName := filepath.Split(outputFile)
 
 	uncompressedPath := filepath.Join(tmpDir, fileName) + ".idt"
 	uncompressedFile, err := NewRawWordsFile(uncompressedPath)
@@ -141,19 +138,19 @@ func NewCompressor(ctx context.Context, logPrefix, outputFile, tmpDir string, cf
 	wg.Add(workers)
 	suffixCollectors := make([]*etl.Collector, workers)
 	for i := 0; i < workers; i++ {
-		collector := etl.NewCollector(logPrefix+"_dict", tmpDir, etl.NewSortableBuffer(etl.BufferOptimalSize/4), logger) //nolint:gocritic
+		collector := etl.NewCollectorWithAllocator(logPrefix+"_dict", tmpDir, etl.SmallSortableBuffers, logger) //nolint:gocritic
 		collector.SortAndFlushInBackground(true)
 		collector.LogLvl(lvl)
 
 		suffixCollectors[i] = collector
 		go extractPatternsInSuperstrings(ctx, superstrings, collector, cfg, wg, logger)
 	}
-
+	_, outputFileName := filepath.Split(outputFile)
 	return &Compressor{
 		Cfg:              cfg,
 		uncompressedFile: uncompressedFile,
-		tmpOutFilePath:   tmpOutFilePath,
 		outputFile:       outputFile,
+		outputFileName:   outputFileName,
 		tmpDir:           tmpDir,
 		logPrefix:        logPrefix,
 		ctx:              ctx,
@@ -174,6 +171,7 @@ func (c *Compressor) Close() {
 }
 
 func (c *Compressor) SetTrace(trace bool) { c.trace = trace }
+func (c *Compressor) FileName() string    { return c.outputFileName }
 func (c *Compressor) WorkersAmount() int  { return c.Workers }
 
 func (c *Compressor) Count() int { return int(c.wordsCount) }
@@ -189,24 +187,26 @@ func (c *Compressor) ReadFrom(g *Getter) error {
 	return nil
 }
 
+var superStringsPool = sync.Pool{New: func() any { return make([]byte, 0, superstringLimit) }}
+
 func (c *Compressor) AddWord(word []byte) error {
-	select {
-	case <-c.ctx.Done():
-		return c.ctx.Err()
-	default:
+	c.wordsCount++
+	if c.wordsCount%1024 == 0 {
+		select {
+		case <-c.ctx.Done():
+			return c.ctx.Err()
+		default:
+		}
 	}
 
-	c.wordsCount++
 	l := 2*len(word) + 2
-	if c.superstringLen+l > superstringLimit {
+	if len(c.superstring)+l > superstringLimit {
 		if c.superstringCount%c.SamplingFactor == 0 {
 			c.superstrings <- c.superstring
 		}
 		c.superstringCount++
-		c.superstring = make([]byte, 0, 1024*1024)
-		c.superstringLen = 0
+		c.superstring = superStringsPool.Get().([]byte)[:0]
 	}
-	c.superstringLen += l
 
 	if c.superstringCount%c.SamplingFactor == 0 {
 		for _, a := range word {
@@ -219,13 +219,15 @@ func (c *Compressor) AddWord(word []byte) error {
 }
 
 func (c *Compressor) AddUncompressedWord(word []byte) error {
-	select {
-	case <-c.ctx.Done():
-		return c.ctx.Err()
-	default:
+	c.wordsCount++
+	if c.wordsCount%1024 == 0 {
+		select {
+		case <-c.ctx.Done():
+			return c.ctx.Err()
+		default:
+		}
 	}
 
-	c.wordsCount++
 	return c.uncompressedFile.AppendUncompressed(word)
 }
 
@@ -255,15 +257,16 @@ func (c *Compressor) Compress() error {
 			return err
 		}
 	}
-	defer os.Remove(c.tmpOutFilePath)
 
-	cf, err := os.Create(c.tmpOutFilePath)
+	cf, err := dir.CreateTemp(c.outputFile)
 	if err != nil {
 		return err
 	}
+	tmpFileName := cf.Name()
+	defer dir.RemoveFile(tmpFileName)
 	defer cf.Close()
 	t := time.Now()
-	if err := compressWithPatternCandidates(c.ctx, c.trace, c.Cfg, c.logPrefix, c.tmpOutFilePath, cf, c.uncompressedFile, db, c.lvl, c.logger); err != nil {
+	if err := compressWithPatternCandidates(c.ctx, c.trace, c.Cfg, c.logPrefix, tmpFileName, cf, c.uncompressedFile, db, c.lvl, c.logger); err != nil {
 		return err
 	}
 	if err = c.fsync(cf); err != nil {
@@ -272,7 +275,7 @@ func (c *Compressor) Compress() error {
 	if err = cf.Close(); err != nil {
 		return err
 	}
-	if err := os.Rename(c.tmpOutFilePath, c.outputFile); err != nil {
+	if err := os.Rename(tmpFileName, c.outputFile); err != nil {
 		return fmt.Errorf("renaming: %w", err)
 	}
 
@@ -298,7 +301,7 @@ func (c *Compressor) fsync(f *os.File) error {
 		return nil
 	}
 	if err := f.Sync(); err != nil {
-		c.logger.Warn("couldn't fsync", "err", err, "file", c.tmpOutFilePath)
+		c.logger.Warn("couldn't fsync", "err", err, "file", f.Name())
 		return err
 	}
 	return nil
@@ -355,11 +358,21 @@ func (db *DictionaryBuilder) Pop() interface{} {
 }
 
 func (db *DictionaryBuilder) processWord(chars []byte, score uint64) {
-	heap.Push(db, &Pattern{word: common.Copy(chars), score: score})
-	if db.Len() > db.softLimit {
-		// Remove the element with smallest score
-		heap.Pop(db)
+	if db.Len()+1 <= db.softLimit {
+		heap.Push(db, &Pattern{word: common.Copy(chars), score: score})
+		return
 	}
+
+	// RemoveFile the element with smallest score
+	elem := heap.Pop(db).(*Pattern)
+	if elem == nil {
+		heap.Push(db, &Pattern{word: common.Copy(chars), score: score})
+		return
+	}
+	elem.word = append(elem.word[:0], chars...)
+	elem.score = score
+	heap.Push(db, elem)
+	return
 }
 
 func (db *DictionaryBuilder) loadFunc(k, v []byte, table etl.CurrentTableReader, next etl.LoadNextFunc) error {
@@ -382,7 +395,7 @@ func (db *DictionaryBuilder) finish(hardLimit int) {
 	}
 
 	for db.Len() > hardLimit {
-		// Remove the element with smallest score
+		// RemoveFile the element with smallest score
 		heap.Pop(db)
 	}
 }
@@ -852,7 +865,7 @@ func (f *RawWordsFile) Close() {
 }
 func (f *RawWordsFile) CloseAndRemove() {
 	f.Close()
-	os.Remove(f.filePath)
+	dir2.RemoveFile(f.filePath)
 }
 func (f *RawWordsFile) Append(v []byte) error {
 	f.count++

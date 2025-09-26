@@ -36,6 +36,7 @@ import (
 	"github.com/erigontech/erigon/params"
 	cli2 "github.com/erigontech/erigon/turbo/cli"
 	"github.com/erigontech/erigon/turbo/debug"
+	shuttercmd "github.com/erigontech/erigon/txnprovider/shutter/cmd"
 )
 
 // MakeApp creates a cli application (based on `github.com/urlfave/cli` package).
@@ -84,6 +85,7 @@ func MakeApp(name string, action cli.ActionFunc, cliFlags []cli.Flag) *cli.App {
 		&supportCommand,
 		//&backupCommand,
 	}
+	shuttercmd.RegisterCmds(app)
 	return app
 }
 
@@ -167,7 +169,7 @@ func doMigrateFlags(ctx *cli.Context) {
 }
 
 func NewNodeConfig(ctx *cli.Context, logger log.Logger) (*nodecfg.Config, error) {
-	nodeConfig, err := enode.NewNodConfigUrfave(ctx, logger)
+	nodeConfig, err := enode.NewNodConfigUrfave(ctx, nil, logger)
 	if err != nil {
 		return nil, err
 	}

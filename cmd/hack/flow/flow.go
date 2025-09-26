@@ -18,6 +18,7 @@ package flow
 
 import (
 	"bufio"
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"flag"
@@ -201,7 +202,7 @@ func batchServer() {
 			defer debug.LogPanic()
 			for job := range jobs {
 				enc := hex.EncodeToString(job.code)
-				cmd := exec.Command("./build/bin/hack",
+				cmd := exec.CommandContext(context.Background(), "./build/bin/hack",
 					"--action", "cfg",
 					"--mode", "worker",
 					"--quiet",
@@ -604,18 +605,18 @@ type dummyAccount struct{}
 
 func (dummyAccount) SubBalance(amount *big.Int)                          {}
 func (dummyAccount) AddBalance(amount *big.Int)                          {}
-func (dummyAccount) SetAddress(libcommon.Address)                           {}
+func (dummyAccount) SetAddress(common.Address)                           {}
 func (dummyAccount) Value() *big.Int                                     { return nil }
 func (dummyAccount) SetBalance(*big.Int)                                 {}
 func (dummyAccount) SetNonce(uint64)                                     {}
 func (dummyAccount) Balance() *big.Int                                   { return nil }
-func (dummyAccount) Address() libcommon.Address                             { return libcommon.Address{} }
+func (dummyAccount) Address() common.Address                             { return common.Address{} }
 func (dummyAccount) ReturnGas(*big.Int)                                  {}
-func (dummyAccount) SetCode(libcommon.Hash, []byte)                         {}
-func (dummyAccount) ForEachStorage(cb func(key, value libcommon.Hash) bool) {}
+func (dummyAccount) SetCode(common.Hash, []byte)                         {}
+func (dummyAccount) ForEachStorage(cb func(key, value common.Hash) bool) {}
 
 func testGenCfg() error {
-	env := vm.NewEVM(vm.Context{BlockNumber: big.NewInt(1)}, &dummyStatedb{}, params.TestChainConfig,
+	env := vm.NewEVM(vm.Context{BlockNumber: big.NewInt(1)}, &dummyStatedb{}, chain.TestChainConfig,
 		vm.Config{
 			EVMInterpreter: "SaInterpreter",
 		}, nil)

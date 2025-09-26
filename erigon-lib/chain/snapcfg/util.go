@@ -17,68 +17,108 @@
 package snapcfg
 
 import (
+	"bytes"
 	"context"
 	_ "embed"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
 	"path/filepath"
 	"slices"
-	"sort"
 	"strconv"
 	"strings"
 
-	"github.com/pkg/errors"
-
+	"github.com/anacrolix/missinggo/v2/panicif"
+	snapshothashes "github.com/erigontech/erigon-snapshot"
+	"github.com/erigontech/erigon-snapshot/webseed"
 	"github.com/pelletier/go-toml/v2"
 	"github.com/tidwall/btree"
 
-	snapshothashes "github.com/erigontech/erigon-snapshot"
-	"github.com/erigontech/erigon-snapshot/webseed"
-
 	"github.com/erigontech/erigon-lib/chain/networkname"
 	"github.com/erigontech/erigon-lib/common/dbg"
-	"github.com/erigontech/erigon-lib/downloader/snaptype"
+	"github.com/erigontech/erigon-lib/log/v3"
+	"github.com/erigontech/erigon-lib/snaptype"
+	"github.com/erigontech/erigon-lib/version"
+	ver "github.com/erigontech/erigon-lib/version"
 )
 
-// TODO(yperbasis) move into params/version.go
-const DefaultSnapshotGitBranch = "release/3.0"
-
-var snapshotGitBranch = dbg.EnvString("SNAPS_GIT_BRANCH", DefaultSnapshotGitBranch)
+var snapshotGitBranch = dbg.EnvString("SNAPS_GIT_BRANCH", version.DefaultSnapshotGitBranch)
 
 var (
-	Mainnet    = fromToml(snapshothashes.Mainnet)
-	Holesky    = fromToml(snapshothashes.Holesky)
-	Sepolia    = fromToml(snapshothashes.Sepolia)
-	Amoy       = fromToml(snapshothashes.Amoy)
-	BorMainnet = fromToml(snapshothashes.BorMainnet)
-	Gnosis     = fromToml(snapshothashes.Gnosis)
-	Chiado     = fromToml(snapshothashes.Chiado)
+	Mainnet = fromEmbeddedToml(snapshothashes.Mainnet)
+	Holesky = fromEmbeddedToml(snapshothashes.Holesky)
+	Sepolia = fromEmbeddedToml(snapshothashes.Sepolia)
+	//Mumbai     = fromToml(snapshothashes.Mumbai)
+	Amoy       = fromEmbeddedToml(snapshothashes.Amoy)
+	BorMainnet = fromEmbeddedToml(snapshothashes.BorMainnet)
+	Gnosis     = fromEmbeddedToml(snapshothashes.Gnosis)
+	Chiado     = fromEmbeddedToml(snapshothashes.Chiado)
+	Hoodi      = fromEmbeddedToml(snapshothashes.Hoodi)
+
+	// This belongs in a generic embed.FS or something.
+	allSnapshotHashes = []*[]byte{
+		&snapshothashes.Mainnet,
+		&snapshothashes.Holesky,
+		&snapshothashes.Sepolia,
+		&snapshothashes.Amoy,
+		&snapshothashes.BorMainnet,
+		&snapshothashes.Gnosis,
+		&snapshothashes.Chiado,
+		&snapshothashes.Hoodi,
+	}
 )
+
+func fromEmbeddedToml(in []byte) Preverified {
+	items := fromToml(in)
+	return Preverified{
+		Local: false,
+		Items: items,
+	}
+}
 
 type PreverifiedItem struct {
 	Name string
 	Hash string
 }
-type Preverified []PreverifiedItem
 
-func Merge(p0 Preverified, p1 []PreverifiedItem) Preverified {
-	merged := append(p0, p1...)
-	slices.SortFunc(merged, func(i, j PreverifiedItem) int { return strings.Compare(i.Name, j.Name) })
-	return merged
+type PreverifiedItems []PreverifiedItem
+
+type Preverified struct {
+	Local bool
+	// These should be sorted by Name.
+	Items PreverifiedItems
 }
 
-func (p Preverified) Get(name string) (PreverifiedItem, bool) {
-	i := sort.Search(len(p), func(i int) bool { return p[i].Name >= name })
-	if i >= len(p) || p[i].Name != name {
-		return PreverifiedItem{}, false
+func (p PreverifiedItems) searchName(name string) (int, bool) {
+	p.assertSorted()
+	return slices.BinarySearchFunc(p, name, func(l PreverifiedItem, target string) int {
+		return strings.Compare(l.Name, target)
+	})
+}
+
+// Preverified.Typed was breaking sort invariance.
+func (me PreverifiedItems) assertSorted() {
+	panicif.False(slices.IsSortedFunc(me, preverifiedItemCompare))
+}
+
+func preverifiedItemCompare(a, b PreverifiedItem) int {
+	return strings.Compare(a.Name, b.Name)
+}
+
+func (me PreverifiedItems) Get(name string) (item PreverifiedItem, found bool) {
+	me.assertSorted()
+	i, found := me.searchName(name)
+	if found {
+		item = me[i]
 	}
-
-	return p[i], true
+	return
 }
 
-func (p Preverified) Contains(name string, ignoreVersion ...bool) bool {
+func (me PreverifiedItems) Contains(name string, ignoreVersion ...bool) bool {
 	if len(ignoreVersion) > 0 && ignoreVersion[0] {
 		_, name, _ := strings.Cut(name, "-")
-		for _, item := range p {
+		for _, item := range me {
 			_, noVersion, _ := strings.Cut(item.Name, "-")
 			if noVersion == name {
 				return true
@@ -86,15 +126,14 @@ func (p Preverified) Contains(name string, ignoreVersion ...bool) bool {
 		}
 		return false
 	}
-
-	i := sort.Search(len(p), func(i int) bool { return p[i].Name >= name })
-	return i < len(p) && p[i].Name == name
+	_, found := me.searchName(name)
+	return found
 }
 
 func (p Preverified) Typed(types []snaptype.Type) Preverified {
 	var bestVersions btree.Map[string, PreverifiedItem]
 
-	for _, p := range p {
+	for _, p := range p.Items {
 		if strings.HasPrefix(p.Name, "salt") && strings.HasSuffix(p.Name, "txt") {
 			bestVersions.Set(p.Name, p)
 			continue
@@ -152,24 +191,24 @@ func (p Preverified) Typed(types []snaptype.Type) Preverified {
 			continue
 		}
 
-		version, err := snaptype.ParseVersion(v)
+		version, err := ver.ParseVersion(v)
 		if err != nil {
 			continue
 		}
 
-		if version < minVersion {
+		if version.Less(minVersion) {
 			continue
 		}
 
-		if version > preferredVersion {
+		if preferredVersion.Less(version) {
 			continue
 		}
 
 		if current, ok := bestVersions.Get(name); ok {
 			v, _, _ := strings.Cut(current.Name, "-")
-			cv, _ := snaptype.ParseVersion(v)
+			cv, _ := ver.ParseVersion(v)
 
-			if version > cv {
+			if cv.Less(version) {
 				bestVersions.Set(name, p)
 			}
 		} else {
@@ -177,92 +216,24 @@ func (p Preverified) Typed(types []snaptype.Type) Preverified {
 		}
 	}
 
-	var versioned Preverified
+	var versioned []PreverifiedItem
 
+	// Scanning this can introduce an unexpected order to preverified items as it's not keyed on the
+	// item name.
 	bestVersions.Scan(func(key string, value PreverifiedItem) bool {
 		versioned = append(versioned, value)
 		return true
 	})
-
-	return versioned
-}
-
-func (p Preverified) Versioned(preferredVersion snaptype.Version, minVersion snaptype.Version, types ...snaptype.Enum) Preverified {
-	var bestVersions btree.Map[string, PreverifiedItem]
-
-	for _, p := range p {
-		v, name, ok := strings.Cut(p.Name, "-")
-		if !ok {
-			if strings.HasPrefix(p.Name, "domain") || strings.HasPrefix(p.Name, "history") || strings.HasPrefix(p.Name, "idx") || strings.HasPrefix(p.Name, "accessor") {
-				bestVersions.Set(p.Name, p)
-				continue
-			}
-			continue
-		}
-
-		parts := strings.Split(name, "-")
-		if len(parts) < 3 {
-			if strings.HasPrefix(p.Name, "domain") || strings.HasPrefix(p.Name, "history") || strings.HasPrefix(p.Name, "idx") || strings.HasPrefix(p.Name, "accessor") {
-				bestVersions.Set(p.Name, p)
-				continue
-			}
-			continue
-		}
-		typeName, _ := strings.CutSuffix(parts[2], filepath.Ext(parts[2]))
-		include := false
-
-		if len(types) > 0 {
-			for _, typ := range types {
-				if typeName == typ.String() {
-					include = true
-					break
-				}
-			}
-
-			if !include {
-				continue
-			}
-		}
-
-		version, err := snaptype.ParseVersion(v)
-
-		if err != nil {
-			continue
-		}
-
-		if version < minVersion {
-			continue
-		}
-
-		if version > preferredVersion {
-			continue
-		}
-
-		if current, ok := bestVersions.Get(name); ok {
-			v, _, _ := strings.Cut(current.Name, "-")
-			cv, _ := snaptype.ParseVersion(v)
-
-			if version > cv {
-				bestVersions.Set(name, p)
-			}
-		} else {
-			bestVersions.Set(name, p)
-		}
-	}
-
-	var versioned Preverified
-
-	bestVersions.Scan(func(key string, value PreverifiedItem) bool {
-		versioned = append(versioned, value)
-		return true
+	slices.SortFunc(versioned, func(i, j PreverifiedItem) int {
+		return strings.Compare(i.Name, j.Name)
 	})
-
-	return versioned
+	p.Items = versioned
+	return p
 }
 
-func (p Preverified) MaxBlock(version snaptype.Version) (uint64, error) {
+func (p Preverified) MaxBlock(version ver.Version) (uint64, error) {
 	_max := uint64(0)
-	for _, p := range p {
+	for _, p := range p.Items {
 		_, fileName := filepath.Split(p.Name)
 		ext := filepath.Ext(fileName)
 		if ext != ".seg" {
@@ -291,18 +262,18 @@ func (p Preverified) MaxBlock(version snaptype.Version) (uint64, error) {
 
 var errWrongVersion = errors.New("wrong version")
 
-func ExtractBlockFromName(name string, v snaptype.Version) (block uint64, err error) {
+func ExtractBlockFromName(name string, v ver.Version) (block uint64, err error) {
 	i := 0
 	for i < len(name) && name[i] != '-' {
 		i++
 	}
 
-	version, err := snaptype.ParseVersion(name[:i])
+	version, err := ver.ParseVersion(name[:i])
 	if err != nil {
 		return 0, err
 	}
 
-	if v != 0 && v != version {
+	if !v.IsZero() && v != version {
 		return 0, errWrongVersion
 	}
 
@@ -336,7 +307,7 @@ func ExtractBlockFromName(name string, v snaptype.Version) (block uint64, err er
 	return block, nil
 }
 
-func (p Preverified) MarshalJSON() ([]byte, error) {
+func (p PreverifiedItems) MarshalJSON() ([]byte, error) {
 	out := map[string]string{}
 
 	for _, i := range p {
@@ -346,7 +317,7 @@ func (p Preverified) MarshalJSON() ([]byte, error) {
 	return json.Marshal(out)
 }
 
-func (p *Preverified) UnmarshalJSON(data []byte) error {
+func (p *PreverifiedItems) UnmarshalJSON(data []byte) error {
 	var outMap map[string]string
 
 	if err := json.Unmarshal(data, &outMap); err != nil {
@@ -357,7 +328,7 @@ func (p *Preverified) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func fromToml(in []byte) (out Preverified) {
+func fromToml(in []byte) PreverifiedItems {
 	var outMap map[string]string
 	if err := toml.Unmarshal(in, &outMap); err != nil {
 		panic(err)
@@ -365,20 +336,26 @@ func fromToml(in []byte) (out Preverified) {
 	return doSort(outMap)
 }
 
-func doSort(in map[string]string) Preverified {
-	out := make(Preverified, 0, len(in))
+func doSort(in map[string]string) []PreverifiedItem {
+	out := make([]PreverifiedItem, 0, len(in))
 	for k, v := range in {
 		out = append(out, PreverifiedItem{k, v})
 	}
-	slices.SortFunc(out, func(i, j PreverifiedItem) int { return strings.Compare(i.Name, j.Name) })
+	slices.SortFunc(out, preverifiedItemCompare)
 	return out
 }
 
 func newCfg(networkName string, preverified Preverified) *Cfg {
-	maxBlockNum, _ := preverified.MaxBlock(0)
-	cfg := &Cfg{ExpectBlocks: maxBlockNum, Preverified: preverified, networkName: networkName}
-	cfg.PreverifiedParsed = make([]*snaptype.FileInfo, len(preverified))
-	for i, p := range cfg.Preverified {
+	maxBlockNum, _ := preverified.MaxBlock(ver.ZeroVersion)
+	cfg := &Cfg{
+		ExpectBlocks: maxBlockNum,
+		Preverified:  preverified,
+		networkName:  networkName,
+		Local:        preverified.Local,
+	}
+	cfg.PreverifiedParsed = make([]*snaptype.FileInfo, len(preverified.Items))
+	for i, p := range cfg.Preverified.Items {
+		// TODO: Pack these into a single array, or consider inlining them into PreverifiedParsed?
 		info, _, ok := snaptype.ParseFileName("", p.Name)
 		if !ok {
 			continue
@@ -396,7 +373,10 @@ type Cfg struct {
 	ExpectBlocks      uint64
 	Preverified       Preverified          // immutable
 	PreverifiedParsed []*snaptype.FileInfo //Preverified field after `snaptype.ParseFileName("", p.Name)`
-	networkName       string
+	// The preverified list were loaded from local storage. That means they were committed after an
+	// initial sync completed successfully.
+	Local       bool
+	networkName string
 }
 
 // Seedable - can seed it over Bittorrent network to other nodes
@@ -408,7 +388,7 @@ func (c Cfg) Seedable(info snaptype.FileInfo) bool {
 // IsFrozen - can't be merged to bigger files
 func (c Cfg) IsFrozen(info snaptype.FileInfo) bool {
 	mergeLimit := c.MergeLimit(info.Type.Enum(), info.From)
-	return info.To-info.From == mergeLimit
+	return info.To-info.From >= mergeLimit
 }
 
 func (c Cfg) MergeLimit(t snaptype.Enum, fromBlock uint64) uint64 {
@@ -458,13 +438,15 @@ func (c Cfg) MergeLimit(t snaptype.Enum, fromBlock uint64) uint64 {
 }
 
 var knownPreverified = map[string]Preverified{
-	networkname.Mainnet:    Mainnet,
-	networkname.Holesky:    Holesky,
-	networkname.Sepolia:    Sepolia,
+	networkname.Mainnet: Mainnet,
+	networkname.Holesky: Holesky,
+	networkname.Sepolia: Sepolia,
+	//networkname.Mumbai:     Mumbai,
 	networkname.Amoy:       Amoy,
 	networkname.BorMainnet: BorMainnet,
 	networkname.Gnosis:     Gnosis,
 	networkname.Chiado:     Chiado,
+	networkname.Hoodi:      Hoodi,
 }
 
 func RegisterKnownTypes(networkName string, types []snaptype.Type) {
@@ -477,7 +459,8 @@ func Seedable(networkName string, info snaptype.FileInfo) bool {
 	if networkName == "" {
 		return false
 	}
-	return KnownCfg(networkName).Seedable(info)
+	snapCfg, _ := KnownCfg(networkName)
+	return snapCfg.Seedable(info)
 }
 
 func MergeLimitFromCfg(cfg *Cfg, snapType snaptype.Enum, fromBlock uint64) uint64 {
@@ -486,7 +469,7 @@ func MergeLimitFromCfg(cfg *Cfg, snapType snaptype.Enum, fromBlock uint64) uint6
 
 func MaxSeedableSegment(chain string, dir string) uint64 {
 	var _max uint64
-	segConfig := KnownCfg(chain)
+	segConfig, _ := KnownCfg(chain)
 	if list, err := snaptype.Segments(dir); err == nil {
 		for _, info := range list {
 			if segConfig.Seedable(info) && info.Type.Enum() == snaptype.MinCoreEnum && info.To > _max {
@@ -510,40 +493,25 @@ func MergeStepsFromCfg(cfg *Cfg, snapType snaptype.Enum, fromBlock uint64) []uin
 	return snaptype.MergeSteps
 }
 
-func IsFrozen(networkName string, info snaptype.FileInfo) bool {
-	if networkName == "" {
-		return false
-	}
-	return KnownCfg(networkName).IsFrozen(info)
-}
-
 // KnownCfg return list of preverified hashes for given network, but apply whiteList filter if it's not empty
-func KnownCfg(networkName string) *Cfg {
+func KnownCfg(networkName string) (*Cfg, bool) {
 	c, ok := knownPreverified[networkName]
 	if !ok {
-		return newCfg(networkName, Preverified{})
+		return newCfg(networkName, Preverified{}), false
 	}
-	return newCfg(networkName, c.Typed(knownTypes[networkName]))
-}
-
-func VersionedCfg(networkName string, preferred snaptype.Version, _min snaptype.Version) *Cfg {
-	c, ok := knownPreverified[networkName]
-
-	if !ok {
-		return newCfg(networkName, Preverified{})
-	}
-
-	return newCfg(networkName, c.Versioned(preferred, _min))
+	return newCfg(networkName, c.Typed(knownTypes[networkName])), true
 }
 
 var KnownWebseeds = map[string][]string{
-	networkname.Mainnet:    webseedsParse(webseed.Mainnet),
-	networkname.Sepolia:    webseedsParse(webseed.Sepolia),
+	networkname.Mainnet: webseedsParse(webseed.Mainnet),
+	networkname.Sepolia: webseedsParse(webseed.Sepolia),
+	//networkname.Mumbai:     webseedsParse(webseed.Mumbai),
 	networkname.Amoy:       webseedsParse(webseed.Amoy),
 	networkname.BorMainnet: webseedsParse(webseed.BorMainnet),
 	networkname.Gnosis:     webseedsParse(webseed.Gnosis),
 	networkname.Chiado:     webseedsParse(webseed.Chiado),
 	networkname.Holesky:    webseedsParse(webseed.Holesky),
+	networkname.Hoodi:      webseedsParse(webseed.Hoodi),
 }
 
 func webseedsParse(in []byte) (res []string) {
@@ -558,48 +526,80 @@ func webseedsParse(in []byte) (res []string) {
 	return res
 }
 
-func LoadRemotePreverified(ctx context.Context) (loaded bool, err error) {
-	loaded, err = snapshothashes.LoadSnapshots(ctx, snapshotGitBranch)
-	if err != nil {
-		return false, err
+func LoadRemotePreverified(ctx context.Context) (err error) {
+	if s, ok := os.LookupEnv("ERIGON_REMOTE_PREVERIFIED"); ok {
+		log.Info("Loading local preverified override file", "file", s)
+
+		b, err := os.ReadFile(s)
+		if err != nil {
+			return fmt.Errorf("reading remote preverified override file: %w", err)
+		}
+		for _, sh := range allSnapshotHashes {
+			*sh = bytes.Clone(b)
+		}
+	} else {
+		// Can't log in erigon-snapshot repo due to erigon-lib module import path.
+		log.Info("Loading remote snapshot hashes")
+
+		err = snapshothashes.LoadSnapshots(ctx, snapshothashes.R2, snapshotGitBranch)
+		if err != nil {
+			log.Root().Warn("Failed to load snapshot hashes from R2; falling back to GitHub", "err", err)
+
+			// Fallback to GitHub if R2 fails
+			err = snapshothashes.LoadSnapshots(ctx, snapshothashes.Github, snapshotGitBranch)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	// Re-load the preverified hashes
-	Mainnet = fromToml(snapshothashes.Mainnet)
-	Holesky = fromToml(snapshothashes.Holesky)
-	Sepolia = fromToml(snapshothashes.Sepolia)
-	Amoy = fromToml(snapshothashes.Amoy)
-	BorMainnet = fromToml(snapshothashes.BorMainnet)
-	Gnosis = fromToml(snapshothashes.Gnosis)
-	Chiado = fromToml(snapshothashes.Chiado)
+	Mainnet = fromEmbeddedToml(snapshothashes.Mainnet)
+	Holesky = fromEmbeddedToml(snapshothashes.Holesky)
+	//Mumbai = fromEmbeddedToml(snapshothashes.Mumbai)
+	Sepolia = fromEmbeddedToml(snapshothashes.Sepolia)
+	Amoy = fromEmbeddedToml(snapshothashes.Amoy)
+	BorMainnet = fromEmbeddedToml(snapshothashes.BorMainnet)
+	Gnosis = fromEmbeddedToml(snapshothashes.Gnosis)
+	Chiado = fromEmbeddedToml(snapshothashes.Chiado)
+	Hoodi = fromEmbeddedToml(snapshothashes.Hoodi)
+
 	// Update the known preverified hashes
 	KnownWebseeds = map[string][]string{
-		networkname.Mainnet:    webseedsParse(webseed.Mainnet),
-		networkname.Sepolia:    webseedsParse(webseed.Sepolia),
+		networkname.Mainnet: webseedsParse(webseed.Mainnet),
+		networkname.Sepolia: webseedsParse(webseed.Sepolia),
+		//networkname.Mumbai:     webseedsParse(webseed.Mumbai),
 		networkname.Amoy:       webseedsParse(webseed.Amoy),
 		networkname.BorMainnet: webseedsParse(webseed.BorMainnet),
 		networkname.Gnosis:     webseedsParse(webseed.Gnosis),
 		networkname.Chiado:     webseedsParse(webseed.Chiado),
 		networkname.Holesky:    webseedsParse(webseed.Holesky),
+		networkname.Hoodi:      webseedsParse(webseed.Hoodi),
 	}
 
 	knownPreverified = map[string]Preverified{
-		networkname.Mainnet:    Mainnet,
-		networkname.Holesky:    Holesky,
-		networkname.Sepolia:    Sepolia,
+		networkname.Mainnet: Mainnet,
+		networkname.Holesky: Holesky,
+		networkname.Sepolia: Sepolia,
+		//networkname.Mumbai:     Mumbai,
 		networkname.Amoy:       Amoy,
 		networkname.BorMainnet: BorMainnet,
 		networkname.Gnosis:     Gnosis,
 		networkname.Chiado:     Chiado,
+		networkname.Hoodi:      Hoodi,
 	}
-	return loaded, nil
+	return
 }
 
-func SetToml(networkName string, toml []byte) {
+func SetToml(networkName string, toml []byte, local bool) {
 	if _, ok := knownPreverified[networkName]; !ok {
 		return
 	}
-	knownPreverified[networkName] = fromToml(toml)
+	value := Preverified{
+		Local: local,
+		Items: fromToml(toml),
+	}
+	knownPreverified[networkName] = value
 }
 
 func GetToml(networkName string) []byte {
@@ -610,6 +610,8 @@ func GetToml(networkName string) []byte {
 		return snapshothashes.Holesky
 	case networkname.Sepolia:
 		return snapshothashes.Sepolia
+	//case networkname.Mumbai:
+	//	return snapshothashes.Mumbai
 	case networkname.Amoy:
 		return snapshothashes.Amoy
 	case networkname.BorMainnet:
@@ -618,6 +620,8 @@ func GetToml(networkName string) []byte {
 		return snapshothashes.Gnosis
 	case networkname.Chiado:
 		return snapshothashes.Chiado
+	case networkname.Hoodi:
+		return snapshothashes.Hoodi
 	default:
 		return nil
 	}

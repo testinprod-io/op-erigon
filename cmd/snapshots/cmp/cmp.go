@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/erigontech/erigon-lib/common/dir"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -32,19 +33,18 @@ import (
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/erigontech/erigon-lib/log/v3"
-
+	"github.com/erigontech/erigon-db/downloader"
+	coresnaptype "github.com/erigontech/erigon-db/snaptype"
 	"github.com/erigontech/erigon-lib/chain"
 	"github.com/erigontech/erigon-lib/common"
-	"github.com/erigontech/erigon-lib/downloader"
-	"github.com/erigontech/erigon-lib/downloader/snaptype"
+	"github.com/erigontech/erigon-lib/log/v3"
+	"github.com/erigontech/erigon-lib/snaptype"
+	"github.com/erigontech/erigon-lib/types"
 	"github.com/erigontech/erigon/cmd/snapshots/flags"
 	"github.com/erigontech/erigon/cmd/snapshots/sync"
 	"github.com/erigontech/erigon/cmd/utils"
-	coresnaptype "github.com/erigontech/erigon/core/snaptype"
-	"github.com/erigontech/erigon/core/types"
 	"github.com/erigontech/erigon/eth/ethconfig"
-	"github.com/erigontech/erigon/params"
+	"github.com/erigontech/erigon/execution/chainspec"
 	"github.com/erigontech/erigon/turbo/logging"
 	"github.com/erigontech/erigon/turbo/snapshotsync/freezeblocks"
 )
@@ -92,7 +92,7 @@ func cmp(cliCtx *cli.Context) error {
 			return err
 		}
 		tempDir = dataDir
-		defer os.RemoveAll(dataDir)
+		defer dir.RemoveAll(dataDir)
 	} else {
 		tempDir = filepath.Join(dataDir, "temp")
 
@@ -338,7 +338,7 @@ type BodyEntry struct {
 func splitEntries(files []fs.DirEntry, version snaptype.Version, firstBlock, lastBlock uint64) (hents []fs.DirEntry, bents []*BodyEntry) {
 	for _, ent := range files {
 		if info, err := ent.Info(); err == nil {
-			if snapInfo, ok := info.Sys().(downloader.SnapInfo); ok && snapInfo.Version() > 0 {
+			if snapInfo, ok := info.Sys().(downloader.SnapInfo); ok && !snapInfo.Version().IsZero() {
 				if version == snapInfo.Version() &&
 					(firstBlock == 0 || snapInfo.From() >= firstBlock) &&
 					(lastBlock == 0 || snapInfo.From() < lastBlock) {
@@ -395,7 +395,7 @@ type comparitor struct {
 }
 
 func (c comparitor) chainConfig() *chain.Config {
-	return params.ChainConfigByChainName(c.chain)
+	return chainspec.ChainConfigByChainName(c.chain)
 }
 
 func (c comparitor) compareHeaders(ctx context.Context, f1ents []fs.DirEntry, f2ents []fs.DirEntry, workers int, logger log.Logger) (time.Duration, time.Duration, time.Duration, error) {
@@ -500,8 +500,8 @@ func (c comparitor) compareHeaders(ctx context.Context, f1ents []fs.DirEntry, f2
 						atomic.AddUint64(&compareTime, uint64(time.Since(startTime)))
 					}()
 
-					blockReader1 := freezeblocks.NewBlockReader(f1snaps, nil, nil, nil)
-					blockReader2 := freezeblocks.NewBlockReader(f2snaps, nil, nil, nil)
+					blockReader1 := freezeblocks.NewBlockReader(f1snaps, nil)
+					blockReader2 := freezeblocks.NewBlockReader(f2snaps, nil)
 
 					g, gctx = errgroup.WithContext(ctx)
 					g.SetLimit(2)
@@ -562,7 +562,7 @@ func (c comparitor) compareHeaders(ctx context.Context, f1ents []fs.DirEntry, f2
 				f2snaps.Close()
 
 				for _, file := range files {
-					os.Remove(file)
+					dir.RemoveFile(file)
 				}
 
 				return err
@@ -779,8 +779,8 @@ func (c comparitor) compareBodies(ctx context.Context, f1ents []*BodyEntry, f2en
 						atomic.AddUint64(&compareTime, uint64(time.Since(startTime)))
 					}()
 
-					blockReader1 := freezeblocks.NewBlockReader(f1snaps, nil, nil, nil)
-					blockReader2 := freezeblocks.NewBlockReader(f2snaps, nil, nil, nil)
+					blockReader1 := freezeblocks.NewBlockReader(f1snaps, nil)
+					blockReader2 := freezeblocks.NewBlockReader(f2snaps, nil)
 
 					return func() error {
 						for i := ent1.From; i < ent1.To; i++ {
@@ -817,7 +817,7 @@ func (c comparitor) compareBodies(ctx context.Context, f1ents []*BodyEntry, f2en
 				f2snaps.Close()
 
 				for _, file := range files {
-					os.Remove(file)
+					dir.RemoveFile(file)
 				}
 
 				return err

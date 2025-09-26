@@ -51,6 +51,7 @@ func NewService(
 	heimdallService *heimdall.Service,
 	notifications *shards.Notifications,
 	engineAPISwitcher EngineAPISwitcher,
+	minedBlockReg MinedBlockObserverRegistrar,
 
 ) *Service {
 	borConfig := chainConfig.Bor.(*borcfg.BorConfig)
@@ -76,8 +77,8 @@ func NewService(
 		store,
 		blockLimit,
 	)
-	ccBuilderFactory := NewCanonicalChainBuilderFactory(chainConfig, borConfig, heimdallService, signaturesCache)
-	events := NewTipEvents(logger, p2pService, heimdallService)
+	ccBuilderFactory := NewCanonicalChainBuilderFactory(chainConfig, borConfig, heimdallService, signaturesCache, logger)
+	events := NewTipEvents(logger, p2pService, heimdallService, minedBlockReg)
 	sync := NewSync(
 		config,
 		logger,
@@ -90,7 +91,7 @@ func NewService(
 		ccBuilderFactory,
 		heimdallService,
 		bridgeService,
-		events.Events(),
+		events,
 		notifications,
 		NewWiggleCalculator(borConfig, signaturesCache, heimdallService),
 		engineAPISwitcher,
@@ -117,7 +118,7 @@ type Service struct {
 }
 
 func (s *Service) Run(parentCtx context.Context) error {
-	defer func() { s.logger.Info(syncLogPrefix("sync service component stopped")) }()
+	defer s.logger.Info(syncLogPrefix("sync service component stopped"))
 	s.logger.Info(syncLogPrefix("running sync service component"))
 
 	group, ctx := errgroup.WithContext(parentCtx)

@@ -54,19 +54,9 @@ const (
 	//key - contract code hash
 	//value - contract code
 	Code = "Code"
-
-	//key - addressHash+incarnation
-	//value - code hash
-	ContractCode = "HashedCodeHash"
 )
 
 const Witnesses = "witnesses" // block_num_u64 + "_chunk_" + chunk_num_u64 -> witness ( see: docs/programmers_guide/witness_format.md )
-
-// Mapping [block number] => [Verkle Root]
-const VerkleRoots = "VerkleRoots"
-
-// Mapping [Verkle Root] => [Rlp-Encoded Verkle Node]
-const VerkleTrie = "VerkleTrie"
 
 const (
 	// DatabaseInfo is used to store information about data layout.
@@ -87,7 +77,7 @@ const (
 
 	// Naming:
 	//  TxNum - Ethereum canonical transaction number - same across all nodes.
-	//  TxnID - auto-increment ID - can be differrent across all nodes
+	//  TxnID - auto-increment ID - can be different across all nodes
 	//  BlockNum/BlockID - same
 	//
 	// EthTx - stores all transactions of Canonical/NonCanonical/Bad blocks
@@ -103,36 +93,9 @@ const (
 	EthTx    = "BlockTransaction" // tx_id_u64 -> rlp(tx)
 	MaxTxNum = "MaxTxNum"         // block_number_u64 -> max_tx_num_in_block_u64
 
-	Receipts = "Receipt"        // block_num_u64 -> canonical block receipts (non-canonical are not stored)
-	Log      = "TransactionLog" // block_num_u64 + txId -> logs of transaction
-
-	// Stores bitmap indices - in which block numbers saw logs of given 'address' or 'topic'
-	// [addr or topic] + [2 bytes inverted shard number] -> bitmap(blockN)
-	// indices are sharded - because some bitmaps are >1Mb and when new incoming blocks process it
-	//	 updates ~300 of bitmaps - by append small amount new values. It cause much big writes (MDBX does copy-on-write).
-	//
-	// if last existing shard size merge it with delta
-	// if serialized size of delta > ShardLimit - break down to multiple shards
-	// shard number - it's biggest value in bitmap
-	LogTopicIndex   = "LogTopicIndex"
-	LogAddressIndex = "LogAddressIndex"
-
-	// CallTraceSet is the name of the table that contain the mapping of block number to the set (sorted) of all accounts
-	// touched by call traces. It is DupSort-ed table
-	// 8-byte BE block number -> account address -> two bits (one for "from", another for "to")
-	CallTraceSet = "CallTraceSet"
-	// Indices for call traces - have the same format as LogTopicIndex and LogAddressIndex
-	// Store bitmap indices - in which block number we saw calls from (CallFromIndex) or to (CallToIndex) some addresses
-	CallFromIndex = "CallFromIndex"
-	CallToIndex   = "CallToIndex"
-
-	ReceiptsCache = "ReceiptCache" // block_num_u64 + block_hash + txn_index_u32 -> rlp(receipt)
-
 	TxLookup = "BlockTransactionLookup" // hash -> transaction/receipt lookup metadata
 
 	ConfigTable = "Config" // config prefix for the db
-
-	PreimagePrefix = "SecureKey" // preimagePrefix + hash -> preima
 
 	// Progress of sync stages: stageName -> stageData
 	SyncStageProgress = "SyncStage"
@@ -169,25 +132,28 @@ const (
 	PendingEpoch = "DevPendingEpoch" // block_num_u64+block_hash->transition_proof
 
 	// BOR
-	BorFinality             = "BorFinality"
-	BorTxLookup             = "BlockBorTransactionLookup" // transaction_hash -> block_num_u64
-	BorSeparate             = "BorSeparate"               // persisted snapshots of the Validator Sets, with their proposer priorities
-	BorEvents               = "BorEvents"                 // event_id -> event_payload
-	BorEventNums            = "BorEventNums"              // block_num -> event_id (last event_id in that block)
-	BorEventProcessedBlocks = "BorEventProcessedBlocks"   // block_num -> block_time, tracks processed blocks in the bridge, used for unwinds and restarts, gets pruned
-	BorSpans                = "BorSpans"                  // span_id -> span (in JSON encoding)
-	BorMilestones           = "BorMilestones"             // milestone_id -> milestone (in JSON encoding)
-	BorMilestoneEnds        = "BorMilestoneEnds"          // start block_num -> milestone_id (first block of milestone)
-	BorCheckpoints          = "BorCheckpoints"            // checkpoint_id -> checkpoint (in JSON encoding)
-	BorCheckpointEnds       = "BorCheckpointEnds"         // start block_num -> checkpoint_id (first block of checkpoint)
-	BorProducerSelections   = "BorProducerSelections"     // span_id -> span selection with accumulated proposer priorities (in JSON encoding)
+	BorTxLookup                = "BlockBorTransactionLookup"  // transaction_hash -> block_num_u64
+	BorEvents                  = "BorEvents"                  // event_id -> event_payload
+	BorEventNums               = "BorEventNums"               // block_num -> event_id (last event_id in that block)
+	BorEventProcessedBlocks    = "BorEventProcessedBlocks"    // block_num -> block_time, tracks processed blocks in the bridge, used for unwinds and restarts, gets pruned
+	BorEventTimes              = "BorEventTimes"              // timestamp -> event_id
+	BorSpans                   = "BorSpans"                   // span_id -> span (in JSON encoding)
+	BorSpansIndex              = "BorSpansIndex"              // span.StartBlockNumber -> span.Id
+	BorMilestones              = "BorMilestones"              // milestone_id -> milestone (in JSON encoding)
+	BorMilestoneEnds           = "BorMilestoneEnds"           // start block_num -> milestone_id (first block of milestone)
+	BorCheckpoints             = "BorCheckpoints"             // checkpoint_id -> checkpoint (in JSON encoding)
+	BorCheckpointEnds          = "BorCheckpointEnds"          // start block_num -> checkpoint_id (first block of checkpoint)
+	BorProducerSelections      = "BorProducerSelections"      // span_id -> span selection with accumulated proposer priorities (in JSON encoding)
+	BorProducerSelectionsIndex = "BorProducerSelectionsIndex" // span.StartBlockNumber -> span.Id
+	BorWitnesses               = "BorWitnesses"               // block_num_u64 + block_hash -> witness
+	BorWitnessSizes            = "BorWitnessSizes"            // block_num_u64 + block_hash -> witness size (uint64)
 
 	// Downloader
 	BittorrentCompletion = "BittorrentCompletion"
 	BittorrentInfo       = "BittorrentInfo"
 
 	// Domains/History/InvertedIndices
-	// Contants have "Tbl" prefix, to avoid collision with actual Domain names
+	// Constants have "Tbl" prefix, to avoid collision with actual Domain names
 	// This constants is very rarely used in APP, but Domain/History/Idx names are widely used
 	TblAccountVals        = "AccountVals"
 	TblAccountHistoryKeys = "AccountHistoryKeys"
@@ -213,6 +179,11 @@ const (
 	TblReceiptHistoryKeys = "ReceiptHistoryKeys"
 	TblReceiptHistoryVals = "ReceiptHistoryVals"
 	TblReceiptIdx         = "ReceiptIdx"
+
+	TblRCacheVals        = "ReceiptCacheVals"
+	TblRCacheHistoryKeys = "ReceiptCacheHistoryKeys"
+	TblRCacheHistoryVals = "ReceiptCacheHistoryVals"
+	TblRCacheIdx         = "ReceiptCacheIdx"
 
 	TblLogAddressKeys = "LogAddressKeys"
 	TblLogAddressIdx  = "LogAddressIdx"
@@ -260,7 +231,8 @@ const (
 	LastBeaconSnapshot    = "LastBeaconSnapshot"
 	LastBeaconSnapshotKey = "LastBeaconSnapshotKey"
 
-	BlockRootToKzgCommitments = "BlockRootToKzgCommitments"
+	BlockRootToKzgCommitments  = "BlockRootToKzgCommitments"
+	BlockRootToDataColumnCount = "BlockRootToDataColumnCount"
 
 	// [Block Root] => [Parent Root]
 	BlockRootToParentRoot  = "BlockRootToParentRoot"
@@ -297,7 +269,16 @@ const (
 
 	IntraRandaoMixes = "IntraRandaoMixes" // [validator_index+slot] => [randao_mix]
 	RandaoMixes      = "RandaoMixes"      // [validator_index+slot] => [randao_mix]
-	Proposers        = "BlockProposers"   // epoch => proposers indicies
+	Proposers        = "BlockProposers"   // epoch => proposers indices
+
+	// Electra
+	PendingDepositsDump           = "PendingDepositsDump"           // block_num => dump
+	PendingPartialWithdrawalsDump = "PendingPartialWithdrawalsDump" // block_num => dump
+	PendingConsolidationsDump     = "PendingConsolidationsDump"     // block_num => dump
+	PendingDeposits               = "PendingDeposits"               // slot => queue_diffs
+	PendingPartialWithdrawals     = "PendingPartialWithdrawals"     // slot => queue_diffs
+	PendingConsolidations         = "PendingConsolidations"         // slot => queue_diffs
+	// End Electra
 
 	// Electra
 	PendingDepositsDump           = "PendingDepositsDump"           // block_num => dump
@@ -317,8 +298,8 @@ const (
 
 // Keys
 var (
-	// ExperimentalGetProofsLayout is used to keep track whether we store indecies to facilitate eth_getProof
-	CommitmentLayoutFlagKey = []byte("CommitmentLayoutFlag")
+	// ExperimentalGetProofsLayout is used to keep track whether we store indices to facilitate eth_getProof
+	CommitmentLayoutFlagKey = []byte("CommitmentLayouFlag")
 
 	PruneTypeOlder = []byte("older")
 	PruneHistory   = []byte("pruneHistory")
@@ -350,11 +331,9 @@ var ChaindataTables = []string{
 	E2AccountsHistory,
 	E2StorageHistory,
 	Code,
-	ContractCode,
 	HeaderNumber,
 	BadHeaderNumber,
 	BlockBody,
-	ReceiptsCache,
 	TxLookup,
 	ConfigTable,
 	DatabaseInfo,
@@ -368,33 +347,28 @@ var ChaindataTables = []string{
 	HeadHeaderKey,
 	LastForkchoice,
 	Migrations,
-	LogTopicIndex,
-	LogAddressIndex,
-	CallTraceSet,
-	CallFromIndex,
-	CallToIndex,
-	Log,
 	Sequence,
 	EthTx,
-	TrieOfAccounts,
-	TrieOfStorage,
 	HeaderCanonical,
 	Headers,
 	HeaderTD,
 	Epoch,
 	PendingEpoch,
-	BorFinality,
 	BorTxLookup,
-	BorSeparate,
 	BorEvents,
 	BorEventNums,
 	BorEventProcessedBlocks,
+	BorEventTimes,
 	BorSpans,
+	BorSpansIndex,
 	BorMilestones,
 	BorMilestoneEnds,
 	BorCheckpoints,
 	BorCheckpointEnds,
 	BorProducerSelections,
+	BorProducerSelectionsIndex,
+	BorWitnesses,
+	BorWitnessSizes,
 	TblAccountVals,
 	TblAccountHistoryKeys,
 	TblAccountHistoryVals,
@@ -420,6 +394,11 @@ var ChaindataTables = []string{
 	TblReceiptHistoryVals,
 	TblReceiptIdx,
 
+	TblRCacheVals,
+	TblRCacheHistoryKeys,
+	TblRCacheHistoryVals,
+	TblRCacheIdx,
+
 	TblLogAddressKeys,
 	TblLogAddressIdx,
 	TblLogTopicsKeys,
@@ -434,8 +413,6 @@ var ChaindataTables = []string{
 
 	MaxTxNum,
 
-	VerkleRoots,
-	VerkleTrie,
 	// Beacon stuff
 	BeaconBlocks,
 	CanonicalBlockRoots,
@@ -451,6 +428,7 @@ var ChaindataTables = []string{
 	ParentRootToBlockRoots,
 	// Blob Storage
 	BlockRootToKzgCommitments,
+	BlockRootToDataColumnCount,
 	// State Reconstitution
 	ValidatorEffectiveBalance,
 	ValidatorBalance,
@@ -506,8 +484,8 @@ var ConsensusTables = append([]string{
 },
 	ChaindataTables..., //TODO: move bor tables from chaintables to `ConsensusTables`
 )
-var HeimdallTables = []string{}
-var PolygonBridgeTables = []string{}
+var HeimdallTables = ChaindataTables
+var PolygonBridgeTables = ChaindataTables
 var DownloaderTables = []string{
 	BittorrentCompletion,
 	BittorrentInfo,
@@ -535,7 +513,7 @@ type CmpFunc func(k1, k2, v1, v2 []byte) int
 type TableCfg map[string]TableCfgItem
 type Bucket string
 
-type DBI uint
+type DBI uint32
 type TableFlags uint
 
 const (
@@ -577,34 +555,42 @@ var ChaindataTablesCfg = TableCfg{
 		DupFromLen:                60,
 		DupToLen:                  28,
 	},
-	CallTraceSet: {Flags: DupSort},
 
-	TblAccountVals:           {Flags: DupSort},
-	TblAccountHistoryKeys:    {Flags: DupSort},
-	TblAccountHistoryVals:    {Flags: DupSort},
-	TblAccountIdx:            {Flags: DupSort},
-	TblStorageVals:           {Flags: DupSort},
-	TblStorageHistoryKeys:    {Flags: DupSort},
-	TblStorageHistoryVals:    {Flags: DupSort},
-	TblStorageIdx:            {Flags: DupSort},
-	TblCodeHistoryKeys:       {Flags: DupSort},
-	TblCodeIdx:               {Flags: DupSort},
+	TblAccountVals:        {Flags: DupSort},
+	TblAccountHistoryKeys: {Flags: DupSort},
+	TblAccountHistoryVals: {Flags: DupSort},
+	TblAccountIdx:         {Flags: DupSort},
+
+	TblStorageVals:        {Flags: DupSort},
+	TblStorageHistoryKeys: {Flags: DupSort},
+	TblStorageHistoryVals: {Flags: DupSort},
+	TblStorageIdx:         {Flags: DupSort},
+
+	TblCodeHistoryKeys: {Flags: DupSort},
+	TblCodeIdx:         {Flags: DupSort},
+
 	TblCommitmentVals:        {Flags: DupSort},
 	TblCommitmentHistoryKeys: {Flags: DupSort},
 	TblCommitmentHistoryVals: {Flags: DupSort},
 	TblCommitmentIdx:         {Flags: DupSort},
-	TblReceiptVals:           {Flags: DupSort},
-	TblReceiptHistoryKeys:    {Flags: DupSort},
-	TblReceiptHistoryVals:    {Flags: DupSort},
-	TblReceiptIdx:            {Flags: DupSort},
-	TblLogAddressKeys:        {Flags: DupSort},
-	TblLogAddressIdx:         {Flags: DupSort},
-	TblLogTopicsKeys:         {Flags: DupSort},
-	TblLogTopicsIdx:          {Flags: DupSort},
-	TblTracesFromKeys:        {Flags: DupSort},
-	TblTracesFromIdx:         {Flags: DupSort},
-	TblTracesToKeys:          {Flags: DupSort},
-	TblTracesToIdx:           {Flags: DupSort},
+
+	TblReceiptVals:        {Flags: DupSort},
+	TblReceiptHistoryKeys: {Flags: DupSort},
+	TblReceiptHistoryVals: {Flags: DupSort},
+	TblReceiptIdx:         {Flags: DupSort},
+
+	TblRCacheHistoryKeys: {Flags: DupSort},
+	TblRCacheIdx:         {Flags: DupSort},
+
+	TblLogAddressKeys: {Flags: DupSort},
+	TblLogAddressIdx:  {Flags: DupSort},
+	TblLogTopicsKeys:  {Flags: DupSort},
+	TblLogTopicsIdx:   {Flags: DupSort},
+
+	TblTracesFromKeys: {Flags: DupSort},
+	TblTracesFromIdx:  {Flags: DupSort},
+	TblTracesToKeys:   {Flags: DupSort},
+	TblTracesToIdx:    {Flags: DupSort},
 }
 
 var AuRaTablesCfg = TableCfg{
@@ -613,17 +599,21 @@ var AuRaTablesCfg = TableCfg{
 }
 
 var BorTablesCfg = TableCfg{
-	BorFinality:             {Flags: DupSort},
-	BorTxLookup:             {Flags: DupSort},
-	BorEvents:               {Flags: DupSort},
-	BorEventNums:            {Flags: DupSort},
-	BorEventProcessedBlocks: {Flags: DupSort},
-	BorSpans:                {Flags: DupSort},
-	BorCheckpoints:          {Flags: DupSort},
-	BorCheckpointEnds:       {Flags: DupSort},
-	BorMilestones:           {Flags: DupSort},
-	BorMilestoneEnds:        {Flags: DupSort},
-	BorProducerSelections:   {Flags: DupSort},
+	BorTxLookup:                {Flags: DupSort},
+	BorEvents:                  {Flags: DupSort},
+	BorEventNums:               {Flags: DupSort},
+	BorEventProcessedBlocks:    {Flags: DupSort},
+	BorEventTimes:              {Flags: DupSort},
+	BorSpans:                   {Flags: DupSort},
+	BorSpansIndex:              {Flags: DupSort},
+	BorProducerSelectionsIndex: {Flags: DupSort},
+	BorCheckpoints:             {Flags: DupSort},
+	BorCheckpointEnds:          {Flags: DupSort},
+	BorMilestones:              {Flags: DupSort},
+	BorMilestoneEnds:           {Flags: DupSort},
+	BorProducerSelections:      {Flags: DupSort},
+	BorWitnesses:               {Flags: DupSort},
+	BorWitnessSizes:            {Flags: DupSort},
 }
 
 var TxpoolTablesCfg = TableCfg{}
@@ -750,28 +740,84 @@ func reinit() {
 // Temporal
 
 const (
-	AccountsDomain   Domain = 0
-	StorageDomain    Domain = 1
-	CodeDomain       Domain = 2
-	CommitmentDomain Domain = 3
-	ReceiptDomain    Domain = 4
-	DomainLen        Domain = 5
+	AccountsDomain   Domain = 0 // Eth Accounts
+	StorageDomain    Domain = 1 // Eth Account's Storage
+	CodeDomain       Domain = 2 // Eth Smart-Contract Code
+	CommitmentDomain Domain = 3 // Merkle Trie
+	ReceiptDomain    Domain = 4 // Tiny Receipts - without logs. Required for node-operations.
+	RCacheDomain     Domain = 5 // Fat Receipts - with logs. Optional.
+	DomainLen        Domain = 6 // Technical marker of Enum. Not real Domain.
 )
 
 var StateDomains = []Domain{AccountsDomain, StorageDomain, CodeDomain, CommitmentDomain}
 
 const (
-	AccountsHistoryIdx   InvertedIdx = "AccountsHistoryIdx"
-	StorageHistoryIdx    InvertedIdx = "StorageHistoryIdx"
-	CodeHistoryIdx       InvertedIdx = "CodeHistoryIdx"
-	CommitmentHistoryIdx InvertedIdx = "CommitmentHistoryIdx"
-	ReceiptHistoryIdx    InvertedIdx = "ReceiptHistoryIdx"
+	AccountsHistoryIdx   InvertedIdx = 0
+	StorageHistoryIdx    InvertedIdx = 1
+	CodeHistoryIdx       InvertedIdx = 2
+	CommitmentHistoryIdx InvertedIdx = 3
+	ReceiptHistoryIdx    InvertedIdx = 4
+	RCacheHistoryIdx     InvertedIdx = 5
 
-	LogTopicIdx   InvertedIdx = "LogTopicIdx"
-	LogAddrIdx    InvertedIdx = "LogAddrIdx"
-	TracesFromIdx InvertedIdx = "TracesFromIdx"
-	TracesToIdx   InvertedIdx = "TracesToIdx"
+	LogTopicIdx   InvertedIdx = 6
+	LogAddrIdx    InvertedIdx = 7
+	TracesFromIdx InvertedIdx = 8
+	TracesToIdx   InvertedIdx = 9
 )
+
+func (idx InvertedIdx) String() string {
+	switch idx {
+	case AccountsHistoryIdx:
+		return "accounts"
+	case StorageHistoryIdx:
+		return "storage"
+	case CodeHistoryIdx:
+		return "code"
+	case CommitmentHistoryIdx:
+		return "commitment"
+	case ReceiptHistoryIdx:
+		return "receipt"
+	case RCacheHistoryIdx:
+		return "rcache"
+	case LogAddrIdx:
+		return "logaddrs"
+	case LogTopicIdx:
+		return "logtopics"
+	case TracesFromIdx:
+		return "tracesfrom"
+	case TracesToIdx:
+		return "tracesto"
+	default:
+		return "unknown index"
+	}
+}
+
+func String2InvertedIdx(in string) (InvertedIdx, error) {
+	switch in {
+	case "accounts":
+		return AccountsHistoryIdx, nil
+	case "storage":
+		return StorageHistoryIdx, nil
+	case "code":
+		return CodeHistoryIdx, nil
+	case "commitment":
+		return CommitmentHistoryIdx, nil
+	case "receipt":
+		return ReceiptHistoryIdx, nil
+	case "rcache":
+		return RCacheHistoryIdx, nil
+	case "logaddrs":
+		return LogAddrIdx, nil
+	case "logtopics":
+		return LogTopicIdx, nil
+	case "tracesfrom":
+		return TracesFromIdx, nil
+	case "tracesto":
+		return TracesToIdx, nil
+	default:
+		return InvertedIdx(MaxUint16), fmt.Errorf("unknown inverted index name: %s", in)
+	}
+}
 
 const (
 	ReceiptsAppendable Appendable = 0
@@ -790,6 +836,8 @@ func (d Domain) String() string {
 		return "commitment"
 	case ReceiptDomain:
 		return "receipt"
+	case RCacheDomain:
+		return "rcache"
 	default:
 		return "unknown domain"
 	}
@@ -807,30 +855,14 @@ func String2Domain(in string) (Domain, error) {
 		return CommitmentDomain, nil
 	case "receipt":
 		return ReceiptDomain, nil
+	case "rcache":
+		return RCacheDomain, nil
 	default:
-		return Domain(MaxUint16), fmt.Errorf("unknown history name: %s", in)
+		return Domain(MaxUint16), fmt.Errorf("unknown name: %s", in)
 	}
 }
 
 const MaxUint16 uint16 = 1<<16 - 1
-
-func (iip Appendable) String() string {
-	switch iip {
-	case ReceiptsAppendable:
-		return "receipts"
-	default:
-		return "unknown Appendable"
-	}
-}
-
-func String2Appendable(in string) (Appendable, error) {
-	switch in {
-	case "receipts":
-		return ReceiptsAppendable, nil
-	default:
-		return Appendable(MaxUint16), fmt.Errorf("unknown Appendable name: %s", in)
-	}
-}
 
 // --- Deprecated
 const (
@@ -838,7 +870,7 @@ const (
 	// ChaindataTables
 
 	// Dictionary:
-	// "Plain State" - state where keys arent' hashed. "CurrentState" - same, but keys are hashed. "PlainState" used for blocks execution. "CurrentState" used mostly for Merkle root calculation.
+	// "Plain State" - state where keys aren't hashed. "CurrentState" - same, but keys are hashed. "PlainState" used for blocks execution. "CurrentState" used mostly for Merkle root calculation.
 	// "incarnation" - uint64 number - how much times given account was SelfDestruct'ed.
 
 	/*
@@ -948,56 +980,6 @@ const (
 	*/
 	E2AccountsHistory = "AccountHistory"
 	E2StorageHistory  = "StorageHistory"
-
-	/*
-	   TrieOfAccounts and TrieOfStorage
-	   hasState,groups - mark prefixes existing in hashed_account table
-	   hasTree - mark prefixes existing in trie_account table (not related with branchNodes)
-	   hasHash - mark prefixes which hashes are saved in current trie_account record (actually only hashes of branchNodes can be saved)
-	   @see UnmarshalTrieNode
-	   @see integrity.Trie
-
-	   +-----------------------------------------------------------------------------------------------------+
-	   | DB record: 0x0B, hasState: 0b1011, hasTree: 0b1001, hasHash: 0b1001, hashes: [x,x]                  |
-	   +-----------------------------------------------------------------------------------------------------+
-
-	   	|                                           |                               |
-	   	v                                           |                               v
-
-	   +---------------------------------------------+             |            +--------------------------------------+
-	   | DB record: 0x0B00, hasState: 0b10001        |             |            | DB record: 0x0B03, hasState: 0b10010 |
-	   | hasTree: 0, hasHash: 0b10000, hashes: [x]   |             |            | hasTree: 0, hasHash: 0, hashes: []   |
-	   +---------------------------------------------+             |            +--------------------------------------+
-
-	   	|                    |                              |                         |                  |
-	   	v                    v                              v                         v                  v
-
-	   +------------------+    +----------------------+     +---------------+        +---------------+  +---------------+
-	   | Account:         |    | BranchNode: 0x0B0004 |     | Account:      |        | Account:      |  | Account:      |
-	   | 0x0B0000...      |    | has no record in     |     | 0x0B01...     |        | 0x0B0301...   |  | 0x0B0304...   |
-	   | in HashedAccount |    |     TrieAccount      |     |               |        |               |  |               |
-	   +------------------+    +----------------------+     +---------------+        +---------------+  +---------------+
-
-	   	                           |                |
-	   	                           v                v
-	   			           +---------------+  +---------------+
-	   			           | Account:      |  | Account:      |
-	   			           | 0x0B000400... |  | 0x0B000401... |
-	   			           +---------------+  +---------------+
-
-	   Invariants:
-	   - hasTree is subset of hasState
-	   - hasHash is subset of hasState
-	   - first level in account_trie always exists if hasState>0
-	   - TrieStorage record of account.root (length=40) must have +1 hash - it's account.root
-	   - each record in TrieAccount table must have parent (may be not direct) and this parent must have correct bit in hasTree bitmap
-	   - if hasState has bit - then HashedAccount table must have record according to this bit
-	   - each TrieAccount record must cover some state (means hasState is always > 0)
-	   - TrieAccount records with length=1 can satisfy (hasBranch==0&&hasHash==0) condition
-	   - Other records in TrieAccount and TrieStorage must (hasTree!=0 || hasHash!=0)
-	*/
-	TrieOfAccounts = "TrieAccount"
-	TrieOfStorage  = "TrieStorage"
 
 	// IncarnationMap for deleted accounts
 	//key - address

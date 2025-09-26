@@ -2,6 +2,7 @@ package state
 
 import (
 	"fmt"
+	"github.com/erigontech/erigon-lib/common/dir"
 	"os"
 	"path/filepath"
 	"testing"
@@ -10,19 +11,19 @@ import (
 	btree2 "github.com/tidwall/btree"
 )
 
-func TestFileItemWithMissingAccessor(t *testing.T) {
+func TestFileItemWithMissedAccessor(t *testing.T) {
 	tmp := t.TempDir()
 
 	// filesItem
-	f1 := &filesItem{
+	f1 := &FilesItem{
 		startTxNum: 1,
 		endTxNum:   10,
 	}
-	f2 := &filesItem{
+	f2 := &FilesItem{
 		startTxNum: 11,
 		endTxNum:   20,
 	}
-	f3 := &filesItem{
+	f3 := &FilesItem{
 		startTxNum: 31,
 		endTxNum:   40,
 	}
@@ -43,15 +44,15 @@ func TestFileItemWithMissingAccessor(t *testing.T) {
 	// create accesssor files for f1, f2
 	for _, fname := range accessorFor(f1.startTxNum/aggStep, f1.endTxNum/aggStep) {
 		os.WriteFile(fname, []byte("test"), 0644)
-		defer os.Remove(fname)
+		defer dir.RemoveFile(fname)
 	}
 
 	for _, fname := range accessorFor(f2.startTxNum/aggStep, f2.endTxNum/aggStep) {
 		os.WriteFile(fname, []byte("test"), 0644)
-		defer os.Remove(fname)
+		defer dir.RemoveFile(fname)
 	}
 
-	fileItems := fileItemsWithMissingAccessors(btree, aggStep, accessorFor)
-	require.Equal(t, 1, len(fileItems))
+	fileItems := fileItemsWithMissedAccessors(btree.Items(), aggStep, accessorFor)
+	require.Len(t, fileItems, 1)
 	require.Equal(t, f3, fileItems[0])
 }
