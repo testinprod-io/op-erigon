@@ -9,6 +9,7 @@ import (
 
 	"github.com/erigontech/erigon-lib/chain"
 	"github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon/execution/chainspec"
 	"github.com/erigontech/erigon/superchain"
 )
 
@@ -35,7 +36,7 @@ func OPStackChainConfigByName(name string) *superchain.ChainConfig {
 
 // OPStackChainConfigByGenesisHash loads chain config corresponding to the genesis hash from superchain registry.
 func OPStackChainConfigByGenesisHash(genesisHash common.Hash) *superchain.ChainConfig {
-	if bytes.Equal(genesisHash.Bytes(), OPMainnetGenesisHash.Bytes()) {
+	if bytes.Equal(genesisHash.Bytes(), chainspec.OPMainnetGenesisHash.Bytes()) {
 		chainCfg, err := superchain.Chains[OPMainnetChainID].Config()
 		if err == nil {
 			return chainCfg

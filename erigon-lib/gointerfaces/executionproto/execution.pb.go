@@ -1051,13 +1051,13 @@ type AssembleBlockRequest struct {
 	SuggestedFeeRecipient *typesproto.H160         `protobuf:"bytes,4,opt,name=suggested_fee_recipient,json=suggestedFeeRecipient,proto3" json:"suggested_fee_recipient,omitempty"`
 	Withdrawals           []*typesproto.Withdrawal `protobuf:"bytes,5,rep,name=withdrawals,proto3" json:"withdrawals,omitempty"`                                                            // added in Shapella (EIP-4895)
 	ParentBeaconBlockRoot *typesproto.H256         `protobuf:"bytes,6,opt,name=parent_beacon_block_root,json=parentBeaconBlockRoot,proto3,oneof" json:"parent_beacon_block_root,omitempty"` // added in Dencun (EIP-4788)
-	// Optimism shit
-	Transactions           [][]byte `protobuf:"bytes,7,rep,name=transactions,proto3" json:"transactions,omitempty"`
-	NoTxPool               bool     `protobuf:"varint,8,opt,name=no_tx_pool,json=noTxPool,proto3" json:"no_tx_pool,omitempty"`
-	GasLimit               *uint64  `protobuf:"varint,9,opt,name=gas_limit,json=gasLimit,proto3,oneof" json:"gas_limit,omitempty"`
-	Holocene_Eip1559Params []byte   `protobuf:"bytes,10,opt,name=holocene_Eip1559_params,json=holoceneEip1559Params,proto3,oneof" json:"holocene_Eip1559_params,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	// optimism
+	Transactions   [][]byte `protobuf:"bytes,7,rep,name=transactions,proto3" json:"transactions,omitempty"`
+	NoTxPool       bool     `protobuf:"varint,8,opt,name=no_tx_pool,json=noTxPool,proto3" json:"no_tx_pool,omitempty"`
+	GasLimit       *uint64  `protobuf:"varint,9,opt,name=gas_limit,json=gasLimit,proto3,oneof" json:"gas_limit,omitempty"`
+	Eip_1559Params []byte   `protobuf:"bytes,10,opt,name=eip_1559_params,json=eip1559Params,proto3,oneof" json:"eip_1559_params,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *AssembleBlockRequest) Reset() {
@@ -1153,9 +1153,9 @@ func (x *AssembleBlockRequest) GetGasLimit() uint64 {
 	return 0
 }
 
-func (x *AssembleBlockRequest) GetHolocene_Eip1559Params() []byte {
+func (x *AssembleBlockRequest) GetEip_1559Params() []byte {
 	if x != nil {
-		return x.Holocene_Eip1559Params
+		return x.Eip_1559Params
 	}
 	return nil
 }
@@ -1257,13 +1257,12 @@ func (x *GetAssembledBlockRequest) GetId() uint64 {
 }
 
 type AssembledBlockData struct {
-	state            protoimpl.MessageState       `protogen:"open.v1"`
-	ExecutionPayload *typesproto.ExecutionPayload `protobuf:"bytes,1,opt,name=execution_payload,json=executionPayload,proto3" json:"execution_payload,omitempty"`
-	BlockValue       *typesproto.H256             `protobuf:"bytes,2,opt,name=block_value,json=blockValue,proto3" json:"block_value,omitempty"`
-	BlobsBundle      *typesproto.BlobsBundleV1    `protobuf:"bytes,3,opt,name=blobs_bundle,json=blobsBundle,proto3" json:"blobs_bundle,omitempty"`
-	Requests         *typesproto.RequestsBundle   `protobuf:"bytes,4,opt,name=requests,proto3" json:"requests,omitempty"`
-	// Optimism
-	ParentBeaconBlockRoot *typesproto.H256 `protobuf:"bytes,5,opt,name=parent_beacon_block_root,json=parentBeaconBlockRoot,proto3,oneof" json:"parent_beacon_block_root,omitempty"`
+	state                 protoimpl.MessageState       `protogen:"open.v1"`
+	ExecutionPayload      *typesproto.ExecutionPayload `protobuf:"bytes,1,opt,name=execution_payload,json=executionPayload,proto3" json:"execution_payload,omitempty"`
+	BlockValue            *typesproto.H256             `protobuf:"bytes,2,opt,name=block_value,json=blockValue,proto3" json:"block_value,omitempty"`
+	BlobsBundle           *typesproto.BlobsBundleV1    `protobuf:"bytes,3,opt,name=blobs_bundle,json=blobsBundle,proto3" json:"blobs_bundle,omitempty"`
+	Requests              *typesproto.RequestsBundle   `protobuf:"bytes,4,opt,name=requests,proto3" json:"requests,omitempty"`
+	ParentBeaconBlockRoot *typesproto.H256             `protobuf:"bytes,5,opt,name=parent_beacon_block_root,json=parentBeaconBlockRoot,proto3,oneof" json:"parent_beacon_block_root,omitempty"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -1767,7 +1766,7 @@ const file_execution_execution_proto_rawDesc = "" +
 	"\x06result\x18\x01 \x01(\x0e2\x1a.execution.ExecutionStatusR\x06result\"L\n" +
 	"\x11ValidationRequest\x12\x1f\n" +
 	"\x04hash\x18\x01 \x01(\v2\v.types.H256R\x04hash\x12\x16\n" +
-	"\x06number\x18\x02 \x01(\x04R\x06number\"\xbd\x04\n" +
+	"\x06number\x18\x02 \x01(\x04R\x06number\"\xa5\x04\n" +
 	"\x14AssembleBlockRequest\x12,\n" +
 	"\vparent_hash\x18\x01 \x01(\v2\v.types.H256R\n" +
 	"parentHash\x12\x1c\n" +
@@ -1780,13 +1779,13 @@ const file_execution_execution_proto_rawDesc = "" +
 	"\ftransactions\x18\a \x03(\fR\ftransactions\x12\x1c\n" +
 	"\n" +
 	"no_tx_pool\x18\b \x01(\bR\bnoTxPool\x12 \n" +
-	"\tgas_limit\x18\t \x01(\x04H\x01R\bgasLimit\x88\x01\x01\x12;\n" +
-	"\x17holocene_Eip1559_params\x18\n" +
-	" \x01(\fH\x02R\x15holoceneEip1559Params\x88\x01\x01B\x1b\n" +
+	"\tgas_limit\x18\t \x01(\x04H\x01R\bgasLimit\x88\x01\x01\x12+\n" +
+	"\x0feip_1559_params\x18\n" +
+	" \x01(\fH\x02R\reip1559Params\x88\x01\x01B\x1b\n" +
 	"\x19_parent_beacon_block_rootB\f\n" +
 	"\n" +
-	"_gas_limitB\x1a\n" +
-	"\x18_holocene_Eip1559_params\";\n" +
+	"_gas_limitB\x12\n" +
+	"\x10_eip_1559_params\";\n" +
 	"\x15AssembleBlockResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04busy\x18\x02 \x01(\bR\x04busy\"*\n" +

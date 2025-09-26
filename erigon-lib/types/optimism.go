@@ -26,14 +26,9 @@ import (
 
 	"github.com/erigontech/erigon-lib/chain"
 	"github.com/erigontech/erigon-lib/common"
-	"github.com/erigontech/erigon-lib/rlp"
 	"github.com/erigontech/erigon-lib/opstack"
+	"github.com/erigontech/erigon-lib/rlp"
 	"github.com/holiman/uint256"
-	// "github.com/ledgerwatch/erigon-lib/chain"
-	// libcommon "github.com/ledgerwatch/erigon-lib/common"
-	// "github.com/ledgerwatch/erigon/rlp"
-	// "github.com/holiman/uint256"
-	// "github.com/ledgerwatch/erigon/common"
 )
 
 type OptimismDepositTx struct {
@@ -42,11 +37,11 @@ type OptimismDepositTx struct {
 	hash atomic.Value //nolint:structcheck
 	size atomic.Value //nolint:structcheck
 	// SourceHash uniquely identifies the source of the deposit
-	SourceHash libcommon.Hash
+	SourceHash common.Hash
 	// From is exposed through the types.Signer, not through TxData
-	From libcommon.Address
+	From common.Address
 	// nil means contract creation
-	To *libcommon.Address `rlp:"nil"`
+	To *common.Address `rlp:"nil"`
 	// Mint is minted on L2, locked on L1, nil if no minting.
 	Mint *uint256.Int `rlp:"nil"`
 	// Value is transferred from L2 balance, executed after Mint (if any)
@@ -69,7 +64,7 @@ func (tx OptimismDepositTx) GetNonce() uint64 {
 	return 0
 }
 
-func (tx OptimismDepositTx) GetTo() *libcommon.Address {
+func (tx OptimismDepositTx) GetTo() *common.Address {
 	return tx.To
 }
 
@@ -77,8 +72,8 @@ func (tx OptimismDepositTx) GetBlobGas() uint64 {
 	return 0
 }
 
-func (tx OptimismDepositTx) GetBlobHashes() []libcommon.Hash {
-	return []libcommon.Hash{}
+func (tx OptimismDepositTx) GetBlobHashes() []common.Hash {
+	return []common.Hash{}
 }
 
 func (tx OptimismDepositTx) GetGas() uint64 {
@@ -93,15 +88,15 @@ func (tx OptimismDepositTx) GetData() []byte {
 	return tx.Data
 }
 
-func (tx OptimismDepositTx) GetSender() (libcommon.Address, bool) {
+func (tx OptimismDepositTx) GetSender() (common.Address, bool) {
 	return tx.From, true
 }
 
-func (tx OptimismDepositTx) cachedSender() (libcommon.Address, bool) {
+func (tx OptimismDepositTx) cachedSender() (common.Address, bool) {
 	return tx.From, true
 }
 
-func (tx *OptimismDepositTx) SetSender(addr libcommon.Address) {
+func (tx *OptimismDepositTx) SetSender(addr common.Address) {
 	tx.From = addr
 }
 
@@ -109,8 +104,12 @@ func (tx OptimismDepositTx) RawSignatureValues() (*uint256.Int, *uint256.Int, *u
 	panic("deposit tx does not have a signature")
 }
 
-func (tx OptimismDepositTx) SigningHash(chainID *big.Int) libcommon.Hash {
+func (tx OptimismDepositTx) SigningHash(chainID *big.Int) common.Hash {
 	panic("deposit tx does not have a signing hash")
+}
+
+func (tx *OptimismDepositTx) GetAuthorizations() []Authorization {
+	return nil
 }
 
 // NOTE: Need to check this
@@ -316,7 +315,7 @@ func (tx *OptimismDepositTx) DecodeRLP(s *rlp.Stream) error {
 		return fmt.Errorf("wrong size for To: %d", len(b))
 	}
 	if len(b) > 0 {
-		tx.To = &libcommon.Address{}
+		tx.To = &common.Address{}
 		copy((*tx.To)[:], b)
 	}
 	// Mint
@@ -343,7 +342,7 @@ func (tx *OptimismDepositTx) DecodeRLP(s *rlp.Stream) error {
 	return s.ListEnd()
 }
 
-func (tx *OptimismDepositTx) FakeSign(address libcommon.Address) (Transaction, error) {
+func (tx *OptimismDepositTx) FakeSign(address common.Address) (Transaction, error) {
 	cpy := tx.copy()
 	cpy.SetSender(address)
 	return cpy, nil
@@ -359,9 +358,9 @@ func (tx OptimismDepositTx) Time() time.Time {
 
 func (tx OptimismDepositTx) Type() byte { return OptimismDepositTxType }
 
-func (tx *OptimismDepositTx) Hash() libcommon.Hash {
+func (tx *OptimismDepositTx) Hash() common.Hash {
 	if hash := tx.hash.Load(); hash != nil {
-		return *hash.(*libcommon.Hash)
+		return *hash.(*common.Hash)
 	}
 	hash := prefixedRlpHash(OptimismDepositTxType, []interface{}{
 		tx.SourceHash,
@@ -408,9 +407,9 @@ func (tx OptimismDepositTx) GetAccessList() AccessList {
 
 // NewDepositTransaction creates a deposit transaction
 func NewDepositTransaction(
-	sourceHash libcommon.Hash,
-	from libcommon.Address,
-	to libcommon.Address,
+	sourceHash common.Hash,
+	from common.Address,
+	to common.Address,
 	mint *uint256.Int,
 	value *uint256.Int,
 	gasLimit uint64,
@@ -438,7 +437,7 @@ func (tx OptimismDepositTx) copy() *OptimismDepositTx {
 		Value:               new(uint256.Int),
 		Gas:                 tx.Gas,
 		IsSystemTransaction: tx.IsSystemTransaction,
-		Data:                libcommon.CopyBytes(tx.Data),
+		Data:                common.CopyBytes(tx.Data),
 	}
 	if tx.Mint != nil {
 		cpy.Mint = new(uint256.Int).Set(tx.Mint)
@@ -450,8 +449,8 @@ func (tx OptimismDepositTx) copy() *OptimismDepositTx {
 }
 
 // AsMessage returns the transaction as a core.Message.
-func (tx OptimismDepositTx) AsMessage(s Signer, baseFee *big.Int, rules *chain.Rules) (Message, error) {
-	return Message{
+func (tx OptimismDepositTx) AsMessage(s Signer, baseFee *big.Int, rules *chain.Rules) (*Message, error) {
+	return &Message{
 		nonce:               0,
 		gasLimit:            tx.Gas,
 		gasPrice:            *uint256.NewInt(0),
@@ -468,7 +467,7 @@ func (tx OptimismDepositTx) AsMessage(s Signer, baseFee *big.Int, rules *chain.R
 	}, nil
 }
 
-func (tx *OptimismDepositTx) Sender(signer Signer) (libcommon.Address, error) {
+func (tx *OptimismDepositTx) Sender(signer Signer) (common.Address, error) {
 	return tx.From, nil
 }
 
@@ -476,9 +475,9 @@ func (tx OptimismDepositTx) RollupCostData() opstack.RollupCostData {
 	return opstack.RollupCostData{}
 }
 
-func (tx *OptimismDepositTx) GetDataHashes() []libcommon.Hash {
+func (tx *OptimismDepositTx) GetDataHashes() []common.Hash {
 	// Only blob txs have data hashes
-	return []libcommon.Hash{}
+	return []common.Hash{}
 }
 
 func (tx *OptimismDepositTx) Unwrap() Transaction {

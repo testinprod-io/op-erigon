@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/erigontech/erigon-lib/opstack"
 	"io"
 	"math/big"
 
@@ -54,6 +55,10 @@ type AccountAbstractionTransaction struct {
 
 	// RIP-7712 two-dimensional nonce (optional), 192 bits
 	NonceKey *uint256.Int
+}
+
+func (tx *AccountAbstractionTransaction) RollupCostData() opstack.RollupCostData {
+	return opstack.RollupCostData{}
 }
 
 func (tx *AccountAbstractionTransaction) GetData() []byte {

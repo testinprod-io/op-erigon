@@ -66,10 +66,10 @@ type txJSON struct {
 	Hash common.Hash `json:"hash"`
 
 	// Optimism Deposit transaction fields
-	SourceHash *libcommon.Hash    `json:"sourceHash,omitempty"`
-	From       *libcommon.Address `json:"from,omitempty"`
-	Mint       *hexutil.Big       `json:"mint,omitempty"`
-	IsSystemTx *bool              `json:"isSystemTx,omitempty"`
+	SourceHash *common.Hash    `json:"sourceHash,omitempty"`
+	From       *common.Address `json:"from,omitempty"`
+	Mint       *hexutil.Big    `json:"mint,omitempty"`
+	IsSystemTx *bool           `json:"isSystemTx,omitempty"`
 }
 
 type JsonAuthorization struct {
@@ -528,15 +528,15 @@ func (tx *OptimismDepositTx) UnmarshalJSON(input []byte) error {
 	if err := json.Unmarshal(input, &dec); err != nil {
 		return err
 	}
-	if dec.AccessList != nil || dec.Tip != nil || dec.FeeCap != nil {
+	if dec.AccessList != nil || dec.MaxPriorityFeePerGas != nil || dec.MaxFeePerGas != nil {
 		return errors.New("unexpected field(s) in deposit transaction")
 	}
-	if dec.GasPrice != nil && dec.GasPrice.ToInt().Cmp(libcommon.Big0) != 0 {
+	if dec.GasPrice != nil && dec.GasPrice.ToInt().Cmp(common.Big0) != 0 {
 		return errors.New("deposit transaction GasPrice must be 0")
 	}
-	if (dec.V != nil && dec.V.ToInt().Cmp(libcommon.Big0) != 0) ||
-		(dec.R != nil && dec.R.ToInt().Cmp(libcommon.Big0) != 0) ||
-		(dec.S != nil && dec.S.ToInt().Cmp(libcommon.Big0) != 0) {
+	if (dec.V != nil && dec.V.ToInt().Cmp(common.Big0) != 0) ||
+		(dec.R != nil && dec.R.ToInt().Cmp(common.Big0) != 0) ||
+		(dec.S != nil && dec.S.ToInt().Cmp(common.Big0) != 0) {
 		return errors.New("deposit transaction signature must be 0 or unset")
 	}
 	if dec.To != nil {

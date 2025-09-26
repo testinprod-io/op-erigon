@@ -4,7 +4,7 @@ go 1.24
 
 replace (
 	github.com/crate-crypto/go-kzg-4844 => github.com/erigontech/go-kzg-4844 v0.0.0-20250130131058-ce13be60bc86
-	github.com/erigontech/interfaces => github.com/testinprod-io/erigon-interfaces v0.0.0-20250418041839-803e619d8554
+	github.com/erigontech/interfaces => github.com/testinprod-io/erigon-interfaces v0.0.0-20250926194814-e1232a0d357f
 	github.com/holiman/bloomfilter/v2 => github.com/AskAlexSharov/bloomfilter/v2 v2.0.9
 )
 

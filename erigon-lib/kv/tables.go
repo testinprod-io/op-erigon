@@ -280,15 +280,6 @@ const (
 	PendingConsolidations         = "PendingConsolidations"         // slot => queue_diffs
 	// End Electra
 
-	// Electra
-	PendingDepositsDump           = "PendingDepositsDump"           // block_num => dump
-	PendingPartialWithdrawalsDump = "PendingPartialWithdrawalsDump" // block_num => dump
-	PendingConsolidationsDump     = "PendingConsolidationsDump"     // block_num => dump
-	PendingDeposits               = "PendingDeposits"               // slot => queue_diffs
-	PendingPartialWithdrawals     = "PendingPartialWithdrawals"     // slot => queue_diffs
-	PendingConsolidations         = "PendingConsolidations"         // slot => queue_diffs
-	// End Electra
-
 	StatesProcessingProgress = "StatesProcessingProgress"
 
 	//Diagnostics tables

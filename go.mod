@@ -18,11 +18,14 @@ replace (
 )
 
 require (
+	github.com/BurntSushi/toml v1.4.0
 	github.com/erigontech/erigonwatch v0.0.0-20240718131902-b6576bde1116
 	github.com/erigontech/mdbx-go v0.39.8
 	github.com/erigontech/secp256k1 v1.2.0
 	github.com/erigontech/silkworm-go v0.24.0
 )
+
+require github.com/naoina/go-stringutil v0.1.0 // indirect
 
 require (
 	gfx.cafe/util/go/generic v0.0.0-20230721185457-c559e86c829c

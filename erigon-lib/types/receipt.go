@@ -32,8 +32,8 @@ import (
 	"github.com/erigontech/erigon-lib/common/dbg"
 	"github.com/erigontech/erigon-lib/common/hexutil"
 	"github.com/erigontech/erigon-lib/crypto"
-	"github.com/erigontech/erigon-lib/rlp"
 	"github.com/erigontech/erigon-lib/opstack"
+	"github.com/erigontech/erigon-lib/rlp"
 )
 
 //(go:generate gencodec -type Receipt -field-override receiptMarshaling -out gen_receipt_json.go)
@@ -433,18 +433,18 @@ func (r *Receipt) Copy() *Receipt {
 		return nil
 	}
 	return &Receipt{
-		Type:              r.Type,
-		PostState:         slices.Clone(r.PostState),
-		Status:            r.Status,
-		CumulativeGasUsed: r.CumulativeGasUsed,
-		Bloom:             r.Bloom,
-		Logs:              r.Logs.Copy(),
-		TxHash:            r.TxHash,
-		ContractAddress:   r.ContractAddress,
-		GasUsed:           r.GasUsed,
-		BlockHash:         r.BlockHash,
-		BlockNumber:       big.NewInt(0).Set(r.BlockNumber),
-		TransactionIndex:  r.TransactionIndex,
+		Type:                     r.Type,
+		PostState:                slices.Clone(r.PostState),
+		Status:                   r.Status,
+		CumulativeGasUsed:        r.CumulativeGasUsed,
+		Bloom:                    r.Bloom,
+		Logs:                     r.Logs.Copy(),
+		TxHash:                   r.TxHash,
+		ContractAddress:          r.ContractAddress,
+		GasUsed:                  r.GasUsed,
+		BlockHash:                r.BlockHash,
+		BlockNumber:              big.NewInt(0).Set(r.BlockNumber),
+		TransactionIndex:         r.TransactionIndex,
 		DepositReceiptVersion:    r.DepositReceiptVersion,
 		FirstLogIndexWithinBlock: r.FirstLogIndexWithinBlock,
 	}
@@ -467,15 +467,11 @@ func (r *ReceiptForStorage) EncodeRLP(w io.Writer) error {
 	for i, l := range r.Logs {
 		logsForStorage[i] = (*LogForStorage)(l)
 	}
-	logsForStorage := make([]*LogForStorage, len(r.Logs))
-	for i, l := range r.Logs {
-		logsForStorage[i] = (*LogForStorage)(l)
-	}
 	return rlp.Encode(w, &storedReceiptRLP{
-		Type:              r.Type,
-		PostStateOrStatus: (*Receipt)(r).statusEncoding(),
-		CumulativeGasUsed: r.CumulativeGasUsed,
-		FirstLogIndex:     r.FirstLogIndexWithinBlock,
+		Type:                  r.Type,
+		PostStateOrStatus:     (*Receipt)(r).statusEncoding(),
+		CumulativeGasUsed:     r.CumulativeGasUsed,
+		FirstLogIndex:         r.FirstLogIndexWithinBlock,
 		DepositReceiptVersion: r.DepositReceiptVersion,
 
 		Logs:             logsForStorage,

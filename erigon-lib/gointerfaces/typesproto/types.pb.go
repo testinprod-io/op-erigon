@@ -1080,7 +1080,7 @@ type AccountAbstractionTransaction struct {
 	FeeCap                      []byte                 `protobuf:"bytes,4,opt,name=fee_cap,json=feeCap,proto3" json:"fee_cap,omitempty"`
 	Gas                         uint64                 `protobuf:"varint,5,opt,name=gas,proto3" json:"gas,omitempty"`
 	SenderAddress               []byte                 `protobuf:"bytes,6,opt,name=sender_address,json=senderAddress,proto3" json:"sender_address,omitempty"`
-	Authorizations              []*Authorization       `protobuf:"bytes,7,rep,name=authorizations,proto3" json:"authorizations,omitempty"`
+	SenderValidationData        []byte                 `protobuf:"bytes,7,opt,name=sender_validation_data,json=senderValidationData,proto3" json:"sender_validation_data,omitempty"`
 	ExecutionData               []byte                 `protobuf:"bytes,8,opt,name=execution_data,json=executionData,proto3" json:"execution_data,omitempty"`
 	Paymaster                   []byte                 `protobuf:"bytes,9,opt,name=paymaster,proto3" json:"paymaster,omitempty"`
 	PaymasterData               []byte                 `protobuf:"bytes,10,opt,name=paymaster_data,json=paymasterData,proto3" json:"paymaster_data,omitempty"`
@@ -1091,6 +1091,7 @@ type AccountAbstractionTransaction struct {
 	PaymasterValidationGasLimit uint64                 `protobuf:"varint,15,opt,name=paymaster_validation_gas_limit,json=paymasterValidationGasLimit,proto3" json:"paymaster_validation_gas_limit,omitempty"`
 	PostOpGasLimit              uint64                 `protobuf:"varint,16,opt,name=post_op_gas_limit,json=postOpGasLimit,proto3" json:"post_op_gas_limit,omitempty"`
 	NonceKey                    []byte                 `protobuf:"bytes,17,opt,name=nonce_key,json=nonceKey,proto3" json:"nonce_key,omitempty"`
+	Authorizations              []*Authorization       `protobuf:"bytes,18,rep,name=authorizations,proto3" json:"authorizations,omitempty"`
 	unknownFields               protoimpl.UnknownFields
 	sizeCache                   protoimpl.SizeCache
 }
@@ -1167,9 +1168,9 @@ func (x *AccountAbstractionTransaction) GetSenderAddress() []byte {
 	return nil
 }
 
-func (x *AccountAbstractionTransaction) GetAuthorizations() []*Authorization {
+func (x *AccountAbstractionTransaction) GetSenderValidationData() []byte {
 	if x != nil {
-		return x.Authorizations
+		return x.SenderValidationData
 	}
 	return nil
 }
@@ -1240,6 +1241,13 @@ func (x *AccountAbstractionTransaction) GetPostOpGasLimit() uint64 {
 func (x *AccountAbstractionTransaction) GetNonceKey() []byte {
 	if x != nil {
 		return x.NonceKey
+	}
+	return nil
+}
+
+func (x *AccountAbstractionTransaction) GetAuthorizations() []*Authorization {
+	if x != nil {
+		return x.Authorizations
 	}
 	return nil
 }
@@ -1459,15 +1467,15 @@ const file_types_types_proto_rawDesc = "" +
 	" \x01(\bR\fconnIsStatic\"q\n" +
 	"\x16ExecutionPayloadBodyV1\x12\"\n" +
 	"\ftransactions\x18\x01 \x03(\fR\ftransactions\x123\n" +
-	"\vwithdrawals\x18\x02 \x03(\v2\x11.types.WithdrawalR\vwithdrawals\"\xff\x04\n" +
+	"\vwithdrawals\x18\x02 \x03(\v2\x11.types.WithdrawalR\vwithdrawals\"\xb5\x05\n" +
 	"\x1dAccountAbstractionTransaction\x12\x14\n" +
 	"\x05nonce\x18\x01 \x01(\x04R\x05nonce\x12\x19\n" +
 	"\bchain_id\x18\x02 \x01(\fR\achainId\x12\x10\n" +
 	"\x03tip\x18\x03 \x01(\fR\x03tip\x12\x17\n" +
 	"\afee_cap\x18\x04 \x01(\fR\x06feeCap\x12\x10\n" +
 	"\x03gas\x18\x05 \x01(\x04R\x03gas\x12%\n" +
-	"\x0esender_address\x18\x06 \x01(\fR\rsenderAddress\x12<\n" +
-	"\x0eauthorizations\x18\a \x03(\v2\x14.types.AuthorizationR\x0eauthorizations\x12%\n" +
+	"\x0esender_address\x18\x06 \x01(\fR\rsenderAddress\x124\n" +
+	"\x16sender_validation_data\x18\a \x01(\fR\x14senderValidationData\x12%\n" +
 	"\x0eexecution_data\x18\b \x01(\fR\rexecutionData\x12\x1c\n" +
 	"\tpaymaster\x18\t \x01(\fR\tpaymaster\x12%\n" +
 	"\x0epaymaster_data\x18\n" +
@@ -1479,7 +1487,8 @@ const file_types_types_proto_rawDesc = "" +
 	"\x14validation_gas_limit\x18\x0e \x01(\x04R\x12validationGasLimit\x12C\n" +
 	"\x1epaymaster_validation_gas_limit\x18\x0f \x01(\x04R\x1bpaymasterValidationGasLimit\x12)\n" +
 	"\x11post_op_gas_limit\x18\x10 \x01(\x04R\x0epostOpGasLimit\x12\x1b\n" +
-	"\tnonce_key\x18\x11 \x01(\fR\bnonceKey\"\x91\x01\n" +
+	"\tnonce_key\x18\x11 \x01(\fR\bnonceKey\x12<\n" +
+	"\x0eauthorizations\x18\x12 \x03(\v2\x14.types.AuthorizationR\x0eauthorizations\"\x91\x01\n" +
 	"\rAuthorization\x12\x19\n" +
 	"\bchain_id\x18\x01 \x01(\x04R\achainId\x12\x18\n" +
 	"\aaddress\x18\x02 \x01(\fR\aaddress\x12\x14\n" +

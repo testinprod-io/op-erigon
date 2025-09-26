@@ -28,8 +28,7 @@ import (
 	"github.com/erigontech/erigon-lib/common/dbg"
 
 	gokzg4844 "github.com/crate-crypto/go-kzg-4844"
-	"github.com/erigontech/erigon/core/types"
-	"github.com/erigontech/erigon/opstack"
+	"github.com/erigontech/erigon-lib/opstack"
 	"github.com/erigontech/secp256k1"
 	"github.com/holiman/uint256"
 	"golang.org/x/crypto/sha3"

@@ -19,6 +19,7 @@ package stagedsync
 import (
 	"errors"
 	"fmt"
+	"github.com/erigontech/erigon-lib/common/empty"
 	"sync/atomic"
 	"time"
 
@@ -198,7 +199,7 @@ func SpawnMiningExecStage(s *StageState, txc wrap.TxContainer, cfg MiningExecCfg
 	}
 
 	var block *types.Block
-	current.Header.WithdrawalsHash = &types.EmptyRootHash // TODO: op-erigon3
+	current.Header.WithdrawalsHash = &empty.RootHash
 	block, current.Requests, err = core.FinalizeBlockExecution(cfg.engine, stateReader, current.Header, current.Txns, current.Uncles, &state.NoopWriter{}, cfg.chainConfig, ibs, current.Receipts, current.Withdrawals, chainReader, true, logger, nil)
 	if err != nil {
 		return fmt.Errorf("cannot finalize block execution: %s", err)
@@ -252,7 +253,7 @@ func SpawnMiningExecStage(s *StageState, txc wrap.TxContainer, cfg MiningExecCfg
 		if err != nil {
 			return fmt.Errorf("cannot read messagePasserRoot: %w", err)
 		}
-		messagePasserRoot := libcommon.BytesToHash(messagePasserRootBytes)
+		messagePasserRoot := common.BytesToHash(messagePasserRootBytes)
 		current.Header.WithdrawalsHash = &messagePasserRoot
 	}
 

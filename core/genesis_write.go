@@ -206,7 +206,7 @@ func WriteGenesisBlock(tx kv.RwTx, genesis *types.Genesis, overrideOsakaTime *bi
 			log.Info("Update latest chain config from superchain registry")
 		}
 		// rewrite using superchain config just in case
-		if err := rawdb.WriteChainConfig(tx, storedHash, newCfg); err != nil {
+		if err := WriteChainConfig(tx, storedHash, newCfg); err != nil {
 			return newCfg, nil, err
 		}
 		return newCfg, storedBlock, nil
@@ -341,7 +341,7 @@ func GenesisToBlock(g *types.Genesis, dirs datadir.Dirs, logger log.Logger) (*ty
 
 	head, withdrawals := GenesisWithoutStateToBlock(g)
 
-	var root common.Hash
+	var root, messagePasserRoot common.Hash
 	var statedb *state.IntraBlockState // reader behind this statedb is dead at the moment of return, tx is rolled back
 
 	isIsthmus := g.Config.IsOptimismIsthmus(g.Timestamp)
@@ -449,7 +449,7 @@ func GenesisToBlock(g *types.Genesis, dirs datadir.Dirs, logger log.Logger) (*ty
 			if err != nil {
 				return err
 			}
-			messagePasserRoot = libcommon.BytesToHash(messagePasserRootBytes)
+			messagePasserRoot = common.BytesToHash(messagePasserRootBytes)
 		}
 		return nil
 	})
@@ -580,38 +580,38 @@ func sortedAllocKeys(m types.GenesisAlloc) []string {
 	return keys
 }
 
-// TODO: op-erigon3
-func GenesisBlockByChainName(chain string) *types.Genesis {
-	genesis, err := loadOPStackGenesisByChainName(chain)
-	if err != nil {
-		panic(err)
-	}
-	if genesis != nil {
-		return genesis
-	}
-
-	switch chain {
-	case networkname.Mainnet:
-		return MainnetGenesisBlock()
-	case networkname.Holesky:
-		return HoleskyGenesisBlock()
-	case networkname.Sepolia:
-		return SepoliaGenesisBlock()
-	case networkname.Hoodi:
-		return HoodiGenesisBlock()
-	case networkname.Amoy:
-		return AmoyGenesisBlock()
-	case networkname.BorMainnet:
-		return BorMainnetGenesisBlock()
-	case networkname.BorDevnet:
-		return BorDevnetGenesisBlock()
-	case networkname.Gnosis:
-		return GnosisGenesisBlock()
-	case networkname.Chiado:
-		return ChiadoGenesisBlock()
-	case networkname.Test:
-		return TestGenesisBlock()
-	default:
-		return nil
-	}
-}
+//// TODO: op-erigon3
+//func GenesisBlockByChainName(chain string) *types.Genesis {
+//	genesis, err := loadOPStackGenesisByChainName(chain)
+//	if err != nil {
+//		panic(err)
+//	}
+//	if genesis != nil {
+//		return genesis
+//	}
+//
+//	switch chain {
+//	case networkname.Mainnet:
+//		return MainnetGenesisBlock()
+//	case networkname.Holesky:
+//		return HoleskyGenesisBlock()
+//	case networkname.Sepolia:
+//		return SepoliaGenesisBlock()
+//	case networkname.Hoodi:
+//		return HoodiGenesisBlock()
+//	case networkname.Amoy:
+//		return AmoyGenesisBlock()
+//	case networkname.BorMainnet:
+//		return BorMainnetGenesisBlock()
+//	case networkname.BorDevnet:
+//		return BorDevnetGenesisBlock()
+//	case networkname.Gnosis:
+//		return GnosisGenesisBlock()
+//	case networkname.Chiado:
+//		return ChiadoGenesisBlock()
+//	case networkname.Test:
+//		return TestGenesisBlock()
+//	default:
+//		return nil
+//	}
+//}

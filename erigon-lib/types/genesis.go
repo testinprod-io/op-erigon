@@ -66,11 +66,11 @@ type Genesis struct {
 	ExcessBlobGas         *uint64      `json:"excessBlobGas"`         // EIP-4844
 	ParentBeaconBlockRoot *common.Hash `json:"parentBeaconBlockRoot"` // EIP-4788
 	RequestsHash          *common.Hash `json:"requestsHash"`          // EIP-7685
-	
+
 	// StateHash represents the genesis state, to allow instantiation of a chain with missing initial state.
 	// Chains with history pruning, or extraordinarily large genesis allocation (e.g. after a regenesis event)
 	// may utilize this to get started, and then state-sync the latest state, while still verifying the header chain.
-	StateHash *libcommon.Hash `json:"stateHash,omitempty"`
+	StateHash *common.Hash `json:"stateHash,omitempty"`
 }
 
 type AuRaSeal struct {

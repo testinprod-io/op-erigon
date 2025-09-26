@@ -26,8 +26,8 @@ import (
 	"math/big"
 
 	"github.com/erigontech/erigon-lib/chain"
+	"github.com/erigontech/erigon-lib/chain/params"
 	"github.com/erigontech/erigon-lib/common"
-	"github.com/erigontech/erigon-lib/common/fixedgas"
 	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/holiman/uint256"
 )
@@ -215,11 +215,11 @@ func newL1CostFuncPreEcotoneHelper(l1BaseFee, overhead, scalar *uint256.Int, isR
 		if rollupCostData == (RollupCostData{}) {
 			return nil, nil // Do not charge if there is no rollup cost-data (e.g. RPC call or deposit)
 		}
-		gas := rollupCostData.Zeroes * fixedgas.TxDataZeroGas
+		gas := rollupCostData.Zeroes * params.TxDataZeroGas
 		if isRegolith {
-			gas += rollupCostData.Ones * fixedgas.TxDataNonZeroGasEIP2028
+			gas += rollupCostData.Ones * params.TxDataNonZeroGasEIP2028
 		} else {
-			gas += (rollupCostData.Ones + 68) * fixedgas.TxDataNonZeroGasEIP2028
+			gas += (rollupCostData.Ones + 68) * params.TxDataNonZeroGasEIP2028
 		}
 		gasWithOverhead := uint256.NewInt(gas)
 		gasWithOverhead.Add(gasWithOverhead, overhead)
@@ -481,7 +481,7 @@ func NewL1CostFuncFjord(l1BaseFee, l1BlobBaseFee, baseFeeScalar, blobFeeScalar *
 		l1CostScaled := new(uint256.Int).Mul(estimatedSize, l1FeeScaled)
 		l1Cost := new(uint256.Int).Div(l1CostScaled, fjordDivisor)
 
-		calldataGasUsed = new(uint256.Int).Mul(estimatedSize, new(uint256.Int).SetUint64(fixedgas.TxDataNonZeroGasEIP2028))
+		calldataGasUsed = new(uint256.Int).Mul(estimatedSize, new(uint256.Int).SetUint64(params.TxDataNonZeroGasEIP2028))
 		calldataGasUsed.Div(calldataGasUsed, uint256.NewInt(1e6))
 
 		return l1Cost, calldataGasUsed
@@ -496,7 +496,7 @@ func extractEcotoneFeeParams(l1FeeParams []byte) (l1BaseFeeScalar, l1BlobBaseFee
 }
 
 func bedrockCalldataGasUsed(costData RollupCostData) (calldataGasUsed *uint256.Int) {
-	calldataGas := (costData.Zeroes * fixedgas.TxDataZeroGas) + (costData.Ones * fixedgas.TxDataNonZeroGasEIP2028)
+	calldataGas := (costData.Zeroes * params.TxDataZeroGas) + (costData.Ones * params.TxDataNonZeroGasEIP2028)
 	return new(uint256.Int).SetUint64(calldataGas)
 }
 

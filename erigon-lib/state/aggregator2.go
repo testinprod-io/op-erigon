@@ -481,10 +481,3 @@ func checkSnapshotsCompatibility(d datadir.Dirs) error {
 
 	return nil
 }
-
-func EnableHistoricalCommitment() {
-	cfg := Schema[kv.CommitmentDomain]
-	cfg.hist.historyDisabled = false
-	cfg.hist.snapshotsDisabled = false
-	Schema[kv.CommitmentDomain] = cfg
-}

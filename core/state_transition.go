@@ -40,7 +40,7 @@ import (
 	"github.com/erigontech/erigon/core/tracing"
 	"github.com/erigontech/erigon/core/vm"
 	"github.com/erigontech/erigon/core/vm/evmtypes"
-	"github.com/erigontech/erigon/opstack" // TODO: op-erigon3
+	"github.com/erigontech/erigon-lib/opstack"
 	"github.com/erigontech/erigon/params"
 	"github.com/erigontech/erigon/execution/consensus"
 )
