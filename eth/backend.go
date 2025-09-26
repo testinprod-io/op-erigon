@@ -24,6 +24,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/erigontech/erigon-lib/chain/superchain"
 	"io/fs"
 	"math/big"
 	"net"
@@ -407,7 +408,7 @@ func New(ctx context.Context, stack *node.Node, config *ethconfig.Config, logger
 
 	segmentsBuildLimiter := semaphore.NewWeighted(int64(dbg.BuildSnapshotAllowance))
 
-	if chainConfig.ChainID.Uint64() == params.OPMainnetChainID {
+	if chainConfig.ChainID.Uint64() == superchain.OPMainnetChainID {
 		logger.Info("Snapshot is not supported on op-mainnet. Disabled snapshot feature")
 		config.Snapshot.ProduceE2 = false
 		config.Snapshot.ProduceE3 = false

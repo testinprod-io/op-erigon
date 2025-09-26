@@ -405,11 +405,11 @@ func RPCMarshalHeader(head *types.Header) map[string]interface{} {
 // RPCMarshalBlock converts the given block to the RPC output which depends on fullTx. If inclTx is true transactions are
 // returned. When fullTx is true the returned block contains full transaction details, otherwise it will only contain
 // transaction hashes.
-func RPCMarshalBlockDeprecated(block *types.Block, inclTx bool, fullTx bool) (map[string]interface{}, error) {
-	return RPCMarshalBlockExDeprecated(block, inclTx, fullTx, nil, common.Hash{})
+func RPCMarshalBlockDeprecated(block *types.Block, inclTx bool, fullTx bool, receipts types.Receipts) (map[string]interface{}, error) {
+	return RPCMarshalBlockExDeprecated(block, inclTx, fullTx, nil, common.Hash{}, receipts)
 }
 
-func RPCMarshalBlockExDeprecated(block *types.Block, inclTx bool, fullTx bool, borTx types.Transaction, borTxHash common.Hash) (map[string]interface{}, error) {
+func RPCMarshalBlockExDeprecated(block *types.Block, inclTx bool, fullTx bool, borTx types.Transaction, borTxHash common.Hash, receipts types.Receipts) (map[string]interface{}, error) {
 	fields := RPCMarshalHeader(block.Header())
 	fields["size"] = hexutil.Uint64(block.Size())
 	if _, ok := fields["transactions"]; !ok {
@@ -487,13 +487,13 @@ type RPCTransaction struct {
 	YParity              *hexutil.Big               `json:"yParity,omitempty"`
 	R                    *hexutil.Big               `json:"r"`
 	S                    *hexutil.Big               `json:"s"`
-	
+
 	// TODO: op-erigon3
 	// Optimism
 	// deposit-tx only
-	SourceHash *libcommon.Hash `json:"sourceHash,omitempty"`
-	Mint       *hexutil.Big    `json:"mint,omitempty"`
-	IsSystemTx *bool           `json:"isSystemTx,omitempty"`
+	SourceHash *common.Hash `json:"sourceHash,omitempty"`
+	Mint       *hexutil.Big `json:"mint,omitempty"`
+	IsSystemTx *bool        `json:"isSystemTx,omitempty"`
 	// deposit-tx post-Canyon only
 	DepositReceiptVersion *hexutil.Uint64 `json:"depositReceiptVersion,omitempty"`
 }
@@ -535,12 +535,12 @@ func NewRPCTransaction(txn types.Transaction, blockHash common.Hash, blockNumber
 				*result.DepositReceiptVersion = hexutil.Uint64(*receipt.DepositReceiptVersion)
 			}
 		}
-		result.GasPrice = (*hexutil.Big)(libcommon.Big0)
+		result.GasPrice = (*hexutil.Big)(common.Big0)
 		// must contain v, r, s values for backwards compatibility.
-		result.V = (*hexutil.Big)(libcommon.Big0)
+		result.V = (*hexutil.Big)(common.Big0)
 
-		result.R = (*hexutil.Big)(libcommon.Big0)
-		result.S = (*hexutil.Big)(libcommon.Big0)
+		result.R = (*hexutil.Big)(common.Big0)
+		result.S = (*hexutil.Big)(common.Big0)
 
 		signer := types.LatestSignerForChainID(chainId.ToBig())
 		var err error
@@ -548,7 +548,7 @@ func NewRPCTransaction(txn types.Transaction, blockHash common.Hash, blockNumber
 		if err != nil {
 			log.Warn("sender recovery", "err", err)
 		}
-		if blockHash != (libcommon.Hash{}) {
+		if blockHash != (common.Hash{}) {
 			result.BlockHash = &blockHash
 			result.BlockNumber = (*hexutil.Big)(new(big.Int).SetUint64(blockNumber))
 			result.TransactionIndex = (*hexutil.Uint64)(&index)

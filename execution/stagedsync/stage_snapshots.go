@@ -23,6 +23,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/erigontech/erigon-lib/chain/superchain"
 	"io"
 	"io/fs"
 	"os"
@@ -463,7 +464,7 @@ func pruneCanonicalMarkers(ctx context.Context, tx kv.RwTx, blockReader services
 
 // SnapshotsPrune moving block data from db into snapshots, removing old snapshots (if --prune.* enabled)
 func SnapshotsPrune(s *PruneState, cfg SnapshotsCfg, ctx context.Context, tx kv.RwTx, logger log.Logger) (err error) {
-	if cfg.chainConfig.ChainID.Uint64() == params.OPMainnetChainID {
+	if cfg.chainConfig.ChainID.Uint64() == superchain.OPMainnetChainID {
 		logger.Debug("Snapshot is not supported on op-mainnet. Skip SnapshotsPrune")
 		return nil
 	}

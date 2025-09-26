@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-
+	"github.com/erigontech/erigon-lib/chain/superchain"
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/hexutil"
 	"github.com/erigontech/erigon-lib/gointerfaces"
@@ -72,10 +72,10 @@ type PayloadAttributes struct {
 	ParentBeaconBlockRoot *common.Hash        `json:"parentBeaconBlockRoot"`
 
 	// Optimism
-	Transactions          []hexutility.Bytes `json:"transactions,omitempty"`
-	NoTxPool              bool               `json:"noTxPool,omitempty"`
-	GasLimit              *hexutil.Uint64    `json:"gasLimit,omitempty"`
-	HoloceneEIP1559Params hexutility.Bytes   `json:"eip1559Params,omitempty"`
+	Transactions          []hexutil.Bytes `json:"transactions,omitempty"`
+	NoTxPool              bool            `json:"noTxPool,omitempty"`
+	GasLimit              *hexutil.Uint64 `json:"gasLimit,omitempty"`
+	HoloceneEIP1559Params hexutil.Bytes   `json:"eip1559Params,omitempty"`
 }
 
 // TransitionConfiguration represents the correct configurations of the CL and the EL
@@ -104,12 +104,6 @@ type BlobAndProofV2 struct {
 	CellProofs []hexutil.Bytes `json:"proofs" gencodec:"required"`
 }
 
-// BlobAndProofV1 holds one item for engine_getBlobsV1
-type BlobAndProofV1 struct {
-	Blob  hexutility.Bytes `json:"blob" gencodec:"required"`
-	Proof hexutility.Bytes `json:"proof" gencodec:"required"`
-}
-
 type ExecutionPayloadBody struct {
 	Transactions []hexutil.Bytes     `json:"transactions" gencodec:"required"`
 	Withdrawals  []*types.Withdrawal `json:"withdrawals"  gencodec:"required"`
@@ -133,7 +127,7 @@ type GetPayloadResponse struct {
 	BlobsBundle           *BlobsBundleV1    `json:"blobsBundle"`
 	ExecutionRequests     []hexutil.Bytes   `json:"executionRequests"`
 	ShouldOverrideBuilder bool              `json:"shouldOverrideBuilder"`
-	
+
 	// OP-Stack: Ecotone specific fields
 	ParentBeaconBlockRoot *common.Hash `json:"parentBeaconBlockRoot,omitempty"`
 }
@@ -326,6 +320,6 @@ func ConvertPayloadId(payloadId uint64) *hexutil.Bytes {
 }
 
 type SuperchainSignal struct {
-	Recommended params.ProtocolVersion `json:"recommended"`
-	Required    params.ProtocolVersion `json:"required"`
+	Recommended superchain.ProtocolVersion `json:"recommended"`
+	Required    superchain.ProtocolVersion `json:"required"`
 }

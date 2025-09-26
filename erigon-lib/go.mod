@@ -16,6 +16,7 @@ require (
 )
 
 require (
+	github.com/BurntSushi/toml v0.3.1
 	github.com/FastFilter/xorfilter v0.2.1
 	github.com/RoaringBitmap/roaring/v2 v2.9.0
 	github.com/anacrolix/missinggo/v2 v2.10.0
@@ -44,6 +45,7 @@ require (
 	github.com/klauspost/compress v1.18.0
 	github.com/mattn/go-colorable v0.1.13
 	github.com/mattn/go-isatty v0.0.20
+	github.com/naoina/toml v0.1.1
 	github.com/nyaosorg/go-windows-shortcut v0.0.0-20220529122037-8b0c89bca4c4
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
 	github.com/pelletier/go-toml/v2 v2.2.4
@@ -101,6 +103,7 @@ require (
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/multiformats/go-multihash v0.2.3 // indirect
 	github.com/multiformats/go-varint v0.0.6 // indirect
+	github.com/naoina/go-stringutil v0.1.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20220216144756-c35f1ee13d7c // indirect
 	github.com/prometheus/common v0.62.0 // indirect

@@ -4,17 +4,17 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/chain/superchain"
+	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/datadir"
 	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/erigontech/erigon-lib/types"
-	"github.com/erigontech/erigon/params"
-	"github.com/erigontech/erigon/superchain"
 	"os"
 )
 
-func loadOPStackGenesisByChainName(name string) (*types.Genesis, error) {
-	opStackChainCfg := params.OPStackChainConfigByName(name)
+// TODO: op-erigon3 - move to core or chainspec
+func LoadOPStackGenesisByChainName(name string) (*types.Genesis, error) {
+	opStackChainCfg := superchain.OPStackChainConfigByName(name)
 	if opStackChainCfg == nil {
 		return nil, nil
 	}
@@ -35,7 +35,7 @@ func LoadOPStackGenesis(chainID uint64) (*types.Genesis, error) {
 		return nil, fmt.Errorf("error getting chain config from superchain: %w", err)
 	}
 
-	cfg := params.LoadSuperChainConfig(chConfig)
+	cfg := superchain.LoadSuperChainConfig(chConfig)
 	gen, err := readOPStackGenesis(chain)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load genesis definition for chain %d: %w", chainID, err)
@@ -67,8 +67,8 @@ func LoadOPStackGenesis(chainID uint64) (*types.Genesis, error) {
 		genesis.Alloc = nil
 	}
 
-	if chainID == params.OPMainnetChainID {
-		opmStateHash := libcommon.HexToHash("0xeddb4c1786789419153a27c4c80ff44a2226b6eda04f7e22ce5bae892ea568eb")
+	if chainID == superchain.OPMainnetChainID {
+		opmStateHash := common.HexToHash("0xeddb4c1786789419153a27c4c80ff44a2226b6eda04f7e22ce5bae892ea568eb")
 		genesis.StateHash = &opmStateHash
 	}
 
@@ -85,8 +85,8 @@ func LoadOPStackGenesis(chainID uint64) (*types.Genesis, error) {
 	// and check the genesis matches the chain genesis definition.
 	if chConfig.Genesis.L2.Number != genesisBlock.NumberU64() {
 		switch chainID {
-		case params.OPMainnetChainID:
-			expectedHash = libcommon.HexToHash("0x7ca38a1916c42007829c55e69d3e9a73265554b586a499015373241b8a3fa48b")
+		case superchain.OPMainnetChainID:
+			expectedHash = common.HexToHash("0x7ca38a1916c42007829c55e69d3e9a73265554b586a499015373241b8a3fa48b")
 		default:
 			return nil, fmt.Errorf("unknown stateless genesis definition for chain %d", chainID)
 		}

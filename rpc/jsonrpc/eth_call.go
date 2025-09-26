@@ -21,7 +21,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"math/big"
 	"unsafe"
 
@@ -38,6 +37,7 @@ import (
 	"github.com/erigontech/erigon-lib/kv"
 	"github.com/erigontech/erigon-lib/kv/dbutils"
 	"github.com/erigontech/erigon-lib/kv/membatchwithdb"
+	"github.com/erigontech/erigon-lib/log/v3"
 	libstate "github.com/erigontech/erigon-lib/state"
 	"github.com/erigontech/erigon-lib/trie"
 	"github.com/erigontech/erigon-lib/types"
@@ -173,7 +173,6 @@ func (api *APIImpl) EstimateGas(ctx context.Context, argsOrNil *ethapi2.CallArgs
 			header = b.HeaderNoCopy()
 		}
 	}
-	header := block.HeaderNoCopy()
 
 	if header == nil {
 		return 0, errors.New(fmt.Sprintf("could not find the header %s in cache or db", blockNrOrHash.String()))

@@ -588,7 +588,7 @@ func (ethash *Ethash) FinalizeAndAssemble(chainConfig *chain.Config, header *typ
 		return nil, nil, err
 	}
 	// Header seems complete, assemble into a block and return
-	return types.NewBlock(header, txs, uncles, r, withdrawals), nil, nil
+	return types.NewBlock(header, txs, uncles, r, withdrawals, chainConfig.IsOptimismIsthmus(header.Time)), nil, nil
 }
 
 // SealHash returns the hash of a block prior to it being sealed.

@@ -20,11 +20,14 @@ import (
 	"context"
 	"encoding/binary"
 
+	"github.com/erigontech/erigon-lib/chain/superchain"
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/hexutil"
+	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/erigontech/erigon/cl/clparams"
 	"github.com/erigontech/erigon/execution/engineapi/engine_types"
 	"github.com/erigontech/erigon/params"
+	"github.com/erigontech/erigon/rpc"
 )
 
 var ourCapabilities = []string{
@@ -197,23 +200,23 @@ func (e *EngineServer) ExchangeCapabilities(fromCl []string) []string {
 	return ourCapabilities
 }
 
-func (e *EngineServer) SignalSuperchainV1(ctx context.Context, signal *engine_types.SuperchainSignal) (params.ProtocolVersion, error) {
+func (e *EngineServer) SignalSuperchainV1(ctx context.Context, signal *engine_types.SuperchainSignal) (superchain.ProtocolVersion, error) {
 	if signal == nil {
-		e.logger.Info("Received empty superchain version signal", "local", params.OPStackSupport)
-		return params.OPStackSupport, nil
+		e.logger.Info("Received empty superchain version signal", "local", superchain.OPStackSupport)
+		return superchain.OPStackSupport, nil
 	}
 
 	// log any warnings/info
-	logger := log.New("local", params.OPStackSupport, "required", signal.Required, "recommended", signal.Recommended)
-	LogProtocolVersionSupport(logger, params.OPStackSupport, signal.Recommended, "recommended")
-	LogProtocolVersionSupport(logger, params.OPStackSupport, signal.Required, "required")
+	logger := log.New("local", superchain.OPStackSupport, "required", signal.Required, "recommended", signal.Recommended)
+	LogProtocolVersionSupport(logger, superchain.OPStackSupport, signal.Recommended, "recommended")
+	LogProtocolVersionSupport(logger, superchain.OPStackSupport, signal.Required, "required")
 
 	if err := e.HandleRequiredProtocolVersion(signal.Required); err != nil {
 		e.logger.Error("Failed to handle required protocol version", "err", err, "required", signal.Required)
-		return params.OPStackSupport, err
+		return superchain.OPStackSupport, err
 	}
 
-	return params.OPStackSupport, nil
+	return superchain.OPStackSupport, nil
 }
 
 func (e *EngineServer) GetBlobsV1(ctx context.Context, blobHashes []common.Hash) ([]*engine_types.BlobAndProofV1, error) {

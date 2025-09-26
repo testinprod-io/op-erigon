@@ -84,15 +84,6 @@ func GetGenesisState(network clparams.NetworkType) (*state.CachingBeaconState, e
 		if err := returnState.DecodeSSZ(encodedState, int(clparams.Phase0Version)); err != nil {
 			return nil, err
 		}
-	case clparams.HoodiNetwork:
-		// Download genesis state by wget the url
-		encodedState, err := downloadGenesisState("https://github.com/eth-clients/hoodi/raw/main/metadata/genesis.ssz")
-		if err != nil {
-			return nil, err
-		}
-		if err := returnState.DecodeSSZ(encodedState, int(clparams.Phase0Version)); err != nil {
-			return nil, err
-		}
 	case chainspec.HoodiChainID:
 		// Download genesis state by wget the url
 		encodedState, err := downloadGenesisState("https://github.com/eth-clients/hoodi/raw/main/metadata/genesis.ssz")

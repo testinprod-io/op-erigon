@@ -158,7 +158,7 @@ func BodiesForward(s *StageState, u Unwinder, ctx context.Context, tx kv.RwTx, c
 		for loopCount := 0; loopCount == 0 || (req != nil && sentToPeer && loopCount < requestLoopCutOff); loopCount++ {
 			start := time.Now()
 			currentTime := uint64(time.Now().Unix())
-			req, err = cfg.bd.RequestMoreBodies(tx, cfg.blockReader, currentTime, cfg.blockPropagator, &cfg.chanConfig)
+			req, err = cfg.bd.RequestMoreBodies(tx, cfg.blockReader, currentTime, cfg.blockPropagator, cfg.chanConfig)
 			if err != nil {
 				return false, fmt.Errorf("request more bodies: %w", err)
 			}

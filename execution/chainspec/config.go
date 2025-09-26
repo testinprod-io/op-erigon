@@ -56,15 +56,14 @@ func ReadChainSpec(fileSys fs.FS, filename string) *chain.Config {
 
 // Genesis hashes to enforce below configs on.
 var (
-	MainnetGenesisHash 		= common.HexToHash("0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3")
-	HoleskyGenesisHash 		= common.HexToHash("0xb5f7f912443c940f21fd611f12828d75b534364ed9e95ca4e307729a4661bde4")
-	SepoliaGenesisHash 		= common.HexToHash("0x25a5cc106eea7138acab33231d7160d69cb777ee0c2c553fcddf5138993e6dd9")
-	HoodiGenesisHash   		= common.HexToHash("0xbbe312868b376a3001692a646dd2d7d1e4406380dfd86b98aa8a34d1557c971b")
-	GnosisGenesisHash  		= common.HexToHash("0x4f1dd23188aab3a76b463e4af801b52b1248ef073c648cbdc4c9333d3da79756")
-	ChiadoGenesisHash  		= common.HexToHash("0xada44fd8d2ecab8b08f256af07ad3e777f17fb434f8f8e678b312f576212ba9a")
-	TestGenesisHash    		= common.HexToHash("0x6116de25352c93149542e950162c7305f207bbc17b0eb725136b78c80aed79cc")
-	OPMainnetGenesisHash   	= common.HexToHash("0x7ca38a1916c42007829c55e69d3e9a73265554b586a499015373241b8a3fa48b")
-	BaseMainnetGenesisHash 	= common.HexToHash("0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3")
+	MainnetGenesisHash     = common.HexToHash("0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3")
+	HoleskyGenesisHash     = common.HexToHash("0xb5f7f912443c940f21fd611f12828d75b534364ed9e95ca4e307729a4661bde4")
+	SepoliaGenesisHash     = common.HexToHash("0x25a5cc106eea7138acab33231d7160d69cb777ee0c2c553fcddf5138993e6dd9")
+	HoodiGenesisHash       = common.HexToHash("0xbbe312868b376a3001692a646dd2d7d1e4406380dfd86b98aa8a34d1557c971b")
+	GnosisGenesisHash      = common.HexToHash("0x4f1dd23188aab3a76b463e4af801b52b1248ef073c648cbdc4c9333d3da79756")
+	ChiadoGenesisHash      = common.HexToHash("0xada44fd8d2ecab8b08f256af07ad3e777f17fb434f8f8e678b312f576212ba9a")
+	TestGenesisHash        = common.HexToHash("0x6116de25352c93149542e950162c7305f207bbc17b0eb725136b78c80aed79cc")
+	BaseMainnetGenesisHash = common.HexToHash("0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3")
 )
 
 var (
@@ -216,6 +215,10 @@ func init() {
 	RegisterChain(networkname.Hoodi, HoodiChainConfig, HoodiGenesisBlock(), HoodiGenesisHash, HoodiBootnodes, dnsPrefix+"all.hoodi.ethdisco.net")
 	RegisterChain(networkname.Gnosis, GnosisChainConfig, GnosisGenesisBlock(), GnosisGenesisHash, GnosisBootnodes, "")
 	RegisterChain(networkname.Chiado, ChiadoChainConfig, ChiadoGenesisBlock(), ChiadoGenesisHash, ChiadoBootnodes, "")
-	RegisterChain(networkname.OPMainnetChainName, LoadSuperChainConfig(networkname.OPMainnetChainName), loadOPStackGenesisByChainName(networkname.OPMainnetChainName), OPMainnetGenesisHash, V5OPBootnodes, "")
 	RegisterChain(networkname.Test, chain.TestChainConfig, TestGenesisBlock(), TestGenesisHash, nil, "")
+
+	// TODO: op-erigon3
+	//if genesis, err := core.LoadOPStackGenesisByChainName(networkname.OPMainnetChainName); err == nil && genesis != nil {
+	//	RegisterChain(networkname.OPMainnetChainName, superchain.ChainConfigByOpStackChainName(networkname.OPMainnetChainName), genesis, superchain.OPMainnetGenesisHash, V5OPBootnodes, "")
+	//}
 }

@@ -21,6 +21,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/erigontech/erigon-lib/chain/superchain"
+	"github.com/erigontech/erigon/execution/consensus/misc"
 	"math/big"
 	"os"
 	"sync"
@@ -556,7 +558,7 @@ func (s *EngineServer) getPayload(ctx context.Context, payloadId uint64, version
 		if data.ParentBeaconBlockRoot == nil {
 			return nil, &rpc.UnsupportedForkError{Message: "missing ParentBeaconBlockRoot in Ecotone block"}
 		}
-		parentBeaconBlockRoot := libcommon.Hash(gointerfaces.ConvertH256ToHash(data.ParentBeaconBlockRoot))
+		parentBeaconBlockRoot := common.Hash(gointerfaces.ConvertH256ToHash(data.ParentBeaconBlockRoot))
 		response.ParentBeaconBlockRoot = &parentBeaconBlockRoot
 	}
 
@@ -600,7 +602,7 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 	)
 
 	if !s.config.IsOptimism() {
-		status, err := s.getQuickPayloadStatusIfPossible(ctx, forkchoiceState.HeadHash, 0, common.Hash{}, forkchoiceState, false)
+		status, err = s.getQuickPayloadStatusIfPossible(ctx, forkchoiceState.HeadHash, 0, common.Hash{}, forkchoiceState, false)
 		if err != nil {
 			return nil, err
 		}
@@ -695,7 +697,7 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 				if err := misc.ValidateHolocene1559Params(payloadAttributes.HoloceneEIP1559Params); err != nil {
 					return nil, err
 				}
-				req.Holocene_Eip1559Params = bytes.Clone(payloadAttributes.HoloceneEIP1559Params)
+				req.Eip_1559Params = bytes.Clone(payloadAttributes.HoloceneEIP1559Params)
 			} else if len(payloadAttributes.HoloceneEIP1559Params) != 0 {
 				return nil, &engine_helpers.InvalidPayloadAttributesErr
 			}
@@ -1078,45 +1080,45 @@ func waitForStuff(maxWait time.Duration, waitCondnF func() (bool, error)) (bool,
 
 // HandleRequiredProtocolVersion handles the protocol version signal. This implements opt-in halting,
 // the protocol version data is already logged and metered when signaled through the Engine API.
-func (e *EngineServer) HandleRequiredProtocolVersion(required params.ProtocolVersion) error {
+func (e *EngineServer) HandleRequiredProtocolVersion(required superchain.ProtocolVersion) error {
 	needLevel := 3
 	haveLevel := 0
-	switch params.OPStackSupport.Compare(required) {
-	case params.OutdatedMajor:
+	switch superchain.OPStackSupport.Compare(required) {
+	case superchain.OutdatedMajor:
 		haveLevel = 3
-	case params.OutdatedMinor:
+	case superchain.OutdatedMinor:
 		haveLevel = 2
-	case params.OutdatedPatch:
+	case superchain.OutdatedPatch:
 		haveLevel = 1
 	}
 	if haveLevel >= needLevel { // halt if we opted in to do so at this granularity
-		log.Error("Opted to halt, unprepared for protocol change", "required", required, "local", params.OPStackSupport)
+		log.Error("Opted to halt, unprepared for protocol change", "required", required, "local", superchain.OPStackSupport)
 		os.Exit(1) // halt
 	}
 	return nil
 }
 
-func LogProtocolVersionSupport(logger log.Logger, local, other params.ProtocolVersion, name string) {
+func LogProtocolVersionSupport(logger log.Logger, local, other superchain.ProtocolVersion, name string) {
 	switch local.Compare(other) {
-	case params.AheadMajor:
+	case superchain.AheadMajor:
 		logger.Info(fmt.Sprintf("Ahead with major %s protocol version change", name))
-	case params.AheadMinor, params.AheadPatch, params.AheadPrerelease:
+	case superchain.AheadMinor, superchain.AheadPatch, superchain.AheadPrerelease:
 		logger.Debug(fmt.Sprintf("Ahead with compatible %s protocol version change", name))
-	case params.Matching:
+	case superchain.Matching:
 		logger.Debug(fmt.Sprintf("Latest %s protocol version is supported", name))
-	case params.OutdatedMajor:
+	case superchain.OutdatedMajor:
 		logger.Error(fmt.Sprintf("Outdated with major %s protocol change", name))
-	case params.OutdatedMinor:
+	case superchain.OutdatedMinor:
 		logger.Warn(fmt.Sprintf("Outdated with minor backward-compatible %s protocol change", name))
-	case params.OutdatedPatch:
+	case superchain.OutdatedPatch:
 		logger.Info(fmt.Sprintf("Outdated with support backward-compatible %s protocol change", name))
-	case params.OutdatedPrerelease:
+	case superchain.OutdatedPrerelease:
 		logger.Debug(fmt.Sprintf("New %s protocol pre-release is available", name))
-	case params.DiffBuild:
+	case superchain.DiffBuild:
 		logger.Debug(fmt.Sprintf("Ignoring %s protocolversion signal, local build is different", name))
-	case params.DiffVersionType:
+	case superchain.DiffVersionType:
 		logger.Warn(fmt.Sprintf("Failed to recognize %s protocol version signal version-type", name))
-	case params.EmptyVersion:
+	case superchain.EmptyVersion:
 		logger.Debug(fmt.Sprintf("No %s protocol version available to check", name))
 	}
 }

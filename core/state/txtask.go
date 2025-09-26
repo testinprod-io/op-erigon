@@ -80,7 +80,7 @@ type TxTask struct {
 	TraceFroms         map[common.Address]struct{}
 	TraceTos           map[common.Address]struct{}
 
-	GasUsed uint64
+	GasUsed              uint64
 	OptimismDepositNonce *uint64
 
 	// BlockReceipts is used only by Gnosis:
@@ -165,15 +165,15 @@ func (t *TxTask) createReceipt(cumulativeGasUsed uint64, firstLogIndex uint32) *
 	}
 
 	receipt := &types.Receipt{
-		BlockNumber:       t.Header.Number,
-		BlockHash:         t.BlockHash,
-		TransactionIndex:  uint(t.TxIndex),
-		Type:              t.Tx.Type(),
-		GasUsed:           t.GasUsed,
-		CumulativeGasUsed: cumulativeGasUsed,
-		TxHash:            t.Tx.Hash(),
-		Logs:              t.Logs,
-		DepositNonce:      t.OptimismDepositNonce,
+		BlockNumber:              t.Header.Number,
+		BlockHash:                t.BlockHash,
+		TransactionIndex:         uint(t.TxIndex),
+		Type:                     t.Tx.Type(),
+		GasUsed:                  t.GasUsed,
+		CumulativeGasUsed:        cumulativeGasUsed,
+		TxHash:                   t.Tx.Hash(),
+		Logs:                     t.Logs,
+		DepositNonce:             t.OptimismDepositNonce,
 		FirstLogIndexWithinBlock: firstLogIndex,
 	}
 	blockNum := t.Header.Number.Uint64()
@@ -188,7 +188,7 @@ func (t *TxTask) createReceipt(cumulativeGasUsed uint64, firstLogIndex uint32) *
 		receipt.Status = types.ReceiptStatusSuccessful
 	}
 
-	if t.config.IsOptimismCanyon(t.Header.Time) && t.config.IsOptimismRegolith(t.Header.Time) {
+	if t.Config.IsOptimismCanyon(t.Header.Time) && t.Config.IsOptimismRegolith(t.Header.Time) {
 		receipt.DepositReceiptVersion = new(uint64)
 		*receipt.DepositReceiptVersion = types.CanyonDepositReceiptVersion
 	}

@@ -37,10 +37,6 @@ const (
 	isCatchingDelaySec = 600
 )
 
-const (
-	isCatchingDelaySec = 600
-)
-
 type ServiceConfig struct {
 	Store       Store
 	ChainConfig *chain.Config

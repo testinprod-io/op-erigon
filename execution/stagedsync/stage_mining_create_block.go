@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	params2 "github.com/erigontech/erigon-lib/chain/params"
 	"math/big"
 	"time"
 
@@ -252,7 +253,7 @@ func SpawnMiningCreateBlockStage(s *StageState, txc wrap.TxContainer, cfg Mining
 		timestamp = cfg.blockBuilderParameters.Timestamp
 	}
 
-	targetGasLimit := &cfg.miner.MiningConfig.GasLimit
+	targetGasLimit := cfg.miner.MiningConfig.GasLimit
 	if cfg.chainConfig.IsOptimism() {
 		targetGasLimit = cfg.blockBuilderParameters.GasLimit
 	}
@@ -270,7 +271,7 @@ func SpawnMiningCreateBlockStage(s *StageState, txc wrap.TxContainer, cfg Mining
 		uncles:    mapset.NewSet[common.Hash](),
 	}
 
-	header := core.MakeEmptyHeader(parent, cfg.chainConfig, timestamp, cfg.miner.MiningConfig.GasLimit)
+	header := core.MakeEmptyHeader(parent, cfg.chainConfig, timestamp, targetGasLimit)
 	if !cfg.chainConfig.IsOptimism() {
 		if err := misc.VerifyGaslimit(parent.GasLimit, header.GasLimit); err != nil {
 			logger.Warn("Failed to verify gas limit given by the validator, defaulting to parent gas limit", "err", err)
@@ -299,8 +300,8 @@ func SpawnMiningCreateBlockStage(s *StageState, txc wrap.TxContainer, cfg Mining
 		// constants in the header.
 		d, e := misc.DecodeHolocene1559Params(cfg.blockBuilderParameters.HoloceneEIP1559Params)
 		if d == 0 {
-			d = misc.GetBaseFeeChangeDenominator(&cfg.chainConfig, params.BaseFeeChangeDenominator, header.Time)
-			e = cfg.chainConfig.ElasticityMultiplier(params.ElasticityMultiplier)
+			d = misc.GetBaseFeeChangeDenominator(cfg.chainConfig, params2.BaseFeeChangeDenominator, header.Time)
+			e = cfg.chainConfig.ElasticityMultiplier(params2.ElasticityMultiplier)
 		}
 		header.Extra = misc.EncodeHoloceneExtraData(uint32(d), uint32(e))
 	} else if cfg.blockBuilderParameters != nil && cfg.blockBuilderParameters.HoloceneEIP1559Params != nil {

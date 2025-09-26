@@ -81,7 +81,7 @@ func (api *ErigonImpl) BlockNumber(ctx context.Context, rpcBlockNumPtr *rpc.Bloc
 			return 0, err
 		}
 	case rpc.FinalizedBlockNumber:
-		blockNum, err = rpchelper.GetFinalizedBlockNumber(tx)
+		blockNum, err = rpchelper.GetFinalizedBlockNumber(tx, api._blockReader)
 		if err != nil {
 			return 0, err
 		}

@@ -23,7 +23,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/erigontech/erigon/params"
 	"os"
 	"testing"
 	"time"
@@ -31,6 +30,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/erigontech/erigon-lib/chain/params"
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/hexutil"
 	"github.com/erigontech/erigon-lib/common/math"
@@ -454,21 +454,21 @@ func TestPrecompiledP256Verify(t *testing.T) {
 func TestPrecompileBlsInputSize(t *testing.T) {
 	big := make([]byte, params.Bls12381G1MulMaxInputSizeIsthmus+1)
 	testPrecompiledFailure("1f0b", precompiledFailureTest{
-		Input:         libcommon.Bytes2Hex(big),
+		Input:         common.Bytes2Hex(big),
 		ExpectedError: "g1 msm input size exceeds maximum",
 		Name:          "bls12381G1MSM_input_too_big",
 	}, t)
 
 	big = make([]byte, params.Bls12381G2MulMaxInputSizeIsthmus+1)
 	testPrecompiledFailure("1f0d", precompiledFailureTest{
-		Input:         libcommon.Bytes2Hex(big),
+		Input:         common.Bytes2Hex(big),
 		ExpectedError: "g2 msm input size exceeds maximum",
 		Name:          "bls12381G2MSM_input_too_big",
 	}, t)
 
 	big = make([]byte, params.Bls12381PairingMaxInputSizeIsthmus+1)
 	testPrecompiledFailure("1f0e", precompiledFailureTest{
-		Input:         libcommon.Bytes2Hex(big),
+		Input:         common.Bytes2Hex(big),
 		ExpectedError: "pairing input size exceeds maximum",
 		Name:          "bls12381Pairing_input_too_big",
 	}, t)

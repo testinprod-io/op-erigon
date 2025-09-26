@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 
 	"github.com/erigontech/erigon-lib/chain"
-	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon/core/state"
 )
 
@@ -15,8 +15,8 @@ import (
 // file applies the contract code to the canonical address manually in the Canyon
 // hardfork.
 
-var create2DeployerAddress = libcommon.HexToAddress("0x13b0D85CcB8bf860b6b79AF3029fCA081AE9beF2")
-var create2DeployerCodeHash = libcommon.HexToHash("0xb0550b5b431e30d38000efb7107aaa0ade03d48a7198a140edda9d27134468b2")
+var create2DeployerAddress = common.HexToAddress("0x13b0D85CcB8bf860b6b79AF3029fCA081AE9beF2")
+var create2DeployerCodeHash = common.HexToHash("0xb0550b5b431e30d38000efb7107aaa0ade03d48a7198a140edda9d27134468b2")
 
 // TODO: bytecode will be fetched from superchain-registry
 // remove TestCreateDeployerCodeHash test after integration is done

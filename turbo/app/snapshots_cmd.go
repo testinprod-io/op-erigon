@@ -2075,7 +2075,6 @@ func doRetireCommand(cliCtx *cli.Context, dirs datadir.Dirs) error {
 	}
 
 	//agg.LimitRecentHistoryWithoutFiles(0)
-	blockReader, _ := br.IO()
 
 	var to uint64
 	if err := db.View(ctx, func(tx kv.Tx) error {
@@ -2083,14 +2082,6 @@ func doRetireCommand(cliCtx *cli.Context, dirs datadir.Dirs) error {
 		return err
 	}); err != nil {
 		return err
-	}
-	if err := blockReader.Snapshots().RemoveOverlaps(); err != nil {
-		return err
-	}
-	if sn := blockReader.BorSnapshots(); sn != nil {
-		if err := sn.RemoveOverlaps(); err != nil {
-			return err
-		}
 	}
 
 	blockReader, _ := br.IO()

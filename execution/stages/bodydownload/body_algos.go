@@ -134,7 +134,7 @@ func (bd *BodyDownload) RequestMoreBodies(tx kv.RwTx, blockReader services.FullB
 			}
 		}
 		if request {
-			invalidUncleHash := header.UncleHash == types.EmptyUncleHash
+			invalidUncleHash := header.UncleHash == empty.UncleHash
 			invalidTxHash := header.TxHash == empty.RootHash
 			emptyWithdrawalsHash := header.WithdrawalsHash != nil && *header.WithdrawalsHash == empty.RootHash
 			skipCheckOnIsthmus := chainCfg != nil && chainCfg.IsOptimismIsthmus(header.Time)

@@ -77,7 +77,7 @@ func _GetBlockNumber(ctx context.Context, requireCanonical bool, blockNrOrHash r
 		case rpc.EarliestBlockNumber:
 			blockNumber = 0
 		case rpc.FinalizedBlockNumber:
-			blockNumber, err = GetFinalizedBlockNumber(tx)
+			blockNumber, err = GetFinalizedBlockNumber(tx, br)
 			if err != nil {
 				return 0, common.Hash{}, false, false, err
 			}

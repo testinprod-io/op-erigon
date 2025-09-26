@@ -21,8 +21,8 @@ package chainspec
 
 import (
 	"github.com/erigontech/erigon-lib/chain/networkname"
+	"github.com/erigontech/erigon-lib/chain/superchain"
 	"github.com/erigontech/erigon-lib/common"
-	
 	"strings"
 )
 
@@ -166,14 +166,14 @@ func BootnodeURLsByGenesisHash(genesis common.Hash) []string {
 var bootNodeURLsByChainName = make(map[string][]string)
 
 func BootnodeURLsOfChain(chain string) []string {
-	if OPStackChainConfigByName(chain) != nil {
+	if superchain.OPStackChainConfigByName(chain) != nil {
 		if strings.Contains(chain, "mainnet") {
 			return V5OPBootnodes
 		} else {
 			return V5OPTestnetBootnodes
 		}
 	}
-	
+
 	return bootNodeURLsByChainName[chain]
 }
 

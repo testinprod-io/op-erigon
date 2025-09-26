@@ -23,6 +23,7 @@ package utils
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"github.com/erigontech/erigon-lib/chain/superchain"
 	"math/big"
 	"path/filepath"
 	"runtime"
@@ -1715,7 +1716,7 @@ func setBorConfig(ctx *cli.Context, cfg *ethconfig.Config, nodeConfig *nodecfg.C
 
 	chainConfig := chainspec.ChainConfigByChainName(ctx.String(ChainFlag.Name))
 	if chainConfig == nil {
-		chainConfig = params.ChainConfigByOpStackChainName(ctx.String(ChainFlag.Name)) // TODO: op-erigon3
+		chainConfig = superchain.ChainConfigByOpStackChainName(ctx.String(ChainFlag.Name)) // TODO: op-erigon3
 	}
 	if chainConfig != nil && chainConfig.Bor != nil && !ctx.IsSet(MaxPeersFlag.Name) {
 		// override default max devp2p peers for polygon as per
@@ -1951,8 +1952,6 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 	} else {
 		cfg.NetworkID = chainspec.NetworkIDByChainName(chain)
 	}
-
-	cfg.PersistReceipts = ctx.Uint64(PersistReceiptsFlag.Name)
 
 	cfg.Dirs = nodeConfig.Dirs
 	cfg.Snapshot.KeepBlocks = ctx.Bool(SnapKeepBlocksFlag.Name)

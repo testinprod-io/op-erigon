@@ -35,13 +35,12 @@ import (
 	"github.com/erigontech/erigon-lib/common/math"
 	"github.com/erigontech/erigon-lib/common/u256"
 	"github.com/erigontech/erigon-lib/log/v3"
+	"github.com/erigontech/erigon-lib/opstack"
 	"github.com/erigontech/erigon-lib/types"
 	"github.com/erigontech/erigon/core/state"
 	"github.com/erigontech/erigon/core/tracing"
 	"github.com/erigontech/erigon/core/vm"
 	"github.com/erigontech/erigon/core/vm/evmtypes"
-	"github.com/erigontech/erigon-lib/opstack"
-	"github.com/erigontech/erigon/params"
 	"github.com/erigontech/erigon/execution/consensus"
 )
 
@@ -486,13 +485,16 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*evmtype
 	// 		return nil, fmt.Errorf("%w: %w", ErrStateTransitionFailed, err)
 	// 	}
 	// }
-	// snap := st.state.Snapshot()
+	snap := st.state.Snapshot()
 
 	result, err := st.innerTransitionDB(refunds, gasBailout)
 	// Failed deposits must still be included. Unless we cannot produce the block at all due to the gas limit.
 	// On deposit failure, we rewind any state changes from after the minting, and increment the nonce.
 	if err != nil && err != ErrGasLimitReached && st.msg.IsOptimismDepositTx() {
-		st.state.RevertToSnapshot(snap) // TODO: op-erigon3
+		st.state.RevertToSnapshot(snap, err) // TODO: op-erigon3
+		if err != nil {
+			return nil, fmt.Errorf("%w: %w", ErrStateTransitionFailed, err)
+		}
 		nonce, err := st.state.GetNonce(st.msg.From())
 		if err != nil {
 			return nil, fmt.Errorf("%w: %w", ErrStateTransitionFailed, err)
@@ -509,7 +511,7 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*evmtype
 			gasUsed = 0
 		}
 		return &evmtypes.ExecutionResult{
-			UsedGas:    gasUsed,
+			GasUsed:    gasUsed,
 			Err:        fmt.Errorf("failed deposit: %w", err),
 			ReturnData: nil,
 		}, nil
@@ -517,7 +519,7 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*evmtype
 	return result, err
 }
 
-func (st *StateTransition) innerTransitionDB(refunds bool, gasBailout bool) (*evmtypes.ExecutionResult, error) {
+func (st *StateTransition) innerTransitionDB(refunds bool, gasBailout bool) (result *evmtypes.ExecutionResult, err error) {
 	if st.evm.IntraBlockState().IsVersioned() {
 		defer func() {
 			if r := recover(); r != nil {
@@ -654,7 +656,7 @@ func (st *StateTransition) innerTransitionDB(refunds bool, gasBailout bool) (*ev
 			gasUsed = 0
 		}
 		return &evmtypes.ExecutionResult{
-			UsedGas:    gasUsed,
+			GasUsed:    gasUsed,
 			Err:        vmerr,
 			ReturnData: ret,
 		}, nil
@@ -680,7 +682,7 @@ func (st *StateTransition) innerTransitionDB(refunds bool, gasBailout bool) (*ev
 	if st.msg.IsOptimismDepositTx() && rules.IsOptimismRegolith {
 		// Skip coinbase payments for deposit tx in Regolith
 		return &evmtypes.ExecutionResult{
-			UsedGas:    st.gasUsed(),
+			GasUsed:    st.gasUsed(),
 			Err:        vmerr,
 			ReturnData: ret,
 		}, nil
@@ -728,12 +730,12 @@ func (st *StateTransition) innerTransitionDB(refunds bool, gasBailout bool) (*ev
 
 	if optimismConfig := st.evm.ChainConfig().Optimism; optimismConfig != nil {
 		l1CostFn := opstack.NewL1CostFunc(st.evm.ChainConfig(), st.state)
-		st.state.AddBalance(params.OptimismBaseFeeRecipient, new(uint256.Int).Mul(uint256.NewInt(st.gasUsed()), st.evm.Context.BaseFee), tracing.BalanceIncreaseRewardTransactionFee)
+		st.state.AddBalance(params.OptimismBaseFeeRecipient, *(&uint256.Int{}).Mul(uint256.NewInt(st.gasUsed()), st.evm.Context.BaseFee), tracing.BalanceIncreaseRewardTransactionFee)
 		if l1CostFn == nil { // Erigon EVM context is used in many unexpected/hacky ways, let's panic if it's misconfigured
 			panic("missing L1 cost func in block context, please configure l1 cost when using optimism config to run EVM")
 		}
 		if cost := l1CostFn(st.msg.RollupCostData(), st.evm.Context.Time); cost != nil {
-			st.state.AddBalance(params.OptimismL1FeeRecipient, cost, tracing.BalanceIncreaseRewardTransactionFee)
+			st.state.AddBalance(params.OptimismL1FeeRecipient, *cost, tracing.BalanceIncreaseRewardTransactionFee)
 		}
 		if st.evm.ChainConfig().IsIsthmus(st.evm.Context.Time) {
 			// Return ETH to transaction sender for operator cost overcharge.
@@ -745,13 +747,13 @@ func (st *StateTransition) innerTransitionDB(refunds bool, gasBailout bool) (*ev
 				panic(fmt.Sprintf("operator cost gas used (%d) > operator cost gas limit (%d)", operatorCostGasUsed, operatorCostGasLimit))
 			}
 
-			st.state.AddBalance(st.msg.From(), new(uint256.Int).Sub(operatorCostGasLimit, operatorCostGasUsed), tracing.BalanceIncreaseRewardTransactionFee)
+			st.state.AddBalance(st.msg.From(), *(&uint256.Int{}).Sub(operatorCostGasLimit, operatorCostGasUsed), tracing.BalanceIncreaseRewardTransactionFee)
 
-			st.state.AddBalance(params.OptimismOperatorFeeRecipient, operatorCostGasUsed, tracing.BalanceIncreaseRewardTransactionFee)
+			st.state.AddBalance(params.OptimismOperatorFeeRecipient, *operatorCostGasUsed, tracing.BalanceIncreaseRewardTransactionFee)
 		}
 	}
 
-	result := &evmtypes.ExecutionResult{
+	result = &evmtypes.ExecutionResult{
 		GasUsed:             st.gasUsed(),
 		Err:                 vmerr,
 		Reverted:            vmerr == vm.ErrExecutionReverted,

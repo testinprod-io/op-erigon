@@ -100,7 +100,7 @@ var (
 )
 
 type StateGetter interface {
-	GetState(addr common.Address, key *common.Hash, value *uint256.Int) error
+	GetState(addr common.Address, key common.Hash, value *uint256.Int) error
 }
 
 // RollupCostData is a transaction structure that caches data for quickly computing the data
@@ -154,10 +154,10 @@ func NewL1CostFunc(config *chain.Config, statedb StateGetter) L1CostFunc {
 		// point to allow deposit transactions from the block to be processed first by state
 		// transition.  This behavior is consensus critical!
 		var l1FeeScalarsInt, l1BlobBaseFee, l1BaseFee uint256.Int
-		statedb.GetState(L1BlockAddr, &L1FeeScalarsSlot, &l1FeeScalarsInt)
+		statedb.GetState(L1BlockAddr, L1FeeScalarsSlot, &l1FeeScalarsInt)
 		l1FeeScalars := l1FeeScalarsInt.Bytes32()
-		statedb.GetState(L1BlockAddr, &L1BlobBaseFeeSlot, &l1BlobBaseFee)
-		statedb.GetState(L1BlockAddr, &L1BaseFeeSlot, &l1BaseFee)
+		statedb.GetState(L1BlockAddr, L1BlobBaseFeeSlot, &l1BlobBaseFee)
+		statedb.GetState(L1BlockAddr, L1BaseFeeSlot, &l1BaseFee)
 
 		// Edge case: the very first Ecotone block requires we use the Bedrock cost
 		// function. We detect this scenario by checking if the Ecotone parameters are
@@ -201,9 +201,9 @@ func NewL1CostFunc(config *chain.Config, statedb StateGetter) L1CostFunc {
 // block only of the Ecotone upgrade.
 func newL1CostFuncPreEcotone(config *chain.Config, statedb StateGetter, blockTime uint64) l1CostFunc {
 	var l1BaseFee, overhead, scalar uint256.Int
-	statedb.GetState(L1BlockAddr, &L1BaseFeeSlot, &l1BaseFee)
-	statedb.GetState(L1BlockAddr, &OverheadSlot, &overhead)
-	statedb.GetState(L1BlockAddr, &ScalarSlot, &scalar)
+	statedb.GetState(L1BlockAddr, L1BaseFeeSlot, &l1BaseFee)
+	statedb.GetState(L1BlockAddr, OverheadSlot, &overhead)
+	statedb.GetState(L1BlockAddr, ScalarSlot, &scalar)
 	isRegolith := config.IsRegolith(blockTime)
 	return newL1CostFuncPreEcotoneHelper(&l1BaseFee, &overhead, &scalar, isRegolith)
 }
@@ -600,7 +600,7 @@ func NewOperatorCostFunc(config *chain.Config, statedb StateGetter) OperatorCost
 			}
 		}
 		var operatorFeeParamsInt uint256.Int
-		statedb.GetState(L1BlockAddr, &OperatorFeeParamsSlot, &operatorFeeParamsInt)
+		statedb.GetState(L1BlockAddr, OperatorFeeParamsSlot, &operatorFeeParamsInt)
 		if operatorFeeParamsInt.IsZero() {
 			return func(gas uint64) *uint256.Int {
 				return uint256.NewInt(0)

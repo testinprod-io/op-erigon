@@ -14,11 +14,10 @@ import (
 	big "math/big"
 	reflect "reflect"
 
-	gomock "go.uber.org/mock/gomock"
-
 	ethereum "github.com/erigontech/erigon"
 	common "github.com/erigontech/erigon-lib/common"
 	types "github.com/erigontech/erigon-lib/types"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockBackend is a mock of Backend interface.

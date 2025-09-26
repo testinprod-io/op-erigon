@@ -105,7 +105,7 @@ func (api *APIImpl) GetTransactionByHash(ctx context.Context, txnHash common.Has
 			return nil, err
 		}
 
-		return ethapi.NewRPCTransaction(txn, blockHash, blockNum, txnIndex, baseFee, receipt), nil
+		return ethapi.NewRPCTransaction(txn, blockHash, blockNum, txnIndex, baseFee, nil), nil
 	}
 
 	curHeader := rawdb.ReadCurrentHeader(tx)
