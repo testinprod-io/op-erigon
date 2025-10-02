@@ -3,12 +3,14 @@ package superchain
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"strings"
 
 	"github.com/erigontech/erigon-lib/chain"
 	"github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/types"
 )
 
 var (
@@ -155,6 +157,80 @@ func LoadSuperChainConfig(chConfig *ChainConfig) *chain.Config {
 	}
 
 	return out
+}
+
+func LoadOPStackGenesisByChainName(name string) (*types.Genesis, error) {
+	opStackChainCfg := OPStackChainConfigByName(name)
+	if opStackChainCfg == nil {
+		return nil, nil
+	}
+
+	return LoadOPStackGenesis(opStackChainCfg.ChainID)
+}
+
+// loadOPStackGenesisByChainName loads genesis block corresponding to the chain name from superchain regsitry.
+// This implementation is based on op-geth(https://github.com/ethereum-optimism/op-geth/blob/acea1259d8ea2e74cf102463e4f5a7738bd5e102/core/superchain.go#L14)
+func LoadOPStackGenesis(chainID uint64) (*types.Genesis, error) {
+	chain, err := GetChain(chainID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting superchain: %w", err)
+	}
+
+	chConfig, err := chain.Config()
+	if err != nil {
+		return nil, fmt.Errorf("error getting chain config from superchain: %w", err)
+	}
+
+	cfg := LoadSuperChainConfig(chConfig)
+	gen, err := readOPStackGenesis(chain)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load genesis definition for chain %d: %w", chainID, err)
+	}
+
+	genesis := &types.Genesis{
+		Config:        cfg,
+		Nonce:         gen.Nonce,
+		Timestamp:     gen.Timestamp,
+		ExtraData:     gen.ExtraData,
+		GasLimit:      gen.GasLimit,
+		Difficulty:    gen.Difficulty,
+		Mixhash:       gen.Mixhash,
+		Coinbase:      gen.Coinbase,
+		Alloc:         gen.Alloc,
+		Number:        gen.Number,
+		GasUsed:       gen.GasUsed,
+		ParentHash:    gen.ParentHash,
+		BaseFee:       gen.BaseFee,
+		ExcessBlobGas: gen.ExcessBlobGas,
+		BlobGasUsed:   gen.BlobGasUsed,
+	}
+
+	if gen.StateHash != nil {
+		if len(gen.Alloc) > 0 {
+			return nil, fmt.Errorf("chain definition unexpectedly contains both allocation (%d) and state-hash %s", len(gen.Alloc), *gen.StateHash)
+		}
+		genesis.StateHash = gen.StateHash
+		genesis.Alloc = nil
+	}
+
+	if chainID == OPMainnetChainID {
+		opmStateHash := common.HexToHash("0xeddb4c1786789419153a27c4c80ff44a2226b6eda04f7e22ce5bae892ea568eb")
+		genesis.StateHash = &opmStateHash
+	}
+
+	return genesis, nil
+}
+
+func readOPStackGenesis(chain *Chain) (*types.Genesis, error) {
+	genData, err := chain.GenesisData()
+	if err != nil {
+		return nil, fmt.Errorf("error getting genesis data from superchain: %w", err)
+	}
+	gen := new(types.Genesis)
+	if err := json.Unmarshal(genData, gen); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal genesis data: %w", err)
+	}
+	return gen, nil
 }
 
 // ProtocolVersion encodes the OP-Stack protocol version. See OP-Stack superchain-upgrade specification.
