@@ -185,7 +185,7 @@ func (rw *Worker) SetReader(reader state.ResettableStateReader) {
 
 func (rw *Worker) RunTxTaskNoLock(txTask *state.TxTask, isMining, skipPostEvaluation bool) {
 	// Optimism Ecotone does not support blob txs
-	if txTask.Tx.Type() == types.BlobTxType && txTask.Rules.IsOptimismEcotone {
+	if txTask.Tx != nil && txTask.Tx.Type() == types.BlobTxType && txTask.Rules != nil && txTask.Rules.IsOptimismEcotone {
 		txTask.Error = errors.New("blob txs are not supported in ecotone")
 		return
 	}
