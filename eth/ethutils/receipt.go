@@ -94,10 +94,12 @@ func MarshalReceipt(
 			fields["l1GasPrice"] = hexutil.Big(*receipt.L1GasPrice)
 			fields["l1GasUsed"] = hexutil.Big(*receipt.L1GasUsed)
 			fields["l1Fee"] = hexutil.Big(*receipt.L1Fee)
+
 			// Fields removed in Ecotone
 			if receipt.FeeScalar != nil {
 				fields["l1FeeScalar"] = receipt.FeeScalar
 			}
+
 			// Fields added in Ecotone
 			if receipt.L1BlobBaseFee != nil {
 				fields["l1BlobBaseFee"] = (*hexutil.Big)(receipt.L1BlobBaseFee)

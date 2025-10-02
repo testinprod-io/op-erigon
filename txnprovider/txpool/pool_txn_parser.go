@@ -165,7 +165,7 @@ func (ctx *TxnParseContext) ParseTransaction(payload []byte, pos int, slot *TxnS
 
 		// TODO: make this escape only when we run an optimism node
 		isOptimismDepositTx := slot.Type == OptimismDepositTxnType
-		if slot.Type > AATxnType && !isOptimismDepositTx{
+		if slot.Type > AATxnType && !isOptimismDepositTx {
 			return 0, fmt.Errorf("%w: unknown transaction type: %d", ErrParseTxn, slot.Type)
 		}
 		p++
@@ -957,7 +957,7 @@ type TxnSlot struct {
 	BlobBundles []PoolBlobBundle
 
 	AuthAndNonces []AuthAndNonce // Indexed authorization signers + nonces for EIP-7702 txns (type-4)
-	
+
 	RollupCostData opstack.RollupCostData
 
 	// RIP-7560: account abstraction

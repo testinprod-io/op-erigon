@@ -20,6 +20,7 @@ import (
 	"container/heap"
 	"context"
 	"fmt"
+	"github.com/erigontech/erigon-lib/opstack"
 	"sync"
 	"time"
 
@@ -191,6 +192,34 @@ func (t *TxTask) createReceipt(cumulativeGasUsed uint64, firstLogIndex uint32) *
 	if t.Config.IsOptimismCanyon(t.Header.Time) && t.Config.IsOptimismRegolith(t.Header.Time) {
 		receipt.DepositReceiptVersion = new(uint64)
 		*receipt.DepositReceiptVersion = types.CanyonDepositReceiptVersion
+	}
+
+	if t.Config.IsOptimism() && t.Tx.Type() != types.OptimismDepositTxType {
+		gasParams, err := opstack.ExtractL1GasParams(t.Config, t.Header.Time, t.Tx.GetData())
+		if err == nil {
+			receipt.L1GasPrice = gasParams.L1BaseFee.ToBig()
+
+			l1Fee, l1GasUsed := gasParams.CostFunc(t.Tx.RollupCostData())
+
+			receipt.L1Fee = l1Fee.ToBig()
+			receipt.L1GasUsed = l1GasUsed.ToBig()
+			receipt.FeeScalar = gasParams.FeeScalar
+			receipt.L1BlobBaseFee = gasParams.L1BlobBaseFee.ToBig()
+			if gasParams.L1BaseFeeScalar != nil {
+				l1BaseFeeScalar := uint64(*gasParams.L1BaseFeeScalar)
+				receipt.L1BaseFeeScalar = &l1BaseFeeScalar
+			}
+			if gasParams.L1BlobBaseFeeScalar != nil {
+				l1BlobBaseFeeScalar := uint64(*gasParams.L1BlobBaseFeeScalar)
+				receipt.L1BlobBaseFeeScalar = &l1BlobBaseFeeScalar
+			}
+			if gasParams.OperatorFeeScalar != nil {
+				operatorFeeScalar := uint64(*gasParams.OperatorFeeScalar)
+				receipt.OperatorFeeScalar = &operatorFeeScalar
+			}
+			receipt.OperatorFeeConstant = gasParams.OperatorFeeConstant
+		}
+
 	}
 
 	// if the transaction created a contract, store the creation address in the receipt.

@@ -579,39 +579,3 @@ func sortedAllocKeys(m types.GenesisAlloc) []string {
 	slices.Sort(keys)
 	return keys
 }
-
-//// TODO: op-erigon3
-//func GenesisBlockByChainName(chain string) *types.Genesis {
-//	genesis, err := loadOPStackGenesisByChainName(chain)
-//	if err != nil {
-//		panic(err)
-//	}
-//	if genesis != nil {
-//		return genesis
-//	}
-//
-//	switch chain {
-//	case networkname.Mainnet:
-//		return MainnetGenesisBlock()
-//	case networkname.Holesky:
-//		return HoleskyGenesisBlock()
-//	case networkname.Sepolia:
-//		return SepoliaGenesisBlock()
-//	case networkname.Hoodi:
-//		return HoodiGenesisBlock()
-//	case networkname.Amoy:
-//		return AmoyGenesisBlock()
-//	case networkname.BorMainnet:
-//		return BorMainnetGenesisBlock()
-//	case networkname.BorDevnet:
-//		return BorDevnetGenesisBlock()
-//	case networkname.Gnosis:
-//		return GnosisGenesisBlock()
-//	case networkname.Chiado:
-//		return ChiadoGenesisBlock()
-//	case networkname.Test:
-//		return TestGenesisBlock()
-//	default:
-//		return nil
-//	}
-//}

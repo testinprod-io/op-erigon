@@ -42,7 +42,6 @@ var DefaultFlags = []cli.Flag{
 	&PruneDistanceFlag,
 	&PruneBlocksDistanceFlag,
 	&PruneModeFlag,
-	&utils.KeepExecutionProofsFlag,
 
 	&BatchSizeFlag,
 	&BodyCacheLimitFlag,

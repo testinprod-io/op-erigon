@@ -25,6 +25,8 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"github.com/erigontech/erigon-lib/chain"
+	"github.com/erigontech/erigon-lib/opstack"
 	"math/big"
 	"time"
 
@@ -1247,7 +1249,7 @@ func ReadReceiptCacheV2(tx kv.TemporalTx, query RCacheV2Query) (*types.Receipt, 
 	return res, true, nil
 }
 
-func ReadReceiptsCacheV2(tx kv.TemporalTx, block *types.Block, txNumReader rawdbv3.TxNumsReader) (res types.Receipts, err error) {
+func ReadReceiptsCacheV2(tx kv.TemporalTx, block *types.Block, txNumReader rawdbv3.TxNumsReader, cfg *chain.Config) (res types.Receipts, err error) {
 	blockHash := block.Hash()
 	blockNum := block.NumberU64()
 
@@ -1281,7 +1283,35 @@ func ReadReceiptsCacheV2(tx kv.TemporalTx, block *types.Block, txNumReader rawdb
 		if int(receipt.TransactionIndex) < len(block.Transactions()) {
 			txn := block.Transactions()[receipt.TransactionIndex]
 			x.DeriveFieldsV4ForCachedReceipt(blockHash, blockNum, txn.Hash(), true)
+
+			if cfg != nil && cfg.IsOptimism() {
+				gasParams, err := opstack.ExtractL1GasParams(cfg, block.Header().Time, txn.GetData())
+				if err == nil {
+					x.L1GasPrice = gasParams.L1BaseFee.ToBig()
+
+					l1Fee, l1GasUsed := gasParams.CostFunc(txn.RollupCostData())
+
+					x.L1Fee = l1Fee.ToBig()
+					x.L1GasUsed = l1GasUsed.ToBig()
+					x.FeeScalar = gasParams.FeeScalar
+					x.L1BlobBaseFee = gasParams.L1BlobBaseFee.ToBig()
+					if gasParams.L1BaseFeeScalar != nil {
+						l1BaseFeeScalar := uint64(*gasParams.L1BaseFeeScalar)
+						x.L1BaseFeeScalar = &l1BaseFeeScalar
+					}
+					if gasParams.L1BlobBaseFeeScalar != nil {
+						l1BlobBaseFeeScalar := uint64(*gasParams.L1BlobBaseFeeScalar)
+						x.L1BlobBaseFeeScalar = &l1BlobBaseFeeScalar
+					}
+					if gasParams.OperatorFeeScalar != nil {
+						operatorFeeScalar := uint64(*gasParams.OperatorFeeScalar)
+						x.OperatorFeeScalar = &operatorFeeScalar
+					}
+					x.OperatorFeeConstant = gasParams.OperatorFeeConstant
+				}
+			}
 		}
+
 		res = append(res, x)
 	}
 	return res, nil

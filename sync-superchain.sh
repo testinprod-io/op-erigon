@@ -87,7 +87,7 @@ chmod -R 755 ./*
 files=$(find . -type f | LC_ALL=C sort)
 echo -n "$files" | xargs zip -9 -oX --quiet superchain-configs.zip
 zipinfo superchain-configs.zip
-mv superchain-configs.zip "$SCRIPT_DIR/superchain/superchain-configs.zip"
+mv superchain-configs.zip "$SCRIPT_DIR/erigon-lib/chain/superchain/superchain-configs.zip"
 
 echo "Cleaning up..."
 rm -rf "$repodir"

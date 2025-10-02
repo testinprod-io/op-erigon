@@ -23,7 +23,6 @@ import (
 	"github.com/erigontech/erigon-lib/chain/networkname"
 	"github.com/erigontech/erigon-lib/chain/superchain"
 	"github.com/erigontech/erigon-lib/common"
-	"strings"
 )
 
 // MainnetBootnodes are the enode URLs of the P2P bootstrap nodes running on
@@ -160,6 +159,14 @@ func KnownDNSNetwork(genesis common.Hash) string {
 var bootNodeURLsByGenesisHash = make(map[common.Hash][]string)
 
 func BootnodeURLsByGenesisHash(genesis common.Hash) []string {
+	if config := superchain.OPStackChainConfigByGenesisHash(genesis); config != nil {
+		if config.Name == "op-mainnet" {
+			return V5OPBootnodes
+		} else {
+			return V5OPTestnetBootnodes
+		}
+	}
+
 	return bootNodeURLsByGenesisHash[genesis]
 }
 
@@ -167,7 +174,7 @@ var bootNodeURLsByChainName = make(map[string][]string)
 
 func BootnodeURLsOfChain(chain string) []string {
 	if superchain.OPStackChainConfigByName(chain) != nil {
-		if strings.Contains(chain, "mainnet") {
+		if chain == "op-mainnet" {
 			return V5OPBootnodes
 		} else {
 			return V5OPTestnetBootnodes

@@ -1742,11 +1742,15 @@ func setMiner(ctx *cli.Context, cfg *params2.MiningConfig) {
 	}
 	if ctx.IsSet(MinerExtraDataFlag.Name) {
 		cfg.ExtraData = []byte(ctx.String(MinerExtraDataFlag.Name))
-	} else if len(params2.GitCommit) > 0 {
-		cfg.ExtraData = []byte(ctx.App.Name + "-" + params2.VersionWithCommit(params2.GitCommit))
-	} else {
-		cfg.ExtraData = []byte(ctx.App.Name + "-" + ctx.App.Version)
 	}
+
+	// op-erigon doesn't use specified extradata
+	//else if len(params2.GitCommit) > 0 {
+	//	cfg.ExtraData = []byte(ctx.App.Name + "-" + params2.VersionWithCommit(params2.GitCommit))
+	//} else {
+	//	cfg.ExtraData = []byte(ctx.App.Name + "-" + ctx.App.Version)
+	//}
+
 	maxExtra := min(int(params.MaximumExtraDataSize), types.ExtraVanityLength)
 	if len(cfg.ExtraData) > maxExtra {
 		cfg.ExtraData = cfg.ExtraData[:maxExtra]

@@ -549,24 +549,20 @@ func (s *EngineServer) getPayload(ctx context.Context, payloadId uint64, version
 		(s.config.IsOsaka(ts) && version < clparams.FuluVersion) {
 		return nil, &rpc.UnsupportedForkError{Message: "Unsupported fork"}
 	}
-	response := &engine_types.GetPayloadResponse{
-		ExecutionPayload: engine_types.ConvertPayloadFromRpc(data.ExecutionPayload),
-		BlockValue:       (*hexutil.Big)(gointerfaces.ConvertH256ToUint256Int(data.BlockValue).ToBig()),
-		BlobsBundle:      engine_types.ConvertBlobsFromRpc(data.BlobsBundle),
-	}
-	if s.config.IsOptimism() && s.config.IsCancun(ts) && version >= clparams.DenebVersion {
-		if data.ParentBeaconBlockRoot == nil {
-			return nil, &rpc.UnsupportedForkError{Message: "missing ParentBeaconBlockRoot in Ecotone block"}
-		}
-		parentBeaconBlockRoot := common.Hash(gointerfaces.ConvertH256ToHash(data.ParentBeaconBlockRoot))
-		response.ParentBeaconBlockRoot = &parentBeaconBlockRoot
-	}
 
 	payload := &engine_types.GetPayloadResponse{
 		ExecutionPayload:  engine_types.ConvertPayloadFromRpc(data.ExecutionPayload),
 		BlockValue:        (*hexutil.Big)(gointerfaces.ConvertH256ToUint256Int(data.BlockValue).ToBig()),
 		BlobsBundle:       engine_types.ConvertBlobsFromRpc(data.BlobsBundle),
 		ExecutionRequests: executionRequests,
+	}
+
+	if s.config.IsOptimism() && s.config.IsCancun(ts) && version >= clparams.DenebVersion {
+		if data.ParentBeaconBlockRoot == nil {
+			return nil, &rpc.UnsupportedForkError{Message: "missing ParentBeaconBlockRoot in Ecotone block"}
+		}
+		parentBeaconBlockRoot := common.Hash(gointerfaces.ConvertH256ToHash(data.ParentBeaconBlockRoot))
+		payload.ParentBeaconBlockRoot = &parentBeaconBlockRoot
 	}
 
 	if version == clparams.FuluVersion {
@@ -689,18 +685,16 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 	}
 
 	if s.config.Optimism != nil {
-		if s.config.Optimism != nil {
-			if payloadAttributes.GasLimit == nil {
-				return nil, &engine_helpers.InvalidPayloadAttributesErr
+		if payloadAttributes.GasLimit == nil {
+			return nil, &engine_helpers.InvalidPayloadAttributesErr
+		}
+		if s.config.IsHolocene(payloadAttributes.Timestamp.Uint64()) {
+			if err := misc.ValidateHolocene1559Params(payloadAttributes.HoloceneEIP1559Params); err != nil {
+				return nil, err
 			}
-			if s.config.IsHolocene(payloadAttributes.Timestamp.Uint64()) {
-				if err := misc.ValidateHolocene1559Params(payloadAttributes.HoloceneEIP1559Params); err != nil {
-					return nil, err
-				}
-				req.Eip_1559Params = bytes.Clone(payloadAttributes.HoloceneEIP1559Params)
-			} else if len(payloadAttributes.HoloceneEIP1559Params) != 0 {
-				return nil, &engine_helpers.InvalidPayloadAttributesErr
-			}
+			req.Eip_1559Params = bytes.Clone(payloadAttributes.HoloceneEIP1559Params)
+		} else if len(payloadAttributes.HoloceneEIP1559Params) != 0 {
+			return nil, &engine_helpers.InvalidPayloadAttributesErr
 		}
 	}
 
@@ -711,8 +705,7 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 	var resp *execution.AssembleBlockResponse
 	// Wait for the execution service to be ready to assemble a block. Wait a full slot duration (12 seconds) to ensure that the execution service is not busy.
 	// Blocks are important and 0.5 seconds is not enough to wait for the execution service to be ready.
-	// TODO: op-erigon3 - should we use shorter timeframe like 500ms?
-	execBusy, err := waitForStuff(time.Duration(s.config.SecondsPerSlot())*time.Second, func() (bool, error) {
+	execBusy, err := waitForStuff(1*time.Second, func() (bool, error) {
 		resp, err = s.executionService.AssembleBlock(ctx, req)
 		if err != nil {
 			return false, err
@@ -841,8 +834,7 @@ func (e *EngineServer) HandleNewPayload(
 
 		if currentHeadNumber != nil {
 			// wait for the slot duration for full download
-			// TODO: op-erigon3 timeframe
-			waitTime := time.Duration(e.config.SecondsPerSlot()) * time.Second
+			waitTime := time.Duration(1) * time.Second
 			// We try waiting until we finish downloading the PoS blocks if the distance from the head is enough,
 			// so that we will perform full validation.
 			if stillSyncing, _ := waitForStuff(waitTime, func() (bool, error) {

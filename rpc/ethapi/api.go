@@ -488,7 +488,6 @@ type RPCTransaction struct {
 	R                    *hexutil.Big               `json:"r"`
 	S                    *hexutil.Big               `json:"s"`
 
-	// TODO: op-erigon3
 	// Optimism
 	// deposit-tx only
 	SourceHash *common.Hash `json:"sourceHash,omitempty"`

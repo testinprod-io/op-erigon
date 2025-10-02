@@ -42,13 +42,6 @@ const (
 	ExtraSealLength   = 65 // Fixed number of extra-data suffix bytes reserved for signer seal
 )
 
-// TODO: op-erigon3
-// var (
-	// EmptyRootHash     = libcommon.HexToHash("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421")
-	// EmptyRequestsHash = libcommon.HexToHash("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855") // sha256.Sum256([]byte(""))
-	// EmptyUncleHash    = rlpHash([]*Header(nil))
-// )
-
 var ErrBlockExceedsMaxRlpSize = errors.New("block exceeds max rlp size")
 
 // A BlockNonce is a 64-bit hash which proves (combined with the

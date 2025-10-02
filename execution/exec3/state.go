@@ -184,11 +184,12 @@ func (rw *Worker) SetReader(reader state.ResettableStateReader) {
 }
 
 func (rw *Worker) RunTxTaskNoLock(txTask *state.TxTask, isMining, skipPostEvaluation bool) {
-	// // Optimism Ecotone does not support blob txs // TODO: op-erigon3
-	// if txTask.Tx.Type() == types.BlobTxType && txTask.Rules.IsOptimismEcotone {
-	// 	txTask.Error = errors.New("blob txs are not supported in ecotone")
-	// 	return
-	// }
+	// Optimism Ecotone does not support blob txs
+	if txTask.Tx.Type() == types.BlobTxType && txTask.Rules.IsOptimismEcotone {
+		txTask.Error = errors.New("blob txs are not supported in ecotone")
+		return
+	}
+
 	if txTask.HistoryExecution && !rw.historyMode {
 		// in case if we cancelled execution and commitment happened in the middle of the block, we have to process block
 		// from the beginning until committed txNum and only then disable history mode.
@@ -335,7 +336,7 @@ func (rw *Worker) RunTxTaskNoLock(txTask *state.TxTask, isMining, skipPostEvalua
 			txTask.Logs = ibs.GetRawLogs(txTask.TxIndex)
 			txTask.TraceFroms = rw.callTracer.Froms()
 			txTask.TraceTos = rw.callTracer.Tos()
-			
+
 			if msg.IsOptimismDepositTx() && rw.chainConfig.IsOptimismRegolith(rw.evm.Context.Time) {
 				txTask.OptimismDepositNonce = new(uint64)
 				*txTask.OptimismDepositNonce = nonce

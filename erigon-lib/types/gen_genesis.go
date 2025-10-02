@@ -21,12 +21,12 @@ func (g Genesis) MarshalJSON() ([]byte, error) {
 		Config                *chain.Config                                `json:"config"`
 		Nonce                 math.HexOrDecimal64                          `json:"nonce"`
 		Timestamp             math.HexOrDecimal64                          `json:"timestamp"`
-		ExtraData             hexutility.Bytes                             `json:"extraData"`
+		ExtraData             hexutil.Bytes                             `json:"extraData"`
 		GasLimit              math.HexOrDecimal64                          `json:"gasLimit"   gencodec:"required"`
 		Difficulty            *math.HexOrDecimal256                        `json:"difficulty" gencodec:"required"`
 		Mixhash               common.Hash                                  `json:"mixHash"`
 		Coinbase              common.Address                               `json:"coinbase"`
-		Alloc                 map[common0.UnprefixedAddress]GenesisAccount `json:"alloc"      gencodec:"required"`
+		Alloc                 map[common.UnprefixedAddress]GenesisAccount `json:"alloc"      gencodec:"required"`
 		AuRaSeal              *AuRaSeal                                    `json:"seal"`
 		Number                math.HexOrDecimal64                          `json:"number"`
 		GasUsed               math.HexOrDecimal64                          `json:"gasUsed"`
@@ -72,12 +72,12 @@ func (g *Genesis) UnmarshalJSON(input []byte) error {
 		Config                *chain.Config                                `json:"config"`
 		Nonce                 *math.HexOrDecimal64                         `json:"nonce"`
 		Timestamp             *math.HexOrDecimal64                         `json:"timestamp"`
-		ExtraData             *hexutility.Bytes                            `json:"extraData"`
+		ExtraData             *hexutil.Bytes                            `json:"extraData"`
 		GasLimit              *math.HexOrDecimal64                         `json:"gasLimit"   gencodec:"required"`
 		Difficulty            *math.HexOrDecimal256                        `json:"difficulty" gencodec:"required"`
 		Mixhash               *common.Hash                                 `json:"mixHash"`
 		Coinbase              *common.Address                              `json:"coinbase"`
-		Alloc                 map[common0.UnprefixedAddress]GenesisAccount `json:"alloc"      gencodec:"required"`
+		Alloc                 map[common.UnprefixedAddress]GenesisAccount `json:"alloc"      gencodec:"required"`
 		AuRaSeal              *AuRaSeal                                    `json:"seal"`
 		Number                *math.HexOrDecimal64                         `json:"number"`
 		GasUsed               *math.HexOrDecimal64                         `json:"gasUsed"`

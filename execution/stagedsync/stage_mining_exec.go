@@ -133,6 +133,15 @@ func SpawnMiningExecStage(s *StageState, txc wrap.TxContainer, cfg MiningExecCfg
 
 	txNum := sd.TxNum()
 
+	forceTxs := current.ForceTxs
+	if len(forceTxs) > 0 {
+		logs, _, err := addTransactionsToMiningBlock(ctx, logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, cfg.engine, forceTxs, cfg.miningState.MiningConfig.Etherbase, ibs, cfg.interrupt, cfg.payloadId, logger, true)
+		if err != nil {
+			return err
+		}
+		NotifyPendingLogs(logPrefix, cfg.notifier, logs, logger)
+	}
+
 	if len(preparedTxns) > 0 {
 		logs, _, err := addTransactionsToMiningBlock(ctx, logPrefix, current, cfg.chainConfig, cfg.vmConfig, getHeader, cfg.engine, preparedTxns, cfg.miningState.MiningConfig.Etherbase, ibs, cfg.interrupt, cfg.payloadId, logger, false)
 		if err != nil {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/erigontech/erigon-lib/opstack"
 	"sync"
 	"time"
 
@@ -191,6 +192,34 @@ func (g *Generator) GetReceipt(ctx context.Context, cfg *chain.Config, tx kv.Tem
 			BlockHash: blockHash,
 			TxnHash:   txnHash,
 		})
+
+		if cfg != nil && cfg.IsOptimism() && txn.Type() == types.OptimismDepositTxType {
+			gasParams, err := opstack.ExtractL1GasParams(cfg, header.Time, txn.GetData())
+			if err == nil {
+				receiptFromDB.L1GasPrice = gasParams.L1BaseFee.ToBig()
+
+				l1Fee, l1GasUsed := gasParams.CostFunc(txn.RollupCostData())
+				receiptFromDB.L1Fee = l1Fee.ToBig()
+				receiptFromDB.L1GasUsed = l1GasUsed.ToBig()
+
+				receiptFromDB.FeeScalar = gasParams.FeeScalar
+				receiptFromDB.L1BlobBaseFee = gasParams.L1BlobBaseFee.ToBig()
+				if gasParams.L1BaseFeeScalar != nil {
+					l1BaseFeeScalar := uint64(*gasParams.L1BaseFeeScalar)
+					receiptFromDB.L1BaseFeeScalar = &l1BaseFeeScalar
+				}
+				if gasParams.L1BlobBaseFeeScalar != nil {
+					l1BlobBaseFeeScalar := uint64(*gasParams.L1BlobBaseFeeScalar)
+					receiptFromDB.L1BlobBaseFeeScalar = &l1BlobBaseFeeScalar
+				}
+				if gasParams.OperatorFeeScalar != nil {
+					operatorFeeScalar := uint64(*gasParams.OperatorFeeScalar)
+					receiptFromDB.OperatorFeeScalar = &operatorFeeScalar
+				}
+				receiptFromDB.OperatorFeeConstant = gasParams.OperatorFeeConstant
+			}
+		}
+
 		if err != nil {
 			return nil, err
 		}
@@ -209,7 +238,6 @@ func (g *Generator) GetReceipt(ctx context.Context, cfg *chain.Config, tx kv.Tem
 	if err != nil {
 		return nil, err
 	}
-
 	if txn.Type() == types.AccountAbstractionTxType {
 		aaTxn := txn.(*types.AccountAbstractionTransaction)
 		blockContext := core.NewEVMBlockContext(header, core.GetHashFn(genEnv.header, genEnv.getHeader), g.engine, nil, cfg)
@@ -264,7 +292,6 @@ func (g *Generator) GetReceipt(ctx context.Context, cfg *chain.Config, tx kv.Tem
 	}
 
 	g.addToCacheReceipt(txnHash, receipt)
-
 	if dbg.AssertEnabled && receiptFromDB != nil {
 		g.assertEqualReceipts(receipt, receiptFromDB)
 	}
@@ -293,7 +320,7 @@ func (g *Generator) GetReceipts(ctx context.Context, cfg *chain.Config, tx kv.Te
 
 	if !rpcDisableRCache {
 		var err error
-		receiptsFromDB, err = rawdb.ReadReceiptsCacheV2(tx, block, g.txNumReader)
+		receiptsFromDB, err = rawdb.ReadReceiptsCacheV2(tx, block, g.txNumReader, cfg)
 		if err != nil {
 			return nil, err
 		}

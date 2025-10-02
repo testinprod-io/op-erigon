@@ -124,7 +124,7 @@ type Message interface {
 	IsFree() bool // service transactions on Gnosis are exempt from EIP-1559 mandatory fees
 	SetIsFree(bool)
 
-	// Mint() *uint256.Int // TODO: op-erigon3
+	Mint() *uint256.Int
 	IsOptimismDepositTx() bool
 	IsOptimismSystemTx() bool
 	RollupCostData() opstack.RollupCostData
@@ -480,18 +480,19 @@ func (st *StateTransition) ApplyFrame() (*evmtypes.ExecutionResult, error) {
 // However if any consensus issue encountered, return the error directly with
 // nil evm execution result.
 func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*evmtypes.ExecutionResult, error) {
-	// if mint := st.msg.Mint(); mint != nil {
-	// 	if err := st.state.AddBalance(st.msg.From(), mint, tracing.BalanceChangeUnspecified); err != nil {
-	// 		return nil, fmt.Errorf("%w: %w", ErrStateTransitionFailed, err)
-	// 	}
-	// }
+	if mint := st.msg.Mint(); mint != nil {
+		if err := st.state.AddBalance(st.msg.From(), *mint, tracing.BalanceChangeUnspecified); err != nil {
+			return nil, fmt.Errorf("%w: %w", ErrStateTransitionFailed, err)
+		}
+	}
+
 	snap := st.state.Snapshot()
 
 	result, err := st.innerTransitionDB(refunds, gasBailout)
 	// Failed deposits must still be included. Unless we cannot produce the block at all due to the gas limit.
 	// On deposit failure, we rewind any state changes from after the minting, and increment the nonce.
 	if err != nil && err != ErrGasLimitReached && st.msg.IsOptimismDepositTx() {
-		st.state.RevertToSnapshot(snap, err) // TODO: op-erigon3
+		st.state.RevertToSnapshot(snap, err)
 		if err != nil {
 			return nil, fmt.Errorf("%w: %w", ErrStateTransitionFailed, err)
 		}

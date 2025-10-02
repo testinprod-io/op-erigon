@@ -23,6 +23,7 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"github.com/erigontech/erigon-lib/chain/superchain"
 	"io/fs"
 	"math/big"
 	"path"
@@ -137,18 +138,35 @@ func NewSnapshotConfig(checkpointInterval uint64, inmemorySnapshots int, inmemor
 var chainConfigByName = make(map[string]*chain.Config)
 
 func ChainConfigByChainName(chainName string) *chain.Config {
+	if config := superchain.ChainConfigByOpStackChainName(chainName); config != nil {
+		return config
+	}
+
 	return chainConfigByName[chainName]
 }
 
 var genesisHashByChainName = make(map[string]*common.Hash)
 
 func GenesisHashByChainName(chain string) *common.Hash {
+	if config := superchain.OPStackChainConfigByName(chain); config != nil {
+		if chain == "op-mainnet" {
+			hash := common.HexToHash("0xeddb4c1786789419153a27c4c80ff44a2226b6eda04f7e22ce5bae892ea568eb")
+			return &hash
+		}
+
+		return &config.Genesis.L2.Hash
+	}
+
 	return genesisHashByChainName[chain]
 }
 
 var chainConfigByGenesisHash = make(map[common.Hash]*chain.Config)
 
 func ChainConfigByGenesisHash(genesisHash common.Hash) *chain.Config {
+	if config := superchain.ChainConfigByOpStackGenesisHash(genesisHash); config != nil {
+		return config
+	}
+
 	return chainConfigByGenesisHash[genesisHash]
 }
 
@@ -216,9 +234,4 @@ func init() {
 	RegisterChain(networkname.Gnosis, GnosisChainConfig, GnosisGenesisBlock(), GnosisGenesisHash, GnosisBootnodes, "")
 	RegisterChain(networkname.Chiado, ChiadoChainConfig, ChiadoGenesisBlock(), ChiadoGenesisHash, ChiadoBootnodes, "")
 	RegisterChain(networkname.Test, chain.TestChainConfig, TestGenesisBlock(), TestGenesisHash, nil, "")
-
-	// TODO: op-erigon3
-	//if genesis, err := core.LoadOPStackGenesisByChainName(networkname.OPMainnetChainName); err == nil && genesis != nil {
-	//	RegisterChain(networkname.OPMainnetChainName, superchain.ChainConfigByOpStackChainName(networkname.OPMainnetChainName), genesis, superchain.OPMainnetGenesisHash, V5OPBootnodes, "")
-	//}
 }

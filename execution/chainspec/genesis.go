@@ -23,6 +23,7 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"github.com/erigontech/erigon-lib/chain/superchain"
 	"io/fs"
 	"math/big"
 
@@ -149,5 +150,9 @@ func DeveloperGenesisBlock(period uint64, faucet common.Address) *types.Genesis 
 var genesisBlockByChainName = make(map[string]*types.Genesis)
 
 func GenesisBlockByChainName(chain string) *types.Genesis {
+	if genesis, err := superchain.LoadOPStackGenesisByChainName(chain); genesis != nil && err == nil {
+		return genesis
+	}
+
 	return genesisBlockByChainName[chain]
 }

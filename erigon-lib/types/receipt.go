@@ -161,16 +161,16 @@ type storedReceiptRLP struct {
 	CumulativeGasUsed uint64
 	FirstLogIndex     uint32 // Logs have their own incremental Index within block. To allow calc it without re-executing whole block - can store it in Receipt
 
-	// Receipt hash post-Regolith but pre-Canyon inadvertently did not include the above
-	// DepositNonce. Post Canyon, receipts will have a non-empty DepositReceiptVersion indicating
-	// which post-Canyon receipt hash function to invoke.
-	DepositReceiptVersion *uint64 `rlp:"optional"`
-
 	Logs []*LogForStorage
 
 	TransactionIndex uint
 	ContractAddress  common.Address
 	GasUsed          uint64
+
+	// Receipt hash post-Regolith but pre-Canyon inadvertently did not include the above
+	// DepositNonce. Post Canyon, receipts will have a non-empty DepositReceiptVersion indicating
+	// which post-Canyon receipt hash function to invoke.
+	DepositReceiptVersion *uint64 `rlp:"optional"`
 }
 
 // NewReceipt creates a barebone transaction receipt, copying the init fields.
@@ -653,29 +653,6 @@ func (r Receipts) DeriveFields(hash common.Hash, number uint64, txs Transactions
 			logIndex++
 		}
 	}
-
-	//if config.IsOptimismBedrock(number) && len(txs) >= 2 { // need at least an info tx and a non-info tx
-	//	gasParams, err := opstack.ExtractL1GasParams(config, time, txs[0].GetData())
-	//	if err != nil {
-	//		return err
-	//	}
-	//	for i := 0; i < len(r); i++ {
-	//		if txs[i].Type() == OptimismDepositTxType {
-	//			continue
-	//		}
-	//
-	//		r[i].L1GasPrice = gasParams.L1BaseFee.ToBig()
-	//		l1Fee, l1GasUsed := gasParams.CostFunc(txs[i].RollupCostData())
-	//		r[i].L1Fee = l1Fee.ToBig()
-	//		r[i].L1GasUsed = l1GasUsed.ToBig()
-	//		r[i].FeeScalar = gasParams.FeeScalar
-	//		r[i].L1BlobBaseFee = gasParams.L1BlobBaseFee.ToBig()
-	//		r[i].L1BaseFeeScalar = u32ptrTou64ptr(gasParams.L1BaseFeeScalar)
-	//		r[i].L1BlobBaseFeeScalar = u32ptrTou64ptr(gasParams.L1BlobBaseFeeScalar)
-	//		r[i].OperatorFeeScalar = u32ptrTou64ptr(gasParams.OperatorFeeScalar)
-	//		r[i].OperatorFeeConstant = gasParams.OperatorFeeConstant
-	//	}
-	//}
 	return nil
 }
 
@@ -722,24 +699,6 @@ func (r *Receipt) DeriveFieldsV3ForSingleReceipt(txnIdx int, blockHash common.Ha
 		r.Logs[j].Index = uint(logIndex)
 		logIndex++
 	}
-
-	// TODO: op-erigon3
-	//if config.IsOptimismBedrock(blockNum) { // need at least an info tx and a non-info tx
-	//	gasParams, err := opstack.ExtractL1GasParams(config, time, txn.GetData())
-	//	if err != nil {
-	//		return err
-	//	}
-	//	if txn.Type() != OptimismDepositTxType {
-	//		r.L1GasPrice = gasParams.L1BaseFee.ToBig()
-	//		l1Fee, l1GasUsed := gasParams.CostFunc(txn.RollupCostData())
-	//		r.L1Fee = l1Fee.ToBig()
-	//		r.L1GasUsed = l1GasUsed.ToBig()
-	//		r.FeeScalar = gasParams.FeeScalar
-	//		r.L1BlobBaseFee = gasParams.L1BlobBaseFee.ToBig()
-	//		r.L1BaseFeeScalar = u32ptrTou64ptr(gasParams.L1BaseFeeScalar)
-	//		r.L1BlobBaseFeeScalar = u32ptrTou64ptr(gasParams.L1BlobBaseFeeScalar)
-	//	}
-	//}
 
 	return nil
 }
