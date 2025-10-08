@@ -251,13 +251,7 @@ func UnmarshalTransactionFromBinary(data []byte, blobTxnsAreWrappedWithBlobs boo
 	case SetCodeTxType:
 		t = &SetCodeTransaction{}
 	case OptimismDepositTxType:
-		// TODO: op-erigon3 - parse deposit tx
-		//s := rlp.NewStream(bytes.NewReader(data[1:]), uint64(len(data)-1))
 		t = &OptimismDepositTx{}
-		//if err := t.DecodeRLP(s); err != nil {
-		//	return nil, err
-		//}
-		//return t, nil
 	case AccountAbstractionTxType:
 		t = &AccountAbstractionTransaction{}
 	default:

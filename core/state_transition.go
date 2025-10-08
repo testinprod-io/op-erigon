@@ -493,15 +493,13 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*evmtype
 	// On deposit failure, we rewind any state changes from after the minting, and increment the nonce.
 	if err != nil && err != ErrGasLimitReached && st.msg.IsOptimismDepositTx() {
 		st.state.RevertToSnapshot(snap, err)
-		if err != nil {
-			return nil, fmt.Errorf("%w: %w", ErrStateTransitionFailed, err)
-		}
-		nonce, err := st.state.GetNonce(st.msg.From())
-		if err != nil {
-			return nil, fmt.Errorf("%w: %w", ErrStateTransitionFailed, err)
-		}
+		nonce, _ := st.state.GetNonce(st.msg.From())
+
+		nonceErr := st.state.SetNonce(st.msg.From(), nonce+1)
 		// Even though we revert the state changes, always increment the nonce for the next deposit transaction
-		st.state.SetNonce(st.msg.From(), nonce+1)
+		if nonceErr != nil {
+			return nil, fmt.Errorf("%w: %w, %w", ErrStateTransitionFailed, nonceErr, err)
+		}
 
 		// Record deposits as using all their gas (matches the gas pool)
 		// System Transactions are special & are not recorded as using any gas (anywhere)
