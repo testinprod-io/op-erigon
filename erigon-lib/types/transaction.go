@@ -36,8 +36,8 @@ import (
 	"github.com/erigontech/erigon-lib/common/math"
 	libcrypto "github.com/erigontech/erigon-lib/crypto"
 	"github.com/erigontech/erigon-lib/log/v3"
-	"github.com/erigontech/erigon-lib/rlp"
 	"github.com/erigontech/erigon-lib/opstack"
+	"github.com/erigontech/erigon-lib/rlp"
 )
 
 var (
@@ -124,11 +124,10 @@ type TransactionMisc struct {
 	// caches
 	hash atomic.Pointer[common.Hash]
 	from atomic.Pointer[common.Address]
-	
+
 	// cache how much gas the tx takes on L1 for its share of rollup data (Optimism only)
 	rollupGas atomic.Pointer[opstack.RollupCostData]
 }
-
 
 // computeRollupGas is a helper method to compute and cache the rollup gas cost for any tx type
 func (tm *TransactionMisc) computeRollupGas(tx interface {
@@ -252,12 +251,13 @@ func UnmarshalTransactionFromBinary(data []byte, blobTxnsAreWrappedWithBlobs boo
 	case SetCodeTxType:
 		t = &SetCodeTransaction{}
 	case OptimismDepositTxType:
-		s := rlp.NewStream(bytes.NewReader(data[1:]), uint64(len(data)-1))
-		t := &OptimismDepositTx{}
-		if err := t.DecodeRLP(s); err != nil {
-			return nil, err
-		}
-		return t, nil
+		// TODO: op-erigon3 - parse deposit tx
+		//s := rlp.NewStream(bytes.NewReader(data[1:]), uint64(len(data)-1))
+		t = &OptimismDepositTx{}
+		//if err := t.DecodeRLP(s); err != nil {
+		//	return nil, err
+		//}
+		//return t, nil
 	case AccountAbstractionTxType:
 		t = &AccountAbstractionTransaction{}
 	default:
