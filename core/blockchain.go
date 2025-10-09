@@ -29,21 +29,21 @@ import (
 
 	"golang.org/x/crypto/sha3"
 
-	"github.com/erigontech/erigon-lib/chain"
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/dbg"
 	"github.com/erigontech/erigon-lib/common/math"
 	"github.com/erigontech/erigon-lib/common/u256"
 	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/erigontech/erigon-lib/metrics"
-	"github.com/erigontech/erigon-lib/rlp"
-	"github.com/erigontech/erigon-lib/types"
 	"github.com/erigontech/erigon/core/state"
 	"github.com/erigontech/erigon/core/tracing"
 	"github.com/erigontech/erigon/core/vm"
 	"github.com/erigontech/erigon/core/vm/evmtypes"
 	"github.com/erigontech/erigon/eth/ethutils"
+	"github.com/erigontech/erigon/execution/chain"
 	"github.com/erigontech/erigon/execution/consensus"
+	"github.com/erigontech/erigon/execution/rlp"
+	"github.com/erigontech/erigon/execution/types"
 	bortypes "github.com/erigontech/erigon/polygon/bor/types"
 )
 
@@ -249,7 +249,7 @@ func logReceipts(receipts types.Receipts, txns types.Transactions, cc *chain.Con
 	marshalled := make([]map[string]interface{}, 0, len(receipts))
 	for i, receipt := range receipts {
 		txn := txns[i]
-		marshalled = append(marshalled, ethutils.MarshalReceipt(receipt, txn, cc, header, txn.Hash(), true))
+		marshalled = append(marshalled, ethutils.MarshalReceipt(receipt, txn, cc, header, txn.Hash(), true, false))
 	}
 
 	result, err := json.Marshal(marshalled)
@@ -289,9 +289,11 @@ func SysCallContractWithBlockContext(contract common.Address, data []byte, chain
 		SysCallGasLimit,
 		u256.Num0,
 		nil, nil,
-		data, nil, false,
-		true, // isFree
-		nil,  // maxFeePerBlobGas
+		data, nil,
+		false, // checkNonce
+		false, // checkGas
+		true,  // isFree
+		nil,   // maxFeePerBlobGas
 	)
 	vmConfig := vmCfg
 	vmConfig.NoReceipts = true
@@ -329,9 +331,11 @@ func SysCreate(contract common.Address, data []byte, chainConfig *chain.Config, 
 		SysCallGasLimit,
 		u256.Num0,
 		nil, nil,
-		data, nil, false,
-		true, // isFree
-		nil,  // maxFeePerBlobGas
+		data, nil,
+		false, // checkNonce
+		false, // checkGas
+		true,  // isFree
+		nil,   // maxFeePerBlobGas
 	)
 	vmConfig := vm.Config{NoReceipts: true}
 	// Create a new context to be used in the EVM environment
@@ -374,7 +378,8 @@ func FinalizeBlockExecution(
 		return nil, nil, err
 	}
 
-	if err := ibs.CommitBlock(cc.Rules(header.Number.Uint64(), header.Time), stateWriter); err != nil {
+	blockContext := NewEVMBlockContext(header, GetHashFn(header, nil), engine, nil, cc)
+	if err := ibs.CommitBlock(blockContext.Rules(cc), stateWriter); err != nil {
 		return nil, nil, fmt.Errorf("committing block %d failed: %w", header.Number.Uint64(), err)
 	}
 
@@ -391,7 +396,8 @@ func InitializeBlockExecution(engine consensus.Engine, chain consensus.ChainHead
 	if stateWriter == nil {
 		stateWriter = state.NewNoopWriter()
 	}
-	ibs.FinalizeTx(cc.Rules(header.Number.Uint64(), header.Time), stateWriter)
+	blockContext := NewEVMBlockContext(header, GetHashFn(header, nil), engine, nil, cc)
+	ibs.FinalizeTx(blockContext.Rules(cc), stateWriter)
 	return nil
 }
 

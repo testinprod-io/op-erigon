@@ -19,7 +19,6 @@ package app
 import (
 	"bufio"
 	"bytes"
-	"cmp"
 	"context"
 	"encoding/binary"
 	"errors"
@@ -27,7 +26,6 @@ import (
 	"io"
 	"io/fs"
 	"math"
-	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -38,50 +36,45 @@ import (
 	"time"
 
 	"github.com/c2h5oh/datasize"
-	"github.com/erigontech/erigon-lib/chain/networkname"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sync/semaphore"
 
-	"github.com/erigontech/erigon-db/rawdb/blockio"
-	coresnaptype "github.com/erigontech/erigon-db/snaptype"
 	"github.com/erigontech/erigon-lib/common"
-	"github.com/erigontech/erigon-lib/common/compress"
-	"github.com/erigontech/erigon-lib/common/datadir"
 	"github.com/erigontech/erigon-lib/common/dbg"
 	dir2 "github.com/erigontech/erigon-lib/common/dir"
 	"github.com/erigontech/erigon-lib/common/disk"
-	"github.com/erigontech/erigon-lib/common/mem"
-	"github.com/erigontech/erigon-lib/config3"
 	"github.com/erigontech/erigon-lib/estimate"
-	"github.com/erigontech/erigon-lib/etl"
-	"github.com/erigontech/erigon-lib/kv"
-	"github.com/erigontech/erigon-lib/kv/mdbx"
-	"github.com/erigontech/erigon-lib/kv/temporal"
 	"github.com/erigontech/erigon-lib/log/v3"
-	"github.com/erigontech/erigon-lib/metrics"
-	"github.com/erigontech/erigon-lib/recsplit"
-	"github.com/erigontech/erigon-lib/seg"
-	"github.com/erigontech/erigon-lib/snaptype"
-	libstate "github.com/erigontech/erigon-lib/state"
-	"github.com/erigontech/erigon-lib/state/stats"
-	"github.com/erigontech/erigon-lib/version"
 	"github.com/erigontech/erigon/cl/clparams"
 	"github.com/erigontech/erigon/cmd/hack/tool/fromdb"
 	"github.com/erigontech/erigon/cmd/utils"
-	"github.com/erigontech/erigon/diagnostics"
+	"github.com/erigontech/erigon/db/compress"
+	"github.com/erigontech/erigon/db/datadir"
+	"github.com/erigontech/erigon/db/etl"
+	"github.com/erigontech/erigon/db/kv"
+	"github.com/erigontech/erigon/db/kv/dbcfg"
+	"github.com/erigontech/erigon/db/kv/mdbx"
+	"github.com/erigontech/erigon/db/kv/temporal"
+	"github.com/erigontech/erigon/db/rawdb/blockio"
+	"github.com/erigontech/erigon/db/recsplit"
+	"github.com/erigontech/erigon/db/seg"
+	"github.com/erigontech/erigon/db/snapshotsync/freezeblocks"
+	"github.com/erigontech/erigon/db/snaptype"
+	"github.com/erigontech/erigon/db/snaptype2"
+	"github.com/erigontech/erigon/db/state"
+	"github.com/erigontech/erigon/db/state/statecfg"
+	"github.com/erigontech/erigon/db/state/stats"
+	"github.com/erigontech/erigon/db/version"
+	"github.com/erigontech/erigon/diagnostics/mem"
 	"github.com/erigontech/erigon/eth/ethconfig"
 	"github.com/erigontech/erigon/eth/ethconfig/features"
 	"github.com/erigontech/erigon/eth/integrity"
-	"github.com/erigontech/erigon/eth/tracers"
+	"github.com/erigontech/erigon/execution/chain/networkname"
 	"github.com/erigontech/erigon/execution/stagedsync/stages"
-	"github.com/erigontech/erigon/params"
 	"github.com/erigontech/erigon/polygon/bridge"
 	"github.com/erigontech/erigon/polygon/heimdall"
-	erigoncli "github.com/erigontech/erigon/turbo/cli"
 	"github.com/erigontech/erigon/turbo/debug"
 	"github.com/erigontech/erigon/turbo/logging"
-	"github.com/erigontech/erigon/turbo/node"
-	"github.com/erigontech/erigon/turbo/snapshotsync/freezeblocks"
 )
 
 func joinFlags(lists ...[]cli.Flag) (res []cli.Flag) {
@@ -202,33 +195,6 @@ var snapshotCommand = cli.Command{
 			Flags: joinFlags([]cli.Flag{
 				&utils.DataDirFlag,
 			}),
-		},
-		{
-			Name:   "uploader",
-			Action: doUploaderCommand,
-			Usage:  "run erigon in snapshot upload mode (no execution)",
-			Flags: joinFlags(erigoncli.DefaultFlags,
-				[]cli.Flag{
-					&erigoncli.UploadLocationFlag,
-					&erigoncli.UploadFromFlag,
-					&erigoncli.FrozenBlockLimitFlag,
-				}),
-			Before: func(ctx *cli.Context) error {
-				ctx.Set(erigoncli.SyncLoopBreakAfterFlag.Name, "Senders")
-				ctx.Set(utils.NoDownloaderFlag.Name, "true")
-				ctx.Set(utils.HTTPEnabledFlag.Name, "false")
-				ctx.Set(utils.TxPoolDisableFlag.Name, "true")
-
-				if !ctx.IsSet(erigoncli.SyncLoopBlockLimitFlag.Name) {
-					ctx.Set(erigoncli.SyncLoopBlockLimitFlag.Name, "100000")
-				}
-
-				if !ctx.IsSet(erigoncli.FrozenBlockLimitFlag.Name) {
-					ctx.Set(erigoncli.FrozenBlockLimitFlag.Name, "1500000")
-				}
-
-				return nil
-			},
 		},
 		{
 			Name:   "uncompress",
@@ -385,11 +351,6 @@ var snapshotCommand = cli.Command{
 		{
 			Name: "publishable",
 			Action: func(cliCtx *cli.Context) error {
-				_, l, err := datadir.New(cliCtx.String(utils.DataDirFlag.Name)).MustFlock()
-				if err != nil {
-					return err
-				}
-				defer l.Unlock()
 				if err := doPublishable(cliCtx); err != nil {
 					log.Error("[publishable]", "err", err)
 					return err
@@ -410,6 +371,16 @@ var snapshotCommand = cli.Command{
 				&utils.DataDirFlag,
 			}),
 		},
+		{
+			Name:        "compareIdx",
+			Action:      doCompareIdx,
+			Description: "compares to accessors (recsplit) files",
+			Flags: joinFlags([]cli.Flag{
+				&cli.PathFlag{Name: "first", Required: true},
+				&cli.PathFlag{Name: "second", Required: true},
+				&cli.BoolFlag{Name: "skip-size-check", Required: false, Value: false},
+			}),
+		},
 	},
 }
 
@@ -426,7 +397,7 @@ var (
 
 // checkCommitmentFileHasRoot checks if a commitment file contains state root key
 func checkCommitmentFileHasRoot(filePath string) (hasState, broken bool, err error) {
-	const stateKey = "state" // by this key, trie stores root cell encoded along with latest state hash.
+	const stateKey = "state"
 	_, fileName := filepath.Split(filePath)
 
 	// First try with recsplit index (.kvi files)
@@ -440,6 +411,10 @@ func checkCommitmentFileHasRoot(filePath string) (hasState, broken bool, err err
 		return false, false, err
 	}
 	if ok {
+		_, err := os.Stat(kvi)
+		if err != nil {
+			return false, false, err
+		}
 		idx, err := recsplit.OpenIndex(kvi)
 		if err != nil {
 			return false, false, err
@@ -459,7 +434,7 @@ func checkCommitmentFileHasRoot(filePath string) (hasState, broken bool, err err
 			return true, false, nil
 		} else {
 			fmt.Printf("skipping file because it doesn't have state key %s\n", fileName)
-			return false, false, nil
+			return true, false, nil
 		}
 	} else {
 		log.Warn("[dbg] not found files for", "pattern", fPathMask)
@@ -469,23 +444,23 @@ func checkCommitmentFileHasRoot(filePath string) (hasState, broken bool, err err
 	derivedBt := strings.Replace(filePath, ".kv", ".bt", 1)
 	fPathMask, err = version.ReplaceVersionWithMask(derivedBt)
 	if err != nil {
-		return false, false, nil
+		return true, false, nil
 	}
 	bt, _, ok, err := version.FindFilesWithVersionsByPattern(fPathMask)
 	if err != nil {
-		return false, false, nil
+		return true, false, nil
 	}
 	if !ok {
 		return false, false, fmt.Errorf("can't find accessor for %s", filePath)
 	}
-	rd, btindex, err := libstate.OpenBtreeIndexAndDataFile(bt, filePath, libstate.DefaultBtreeM, libstate.Schema.CommitmentDomain.Compression, false)
+	rd, btindex, err := state.OpenBtreeIndexAndDataFile(bt, filePath, state.DefaultBtreeM, statecfg.Schema.CommitmentDomain.Compression, false)
 	if err != nil {
 		return false, false, err
 	}
 	defer rd.Close()
 	defer btindex.Close()
 
-	getter := seg.NewReader(rd.MakeGetter(), libstate.Schema.CommitmentDomain.Compression)
+	getter := seg.NewReader(rd.MakeGetter(), statecfg.Schema.CommitmentDomain.Compression)
 	c, err := btindex.Seek(getter, []byte(stateKey))
 	if err != nil {
 		return false, false, err
@@ -499,16 +474,7 @@ func checkCommitmentFileHasRoot(filePath string) (hasState, broken bool, err err
 	return false, false, nil
 }
 
-func doRmStateSnapshots(cliCtx *cli.Context) error {
-	dirs, l, err := datadir.New(cliCtx.String(utils.DataDirFlag.Name)).MustFlock()
-	if err != nil {
-		return err
-	}
-	defer l.Unlock()
-
-	removeLatest := cliCtx.Bool("latest")
-	dryRun := cliCtx.Bool("dry-run")
-
+func DeleteStateSnapshots(dirs datadir.Dirs, removeLatest, promptUserBeforeDelete, dryRun bool, stepRange string, domainNames ...string) error {
 	_maxFrom := uint64(0)
 	files := make([]snaptype.FileInfo, 0)
 	commitmentFilesWithState := make([]snaptype.FileInfo, 0)
@@ -554,7 +520,7 @@ func doRmStateSnapshots(cliCtx *cli.Context) error {
 	}
 
 	// Step 2: Process each candidate file (already parsed)
-	doesRmCommitment := !cliCtx.IsSet("domain") || slices.Contains(cliCtx.StringSlice("domain"), "commitment")
+	doesRmCommitment := len(domainNames) != 0 || slices.Contains(domainNames, kv.CommitmentDomain.String())
 	for _, candidate := range candidateFiles {
 		res := candidate.fileInfo
 
@@ -580,9 +546,9 @@ func doRmStateSnapshots(cliCtx *cli.Context) error {
 	}
 
 	toRemove := make(map[string]snaptype.FileInfo)
-	if cliCtx.IsSet("domain") {
+	if len(domainNames) > 0 {
+		_maxFrom = 0
 		domainFiles := make([]snaptype.FileInfo, 0, len(files))
-		domainNames := cliCtx.StringSlice("domain")
 		for _, domainName := range domainNames {
 			_, err := kv.String2InvertedIdx(domainName)
 			if err != nil {
@@ -595,16 +561,17 @@ func doRmStateSnapshots(cliCtx *cli.Context) error {
 				if !strings.Contains(res.Name(), domainName) {
 					continue
 				}
+				if removeLatest {
+					_maxFrom = max(_maxFrom, res.From)
+				}
 				domainFiles = append(domainFiles, res)
 			}
 		}
 		files = domainFiles
 	}
-	if cliCtx.IsSet("step") || removeLatest {
-		steprm := cliCtx.String("step")
-
+	if stepRange != "" || removeLatest {
 		var minS, maxS uint64
-		if steprm != "" {
+		if stepRange != "" {
 			parseStep := func(step string) (uint64, uint64, error) {
 				var from, to uint64
 				if _, err := fmt.Sscanf(step, "%d-%d", &from, &to); err != nil {
@@ -613,7 +580,7 @@ func doRmStateSnapshots(cliCtx *cli.Context) error {
 				return from, to, nil
 			}
 			var err error
-			minS, maxS, err = parseStep(steprm)
+			minS, maxS, err = parseStep(stepRange)
 			if err != nil {
 				return err
 			}
@@ -621,6 +588,10 @@ func doRmStateSnapshots(cliCtx *cli.Context) error {
 		}
 
 		promptExit := func(s string) (exitNow bool) {
+			if !promptUserBeforeDelete {
+				return false
+			}
+
 		AllowPruneSteps:
 			fmt.Printf("\n%s", s)
 			var ans uint8
@@ -673,6 +644,7 @@ func doRmStateSnapshots(cliCtx *cli.Context) error {
 				}
 			}
 		}
+
 		for _, res := range files {
 			if res.From >= minS && res.To <= maxS {
 				toRemove[res.Path] = res
@@ -700,6 +672,22 @@ func doRmStateSnapshots(cliCtx *cli.Context) error {
 	return nil
 }
 
+func doRmStateSnapshots(cliCtx *cli.Context) error {
+	dirs, l, err := datadir.New(cliCtx.String(utils.DataDirFlag.Name)).MustFlock()
+	if err != nil {
+		return err
+	}
+	defer l.Unlock()
+
+	removeLatest := cliCtx.Bool("latest")
+	stepRange := cliCtx.String("step")
+	domainNames := cliCtx.StringSlice("domain")
+	dryRun := cliCtx.Bool("dry-run")
+	promptUser := true // CLI should always prompt the user
+
+	return DeleteStateSnapshots(dirs, removeLatest, promptUser, dryRun, stepRange, domainNames...)
+}
+
 func doBtSearch(cliCtx *cli.Context) error {
 	_, l, err := datadir.New(cliCtx.String(utils.DataDirFlag.Name)).MustFlock()
 	if err != nil {
@@ -719,7 +707,7 @@ func doBtSearch(cliCtx *cli.Context) error {
 	dbg.ReadMemStats(&m)
 	logger.Info("before open", "alloc", common.ByteCount(m.Alloc), "sys", common.ByteCount(m.Sys))
 	compress := seg.CompressKeys | seg.CompressVals
-	kv, idx, err := libstate.OpenBtreeIndexAndDataFile(srcF, dataFilePath, libstate.DefaultBtreeM, compress, false)
+	kv, idx, err := state.OpenBtreeIndexAndDataFile(srcF, dataFilePath, state.DefaultBtreeM, compress, false)
 	if err != nil {
 		return err
 	}
@@ -779,7 +767,7 @@ func doDebugKey(cliCtx *cli.Context) error {
 
 	ctx := cliCtx.Context
 	dirs := datadir.New(cliCtx.String(utils.DataDirFlag.Name))
-	chainDB := dbCfg(kv.ChainDB, dirs.Chaindata).MustOpen()
+	chainDB := dbCfg(dbcfg.ChainDB, dirs.Chaindata).MustOpen()
 	defer chainDB.Close()
 
 	chainConfig := fromdb.ChainConfig(chainDB)
@@ -830,7 +818,7 @@ func doIntegrity(cliCtx *cli.Context) error {
 	failFast := cliCtx.Bool("failFast")
 	fromStep := cliCtx.Uint64("fromStep")
 	dirs := datadir.New(cliCtx.String(utils.DataDirFlag.Name))
-	chainDB := dbCfg(kv.ChainDB, dirs.Chaindata).MustOpen()
+	chainDB := dbCfg(dbcfg.ChainDB, dirs.Chaindata).MustOpen()
 	defer chainDB.Close()
 
 	chainConfig := fromdb.ChainConfig(chainDB)
@@ -852,6 +840,7 @@ func doIntegrity(cliCtx *cli.Context) error {
 	defer db.Close()
 
 	blockReader, _ := blockRetire.IO()
+	heimdallStore, _ := blockRetire.BorStore()
 	for _, chk := range requestedChecks {
 		logger.Info("[integrity] starting", "check", chk)
 		switch chk {
@@ -889,7 +878,6 @@ func doIntegrity(cliCtx *cli.Context) error {
 				logger.Info("BorSpans skipped because not bor chain")
 				continue
 			}
-			heimdallStore, _ := blockRetire.BorStore()
 			if err := heimdall.ValidateBorSpans(ctx, logger, dirs, heimdallStore, borSnaps, failFast); err != nil {
 				return err
 			}
@@ -898,7 +886,6 @@ func doIntegrity(cliCtx *cli.Context) error {
 				logger.Info("BorCheckpoints skipped because not bor chain")
 				continue
 			}
-			heimdallStore, _ := blockRetire.BorStore()
 			if err := heimdall.ValidateBorCheckpoints(ctx, logger, dirs, heimdallStore, borSnaps, failFast); err != nil {
 				return err
 			}
@@ -1074,31 +1061,31 @@ func checkIfStateSnapshotsPublishable(dirs datadir.Dirs) error {
 			return fmt.Errorf("failed to replace version file %s: %w", res.Name(), err)
 		}
 		for snapType := kv.Domain(0); snapType < kv.DomainLen; snapType++ {
-			schemaVersionMinSup := libstate.Schema.GetDomainCfg(snapType).GetVersions().Domain.DataKV.MinSupported
+			schemaVersionMinSup := statecfg.Schema.GetDomainCfg(snapType).GetVersions().Domain.DataKV.MinSupported
 			expectedFileName := strings.Replace(accName, "accounts", snapType.String(), 1)
 			if err = version.CheckIsThereFileWithSupportedVersion(filepath.Join(dirs.SnapDomain, expectedFileName), schemaVersionMinSup); err != nil {
 				return fmt.Errorf("missing file %s at path %s with err %w", expectedFileName, filepath.Join(dirs.SnapDomain, expectedFileName), err)
 			}
 
 			// check that the index file exist
-			if libstate.Schema.GetDomainCfg(snapType).Accessors.Has(libstate.AccessorBTree) {
-				schemaVersionMinSup = libstate.Schema.GetDomainCfg(snapType).GetVersions().Domain.AccessorBT.MinSupported
+			if statecfg.Schema.GetDomainCfg(snapType).Accessors.Has(statecfg.AccessorBTree) {
+				schemaVersionMinSup = statecfg.Schema.GetDomainCfg(snapType).GetVersions().Domain.AccessorBT.MinSupported
 				fileName := strings.Replace(expectedFileName, ".kv", ".bt", 1)
 				err := version.CheckIsThereFileWithSupportedVersion(filepath.Join(dirs.SnapDomain, fileName), schemaVersionMinSup)
 				if err != nil {
 					return fmt.Errorf("missing file %s at path %s with err %w", expectedFileName, filepath.Join(dirs.SnapDomain, fileName), err)
 				}
 			}
-			if libstate.Schema.GetDomainCfg(snapType).Accessors.Has(libstate.AccessorExistence) {
-				schemaVersionMinSup = libstate.Schema.GetDomainCfg(snapType).GetVersions().Domain.AccessorKVEI.MinSupported
+			if statecfg.Schema.GetDomainCfg(snapType).Accessors.Has(statecfg.AccessorExistence) {
+				schemaVersionMinSup = statecfg.Schema.GetDomainCfg(snapType).GetVersions().Domain.AccessorKVEI.MinSupported
 				fileName := strings.Replace(expectedFileName, ".kv", ".kvei", 1)
 				err := version.CheckIsThereFileWithSupportedVersion(filepath.Join(dirs.SnapDomain, fileName), schemaVersionMinSup)
 				if err != nil {
 					return fmt.Errorf("missing file %s at path %s with err %w", expectedFileName, filepath.Join(dirs.SnapDomain, fileName), err)
 				}
 			}
-			if libstate.Schema.GetDomainCfg(snapType).Accessors.Has(libstate.AccessorHashMap) {
-				schemaVersionMinSup = libstate.Schema.GetDomainCfg(snapType).GetVersions().Domain.AccessorKVI.MinSupported
+			if statecfg.Schema.GetDomainCfg(snapType).Accessors.Has(statecfg.AccessorHashMap) {
+				schemaVersionMinSup = statecfg.Schema.GetDomainCfg(snapType).GetVersions().Domain.AccessorKVI.MinSupported
 				fileName := strings.Replace(expectedFileName, ".kv", ".kvi", 1)
 				err := version.CheckIsThereFileWithSupportedVersion(filepath.Join(dirs.SnapDomain, fileName), schemaVersionMinSup)
 				if err != nil {
@@ -1175,7 +1162,7 @@ func checkIfStateSnapshotsPublishable(dirs datadir.Dirs) error {
 		}
 		// do a range check over all snapshots types (sanitizes domain and history folder)
 		for _, snapType := range []string{"accounts", "storage", "code", "rcache", "receipt", "logtopics", "logaddrs", "tracesfrom", "tracesto"} {
-			versioned, err := libstate.Schema.GetVersioned(snapType)
+			versioned, err := statecfg.Schema.GetVersioned(snapType)
 			if err != nil {
 				return err
 			}
@@ -1374,7 +1361,7 @@ func doBlkTxNum(cliCtx *cli.Context) error {
 	}
 
 	ctx := cliCtx.Context
-	chainDB := dbCfg(kv.ChainDB, dirs.Chaindata).MustOpen()
+	chainDB := dbCfg(dbcfg.ChainDB, dirs.Chaindata).MustOpen()
 	defer chainDB.Close()
 	chainConfig := fromdb.ChainConfig(chainDB)
 	cfg := ethconfig.NewSnapCfg(false, true, true, chainConfig.ChainName)
@@ -1473,7 +1460,17 @@ func doMeta(cliCtx *cli.Context) error {
 			panic(err)
 		}
 		defer src.Close()
-		log.Info("meta", "count", src.Count(), "size", datasize.ByteSize(src.Size()).HumanReadable(), "serialized_dict", datasize.ByteSize(src.SerializedDictSize()).HumanReadable(), "dict_words", src.DictWords(), "name", src.FileName(), "detected_compression_type", seg.DetectCompressType(src.MakeGetter()))
+		var keysSize, valsSize datasize.ByteSize
+		g := src.MakeGetter()
+		for g.HasNext() {
+			k, _ := g.Next(nil)
+			keysSize += datasize.ByteSize(len(k))
+			if g.HasNext() {
+				v, _ := g.Next(nil)
+				valsSize += datasize.ByteSize(len(v))
+			}
+		}
+		log.Info("meta", "count", src.Count(), "size", datasize.ByteSize(src.Size()).HR(), "keys_size", keysSize.HR(), "vals_size", valsSize.HR(), "serialized_dict", datasize.ByteSize(src.SerializedDictSize()).HR(), "dict_words", src.DictWords(), "name", src.FileName(), "detected_compression_type", seg.DetectCompressType(src.MakeGetter()))
 	} else if strings.HasSuffix(fname, ".bt") {
 		kvFPath := strings.TrimSuffix(fname, ".bt") + ".kv"
 		src, err := seg.NewDecompressor(kvFPath)
@@ -1481,7 +1478,7 @@ func doMeta(cliCtx *cli.Context) error {
 			panic(err)
 		}
 		defer src.Close()
-		bt, err := libstate.OpenBtreeIndexWithDecompressor(fname, libstate.DefaultBtreeM, seg.NewReader(src.MakeGetter(), seg.CompressNone))
+		bt, err := state.OpenBtreeIndexWithDecompressor(fname, state.DefaultBtreeM, seg.NewReader(src.MakeGetter(), seg.CompressNone))
 		if err != nil {
 			return err
 		}
@@ -1508,7 +1505,7 @@ func doMeta(cliCtx *cli.Context) error {
 		}
 		defer idx.Close()
 		total, offsets, ef, golombRice, existence, layer1 := idx.Sizes()
-		log.Info("meta", "sz_total", total.HumanReadable(), "sz_offsets", offsets.HumanReadable(), "sz_double_ef", ef.HumanReadable(), "sz_golombRice", golombRice.HumanReadable(), "sz_existence", existence.HumanReadable(), "sz_l1", layer1.HumanReadable(), "keys_count", idx.KeyCount(), "leaf_size", idx.LeafSize(), "bucket_size", idx.BucketSize(), "enums", idx.Enums())
+		log.Info("meta", "sz_total", total.HR(), "sz_offsets", offsets.HR(), "sz_double_ef", ef.HR(), "sz_golombRice", golombRice.HR(), "sz_existence", existence.HR(), "sz_l1", layer1.HR(), "keys_count", idx.KeyCount(), "leaf_size", idx.LeafSize(), "bucket_size", idx.BucketSize(), "enums", idx.Enums())
 	}
 	return nil
 }
@@ -1562,7 +1559,7 @@ func doIndicesCommand(cliCtx *cli.Context, dirs datadir.Dirs) error {
 	ctx := cliCtx.Context
 
 	rebuild := cliCtx.Bool(SnapshotRebuildFlag.Name)
-	chainDB := dbCfg(kv.ChainDB, dirs.Chaindata).MustOpen()
+	chainDB := dbCfg(dbcfg.ChainDB, dirs.Chaindata).MustOpen()
 	defer chainDB.Close()
 
 	if rebuild {
@@ -1603,7 +1600,7 @@ func doLS(cliCtx *cli.Context, dirs datadir.Dirs) error {
 	defer logger.Info("Done")
 	ctx := cliCtx.Context
 
-	chainDB := dbCfg(kv.ChainDB, dirs.Chaindata).MustOpen()
+	chainDB := dbCfg(dbcfg.ChainDB, dirs.Chaindata).MustOpen()
 	defer chainDB.Close()
 	cfg := ethconfig.NewSnapCfg(false, true, true, fromdb.ChainConfig(chainDB).ChainName)
 
@@ -1626,7 +1623,7 @@ func openSnaps(ctx context.Context, cfg ethconfig.BlocksFreezing, dirs datadir.D
 	borSnaps *heimdall.RoSnapshots,
 	csn *freezeblocks.CaplinSnapshots,
 	br *freezeblocks.BlockRetire,
-	agg *libstate.Aggregator,
+	agg *state.Aggregator,
 	clean func(),
 	err error,
 ) {
@@ -1636,14 +1633,14 @@ func openSnaps(ctx context.Context, cfg ethconfig.BlocksFreezing, dirs datadir.D
 
 	chainConfig := fromdb.ChainConfig(chainDB)
 
-	blockSnaps = freezeblocks.NewRoSnapshots(cfg, dirs.Snap, 0, logger)
+	blockSnaps = freezeblocks.NewRoSnapshots(cfg, dirs.Snap, logger)
 	if err = blockSnaps.OpenFolder(); err != nil {
 		return
 	}
 	blockSnaps.LogStat("block")
 
 	heimdall.RecordWayPoints(true) // needed to load checkpoints and milestones snapshots
-	borSnaps = heimdall.NewRoSnapshots(cfg, dirs.Snap, 0, logger)
+	borSnaps = heimdall.NewRoSnapshots(cfg, dirs.Snap, logger)
 	if err = borSnaps.OpenFolder(); err != nil {
 		return
 	}
@@ -1885,7 +1882,7 @@ func doRemoveOverlap(cliCtx *cli.Context, dirs datadir.Dirs) error {
 	}
 	defer logger.Info("Done")
 
-	db := dbCfg(kv.ChainDB, dirs.Chaindata).MustOpen()
+	db := dbCfg(dbcfg.ChainDB, dirs.Chaindata).MustOpen()
 	defer db.Close()
 	chainConfig := fromdb.ChainConfig(db)
 	cfg := ethconfig.NewSnapCfg(false, true, true, chainConfig.ChainName)
@@ -1938,7 +1935,7 @@ func doUnmerge(cliCtx *cli.Context, dirs datadir.Dirs) error {
 	compresCfg.Workers = workers
 	var word = make([]byte, 0, 4096)
 
-	if info.Type.Enum() == coresnaptype.Enums.Headers || info.Type.Enum() == coresnaptype.Enums.Bodies {
+	if info.Type.Enum() == snaptype2.Enums.Headers || info.Type.Enum() == snaptype2.Enums.Bodies {
 		for g.HasNext() {
 			if blockFrom%1000 == 0 {
 				if compressor != nil {
@@ -1968,24 +1965,24 @@ func doUnmerge(cliCtx *cli.Context, dirs datadir.Dirs) error {
 			}
 			compressor.Close()
 		}
-	} else if info.Type.Enum() != coresnaptype.Enums.Transactions {
+	} else if info.Type.Enum() != snaptype2.Enums.Transactions {
 		return fmt.Errorf("unsupported type %s", info.Type.Enum().String())
 	} else {
 		// tx unmerge
 		for ; blockFrom < blockTo; blockFrom += 1000 {
-			um_fileinfo := coresnaptype.Enums.Bodies.Type().FileInfo(dirs.Snap, blockFrom, blockFrom+1000)
+			um_fileinfo := snaptype2.Enums.Bodies.Type().FileInfo(dirs.Snap, blockFrom, blockFrom+1000)
 			bodiesSegment, err := seg.NewDecompressor(um_fileinfo.Path)
 			if err != nil {
 				return err
 			}
 			defer bodiesSegment.Close()
 
-			_, expectedCount, err := coresnaptype.TxsAmountBasedOnBodiesSnapshots(bodiesSegment, um_fileinfo.Len()-1)
+			_, expectedCount, err := snaptype2.TxsAmountBasedOnBodiesSnapshots(bodiesSegment, um_fileinfo.Len()-1)
 			if err != nil {
 				return err
 			}
 
-			txfileinfo := um_fileinfo.As(coresnaptype.Enums.Transactions.Type())
+			txfileinfo := um_fileinfo.As(snaptype2.Enums.Transactions.Type())
 			compressor, err = seg.NewCompressor(ctx, "unmerge", txfileinfo.Path, dirs.Tmp, compresCfg, log.LvlTrace, logger)
 			if err != nil {
 				return err
@@ -2017,7 +2014,7 @@ func doUnmerge(cliCtx *cli.Context, dirs datadir.Dirs) error {
 	}
 
 	decomp.Close()
-	chainDB := dbCfg(kv.ChainDB, dirs.Chaindata).MustOpen()
+	chainDB := dbCfg(dbcfg.ChainDB, dirs.Chaindata).MustOpen()
 	defer chainDB.Close()
 	chainConfig := fromdb.ChainConfig(chainDB)
 	cfg := ethconfig.NewSnapCfg(false, true, true, chainConfig.ChainName)
@@ -2044,7 +2041,7 @@ func doRetireCommand(cliCtx *cli.Context, dirs datadir.Dirs) error {
 
 	from := uint64(0)
 
-	db := dbCfg(kv.ChainDB, dirs.Chaindata).MustOpen()
+	db := dbCfg(dbcfg.ChainDB, dirs.Chaindata).MustOpen()
 	defer db.Close()
 	chainConfig := fromdb.ChainConfig(db)
 	cfg := ethconfig.NewSnapCfg(false, true, true, chainConfig.ChainName)
@@ -2092,7 +2089,7 @@ func doRetireCommand(cliCtx *cli.Context, dirs datadir.Dirs) error {
 		blocksInSnapshots = min(blocksInSnapshots, blockReader.FrozenBorBlocks(false))
 	}
 
-	from2, to2, ok := freezeblocks.CanRetire(to, blocksInSnapshots, coresnaptype.Enums.Headers, nil)
+	from2, to2, ok := freezeblocks.CanRetire(to, blocksInSnapshots, snaptype2.Enums.Headers, nil)
 	if ok {
 		from, to = from2, to2
 	}
@@ -2179,53 +2176,91 @@ func doRetireCommand(cliCtx *cli.Context, dirs datadir.Dirs) error {
 	return nil
 }
 
-func doUploaderCommand(cliCtx *cli.Context) error {
-	_, l, err := datadir.New(cliCtx.String(utils.DataDirFlag.Name)).MustFlock()
+func doCompareIdx(cliCtx *cli.Context) error {
+	// doesn't compare exact hashes offset,
+	// only sizes, counts, offsets, and ordinal lookups.
+	logger, _, _, _, err := debug.Setup(cliCtx, true /* root logger */)
 	if err != nil {
 		return err
 	}
-	defer l.Unlock()
-	var logger log.Logger
-	var tracer *tracers.Tracer
-	var metricsMux *http.ServeMux
-	var pprofMux *http.ServeMux
 
-	if logger, tracer, metricsMux, pprofMux, err = debug.Setup(cliCtx, true /* root logger */); err != nil {
-		return err
+	cmpFn := func(f, s uint64, msg string) {
+		if f != s {
+			panic(fmt.Sprintf("different %s -- first: %d, second: %d", msg, f, s))
+		}
 	}
 
-	debugMux := cmp.Or(metricsMux, pprofMux)
+	first := cliCtx.Path("first")
+	second := cliCtx.Path("second")
+	doSizeCheck := !cliCtx.Bool("skip-size-check")
 
-	// initializing the node and providing the current git commit there
-
-	logger.Info("Build info", "git_branch", params.GitBranch, "git_tag", params.GitTag, "git_commit", params.GitCommit)
-	erigonInfoGauge := metrics.GetOrCreateGauge(fmt.Sprintf(`erigon_info{version="%s",commit="%s"}`, params.Version, params.GitCommit))
-	erigonInfoGauge.Set(1)
-
-	nodeCfg, err := node.NewNodConfigUrfave(cliCtx, debugMux, logger)
-	if err != nil {
-		return err
+	if doSizeCheck {
+		fileInfo1, err := os.Stat(first)
+		if err != nil {
+			return err
+		}
+		fileInfo2, err := os.Stat(second)
+		if err != nil {
+			return err
+		}
+		cmpFn(uint64(fileInfo1.Size()), uint64(fileInfo2.Size()), "file_sizes")
 	}
-	if err := datadir.ApplyMigrations(nodeCfg.Dirs); err != nil {
-		return err
+
+	firstIdx := recsplit.MustOpen(first)
+	secondIdx := recsplit.MustOpen(second)
+	defer firstIdx.Close()
+	defer secondIdx.Close()
+
+	cmpFn(firstIdx.KeyCount(), secondIdx.KeyCount(), "key_count")
+	cmpFn(firstIdx.BaseDataID(), secondIdx.BaseDataID(), "base_data_id")
+
+	if doSizeCheck {
+		cmpFn(uint64(firstIdx.LeafSize()), uint64(secondIdx.LeafSize()), "leaf_size")
+		cmpFn(uint64(firstIdx.BucketSize()), uint64(secondIdx.BucketSize()), "bucket_size")
+
+		total1, offsets1, ef1, golombRice1, existence1, layer11 := firstIdx.Sizes()
+		total2, offsets2, ef2, golombRice2, existence2, layer12 := secondIdx.Sizes()
+		cmpFn(total1.Bytes(), total2.Bytes(), "total")
+		cmpFn(offsets1.Bytes(), offsets2.Bytes(), "offset")
+		cmpFn(ef1.Bytes(), ef2.Bytes(), "ef")
+		cmpFn(golombRice1.Bytes(), golombRice2.Bytes(), "golombRice")
+		cmpFn(existence1.Bytes(), existence2.Bytes(), "existence")
+		cmpFn(layer11.Bytes(), layer12.Bytes(), "layer1")
 	}
 
-	ethCfg := node.NewEthConfigUrfave(cliCtx, nodeCfg, logger)
+	firstOffsets := firstIdx.ExtractOffsets()
+	secondOffsets := secondIdx.ExtractOffsets()
 
-	ethNode, err := node.New(cliCtx.Context, nodeCfg, ethCfg, logger, tracer)
-	if err != nil {
-		log.Error("Erigon startup", "err", err)
-		return err
+	for k := range firstOffsets {
+		_, ok := secondOffsets[k]
+		if !ok {
+			logger.Error("offset not found in second file")
+			return nil
+		}
 	}
-	defer ethNode.Close()
 
-	diagnostics.Setup(cliCtx, ethNode, metricsMux, pprofMux)
-
-	err = ethNode.Serve()
-	if err != nil {
-		log.Error("error while serving an Erigon node", "err", err)
+	for k := range secondOffsets {
+		_, ok := firstOffsets[k]
+		if !ok {
+			logger.Error("offset not found in first file")
+			return nil
+		}
 	}
-	return err
+
+	if firstIdx.Enums() != secondIdx.Enums() {
+		logger.Error("enums value don't match", "first", firstIdx.Enums(), "second", secondIdx.Enums())
+		return nil
+	}
+
+	if firstIdx.Enums() {
+		for i := uint64(0); i < firstIdx.KeyCount(); i++ {
+			off1, off2 := firstIdx.OrdinalLookup(i), secondIdx.OrdinalLookup(i)
+			cmpFn(off1, off2, fmt.Sprintf("offset_ordinal_%d", i))
+		}
+	}
+
+	logger.Info("two files are identical")
+	return nil
 }
 
 func dbCfg(label kv.Label, path string) mdbx.MdbxOpts {
@@ -2235,8 +2270,8 @@ func dbCfg(label kv.Label, path string) mdbx.MdbxOpts {
 		RoTxsLimiter(limiterB).
 		Accede(true) // integration tool: open db without creation and without blocking erigon
 }
-func openAgg(ctx context.Context, dirs datadir.Dirs, chainDB kv.RwDB, logger log.Logger) *libstate.Aggregator {
-	agg, err := libstate.NewAggregator(ctx, dirs, config3.DefaultStepSize, chainDB, logger)
+func openAgg(ctx context.Context, dirs datadir.Dirs, chainDB kv.RwDB, logger log.Logger) *state.Aggregator {
+	agg, err := state.New(dirs).SanityOldNaming().Logger(logger).Open(ctx, chainDB)
 	if err != nil {
 		panic(err)
 	}

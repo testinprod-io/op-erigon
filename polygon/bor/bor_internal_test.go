@@ -26,9 +26,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	common "github.com/erigontech/erigon-lib/common"
-	"github.com/erigontech/erigon-lib/types"
+	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon/execution/consensus"
+	"github.com/erigontech/erigon/execution/types"
 	"github.com/erigontech/erigon/polygon/bor/statefull"
 	polychain "github.com/erigontech/erigon/polygon/chain"
 	"github.com/erigontech/erigon/polygon/heimdall"
@@ -43,10 +43,6 @@ func (m mockBridgeReader) Events(context.Context, common.Hash, uint64) ([]*types
 }
 
 func (m mockBridgeReader) EventsWithinTime(context.Context, time.Time, time.Time) ([]*types.Message, error) {
-	panic("mock")
-}
-
-func (m mockBridgeReader) EventTxnLookup(context.Context, common.Hash) (uint64, bool, error) {
 	panic("mock")
 }
 
@@ -67,7 +63,7 @@ func TestCommitStatesIndore(t *testing.T) {
 	cr := consensus.NewMockChainReader(ctrl)
 	br := NewMockbridgeReader(ctrl)
 
-	bor := New(polychain.BorDevnetChainConfig, nil, nil, nil, nil, br, nil)
+	bor := New(polychain.BorDevnet.Config, nil, nil, nil, nil, br, nil)
 
 	header := &types.Header{
 		Number: big.NewInt(112),
@@ -93,8 +89,9 @@ func TestCommitStatesIndore(t *testing.T) {
 				nil,
 				nil,
 				nil,
-				false,
-				false,
+				false, // checkNonce
+				false, // checkGas
+				false, // isFree
 				nil,
 			),
 		}, nil,
@@ -109,10 +106,7 @@ func TestCommitStatesIndore(t *testing.T) {
 		return nil, nil
 	}
 
-	err := bor.CommitStates(nil, header, statefull.ChainContext{
-		Chain: cr,
-	}, syscall, nil, true)
-
+	err := bor.CommitStates(header, statefull.ChainContext{Chain: cr}, syscall, true)
 	require.NoError(t, err)
 	require.Equal(t, 1, called)
 }

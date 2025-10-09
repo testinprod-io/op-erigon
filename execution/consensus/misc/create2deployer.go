@@ -3,9 +3,9 @@ package misc
 import (
 	"encoding/hex"
 
-	"github.com/erigontech/erigon-lib/chain"
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon/core/state"
+	"github.com/erigontech/erigon/execution/chain"
 )
 
 // The original create2deployer contract could not be deployed to Base mainnet at

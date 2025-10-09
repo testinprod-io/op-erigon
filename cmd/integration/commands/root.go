@@ -26,13 +26,14 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/semaphore"
 
-	"github.com/erigontech/erigon-lib/common/datadir"
-	"github.com/erigontech/erigon-lib/kv"
-	kv2 "github.com/erigontech/erigon-lib/kv/mdbx"
-	"github.com/erigontech/erigon-lib/kv/temporal"
 	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/erigontech/erigon/cmd/utils"
-	"github.com/erigontech/erigon/node/migrations"
+	"github.com/erigontech/erigon/db/datadir"
+	"github.com/erigontech/erigon/db/kv"
+	"github.com/erigontech/erigon/db/kv/dbcfg"
+	kv2 "github.com/erigontech/erigon/db/kv/mdbx"
+	"github.com/erigontech/erigon/db/kv/temporal"
+	"github.com/erigontech/erigon/db/migrations"
 	"github.com/erigontech/erigon/turbo/debug"
 	"github.com/erigontech/erigon/turbo/logging"
 )
@@ -89,10 +90,10 @@ func dbCfg(label kv.Label, path string) kv2.MdbxOpts {
 
 func openDB(opts kv2.MdbxOpts, applyMigrations bool, logger log.Logger) (tdb kv.TemporalRwDB, err error) {
 	migrationDBs := map[kv.Label]bool{
-		kv.ChainDB:         true,
-		kv.ConsensusDB:     true,
-		kv.HeimdallDB:      true,
-		kv.PolygonBridgeDB: true,
+		dbcfg.ChainDB:         true,
+		dbcfg.ConsensusDB:     true,
+		dbcfg.HeimdallDB:      true,
+		dbcfg.PolygonBridgeDB: true,
 	}
 	if _, ok := migrationDBs[opts.GetLabel()]; !ok {
 		panic(opts.GetLabel())

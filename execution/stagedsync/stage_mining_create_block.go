@@ -20,27 +20,27 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	params2 "github.com/erigontech/erigon-lib/chain/params"
+	"github.com/erigontech/erigon/execution/chain/params"
 	"math/big"
 	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
 
-	"github.com/erigontech/erigon-db/rawdb"
-	"github.com/erigontech/erigon-lib/chain"
 	"github.com/erigontech/erigon-lib/common"
-	"github.com/erigontech/erigon-lib/common/debug"
-	"github.com/erigontech/erigon-lib/kv"
+	"github.com/erigontech/erigon-lib/common/dbg"
 	"github.com/erigontech/erigon-lib/log/v3"
-	"github.com/erigontech/erigon-lib/rlp"
-	"github.com/erigontech/erigon-lib/types"
-	"github.com/erigontech/erigon-lib/wrap"
 	"github.com/erigontech/erigon/core"
 	"github.com/erigontech/erigon/core/state"
+	"github.com/erigontech/erigon/db/kv"
+	"github.com/erigontech/erigon/db/rawdb"
+	"github.com/erigontech/erigon/db/wrap"
 	"github.com/erigontech/erigon/eth/ethutils"
+	"github.com/erigontech/erigon/execution/builder/buildercfg"
+	"github.com/erigontech/erigon/execution/chain"
 	"github.com/erigontech/erigon/execution/consensus"
 	"github.com/erigontech/erigon/execution/consensus/misc"
-	"github.com/erigontech/erigon/params"
+	"github.com/erigontech/erigon/execution/rlp"
+	"github.com/erigontech/erigon/execution/types"
 	"github.com/erigontech/erigon/turbo/services"
 )
 
@@ -97,7 +97,7 @@ func (mb *MiningBlock) AvailableRlpSpace(chainConfig *chain.Config, withAddition
 	blockSize += *mb.withdrawalsRlpSize
 	blockSize += mb.TxnsRlpSize(withAdditional...)
 	blockSize += rlp.ListPrefixLen(blockSize)
-	maxSize := chainConfig.GetMaxRlpBlockSize(mb.Header.Number.Uint64())
+	maxSize := chainConfig.GetMaxRlpBlockSize(mb.Header.Time)
 	return maxSize - blockSize
 }
 
@@ -117,13 +117,13 @@ func (mb *MiningBlock) TxnsRlpSize(withAdditional ...types.Transaction) int {
 }
 
 type MiningState struct {
-	MiningConfig    *params.MiningConfig
+	MiningConfig    *buildercfg.MiningConfig
 	PendingResultCh chan *types.Block
 	MiningResultCh  chan *types.BlockWithReceipts
 	MiningBlock     *MiningBlock
 }
 
-func NewMiningState(cfg *params.MiningConfig) MiningState {
+func NewMiningState(cfg *buildercfg.MiningConfig) MiningState {
 	return MiningState{
 		MiningConfig:    cfg,
 		PendingResultCh: make(chan *types.Block, 1),
@@ -287,7 +287,7 @@ func SpawnMiningCreateBlockStage(s *StageState, txc wrap.TxContainer, cfg Mining
 	} else {
 		logger.Info(fmt.Sprintf("[%s] Start mine", logPrefix), "block", executionAt+1, "baseFee", header.BaseFee, "gasLimit", header.GasLimit)
 	}
-	ibs := state.New(state.NewReaderV3(txc.Doms.AsGetter(txc.Tx)))
+	ibs := state.New(state.NewReaderV3(txc.Doms.AsGetter(txc.Ttx)))
 
 	if cfg.chainConfig.IsHolocene(header.Time) {
 		if cfg.blockBuilderParameters == nil {
@@ -300,8 +300,8 @@ func SpawnMiningCreateBlockStage(s *StageState, txc wrap.TxContainer, cfg Mining
 		// constants in the header.
 		d, e := misc.DecodeHolocene1559Params(cfg.blockBuilderParameters.HoloceneEIP1559Params)
 		if d == 0 {
-			d = misc.GetBaseFeeChangeDenominator(cfg.chainConfig, params2.BaseFeeChangeDenominator, header.Time)
-			e = cfg.chainConfig.ElasticityMultiplier(params2.ElasticityMultiplier)
+			d = misc.GetBaseFeeChangeDenominator(cfg.chainConfig, params.BaseFeeChangeDenominator, header.Time)
+			e = cfg.chainConfig.ElasticityMultiplier(params.ElasticityMultiplier)
 		}
 		header.Extra = misc.EncodeHoloceneExtraData(uint32(d), uint32(e))
 	} else if cfg.blockBuilderParameters != nil && cfg.blockBuilderParameters.HoloceneEIP1559Params != nil {
@@ -316,7 +316,7 @@ func SpawnMiningCreateBlockStage(s *StageState, txc wrap.TxContainer, cfg Mining
 			"headerParentHash", header.ParentHash.String(),
 			"parentNumber", parent.Number.Uint64(),
 			"parentHash", parent.Hash().String(),
-			"callers", debug.Callers(10))
+			"stack", dbg.Stack())
 		return err
 	}
 

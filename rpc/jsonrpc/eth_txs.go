@@ -22,13 +22,13 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/erigontech/erigon-db/rawdb"
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/hexutil"
 	"github.com/erigontech/erigon-lib/gointerfaces"
-	txpool "github.com/erigontech/erigon-lib/gointerfaces/txpoolproto"
-	types "github.com/erigontech/erigon-lib/gointerfaces/typesproto"
-	types2 "github.com/erigontech/erigon-lib/types"
+	"github.com/erigontech/erigon-lib/gointerfaces/txpoolproto"
+	"github.com/erigontech/erigon-lib/gointerfaces/typesproto"
+	"github.com/erigontech/erigon/db/rawdb"
+	"github.com/erigontech/erigon/execution/types"
 	bortypes "github.com/erigontech/erigon/polygon/bor/types"
 	"github.com/erigontech/erigon/rpc"
 	"github.com/erigontech/erigon/rpc/ethapi"
@@ -114,12 +114,12 @@ func (api *APIImpl) GetTransactionByHash(ctx context.Context, txnHash common.Has
 	}
 
 	// No finalized transaction, try to retrieve it from the pool
-	reply, err := api.txPool.Transactions(ctx, &txpool.TransactionsRequest{Hashes: []*types.H256{gointerfaces.ConvertHashToH256(txnHash)}})
+	reply, err := api.txPool.Transactions(ctx, &txpoolproto.TransactionsRequest{Hashes: []*typesproto.H256{gointerfaces.ConvertHashToH256(txnHash)}})
 	if err != nil {
 		return nil, err
 	}
 	if len(reply.RlpTxs[0]) > 0 {
-		txn, err := types2.DecodeWrappedTransaction(reply.RlpTxs[0])
+		txn, err := types.DecodeWrappedTransaction(reply.RlpTxs[0])
 		if err != nil {
 			return nil, err
 		}
@@ -159,7 +159,7 @@ func (api *APIImpl) GetRawTransactionByHash(ctx context.Context, hash common.Has
 	if block == nil {
 		return nil, nil
 	}
-	var txn types2.Transaction
+	var txn types.Transaction
 	for _, transaction := range block.Transactions() {
 		if transaction.Hash() == hash {
 			txn = transaction
@@ -174,7 +174,7 @@ func (api *APIImpl) GetRawTransactionByHash(ctx context.Context, hash common.Has
 	}
 
 	// No finalized transaction, try to retrieve it from the pool
-	reply, err := api.txPool.Transactions(ctx, &txpool.TransactionsRequest{Hashes: []*types.H256{gointerfaces.ConvertHashToH256(hash)}})
+	reply, err := api.txPool.Transactions(ctx, &txpoolproto.TransactionsRequest{Hashes: []*typesproto.H256{gointerfaces.ConvertHashToH256(hash)}})
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +212,7 @@ func (api *APIImpl) GetTransactionByBlockHashAndIndex(ctx context.Context, block
 		if chainConfig.Bor == nil {
 			return nil, nil // not error
 		}
-		var borTx types2.Transaction
+		var borTx types.Transaction
 		possibleBorTxnHash := bortypes.ComputeBorTxHash(block.NumberU64(), block.Hash())
 		_, ok, err := api.bridgeReader.EventTxnLookup(ctx, possibleBorTxnHash)
 		if err != nil {
@@ -288,7 +288,7 @@ func (api *APIImpl) GetTransactionByBlockNumberAndIndex(ctx context.Context, blo
 		if chainConfig.Bor == nil {
 			return nil, nil // not error
 		}
-		var borTx types2.Transaction
+		var borTx types.Transaction
 		possibleBorTxnHash := bortypes.ComputeBorTxHash(blockNum, hash)
 		_, ok, err := api.bridgeReader.EventTxnLookup(ctx, possibleBorTxnHash)
 		if err != nil {

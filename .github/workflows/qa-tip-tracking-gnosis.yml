@@ -3,7 +3,7 @@ name: QA - Tip tracking & migration (Gnosis)
 on:
   push:
     branches:
-      - 'release/3.1'
+      - 'release/3.*'
   workflow_dispatch: # Run manually
     inputs:
       explicit_upgrade:
@@ -11,10 +11,6 @@ on:
         type: boolean
         required: false
         default: false
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -34,7 +30,7 @@ jobs:
 
     steps:
     - name: Check out repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Clean Erigon Build Directory
       run: |

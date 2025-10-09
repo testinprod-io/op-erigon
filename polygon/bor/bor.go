@@ -36,24 +36,24 @@ import (
 	"github.com/xsleonard/go-merkle"
 	"golang.org/x/crypto/sha3"
 
-	"github.com/erigontech/erigon-db/rawdb"
-	"github.com/erigontech/erigon-lib/chain"
-	"github.com/erigontech/erigon-lib/chain/params"
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/dbg"
 	"github.com/erigontech/erigon-lib/common/empty"
 	"github.com/erigontech/erigon-lib/common/length"
 	"github.com/erigontech/erigon-lib/crypto"
-	"github.com/erigontech/erigon-lib/kv"
 	"github.com/erigontech/erigon-lib/log/v3"
-	"github.com/erigontech/erigon-lib/rlp"
-	"github.com/erigontech/erigon-lib/types"
-	"github.com/erigontech/erigon-lib/types/accounts"
 	"github.com/erigontech/erigon/core/state"
 	"github.com/erigontech/erigon/core/tracing"
 	"github.com/erigontech/erigon/core/vm/evmtypes"
+	"github.com/erigontech/erigon/db/kv"
+	"github.com/erigontech/erigon/db/rawdb"
+	"github.com/erigontech/erigon/execution/chain"
+	"github.com/erigontech/erigon/execution/chain/params"
 	"github.com/erigontech/erigon/execution/consensus"
 	"github.com/erigontech/erigon/execution/consensus/misc"
+	"github.com/erigontech/erigon/execution/rlp"
+	"github.com/erigontech/erigon/execution/types"
+	"github.com/erigontech/erigon/execution/types/accounts"
 	"github.com/erigontech/erigon/polygon/bor/borcfg"
 	"github.com/erigontech/erigon/polygon/bor/statefull"
 	"github.com/erigontech/erigon/polygon/heimdall"
@@ -61,31 +61,15 @@ import (
 	"github.com/erigontech/erigon/turbo/services"
 )
 
-const (
-	logInterval = 20 * time.Second
-)
-
-const (
-	snapshotPersistInterval = 1024 // Number of blocks after which to persist the vote snapshot to the database
-	inmemorySnapshots       = 128  // Number of recent vote snapshots to keep in memory
-	inmemorySignatures      = 4096 // Number of recent block signatures to keep in memory
-)
-
-var enableBoreventsRemoteFallback = dbg.EnvBool("BOREVENTS_REMOTE_FALLBACK", false)
+const inmemorySignatures = 4096 // Number of recent block signatures to keep in memory
 
 // Bor protocol constants.
 var (
-	defaultSprintLength = map[string]uint64{
-		"0": 64,
-	} // Default number of blocks after which to checkpoint and reset the pending votes
-
-	// diffInTurn = big.NewInt(2) // Block difficulty for in-turn signatures
-	// diffNoTurn = big.NewInt(1) // Block difficulty for out-of-turn signatures
-
+	// Default number of blocks after which to checkpoint and reset the pending votes
+	defaultSprintLength        = map[string]uint64{"0": 64}
 	validatorHeaderBytesLength = length.Addr + 20 // address + power
-
-	// MaxCheckpointLength is the maximum number of blocks that can be requested for constructing a checkpoint root hash
-	MaxCheckpointLength = uint64(math.Pow(2, 15))
+	// maxCheckpointLength is the maximum number of blocks that can be requested for constructing a checkpoint root hash
+	maxCheckpointLength = uint64(math.Pow(2, 15))
 )
 
 // Various error messages to mark blocks invalid. These should be private to
@@ -96,56 +80,28 @@ var (
 	// errUnknownBlock is returned when the list of signers is requested for a block
 	// that is not part of the local blockchain.
 	errUnknownBlock = errors.New("unknown block")
-
-	// errInvalidCheckpointBeneficiary is returned if a checkpoint/epoch transition
-	// block has a beneficiary set to non-zeroes.
-	// errInvalidCheckpointBeneficiary = errors.New("beneficiary in checkpoint block non-zero")
-
-	// errInvalidVote is returned if a nonce value is something else that the two
-	// allowed constants of 0x00..0 or 0xff..f.
-	// errInvalidVote = errors.New("vote nonce not 0x00..0 or 0xff..f")
-
-	// errInvalidCheckpointVote is returned if a checkpoint/epoch transition block
-	// has a vote nonce set to non-zeroes.
-	// errInvalidCheckpointVote = errors.New("vote nonce in checkpoint block non-zero")
-
 	// errMissingVanity is returned if a block's extra-data section is shorter than
 	// 32 bytes, which is required to store the signer vanity.
 	errMissingVanity = errors.New("extra-data 32 byte vanity prefix missing")
-
 	// errMissingSignature is returned if a block's extra-data section doesn't seem
 	// to contain a 65 byte secp256k1 signature.
 	errMissingSignature = errors.New("extra-data 65 byte signature suffix missing")
-
 	// errExtraValidators is returned if non-sprint-end block contain validator data in
 	// their extra-data fields.
 	errExtraValidators = errors.New("non-sprint-end block contains extra validator list")
-
 	// errInvalidSprintValidators is returned if a block contains an
 	// invalid list of validators (i.e. non divisible by 40 bytes).
 	errInvalidSprintValidators = errors.New("invalid validator list on sprint end block")
-
 	// errInvalidMixDigest is returned if a block's mix digest is non-zero.
 	errInvalidMixDigest = errors.New("non-zero mix digest")
-
 	// errInvalidUncleHash is returned if a block contains an non-empty uncle list.
 	errInvalidUncleHash = errors.New("non empty uncle hash")
-
 	// errInvalidDifficulty is returned if the difficulty of a block neither 1 or 2.
 	errInvalidDifficulty = errors.New("invalid difficulty")
-
-	// ErrInvalidTimestamp is returned if the timestamp of a block is lower than
+	// errInvalidTimestamp is returned if the timestamp of a block is lower than
 	// the previous block's timestamp + the minimum block period.
-	ErrInvalidTimestamp = errors.New("invalid timestamp")
-
-	// errOutOfRangeChain is returned if an authorization list is attempted to
-	// be modified via out-of-range or non-contiguous headers.
-	errOutOfRangeChain = errors.New("out of range or non-contiguous chain")
-
-	errUncleDetected     = errors.New("uncles not allowed")
-	errUnknownValidators = errors.New("unknown validators")
-
-	errUnknownSnapshot = errors.New("unknown snapshot")
+	errInvalidTimestamp = errors.New("invalid timestamp")
+	errUncleDetected    = errors.New("uncles not allowed")
 )
 
 // SignerFn is a signer callback function to request a header to be signed by a
@@ -250,6 +206,7 @@ type ValidateHeaderTimeSignerSuccessionNumber interface {
 	GetSignerSuccessionNumber(signer common.Address, number uint64) (int, error)
 }
 
+//go:generate mockgen -typed=true -destination=./span_reader_mock.go -package=bor . spanReader
 type spanReader interface {
 	Span(ctx context.Context, id uint64) (*heimdall.Span, bool, error)
 	Producers(ctx context.Context, blockNum uint64) (*heimdall.ValidatorSet, error)
@@ -259,7 +216,6 @@ type spanReader interface {
 type bridgeReader interface {
 	Events(ctx context.Context, blockHash common.Hash, blockNum uint64) ([]*types.Message, error)
 	EventsWithinTime(ctx context.Context, timeFrom, timeTo time.Time) ([]*types.Message, error)
-	EventTxnLookup(ctx context.Context, borTxHash common.Hash) (uint64, bool, error)
 }
 
 func ValidateHeaderTime(
@@ -618,7 +574,7 @@ func (c *Bor) verifyCascadingFields(chain consensus.ChainHeaderReader, header *t
 	}
 
 	if parent.Time+c.config.CalculatePeriod(number) > header.Time {
-		return ErrInvalidTimestamp
+		return errInvalidTimestamp
 	}
 
 	return ValidateHeaderGas(header, parent, chain.Config())
@@ -859,7 +815,7 @@ func (c *Bor) Finalize(config *chain.Config, header *types.Header, state *state.
 			// post VeBlop spans won't be committed to smart contract
 			if !c.config.IsRio(header.Number.Uint64()) {
 				// check and commit span
-				if err := c.checkAndCommitSpan(state, header, cx, syscall); err != nil {
+				if err := c.checkAndCommitSpan(header, syscall); err != nil {
 					err := fmt.Errorf("Finalize.checkAndCommitSpan: %w", err)
 					c.logger.Error("[bor] committing span", "err", err)
 					return nil, err
@@ -867,7 +823,7 @@ func (c *Bor) Finalize(config *chain.Config, header *types.Header, state *state.
 			}
 
 			// commit states
-			if err := c.CommitStates(state, header, cx, syscall, logger, false); err != nil {
+			if err := c.CommitStates(header, cx, syscall, false); err != nil {
 				err := fmt.Errorf("Finalize.CommitStates: %w", err)
 				c.logger.Error("[bor] Error while committing states", "err", err)
 				return nil, err
@@ -880,9 +836,6 @@ func (c *Bor) Finalize(config *chain.Config, header *types.Header, state *state.
 		return nil, err
 	}
 
-	// Set state sync data to blockchain
-	// bc := chain.(*core.BlockChain)
-	// bc.SetStateSync(stateSyncData)
 	return nil, nil
 }
 
@@ -910,8 +863,6 @@ func (c *Bor) FinalizeAndAssemble(chainConfig *chain.Config, header *types.Heade
 	txs types.Transactions, uncles []*types.Header, receipts types.Receipts, withdrawals []*types.Withdrawal,
 	chain consensus.ChainReader, syscall consensus.SystemCall, call consensus.Call, logger log.Logger,
 ) (*types.Block, types.FlatRequests, error) {
-	// stateSyncData := []*types.StateSyncData{}
-
 	headerNumber := header.Number.Uint64()
 
 	if withdrawals != nil || header.WithdrawalsHash != nil {
@@ -929,14 +880,14 @@ func (c *Bor) FinalizeAndAssemble(chainConfig *chain.Config, header *types.Heade
 			// Post Rio/VeBlop spans won't be committed to smart contract
 			if !c.config.IsRio(header.Number.Uint64()) {
 				// check and commit span
-				if err := c.checkAndCommitSpan(state, header, cx, syscall); err != nil {
+				if err := c.checkAndCommitSpan(header, syscall); err != nil {
 					err := fmt.Errorf("FinalizeAndAssemble.checkAndCommitSpan: %w", err)
 					c.logger.Error("[bor] committing span", "err", err)
 					return nil, nil, err
 				}
 			}
 			// commit states
-			if err := c.CommitStates(state, header, cx, syscall, logger, true); err != nil {
+			if err := c.CommitStates(header, cx, syscall, true); err != nil {
 				err := fmt.Errorf("FinalizeAndAssemble.CommitStates: %w", err)
 				c.logger.Error("[bor] committing states", "err", err)
 				return nil, nil, err
@@ -949,15 +900,7 @@ func (c *Bor) FinalizeAndAssemble(chainConfig *chain.Config, header *types.Heade
 		return nil, nil, err
 	}
 
-	// Assemble block
-	block := types.NewBlockForAsembling(header, txs, nil, receipts, withdrawals, false)
-
-	// set state sync
-	// bc := chain.(*core.BlockChain)
-	// bc.SetStateSync(stateSyncData)
-
-	// return the final block for sealing
-	return block, nil, nil
+	return types.NewBlockForAsembling(header, txs, nil, receipts, withdrawals, chainConfig.IsOptimismIsthmus(header.Time)), nil, nil
 }
 
 func (c *Bor) Initialize(config *chain.Config, chain consensus.ChainHeaderReader, header *types.Header,
@@ -1145,14 +1088,8 @@ func (c *Bor) Close() error {
 	return nil
 }
 
-func (c *Bor) checkAndCommitSpan(
-	state *state.IntraBlockState,
-	header *types.Header,
-	chain statefull.ChainContext,
-	syscall consensus.SystemCall,
-) error {
+func (c *Bor) checkAndCommitSpan(header *types.Header, syscall consensus.SystemCall) error {
 	headerNumber := header.Number.Uint64()
-
 	currentSpan, err := c.spanner.GetCurrentSpan(syscall)
 	if err != nil {
 		return fmt.Errorf("GetCurrentSpan: %w", err)
@@ -1164,7 +1101,7 @@ func (c *Bor) checkAndCommitSpan(
 	// is committed eventually when we commit 1st span (as per the contract). The check below
 	// takes care of that and commits the 1st span (hence the `currentSpan.Id+1` param).
 	if currentSpan.EndBlock == 0 {
-		if err := c.fetchAndCommitSpan(uint64(currentSpan.Id+1), state, header, chain, syscall); err != nil {
+		if err := c.fetchAndCommitSpan(uint64(currentSpan.Id+1), syscall); err != nil {
 			return fmt.Errorf("fetchAndCommitSpan: %w", err)
 		}
 	}
@@ -1172,7 +1109,7 @@ func (c *Bor) checkAndCommitSpan(
 	// For subsequent calls, commit the next span on the first block of the last sprint of a span
 	sprintLength := c.config.CalculateSprintLength(headerNumber)
 	if currentSpan.EndBlock > sprintLength && currentSpan.EndBlock-sprintLength+1 == headerNumber {
-		if err := c.fetchAndCommitSpan(uint64(currentSpan.Id+1), state, header, chain, syscall); err != nil {
+		if err := c.fetchAndCommitSpan(uint64(currentSpan.Id+1), syscall); err != nil {
 			return fmt.Errorf("fetchAndCommitSpan2: %w", err)
 		}
 	}
@@ -1180,13 +1117,7 @@ func (c *Bor) checkAndCommitSpan(
 	return nil
 }
 
-func (c *Bor) fetchAndCommitSpan(
-	newSpanID uint64,
-	state *state.IntraBlockState,
-	header *types.Header,
-	chain statefull.ChainContext,
-	syscall consensus.SystemCall,
-) error {
+func (c *Bor) fetchAndCommitSpan(newSpanID uint64, syscall consensus.SystemCall) error {
 	heimdallSpan, ok, err := c.spanReader.Span(context.Background(), newSpanID)
 	if err != nil {
 		return err
@@ -1209,7 +1140,7 @@ func (c *Bor) fetchAndCommitSpan(
 
 func (c *Bor) GetRootHash(ctx context.Context, tx kv.Tx, start, end uint64) (string, error) {
 	numHeaders := end - start + 1
-	if numHeaders > MaxCheckpointLength {
+	if numHeaders > maxCheckpointLength {
 		return "", &MaxCheckpointLengthExceededError{Start: start, End: end}
 	}
 
@@ -1284,19 +1215,17 @@ func (c *Bor) getHeaderByNumber(ctx context.Context, tx kv.Tx, number uint64) (*
 
 // CommitStates commit states
 func (c *Bor) CommitStates(
-	state *state.IntraBlockState,
 	header *types.Header,
 	chain statefull.ChainContext,
 	syscall consensus.SystemCall,
-	logger log.Logger,
-	fetchEventsWithingTime bool,
+	fetchEventsWithinTime bool,
 ) error {
 	blockNum := header.Number.Uint64()
 	var events []*types.Message
 	var err error
 
 	ctx := dbg.ContextWithDebug(c.execCtx, true)
-	if fetchEventsWithingTime {
+	if fetchEventsWithinTime {
 		sprintLength := c.config.CalculateSprintLength(blockNum)
 
 		if blockNum < sprintLength {

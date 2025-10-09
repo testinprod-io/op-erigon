@@ -10,17 +10,18 @@ import (
 
 	g "github.com/anacrolix/generics"
 	"github.com/anacrolix/torrent/metainfo"
-	"github.com/erigontech/erigon-db/rawdb"
-	"github.com/erigontech/erigon-lib/chain"
-	"github.com/erigontech/erigon-lib/chain/snapcfg"
-	"github.com/erigontech/erigon-lib/common/datadir"
+	"github.com/urfave/cli/v2"
+
 	"github.com/erigontech/erigon-lib/common/dir"
-	"github.com/erigontech/erigon-lib/kv"
-	"github.com/erigontech/erigon-lib/kv/mdbx"
 	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/erigontech/erigon/cmd/utils"
-	"github.com/erigontech/erigon/core"
-	"github.com/urfave/cli/v2"
+	"github.com/erigontech/erigon/db/datadir"
+	"github.com/erigontech/erigon/db/kv"
+	"github.com/erigontech/erigon/db/kv/dbcfg"
+	"github.com/erigontech/erigon/db/kv/mdbx"
+	"github.com/erigontech/erigon/db/rawdb"
+	"github.com/erigontech/erigon/db/snapcfg"
+	"github.com/erigontech/erigon/execution/chain"
 )
 
 var (
@@ -133,11 +134,11 @@ func resetCliAction(cliCtx *cli.Context) (err error) {
 	// Remove chaindata last, so that the config is available if there's an error.
 	if removeLocal {
 		for _, extraDir := range []string{
-			kv.HeimdallDB,
-			kv.PolygonBridgeDB,
+			dbcfg.HeimdallDB,
+			dbcfg.PolygonBridgeDB,
 		} {
 			extraFullPath := filepath.Join(dirs.DataDir, extraDir)
-			err = os.RemoveAll(extraFullPath)
+			err = dir.RemoveAll(extraFullPath)
 			if err != nil {
 				return fmt.Errorf("removing extra dir %q: %w", extraDir, err)
 			}
@@ -171,7 +172,7 @@ func getChainNameFromChainData(cliCtx *cli.Context, logger log.Logger, chainData
 	}
 	ctx := cliCtx.Context
 	var db kv.RoDB
-	db, err = mdbx.New(kv.ChainDB, logger).Path(chainDataDir).Accede(true).Readonly(true).Open(ctx)
+	db, err = mdbx.New(dbcfg.ChainDB, logger).Path(chainDataDir).Accede(true).Readonly(true).Open(ctx)
 	if err != nil {
 		err = fmt.Errorf("opening chaindata database: %w", err)
 		return
@@ -186,7 +187,7 @@ func getChainNameFromChainData(cliCtx *cli.Context, logger log.Logger, chainData
 			return
 		}
 		// Do we need genesis block hash here?
-		chainCfg, err = core.ReadChainConfig(tx, genesis)
+		chainCfg, err = rawdb.ReadChainConfig(tx, genesis)
 		if err != nil {
 			err = fmt.Errorf("reading chain config: %w", err)
 			return

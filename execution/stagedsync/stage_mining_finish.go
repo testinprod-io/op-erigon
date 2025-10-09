@@ -19,12 +19,12 @@ package stagedsync
 import (
 	"fmt"
 
-	"github.com/erigontech/erigon-lib/chain"
-	"github.com/erigontech/erigon-lib/kv"
 	"github.com/erigontech/erigon-lib/log/v3"
-	"github.com/erigontech/erigon-lib/types"
+	"github.com/erigontech/erigon/db/kv"
 	"github.com/erigontech/erigon/execution/builder"
+	"github.com/erigontech/erigon/execution/chain"
 	"github.com/erigontech/erigon/execution/consensus"
+	"github.com/erigontech/erigon/execution/types"
 	"github.com/erigontech/erigon/turbo/services"
 )
 
@@ -93,26 +93,19 @@ func SpawnMiningFinishStage(s *StageState, tx kv.RwTx, cfg MiningFinishCfg, quit
 	cfg.miningState.PendingResultCh <- block
 
 	if block.Transactions().Len() > 0 {
-		if cfg.chainConfig.IsOptimism() {
-			logger.Debug(fmt.Sprintf("[%s] block ready for seal", logPrefix),
-				"block", block.NumberU64(),
-				"transactions", block.Transactions().Len(),
-				"gasUsed", block.GasUsed(),
-				"gasLimit", block.GasLimit(),
-				"difficulty", block.Difficulty(),
-				"header", block.Header(),
-			)
-		} else {
-			logger.Info(fmt.Sprintf("[%s] block ready for seal", logPrefix),
-				"block", block.NumberU64(),
-				"transactions", block.Transactions().Len(),
-				"gasUsed", block.GasUsed(),
-				"gasLimit", block.GasLimit(),
-				"difficulty", block.Difficulty(),
-				"header", block.Header(),
-			)
-		}
-
+		logger.Info(fmt.Sprintf("[%s] block ready for seal", logPrefix),
+			"blockNum", block.NumberU64(),
+			"nonce", block.Nonce(),
+			"hash", block.Hash(),
+			"gasLimit", block.GasLimit(),
+			"gasUsed", block.GasUsed(),
+			"blobGasUsed", block.Header().BlobGasUsed,
+			"transactionsCount", block.Transactions().Len(),
+			"coinbase", block.Coinbase(),
+			"stateRoot", block.Root(),
+			"withdrawalsHash", block.WithdrawalsHash(),
+			"requestsHash", block.RequestsHash(),
+		)
 	}
 	// interrupt aborts the in-flight sealing task.
 	select {

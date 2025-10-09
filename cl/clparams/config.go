@@ -34,11 +34,11 @@ import (
 
 	"github.com/c2h5oh/datasize"
 
-	"github.com/erigontech/erigon-lib/chain/networkname"
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon/cl/beacon/beacon_router_configuration"
 	"github.com/erigontech/erigon/cl/utils"
-	"github.com/erigontech/erigon/execution/chainspec"
+	"github.com/erigontech/erigon/execution/chain/networkname"
+	chainspec "github.com/erigontech/erigon/execution/chain/spec"
 )
 
 var LatestStateFileName = "latest.ssz_snappy"
@@ -367,7 +367,6 @@ var CheckpointSyncEndpoints = map[NetworkType][]string{
 		"https://checkpoint.chiadochain.net/eth/v2/debug/beacon/states/finalized",
 	},
 	chainspec.HoleskyChainID: {
-		"https://holesky.beaconstate.ethstaker.cc/eth/v2/debug/beacon/states/finalized",
 		"https://beaconstate-holesky.chainsafe.io/eth/v2/debug/beacon/states/finalized",
 		"https://holesky.beaconstate.info/eth/v2/debug/beacon/states/finalized",
 		"https://checkpoint-sync.holesky.ethpandaops.io/eth/v2/debug/beacon/states/finalized",
@@ -1042,10 +1041,16 @@ func sepoliaConfig() BeaconChainConfig {
 	cfg.DenebForkVersion = 0x90000073
 	cfg.ElectraForkEpoch = 222464
 	cfg.ElectraForkVersion = 0x90000074
-	cfg.FuluForkEpoch = math.MaxUint64
+	cfg.FuluForkEpoch = 272640
 	cfg.FuluForkVersion = 0x90000075
 	cfg.TerminalTotalDifficulty = "17000000000000000"
 	cfg.DepositContractAddress = "0x7f02C3E3c98b133055B8B348B2Ac625669Ed295D"
+
+	cfg.BlobSchedule = []BlobParameters{
+		{274176, 15},
+		{275712, 21},
+	}
+
 	cfg.InitializeForkSchedule()
 	return cfg
 }
@@ -1072,7 +1077,7 @@ func holeskyConfig() BeaconChainConfig {
 	cfg.DenebForkVersion = 0x05017000
 	cfg.ElectraForkEpoch = 115968
 	cfg.ElectraForkVersion = 0x06017000
-	cfg.FuluForkEpoch = math.MaxUint64
+	cfg.FuluForkEpoch = 165120
 	cfg.FuluForkVersion = 0x07017000
 	cfg.TerminalTotalDifficulty = "0"
 	cfg.TerminalBlockHash = [32]byte{}
@@ -1087,6 +1092,11 @@ func holeskyConfig() BeaconChainConfig {
 	cfg.MinPerEpochChurnLimit = 4
 	cfg.ChurnLimitQuotient = 1 << 16
 	cfg.ProposerScoreBoost = 40
+
+	cfg.BlobSchedule = []BlobParameters{
+		{166400, 15},
+		{167936, 21},
+	}
 
 	cfg.InitializeForkSchedule()
 	return cfg
@@ -1103,6 +1113,7 @@ func hoodiConfig() BeaconChainConfig {
 
 	// Time parameters
 	cfg.SecondsPerSlot = 12
+	cfg.SecondsPerETH1Block = 12
 	cfg.Eth1FollowDistance = 2048
 
 	// Forking
@@ -1116,7 +1127,7 @@ func hoodiConfig() BeaconChainConfig {
 	cfg.DenebForkVersion = 0x50000910
 	cfg.ElectraForkEpoch = 2048
 	cfg.ElectraForkVersion = 0x60000910
-	cfg.FuluForkEpoch = math.MaxUint64
+	cfg.FuluForkEpoch = 50688
 	cfg.FuluForkVersion = 0x70000910
 	cfg.TerminalTotalDifficulty = "0"
 	cfg.TerminalBlockHash = [32]byte{}
@@ -1133,6 +1144,11 @@ func hoodiConfig() BeaconChainConfig {
 	cfg.SlotsPerEpoch = 32
 	cfg.EpochsPerSyncCommitteePeriod = 256
 	cfg.MinPerEpochChurnLimit = 4
+
+	cfg.BlobSchedule = []BlobParameters{
+		{52480, 15},
+		{54016, 21},
+	}
 
 	cfg.InitializeForkSchedule()
 	return cfg

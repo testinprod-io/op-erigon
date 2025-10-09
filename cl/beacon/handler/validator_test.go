@@ -67,6 +67,8 @@ func (t *validatorTestSuite) SetupTest() {
 		nil,
 		t.mockAggrPool,
 		nil,
+		t.mockAggrPool,
+		nil,
 		nil,
 		nil,
 		nil,

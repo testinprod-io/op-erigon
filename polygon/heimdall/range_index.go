@@ -21,9 +21,8 @@ import (
 	"encoding/binary"
 	"errors"
 
-	"github.com/erigontech/erigon/polygon/polygoncommon"
-
-	"github.com/erigontech/erigon-lib/kv"
+	"github.com/erigontech/erigon/db/kv"
+	polygondb "github.com/erigontech/erigon/polygon/db"
 )
 
 type RangeIndex interface {
@@ -49,7 +48,7 @@ type RangeIndexer interface {
 }
 
 type dbRangeIndex struct {
-	db    *polygoncommon.Database
+	db    *polygondb.Database
 	table string
 }
 
@@ -58,12 +57,12 @@ type txRangeIndex struct {
 	tx kv.Tx
 }
 
-func NewRangeIndex(db *polygoncommon.Database, table string) *dbRangeIndex {
+func NewRangeIndex(db *polygondb.Database, table string) *dbRangeIndex {
 	return &dbRangeIndex{db, table}
 }
 
 func NewTxRangeIndex(db kv.RoDB, table string, tx kv.Tx) *txRangeIndex {
-	return &txRangeIndex{&dbRangeIndex{polygoncommon.AsDatabase(db.(kv.RwDB)), table}, tx}
+	return &txRangeIndex{&dbRangeIndex{polygondb.AsDatabase(db.(kv.RwDB)), table}, tx}
 }
 
 func (i *dbRangeIndex) WithTx(tx kv.Tx) RangeIndexer {
