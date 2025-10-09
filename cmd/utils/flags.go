@@ -621,6 +621,20 @@ var (
 		Value: ethconfig.Defaults.GPO.MaxPrice.Int64(),
 	}
 
+	// Rollup Flags
+	RollupSequencerHTTPFlag = cli.StringFlag{
+		Name:  "rollup.sequencerhttp",
+		Usage: "HTTP endpoint for the sequencer mempool",
+	}
+	RollupDisableTxPoolGossipFlag = cli.StringFlag{
+		Name:  "rollup.disabletxpoolgossip",
+		Usage: "Disables transaction pool gossip.",
+	}
+	RollupHaltOnIncompatibleProtocolVersionFlag = cli.StringFlag{
+		Name:  "rollup.halt",
+		Usage: "Opt-in option to halt on incompatible protocol version requirements of the given level (major/minor/patch/none), as signaled through the Engine API by the rollup node",
+	}
+
 	// Metrics flags
 	MetricsEnabledFlag = cli.BoolFlag{
 		Name:  "metrics",
@@ -2016,6 +2030,11 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 		} else {
 			cfg.EthDiscoveryURLs = common.CliString2Array(urls)
 		}
+	}
+
+	// Only configure sequencer http flag if we're running in verifier mode i.e. --mine is disabled.
+	if ctx.IsSet(RollupSequencerHTTPFlag.Name) && !ctx.IsSet(MiningEnabledFlag.Name) {
+		cfg.RollupSequencerHTTP = ctx.String(RollupSequencerHTTPFlag.Name)
 	}
 
 	// Override any default configs for hard coded networks.

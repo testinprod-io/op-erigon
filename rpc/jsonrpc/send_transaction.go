@@ -42,6 +42,17 @@ func (api *APIImpl) SendRawTransaction(ctx context.Context, encodedTx hexutil.By
 		return common.Hash{}, err
 	}
 
+	if cc.IsOptimism() && txn.Type() == types.BlobTxType {
+		return common.Hash{}, types.ErrTxTypeNotSupported
+	}
+
+	if api.seqRPCService != nil {
+		if err := api.seqRPCService.CallContext(ctx, nil, "eth_sendRawTransaction", hexutil.Encode(encodedTx)); err != nil {
+			return common.Hash{}, err
+		}
+		return txn.Hash(), nil
+	}
+
 	if txn.Protected() {
 		txnChainId := txn.GetChainID()
 		chainId := cc.ChainID

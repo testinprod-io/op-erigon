@@ -494,7 +494,6 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*evmtype
 	if err != nil && err != ErrGasLimitReached && st.msg.IsOptimismDepositTx() {
 		st.state.RevertToSnapshot(snap, err)
 		nonce, _ := st.state.GetNonce(st.msg.From())
-
 		nonceErr := st.state.SetNonce(st.msg.From(), nonce+1)
 		// Even though we revert the state changes, always increment the nonce for the next deposit transaction
 		if nonceErr != nil {

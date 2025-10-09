@@ -248,6 +248,8 @@ type Config struct {
 
 	OverrideOsakaTime *big.Int `toml:",omitempty"`
 
+	RollupSequencerHTTP string
+
 	// Embedded Silkworm support
 	SilkwormExecution            bool
 	SilkwormRpcDaemon            bool
