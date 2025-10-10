@@ -561,6 +561,8 @@ func (st *StateTransition) innerTransitionDB(refunds bool, gasBailout bool) (res
 	// 6. caller has enough balance to cover asset transfer for **topmost** call
 
 	// Check clauses 1-3 and 6, buy gas if everything is correct
+	log.Warn("Is deposit", "deposit", st.msg.IsOptimismDepositTx())
+	log.Warn("msg", "gas", st.msg.Gas(), "feecap", st.msg.FeeCap())
 	if err := st.preCheck(gasBailout); err != nil {
 		return nil, err
 	}
@@ -653,6 +655,7 @@ func (st *StateTransition) innerTransitionDB(refunds bool, gasBailout bool) (res
 		if st.msg.IsOptimismSystemTx() {
 			gasUsed = 0
 		}
+		log.Warn("using gaslimit cuz regolith", "gasUsed", gasUsed)
 		return &evmtypes.ExecutionResult{
 			GasUsed:    gasUsed,
 			Err:        vmerr,

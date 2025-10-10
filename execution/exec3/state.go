@@ -328,6 +328,7 @@ func (rw *Worker) RunTxTaskNoLock(txTask *state.TxTask, isMining, skipPostEvalua
 				hooks.OnTxEnd(nil, err)
 			}
 		} else {
+			log.Warn("respond", "gas", applyRes.GasUsed)
 			txTask.Failed = applyRes.Failed()
 			txTask.GasUsed = applyRes.GasUsed
 			// Update the state with pending changes
