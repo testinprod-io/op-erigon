@@ -135,14 +135,6 @@ func RegisterChainSpec(name string, spec Spec) {
 		registeredChainsByGenesisHash[spec.GenesisHash] = spec
 	}
 }
-func OptimismChainSpecByGenesisHash(genesisHash common.Hash) (Spec, error) {
-	chainConfig := ChainConfigByOpStackGenesisHash(genesisHash)
-	if chainConfig == nil {
-		return Spec{}, ErrChainSpecUnknown
-	}
-
-	return OptimismChainSpecByName(chainConfig.ChainName)
-}
 
 func OptimismChainSpecByName(name string) (Spec, error) {
 	chainConfig := ChainConfigByOpStackChainName(name)
@@ -168,6 +160,38 @@ func OptimismChainSpecByName(name string) (Spec, error) {
 	}
 
 	if strings.Contains(name, "mainnet") {
+		spec.Bootnodes = V5OPBootnodes
+	} else {
+		spec.Bootnodes = V5OPTestnetBootnodes
+	}
+
+	return spec, nil
+}
+
+func OptimismChainSpecByGenesisHash(genesisHash common.Hash) (Spec, error) {
+	chainConfig := ChainConfigByOpStackGenesisHash(genesisHash)
+	if chainConfig == nil {
+		return Spec{}, ErrChainSpecUnknown
+	}
+
+	opstackConfig := superchain.OPStackChainConfigByGenesisHash(genesisHash)
+	if opstackConfig == nil {
+		return Spec{}, ErrChainSpecUnknown
+	}
+
+	genesis, err := LoadOPStackGenesis(opstackConfig.ChainID)
+	if err != nil || genesis == nil {
+		return Spec{}, err
+	}
+
+	spec := Spec{
+		Name:        chainConfig.ChainName,
+		GenesisHash: opstackConfig.Genesis.L2.Hash,
+		Genesis:     genesis,
+		Config:      chainConfig,
+	}
+
+	if strings.ContainsAny(opstackConfig.Name, "mainnet") {
 		spec.Bootnodes = V5OPBootnodes
 	} else {
 		spec.Bootnodes = V5OPTestnetBootnodes
