@@ -211,7 +211,7 @@ func writeForkChoiceHashes(tx kv.RwTx, blockHash, safeHash, finalizedHash common
 }
 
 func (e *EthereumExecutionModule) updateForkChoice(ctx context.Context, originalBlockHash, safeHash, finalizedHash common.Hash, outcomeCh chan forkchoiceOutcome) {
-	if e.isBusy() {
+	if !e.semaphore.TryAcquire(1) {
 		if e.config.IsOptimism() {
 			// op-node does not handle SYNCING as asynchronous forkChoiceUpdated.
 			// return an error and make op-node retry
