@@ -47,5 +47,14 @@ func (bc *BlockContext) Rules(c *chain.Config) *chain.Rules {
 		IsPrague:           c.IsPrague(bc.Time) || c.IsBhilai(bc.BlockNumber),
 		IsOsaka:            c.IsOsaka(bc.Time),
 		IsAura:             c.Aura != nil,
+
+		IsOptimismBedrock:  c.IsOptimismBedrock(bc.BlockNumber),
+		IsOptimismRegolith: c.IsOptimismRegolith(bc.Time),
+		IsOptimismCanyon:   c.IsOptimismCanyon(bc.Time),
+		IsOptimismEcotone:  c.IsOptimismEcotone(bc.Time),
+		IsOptimismFjord:    c.IsOptimismFjord(bc.Time),
+		IsOptimismGranite:  c.IsOptimismGranite(bc.Time),
+		IsOptimismHolocene: c.IsOptimismHolocene(bc.Time),
+		IsOptimismIsthmus:  c.IsOptimismIsthmus(bc.Time),
 	}
 }
