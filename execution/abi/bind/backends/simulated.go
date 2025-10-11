@@ -23,6 +23,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/erigontech/erigon/opstack"
 	"math/big"
 	"sync"
 	"testing"
@@ -839,24 +840,25 @@ type callMsg struct {
 	ethereum.CallMsg
 }
 
-func (m callMsg) From() common.Address                  { return m.CallMsg.From }
-func (m callMsg) Nonce() uint64                         { return 0 }
-func (m callMsg) CheckNonce() bool                      { return false }
-func (m callMsg) To() *common.Address                   { return m.CallMsg.To }
-func (m callMsg) GasPrice() *uint256.Int                { return m.CallMsg.GasPrice }
-func (m callMsg) FeeCap() *uint256.Int                  { return m.CallMsg.FeeCap }
-func (m callMsg) TipCap() *uint256.Int                  { return m.CallMsg.TipCap }
-func (m callMsg) Gas() uint64                           { return m.CallMsg.Gas }
-func (m callMsg) CheckGas() bool                        { return true }
-func (m callMsg) Value() *uint256.Int                   { return m.CallMsg.Value }
-func (m callMsg) Data() []byte                          { return m.CallMsg.Data }
-func (m callMsg) AccessList() types.AccessList          { return m.CallMsg.AccessList }
-func (m callMsg) Authorizations() []types.Authorization { return m.CallMsg.Authorizations }
-func (m callMsg) IsFree() bool                          { return false }
-func (m callMsg) SetIsFree(_ bool)                      {}
-func (m callMsg) BlobGas() uint64                { return misc.GetBlobGasUsed(len(m.CallMsg.BlobHashes)) }
-func (m callMsg) MaxFeePerBlobGas() *uint256.Int { return m.CallMsg.MaxFeePerBlobGas }
-func (m callMsg) BlobHashes() []common.Hash      { return m.CallMsg.BlobHashes }
+func (m callMsg) From() common.Address                   { return m.CallMsg.From }
+func (m callMsg) Nonce() uint64                          { return 0 }
+func (m callMsg) CheckNonce() bool                       { return false }
+func (m callMsg) To() *common.Address                    { return m.CallMsg.To }
+func (m callMsg) GasPrice() *uint256.Int                 { return m.CallMsg.GasPrice }
+func (m callMsg) FeeCap() *uint256.Int                   { return m.CallMsg.FeeCap }
+func (m callMsg) TipCap() *uint256.Int                   { return m.CallMsg.TipCap }
+func (m callMsg) Gas() uint64                            { return m.CallMsg.Gas }
+func (m callMsg) CheckGas() bool                         { return true }
+func (m callMsg) Value() *uint256.Int                    { return m.CallMsg.Value }
+func (m callMsg) Data() []byte                           { return m.CallMsg.Data }
+func (m callMsg) AccessList() types.AccessList           { return m.CallMsg.AccessList }
+func (m callMsg) Authorizations() []types.Authorization  { return m.CallMsg.Authorizations }
+func (m callMsg) IsFree() bool                           { return false }
+func (m callMsg) SetIsFree(_ bool)                       {}
+func (m callMsg) BlobGas() uint64                        { return misc.GetBlobGasUsed(len(m.CallMsg.BlobHashes)) }
+func (m callMsg) MaxFeePerBlobGas() *uint256.Int         { return m.CallMsg.MaxFeePerBlobGas }
+func (m callMsg) BlobHashes() []common.Hash              { return m.CallMsg.BlobHashes }
 func (m callMsg) IsOptimismDepositTx() bool              { return false }
 func (m callMsg) IsOptimismSystemTx() bool               { return false }
 func (m callMsg) RollupCostData() opstack.RollupCostData { return opstack.RollupCostData{} }
+func (m callMsg) Mint() *uint256.Int                     { return nil }

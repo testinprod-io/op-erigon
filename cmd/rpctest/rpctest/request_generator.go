@@ -125,10 +125,6 @@ func (g *RequestGenerator) getLogsForAddresses(prevBn uint64, bn uint64, account
 	fmt.Fprintf(&sb, `]}],"id":%d}`, g.reqID.Add(1))
 	return sb.String()
 }
-func (g *RequestGenerator) getLogsNoFilters(prevBn uint64, bn uint64) string {
-	const template = `{"jsonrpc":"2.0","method":"eth_getLogs","params":[{"fromBlock": "0x%x", "toBlock": "0x%x"}],"id":%d}`
-	return fmt.Sprintf(template, prevBn, bn, g.reqID)
-}
 
 func (g *RequestGenerator) getOverlayLogs(prevBn uint64, bn uint64, account common.Address) string {
 	const template = `{"jsonrpc":"2.0","method":"overlay_getLogs","params":[{"fromBlock": "0x%x", "toBlock": "0x%x", "address": "0x%x"},{}],"id":%d}`
