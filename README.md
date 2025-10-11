@@ -1,3 +1,171 @@
+# Optimistic Erigon
+[![CI](https://github.com/testinprod-io/op-erigon/actions/workflows/ci.yml/badge.svg)](https://github.com/testinprod-io/op-erigon/actions/workflows/ci.yml) [![Integration tests](https://github.com/testinprod-io/op-erigon/actions/workflows/test-integration.yml/badge.svg)](https://github.com/testinprod-io/op-erigon/actions/workflows/test-integration.yml) [![](https://dcbadge.vercel.app/api/server/42DFTeZwUZ?style=flat&compact=true)](https://discord.gg/42DFTeZwUZ)
+
+A fork of [Erigon](https://github.com/erigontech/erigon) that supports the [execution engine](https://github.com/ethereum-optimism/optimism/blob/develop/specs/exec-engine.md) of [OP stack](https://stack.optimism.io). Check out the fork status here: [https://op-erigon.testinprod.io](https://op-erigon.testinprod.io)
+
+[`testinprod-io/erigon-lib`](https://github.com/testinprod-io/erigon-lib) has minimal backwards-compatible changes to add Optimism engine-api fields on the `op-erigon` branch.
+
+[`testinprod-io/erigon-interfaces`](https://github.com/testinprod-io/erigon-interfaces) defines the protobuf changes for `erigon-lib` on the `op-erigon` branch.
+- [Optimistic Erigon Project Status](#optimistic-erigon-project-status)
+    + [Features that work correctly](#features-that-work-correctly)
+    + [Features that don't work (or yet to be confirmed)](#features-that-dont-work-or-yet-to-be-confirmed)
+- [Getting started with Optimism](#getting-started-with-optimism)
+- [Example: Running An Optimism Mainnet Node](#example-running-an-optimism-mainnet-node)
+- [Need any help?](#need-any-help)
+- [Original Erigon README.md](#erigon)
+
+Supported today: validator synchronization with op-node; standard Ethereum and Otterscan JSON-RPC APIs; all-in-one binary mode; and P2P transaction gossip. Not yet supported or unconfirmed: sequencer block production and roles (sequencer/proposer), running services as separate processes, and Erigon snapshot.
+
+### Node Snapshots
+
+We provide node snapshots at https://snapshot.testinprod.io. You can download the node snapshots(chaindata) by using the endpoints provided. Note that the keyword **snapshot** is different with the erigon's snapshot feature. Node snapshot is distributed in the compressed form using zstd compression.
+
+### Torrent-based Snapshots
+Erigon also supports syncing the node from snapshots via torrent. This support is coming to op-erigon v3 soon to support faster syncing.  
+
+## Getting started with Optimism
+To build from the code, you can use the same command described below(`make erigon`)
+
+You can use every flag erigon has. But there are some required flags and newly added flags for Optimism.
+
+### `--datadir`
+**[Required]**
+op-erigon cannot execute state transition before the bedrock update. So if the chain was created before bedrock update, preconfigured data file is required to run the node. It includes blocks and states of the pre-bedrock chain.
+
+You can download the chain data from following links:
+- Optimism Mainnet:
+    - [https://op-erigon-backup.mainnet.testinprod.io](https://op-erigon-backup.mainnet.testinprod.io)
+    - Compressed: 115 GB, Uncompressed: 380 GB.
+    - Including blocks up to [105235064](https://optimistic.etherscan.io/block/105235064) (June 2023)
+
+> Prebedrock snapshots will be updated soon for Erigon v3.
+
+
+### `--authrpc.addr`, `--authrpc.port`, `--authrpc.jwtsecret`
+**[Required]**
+Authenticated RPC configs that specify engine API connection info for the consensus client.
+
+
+### `--prune.mode=archive (full=default)`
+**[Optional]**
+Starting from v3, op-erigon can run in both `full` and `archive` mode.
+If you wish to use your op-erigon node as archive node, set the prune mode to `archive`. 
+
+> This flag cannot be changed after db init. To change the prune mode, you must re-sync the whole database.
+
+### `--rollup.sequencerhttp`
+**[New flag / Optional]**
+HTTP endpoint of the sequencer. op-erigon will route `eth_sendRawTransaction` calls to this URL. This is **required** for transaction submission since Bedrock does not currently have a public mempool. Refer to the documentation for the network you are participating in to get the correct URL.
+
+For the OP-Mainnet, set the sequencer endpoint: `https://mainnet-sequencer.optimism.io`.
+
+For the OP-Sepolia Testnet, set the sequencer endpoint: `https://sepolia-sequencer.optimism.io`
+
+### `--rollup.historicalrpc`
+**[New flag / Optional]**
+The historical RPC endpoint. op-erigon queries historical execution data that op-erigon does not support to historical RPC—for example, pre-bedrock executions. For OP-Sepolia Testnet, please set this value to the Legacy Geth endpoint.
+
+For more information about legacy geth, refer the [Optimism's node operator guide](https://community.optimism.io/docs/developers/bedrock/node-operator-guide/#legacy-geth).
+
+### `--db.size.limit=8TB`
+**[Required]**
+Existing nodes whose MDBX page size equals 4kb must add --db.size.limit=8TB flag. Otherwise you will get MDBX_TOO_LARGE error. To check the current page size you can use `make db-tools && ./build/bin/mdbx_stat datadir/chaindata`.
+If your chain is the one of `op-mainnet` & `op-sepolia`, or your chain is synced before version `v2.55`, this flag is **REQUIRED**
+
+### `--txpool.gossip.disable`
+**[Optional]**
+Disables transaction pool gossiping. Though this is not required, it's useful to set this to true since transaction pool gossip is currently unsupported in the Optimism protocol. If not provided, default value is set to `false`.
+
+### `--maxpeers=0`, `--nodiscover`, `--v5disc=false`
+**[Optional]**
+Disable P2P. This can save resources if you are only using op-node to sync the chain instead of using execution-layer syncing.
+
+## Support Chains
+op-erigon supports every OP Stack chains listed in [superchain-registry](https://github.com/ethereum-optimism/superchain-registry).
+You can config any superchain easily by setting `--chain` flag with the chain name written in the superchain registry, in lowercase. (e.g. `op-mainnet`, `base-sepolia`, etc.)
+
+### Caution
+If the chain was created before bedrock update, you need to download **pre-bedrock chain data**. See the following example to sync op-mainnet!
+
+## Example: Running An Optimism Mainnet Node
+### 1. Download and decompress the pre-bedrock chain data
+You can download the pre-bedrock chain data from [https://op-erigon-backup.mainnet.testinprod.io](https://op-erigon-backup.mainnet.testinprod.io). Compressed: 115 GB, Uncompressed: 380 GB.
+```bash
+wget -c -O "backup.tar.gz" https://op-erigon-backup.mainnet.testinprod.io
+tar -zxvf backup.tar.gz
+```
+After untaring, you will get a folder named `database` which contains a folder `chaindata` with two files inside: `mdbx.dat` and `mdbx.lck`. Use this directory as a datadir(`$DATADIR`) for erigon. For example,
+```bash
+export DATA_DIR=`pwd`/database
+```
+
+### 2. Configuring op-erigon
+There are three options to run op-erigon. Please refer to the preceding descriptions for the required flags.
+1. Build from the source
+```bash
+(build from the source)
+$ make erigon
+
+(example execution command)
+$ ./build/bin/erigon \
+    --datadir=$DATA_DIR \
+    --prune.mode=archive \
+    --private.api.addr=localhost:9090 \
+    --http.addr=0.0.0.0 \
+    --http.port=8545 \
+    --http.corsdomain="*" \
+    --http.vhosts="*" \
+    --authrpc.addr=0.0.0.0 \
+    --authrpc.port=8551 \
+    --authrpc.vhosts="*" \
+    --authrpc.jwtsecret=$JWT_SECRET_FILE \
+    --rollup.sequencerhttp="https://mainnet-sequencer.optimism.io" \
+    --rollup.historicalrpc="https://mainnet.optimism.io" \
+    --txpool.gossip.disable=true \
+    --chain=op-mainnet \
+    --db.size.limit=8TB
+```
+
+### 3. Configuring op-node
+op-node is a consensus engine of OP stack. You can also build from the source, use official Docker image(`us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node`), or [Helm chart](https://artifacthub.io/packages/helm/op-charts/op-node).
+
+```bash
+(example execution command)
+$ op-node \
+    --l1=$L1_RPC_ENDPOINT \
+    --l2=$OP_ERIGON_ENGINE_API_ENDPOINT \
+    --l2.jwt-secret=$JWT_SECRET_FILE \
+    --network=op-mainnet \
+    --rpc.addr=0.0.0.0 \
+    --rpc.port=9545 \
+    --l2.enginekind=erigon
+```
+
+#### Execution Layer Syncing
+By default, op-node and op-erigon work together to derive every L2 block from the chain. However, this can take a while if the chain is large.
+
+Instead, you can use `execution-layer` syncmode on op-node to download L2 blocks from the peers in the network.
+This will allow op-erigon to download and execute large number of blocks at once, resulting in a shorter sync time.
+
+Refer to [Optimism's guide for execution layer syncing here](https://docs.optimism.io/builders/node-operators/management/snap-sync#enabling-execution-layer-sync-for-alternative-clients).
+
+To enable execution layer syncing, set the following flags on op-node
+```bash
+    --syncmode=execution-layer \ 
+    --l2.enginekind=erigon
+```
+
+For more information for op-node, refer the [Optimism's node operator guide](https://community.optimism.io/docs/developers/bedrock/node-operator-guide/#configuring-op-node).
+
+## Need any help?
+[![](https://dcbadge.vercel.app/api/server/42DFTeZwUZ?style=flat&compact=true)](https://discord.gg/42DFTeZwUZ) If you need help or find a bug, please share it with our discord!
+
+_Let's stay Optimistic_ 🔴
+
+---
+
+<!-- Original Erigon README starts. -->
+
 # Erigon
 
 [![Docs](https://img.shields.io/badge/docs-up-green)](https://docs.erigon.tech/)
