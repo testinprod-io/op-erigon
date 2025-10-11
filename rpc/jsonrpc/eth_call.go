@@ -78,6 +78,18 @@ func (api *APIImpl) Call(ctx context.Context, args ethapi2.CallArgs, requestedBl
 	if err != nil {
 		return nil, err
 	}
+
+	if blockNum, _, _, err := rpchelper.GetBlockNumber(ctx, blockNrOrHash, tx, api._blockReader, api.filters); err == nil && chainConfig.IsOptimismPreBedrock(blockNum) {
+		if api.historicalRPCService == nil {
+			return nil, rpc.ErrNoHistoricalFallback
+		}
+		var result hexutil.Bytes
+		if err := api.relayToHistoricalBackend(ctx, &result, "eth_call", args, hexutil.EncodeUint64(blockNum), overrides); err != nil {
+			return nil, fmt.Errorf("historical backend error: %w", err)
+		}
+		return result, nil
+	}
+
 	engine := api.engine()
 
 	if args.Gas == nil || uint64(*args.Gas) == 0 {

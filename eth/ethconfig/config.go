@@ -250,7 +250,9 @@ type Config struct {
 
 	OverrideOsakaTime *big.Int `toml:",omitempty"`
 
-	RollupSequencerHTTP string
+	RollupSequencerHTTP        string
+	RollupHistoricalRPC        string
+	RollupHistoricalRPCTimeout time.Duration
 	
 	// Whether to avoid overriding chain config already stored in the DB
 	KeepStoredChainConfig bool

@@ -169,15 +169,16 @@ type Ethereum struct {
 
 	eth1ExecutionServer *eth1.EthereumExecutionModule
 
-	ethBackendRPC       *privateapi2.EthBackendServer
-	ethRpcClient        rpchelper.ApiBackend
-	engineBackendRPC    *engineapi.EngineServer
-	seqRPCService       *rpc.Client
-	miningRPC           *privateapi2.MiningServer
-	miningRpcClient     txpoolproto.MiningClient
-	stateDiffClient     *direct.StateDiffClientDirect
-	rpcFilters          *rpchelper.Filters
-	rpcDaemonStateCache kvcache.Cache
+	ethBackendRPC        *privateapi2.EthBackendServer
+	ethRpcClient         rpchelper.ApiBackend
+	engineBackendRPC     *engineapi.EngineServer
+	seqRPCService        *rpc.Client
+	historicalRPCService *rpc.Client
+	miningRPC            *privateapi2.MiningServer
+	miningRpcClient      txpoolproto.MiningClient
+	stateDiffClient      *direct.StateDiffClientDirect
+	rpcFilters           *rpchelper.Filters
+	rpcDaemonStateCache  kvcache.Cache
 
 	miningSealingQuit   chan struct{}
 	pendingBlocks       chan *types.Block
@@ -754,6 +755,16 @@ func New(ctx context.Context, stack *node.Node, config *ethconfig.Config, logger
 		}
 		backend.seqRPCService = client
 	}
+	
+	if config.RollupHistoricalRPC != "" {
+		ctx, cancel := context.WithTimeout(context.Background(), config.RollupHistoricalRPCTimeout)
+		client, err := rpc.DialContext(ctx, config.RollupHistoricalRPC, logger)
+		cancel()
+		if err != nil {
+			return nil, err
+		}
+		backend.historicalRPCService = client
+	}
 
 	var ethashApi *ethash.API
 	if casted, ok := backend.engine.(*ethash.Ethash); ok {
@@ -837,6 +848,7 @@ func New(ctx context.Context, stack *node.Node, config *ethconfig.Config, logger
 			httpRpcCfg.Dirs,
 			backend.polygonBridge,
 			backend.seqRPCService,
+			backend.historicalRPCService,
 		)
 		ethApi := jsonrpc.NewEthAPI(
 			baseApi,
@@ -1201,7 +1213,7 @@ func (s *Ethereum) Init(stack *node.Node, config *ethconfig.Config, chainConfig 
 		}
 	}
 
-	s.apiList = jsonrpc.APIList(chainKv, s.ethRpcClient, s.txPoolRpcClient, s.miningRpcClient, s.rpcFilters, s.rpcDaemonStateCache, blockReader, &httpRpcCfg, s.engine, s.logger, s.polygonBridge, s.heimdallService, s.seqRPCService)
+	s.apiList = jsonrpc.APIList(chainKv, s.ethRpcClient, s.txPoolRpcClient, s.miningRpcClient, s.rpcFilters, s.rpcDaemonStateCache, blockReader, &httpRpcCfg, s.engine, s.logger, s.polygonBridge, s.heimdallService, s.seqRPCService, s.historicalRPCService)
 
 	if config.SilkwormRpcDaemon && httpRpcCfg.Enabled {
 		interface_log_settings := silkworm.RpcInterfaceLogSettings{

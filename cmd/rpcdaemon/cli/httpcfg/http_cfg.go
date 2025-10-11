@@ -106,8 +106,10 @@ type HttpCfg struct {
 	OtsMaxPageSize uint64
 
 	// Optimism
-	RollupSequencerHTTP       string
-	RollupDisableTxPoolGossip bool
+	RollupSequencerHTTP        string
+	RollupHistoricalRPC        string
+	RollupHistoricalRPCTimeout time.Duration
+	RollupDisableTxPoolGossip  bool
 
 	RPCSlowLogThreshold time.Duration
 }

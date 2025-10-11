@@ -144,10 +144,11 @@ type BaseAPI struct {
 	borReceiptGenerator *receipts.BorGenerator
 
 	// Optimism RPC services
-	seqRPCService *rpc.Client
+	seqRPCService        *rpc.Client
+	historicalRPCService *rpc.Client
 }
 
-func NewBaseApi(f *rpchelper.Filters, stateCache kvcache.Cache, blockReader services.FullBlockReader, singleNodeMode bool, evmCallTimeout time.Duration, engine consensus.EngineReader, dirs datadir.Dirs, bridgeReader bridgeReader, seqRPCService *rpc.Client) *BaseAPI {
+func NewBaseApi(f *rpchelper.Filters, stateCache kvcache.Cache, blockReader services.FullBlockReader, singleNodeMode bool, evmCallTimeout time.Duration, engine consensus.EngineReader, dirs datadir.Dirs, bridgeReader bridgeReader, seqRPCService *rpc.Client, historicalRPCService *rpc.Client) *BaseAPI {
 	var (
 		blocksLRUSize = 128 // ~32Mb
 	)
@@ -161,19 +162,20 @@ func NewBaseApi(f *rpchelper.Filters, stateCache kvcache.Cache, blockReader serv
 	}
 
 	return &BaseAPI{
-		filters:             f,
-		stateCache:          stateCache,
-		blocksLRU:           blocksLRU,
-		_blockReader:        blockReader,
-		_txnReader:          blockReader,
-		_txNumReader:        blockReader.TxnumReader(context.Background()),
-		evmCallTimeout:      evmCallTimeout,
-		_engine:             engine,
-		receiptsGenerator:   receipts.NewGenerator(blockReader, engine, evmCallTimeout),
-		borReceiptGenerator: receipts.NewBorGenerator(blockReader, engine),
-		dirs:                dirs,
-		bridgeReader:        bridgeReader,
-		seqRPCService:       seqRPCService,
+		filters:              f,
+		stateCache:           stateCache,
+		blocksLRU:            blocksLRU,
+		_blockReader:         blockReader,
+		_txnReader:           blockReader,
+		_txNumReader:         blockReader.TxnumReader(context.Background()),
+		evmCallTimeout:       evmCallTimeout,
+		_engine:              engine,
+		receiptsGenerator:    receipts.NewGenerator(blockReader, engine, evmCallTimeout),
+		borReceiptGenerator:  receipts.NewBorGenerator(blockReader, engine),
+		dirs:                 dirs,
+		bridgeReader:         bridgeReader,
+		seqRPCService:        seqRPCService,
+		historicalRPCService: historicalRPCService,
 	}
 }
 
@@ -511,4 +513,8 @@ func (c *GasPriceCache) SetLatest(hash common.Hash, price *big.Int) {
 	c.latestPrice = price
 	c.latestHash = hash
 	c.mtx.Unlock()
+}
+
+func (api *APIImpl) relayToHistoricalBackend(ctx context.Context, result interface{}, method string, args ...interface{}) error {
+	return api.historicalRPCService.CallContext(ctx, result, method, args...)
 }

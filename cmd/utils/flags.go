@@ -631,6 +631,15 @@ var (
 		Name:  "rollup.sequencerhttp",
 		Usage: "HTTP endpoint for the sequencer mempool",
 	}
+	RollupHistoricalRPCFlag = cli.StringFlag{
+		Name:  "rollup.historicalrpc",
+		Usage: "RPC endpoint for historical data.",
+	}
+	RollupHistoricalRPCTimeoutFlag = cli.StringFlag{
+		Name:  "rollup.historicalrpctimeout",
+		Usage: "Timeout for historical RPC requests.",
+		Value: "5s",
+	}
 	RollupDisableTxPoolGossipFlag = cli.StringFlag{
 		Name:  "rollup.disabletxpoolgossip",
 		Usage: "Disables transaction pool gossip.",
@@ -2066,6 +2075,12 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 	// Only configure sequencer http flag if we're running in verifier mode i.e. --mine is disabled.
 	if ctx.IsSet(RollupSequencerHTTPFlag.Name) && !ctx.IsSet(MiningEnabledFlag.Name) {
 		cfg.RollupSequencerHTTP = ctx.String(RollupSequencerHTTPFlag.Name)
+	}
+	if ctx.IsSet(RollupHistoricalRPCFlag.Name) {
+		cfg.RollupHistoricalRPC = ctx.String(RollupHistoricalRPCFlag.Name)
+	}
+	if ctx.IsSet(RollupHistoricalRPCTimeoutFlag.Name) {
+		cfg.RollupHistoricalRPCTimeout = ctx.Duration(RollupHistoricalRPCTimeoutFlag.Name)
 	}
 
 	// Override any default configs for hard coded networks.
