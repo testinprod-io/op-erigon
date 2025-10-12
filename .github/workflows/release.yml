@@ -1,19 +1,19 @@
 name: Release
-run-name: Build release ${{ inputs.release_version}} from branch ${{ inputs.checkout_ref }}, Skip tests=${{ inputs.skip_tests }}
+run-name: Build release ${{ inputs.release_version }} from branch ${{ inputs.checkout_ref }} by @${{ github.actor }}
 
 env:
-  APPLICATION: "erigon"
-  APPLICATION_VERSION: "Erigon3"
+  APPLICATION: "op-erigon"
+  APPLICATION_VERSION: "op-erigon3"
   TEST_TRACKING_TIME_SECONDS: 7200 # 2 hours
   TEST_TOTAL_TIME_SECONDS: 432000   # 5 days
-  TEST_CHAIN: "mainnet"
+  TEST_CHAIN: "op-mainnet"
   BUILDER_IMAGE: "golang:1.24-bookworm"
   DOCKER_BASE_IMAGE: "debian:12-slim"
-  APP_REPO: "erigontech/erigon"
-  PACKAGE: "github.com/erigontech/erigon"
-  BINARIES: "erigon downloader evm caplin capcli integration rpcdaemon sentry txpool"
-  DOCKERHUB_REPOSITORY: "erigontech/erigon"
-  DOCKERHUB_REPOSITORY_DEV: "erigontech/dev-erigon"
+  APP_REPO: "testinprod-io/op-erigon"
+  PACKAGE: "github.com/testinprod-io/op-erigon"
+  BINARIES: "erigon integration"
+  DOCKERHUB_REPOSITORY: "testinprod/op-erigon"
+  DOCKERHUB_REPOSITORY_DEV: "testinprod/op-erigon"
   DOCKERFILE_PATH: "Dockerfile"
   LABEL_DESCRIPTION: "Erigon is an implementation of Ethereum (execution layer with embeddable consensus layer), on the efficiency frontier. Archive Node by default."
 
@@ -23,8 +23,8 @@ on:
       checkout_ref:
         required: true
         type: string
-        default: 'main'
-        description: 'The branch to checkout and build artifacts from. By default "main".'
+        default: 'op-erigon'
+        description: 'The branch to checkout and build artifacts from. By default "op-erigon".'
       release_version:
         required: true
         type: string
@@ -33,7 +33,8 @@ on:
         required: false
         type: boolean
         default: false
-        description: 'perform_release: when set then all artifacts will be published and the DRAFT of the release notes will be created.'
+        description: 'perform_release: when set then all artifacts will be published and the DRAFT of the release
+          notes will be created.'
       publish_latest_tag:
         required: false
         type: boolean
@@ -48,8 +49,7 @@ on:
 jobs:
 
   build-release:
-    #runs-on: ubuntu-latest
-    runs-on: [devops-01-self-hosted]
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     name: Create git tag, build and publish Release Artifacts
     outputs:
@@ -104,10 +104,10 @@ jobs:
           echo "parsed_version=$(echo ${RELEASE_VERSION} | sed -e 's/^v//g')" >> $GITHUB_OUTPUT
 
       - name: Login to Docker Hub
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567  ## v3.3.0
+        uses: docker/login-action@v2
         with:
-          username: ${{ secrets.ORG_DOCKERHUB_ERIGONTECH_USERNAME }}
-          password: ${{ secrets.ORG_DOCKERHUB_ERIGONTECH_TOKEN }}
+          username: ${{ secrets.DOCKERHUB }}
+          password: ${{ secrets.DOCKERHUB_KEY }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -130,10 +130,10 @@ jobs:
             --sbom=true \
             --platform linux/amd64,linux/amd64/v2,linux/arm64 \
             --label org.opencontainers.image.created=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
-            --label org.opencontainers.image.authors="https://github.com/erigontech/erigon/graphs/contributors" \
-            --label org.opencontainers.image.url="https://github.com/erigontech/erigon/tree/${CHECKOUT_REF}" \
-            --label org.opencontainers.image.documentation="https://docs.erigon.tech/" \
-            --label org.opencontainers.image.source="https://github.com/erigontech/erigon" \
+            --label org.opencontainers.image.authors="https://github.com/testinprod-io/op-erigon/graphs/contributors" \
+            --label org.opencontainers.image.url="https://github.com/testinprod-io/op-erigon/blob/main/Dockerfile" \
+            --label org.opencontainers.image.documentation="https://github.com/testinprod-io/op-erigon/blob/main/Dockerfile" \
+            --label org.opencontainers.image.source="https://github.com/testinprod-io/op-erigon/blob/main/Dockerfile" \
             --label org.opencontainers.image.version=${RELEASE_VERSION} \
             --label org.opencontainers.image.revision=${{ steps.getCommitId.outputs.commit-id }} \
             --label org.opencontainers.image.vcs-ref-short=${{ steps.getCommitId.outputs.short-commit-id }} \
@@ -204,7 +204,7 @@ jobs:
   test-release:
     name: test on ${{ matrix.id }}
     if: ${{ ! inputs.skip_tests }}
-    runs-on: [ self-hosted, qa, Release, "${{ matrix.runner-arch }}" ]
+    runs-on: ubuntu-latest
     timeout-minutes: 2800  # 2 days
     needs: [ build-release ]
     strategy:
@@ -339,10 +339,10 @@ jobs:
         name: ${{ env.APPLICATION }}_${{ inputs.release_version }}_linux_amd64v2.tar
 
     - name: Login to Docker Hub
-      uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567  ## v3.3.0
+      uses: docker/login-action@v2
       with:
-        username: ${{ secrets.ORG_DOCKERHUB_ERIGONTECH_USERNAME }}
-        password: ${{ secrets.ORG_DOCKERHUB_ERIGONTECH_TOKEN }}
+        username: ${{ secrets.DOCKERHUB }}
+        password: ${{ secrets.DOCKERHUB_KEY }}
 
     - name: Push multi-platform docker images (${{ env.BUILD_VERSION }}${{ inputs.publish_latest_tag == true && ' and latest tag'}}) in case perform_release is true
       if: ${{ inputs.perform_release }}
