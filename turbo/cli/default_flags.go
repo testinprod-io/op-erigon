@@ -256,4 +256,8 @@ var DefaultFlags = []cli.Flag{
 
 	&utils.ExperimentalConcurrentCommitmentFlag,
 	&utils.ElBlockDownloaderV2,
+
+	&utils.RollupSequencerHTTPFlag,
+	&utils.RollupHistoricalRPCFlag,
+	&utils.RollupHistoricalRPCTimeoutFlag,
 }
