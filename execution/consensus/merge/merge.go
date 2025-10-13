@@ -185,7 +185,7 @@ func (s *Merge) Finalize(config *chain.Config, header *types.Header, state *stat
 		}
 	}
 
-	var rs types.FlatRequests
+	rs := make(types.FlatRequests, 0)
 	if config.IsPrague(header.Time) && !skipReceiptsEval && !config.IsIsthmus(header.Time) {
 		rs = make(types.FlatRequests, 0)
 		allLogs := make(types.Logs, 0)

@@ -561,7 +561,7 @@ func (s *EngineServer) getPayload(ctx context.Context, payloadId uint64, version
 
 	data := resp.Data
 	var executionRequests []hexutil.Bytes
-	if version >= clparams.ElectraVersion {
+	if version >= clparams.ElectraVersion && !s.config.IsOptimism() {
 		executionRequests = make([]hexutil.Bytes, 0)
 		for _, r := range data.Requests.Requests {
 			executionRequests = append(executionRequests, r)
@@ -627,7 +627,7 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 	}
 
 	s.logger.Debug("[ForkChoiceUpdated] processing new request", newReqLogInfoArgs...)
-	
+
 	var (
 		status *engine_types.PayloadStatus
 		err    error

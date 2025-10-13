@@ -412,7 +412,7 @@ func GenesisToBlock(tb testing.TB, g *types.Genesis, dirs datadir.Dirs, logger l
 	root = common.BytesToHash(rh)
 
 	if isIsthmus {
-		messagePasserRootBytes, err := sd.GetAccountStateRoot(ctx, head.Root.Bytes(), params.OptimismL2ToL1MessagePasser)
+		messagePasserRootBytes, err := sd.GetAccountStateRoot(ctx, root.Bytes(), params.OptimismL2ToL1MessagePasser)
 		if err != nil {
 			return nil, nil, err
 		}

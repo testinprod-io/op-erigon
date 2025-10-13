@@ -755,7 +755,7 @@ func New(ctx context.Context, stack *node.Node, config *ethconfig.Config, logger
 		}
 		backend.seqRPCService = client
 	}
-	
+
 	if config.RollupHistoricalRPC != "" {
 		ctx, cancel := context.WithTimeout(context.Background(), config.RollupHistoricalRPCTimeout)
 		client, err := rpc.DialContext(ctx, config.RollupHistoricalRPC, logger)
