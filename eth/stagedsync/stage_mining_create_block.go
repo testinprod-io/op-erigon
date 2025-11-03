@@ -222,7 +222,7 @@ func SpawnMiningCreateBlockStage(s *StageState, tx kv.RwTx, cfg MiningCreateBloc
 			d = cfg.chainConfig.BaseFeeChangeDenominator(params.BaseFeeChangeDenominator, header.Time)
 			e = cfg.chainConfig.ElasticityMultiplier(params.ElasticityMultiplier)
 		}
-		header.Extra = misc.EncodeHoloceneExtraData(uint32(d), uint32(e))
+		header.Extra = misc.EncodeOptimismExtraData(&cfg.chainConfig, header.Time, uint32(d), uint32(e), cfg.blockBuilderParameters.MinBaseFee)
 	} else if cfg.blockBuilderParameters != nil && cfg.blockBuilderParameters.EIP1559Params != nil {
 		return fmt.Errorf("got eip1559 params, expected none")
 	}

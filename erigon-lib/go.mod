@@ -154,4 +154,4 @@ replace github.com/erigontech/erigon-snapshot => github.com/ledgerwatch/erigon-s
 
 //replace github.com/erigontech/interfaces => github.com/ledgerwatch/interfaces v0.0.0-20241024161200-024ffe1cabff
 
-replace github.com/erigontech/interfaces => github.com/testinprod-io/erigon-interfaces v0.0.0-20250409102549-7673ff630750
+replace github.com/erigontech/interfaces => github.com/testinprod-io/erigon-interfaces v0.0.0-20251103143337-7c3cecb93099

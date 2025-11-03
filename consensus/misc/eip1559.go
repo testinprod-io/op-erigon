@@ -17,7 +17,6 @@
 package misc
 
 import (
-	"encoding/binary"
 	"fmt"
 	"math/big"
 
@@ -104,68 +103,6 @@ func (f eip1559Calculator) CurrentFees(chainConfig *chain.Config, db kv.Getter) 
 	return baseFee, blobFee, minBlobGasPrice, currentHeader.GasLimit, nil
 }
 
-// DecodeHolocene1559Params extracts the Holcene 1559 parameters from the encoded form:
-// https://github.com/ethereum-optimism/specs/blob/main/specs/protocol/holocene/exec-engine.md#eip1559params-encoding
-//
-// Returns 0,0 if the format is invalid, though ValidateHolocene1559Params should be used instead of
-// this function for validity checking.
-func DecodeHolocene1559Params(params []byte) (uint64, uint64) {
-	if len(params) != 8 {
-		return 0, 0
-	}
-	denominator := binary.BigEndian.Uint32(params[:4])
-	elasticity := binary.BigEndian.Uint32(params[4:])
-	return uint64(denominator), uint64(elasticity)
-}
-
-// DecodeHoloceneExtraData decodes holocene extra data without performing full validation.
-func DecodeHoloceneExtraData(extra []byte) (uint64, uint64) {
-	if len(extra) != 9 {
-		return 0, 0
-	}
-	return DecodeHolocene1559Params(extra[1:])
-}
-
-func EncodeHolocene1559Params(denom, elasticity uint32) []byte {
-	r := make([]byte, 8)
-	binary.BigEndian.PutUint32(r[:4], denom)
-	binary.BigEndian.PutUint32(r[4:], elasticity)
-	return r
-}
-
-func EncodeHoloceneExtraData(denom, elasticity uint32) []byte {
-	r := make([]byte, 9)
-	// leave version byte 0
-	binary.BigEndian.PutUint32(r[1:5], denom)
-	binary.BigEndian.PutUint32(r[5:], elasticity)
-	return r
-}
-
-// ValidateHolocene1559Params checks if the encoded parameters are valid according to the Holocene
-// upgrade.
-func ValidateHolocene1559Params(params []byte) error {
-	if len(params) != 8 {
-		return fmt.Errorf("holocene eip-1559 params should be 8 bytes, got %d", len(params))
-	}
-	d, e := DecodeHolocene1559Params(params)
-	if e != 0 && d == 0 {
-		return fmt.Errorf("holocene params cannot have a 0 denominator unless elasticity is also 0")
-	}
-	return nil
-}
-
-// ValidateHoloceneExtraData checks if the header extraData is valid according to the Holocene
-// upgrade.
-func ValidateHoloceneExtraData(extra []byte) error {
-	if len(extra) != 9 {
-		return fmt.Errorf("holocene extraData should be 9 bytes, got %d", len(extra))
-	}
-	if extra[0] != 0 {
-		return fmt.Errorf("holocene extraData should have 0 version byte, got %d", extra[0])
-	}
-	return ValidateHolocene1559Params(extra[1:])
-}
-
 // The time belongs to the new block to check which upgrades are active.
 func CalcBaseFee(config *chain.Config, parent *types.Header, time uint64) *big.Int {
 	// If the current block is the first EIP-1559 block, return the InitialBaseFee.
@@ -176,14 +113,28 @@ func CalcBaseFee(config *chain.Config, parent *types.Header, time uint64) *big.I
 	elasticity := config.ElasticityMultiplier(params.ElasticityMultiplier)
 	denominator := getBaseFeeChangeDenominator(config, params.BaseFeeChangeDenominator, time)
 
-	if config.IsHolocene(parent.Time) {
-		denominator, elasticity = DecodeHoloceneExtraData(parent.Extra)
-		if denominator == 0 {
-			// this shouldn't happen as the ExtraData should have been validated prior
-			panic("invalid eip-1559 params in extradata")
+	var minBaseFee *uint64
+
+	if config.IsOptimismHolocene(parent.Time) {
+		denominator, elasticity, minBaseFee = DecodeOptimismExtraData(config, time, parent.Extra)
+	}
+
+	// OPStack addition: calculate the base fee using the upstream code.
+	baseFee := calcBaseFeeInner(parent, elasticity, denominator)
+
+	// OPStack addition: enforce minimum base fee.
+	// If the minimum base fee is 0, this has no effect.
+	if minBaseFee != nil {
+		minBaseFeeBig := new(big.Int).SetUint64(*minBaseFee)
+		if baseFee.Cmp(minBaseFeeBig) < 0 {
+			baseFee = minBaseFeeBig
 		}
 	}
 
+	return baseFee
+}
+
+func calcBaseFeeInner(parent *types.Header, elasticity uint64, denominator uint64) *big.Int {
 	var (
 		parentGasTarget          = parent.GasLimit / elasticity
 		parentGasTargetBig       = new(big.Int).SetUint64(parentGasTarget)

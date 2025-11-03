@@ -166,10 +166,8 @@ func (s *EngineServer) newPayload(ctx context.Context, req *engine_types.Executi
 	}
 
 	// Payload must have eip-1559 params in ExtraData after Holocene
-	if s.config.IsHolocene(req.Timestamp.Uint64()) {
-		if err := misc.ValidateHoloceneExtraData(req.ExtraData); err != nil {
-			return nil, &rpc.InvalidParamsError{Message: "holocene payloads must have eip-1559 params, got none"}
-		}
+	if err := misc.ValidateOptimismExtraData(s.config, req.Timestamp.Uint64(), req.ExtraData); err != nil {
+		return nil, &rpc.InvalidParamsError{Message: err.Error()}
 	}
 
 	var withdrawals types.Withdrawals
@@ -585,6 +583,7 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 		SuggestedFeeRecipient: gointerfaces.ConvertAddressToH160(payloadAttributes.SuggestedFeeRecipient),
 		Transactions:          txs,
 		NoTxPool:              payloadAttributes.NoTxPool,
+		MinBaseFee:            (*uint64)(payloadAttributes.MinBaseFee),
 	}
 
 	if version >= clparams.CapellaVersion {
