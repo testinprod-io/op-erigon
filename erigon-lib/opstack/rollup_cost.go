@@ -365,10 +365,10 @@ func extractL1GasParamsPostEcotone(data []byte) (gasParams, error) {
 }
 
 func extractL1InfoPostIsthmus(data []byte) (l1BaseFee, l1BlobBaseFee *uint256.Int, l1BaseFeeScalar, l1BlobBaseFeeScalar, operatorFeeScalar uint32, operatorFeeConstant uint64, err error) {
-	if len(data) != 176 {
-		return nil, nil, 0, 0, 0, 0, fmt.Errorf("expected 176 L1 info bytes, got %d", len(data))
+	if len(data) < 176 {
+		return nil, nil, 0, 0, 0, 0, fmt.Errorf("expected at least 176 L1 info bytes, got %d", len(data))
 	}
-	// data layout assumed for Isthmus:
+	// data layout assumed for post-Isthmus:
 	// offset type varname
 	// 0     <selector>
 	// 4     uint32 _basefeeScalar
