@@ -123,6 +123,7 @@ func LoadOPStackChainConfig(chConfig *superchain.ChainConfig) *chain.Config {
 		GraniteTime:                   nil,
 		HoloceneTime:                  nil,
 		IsthmusTime:                   nil,
+		JovianTime:                    nil,
 		TerminalTotalDifficulty:       common.Big0,
 		TerminalTotalDifficultyPassed: true,
 		Ethash:                        nil,
@@ -150,6 +151,9 @@ func LoadOPStackChainConfig(chConfig *superchain.ChainConfig) *chain.Config {
 	if hardforks.IsthmusTime != nil {
 		out.PragueTime = new(big.Int).SetUint64(*hardforks.IsthmusTime) // Prague activates with Isthmus
 		out.IsthmusTime = new(big.Int).SetUint64(*hardforks.IsthmusTime)
+	}
+	if hardforks.JovianTime != nil {
+		out.JovianTime = new(big.Int).SetUint64(*hardforks.JovianTime)
 	}
 
 	if chConfig.Optimism != nil {
