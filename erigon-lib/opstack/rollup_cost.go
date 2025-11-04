@@ -86,6 +86,7 @@ var (
 	// `BlobBaseFeeScalarSlotOffset` respectively.
 	L1FeeScalarsSlot = libcommon.BigToHash(big.NewInt(3))
 
+	oneHundred     = uint256.NewInt(100)
 	oneMillion     = uint256.NewInt(1_000_000)
 	ecotoneDivisor = uint256.NewInt(1_000_000 * 16)
 	fjordDivisor   = uint256.NewInt(1_000_000_000_000)
@@ -585,7 +586,11 @@ func NewOperatorCostFunc(config *chain.Config, statedb StateGetter) OperatorCost
 		operatorFeeParams := libcommon.Hash(operatorFeeParamsInt.Bytes32())
 		operatorFeeScalar, operatorFeeConstant := ExtractOperatorFeeParams(operatorFeeParams)
 
-		return newOperatorCostFunc(operatorFeeScalar, operatorFeeConstant)
+		// Return the Operator Fee fix version if the feature is active
+		if config.IsOptimismJovian(blockTime) {
+			return newOperatorCostFuncOperatorFeeFix(operatorFeeScalar, operatorFeeConstant)
+		}
+		return newOperatorCostFuncIsthmus(operatorFeeScalar, operatorFeeConstant)
 	}
 
 	return func(gas uint64, blockTime uint64) *uint256.Int {
@@ -598,11 +603,24 @@ func NewOperatorCostFunc(config *chain.Config, statedb StateGetter) OperatorCost
 	}
 }
 
-func newOperatorCostFunc(operatorFeeScalar *uint256.Int, operatorFeeConstant *uint256.Int) operatorCostFunc {
+// newOperatorCostFuncIsthmus returns the operator cost function introduced with Isthmus.
+func newOperatorCostFuncIsthmus(operatorFeeScalar *uint256.Int, operatorFeeConstant *uint256.Int) operatorCostFunc {
 	return func(gas uint64) *uint256.Int {
 		fee := new(uint256.Int).SetUint64(gas)
 		fee = fee.Mul(fee, operatorFeeScalar)
 		fee = fee.Div(fee, oneMillion)
+		fee = fee.Add(fee, operatorFeeConstant)
+
+		return fee
+	}
+}
+
+// newOperatorCostFuncOperatorFeeFix returns the operator cost function for the operator fee fix feature.
+func newOperatorCostFuncOperatorFeeFix(operatorFeeScalar *uint256.Int, operatorFeeConstant *uint256.Int) operatorCostFunc {
+	return func(gas uint64) *uint256.Int {
+		fee := new(uint256.Int).SetUint64(gas)
+		fee = fee.Mul(fee, operatorFeeScalar)
+		fee = fee.Mul(fee, oneHundred)
 		fee = fee.Add(fee, operatorFeeConstant)
 
 		return fee
