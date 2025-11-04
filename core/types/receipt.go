@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/erigontech/erigon-lib/chain"
+	"github.com/erigontech/erigon-lib/opstack"
 	"io"
 	"math/big"
 
@@ -28,7 +29,6 @@ import (
 	"github.com/erigontech/erigon-lib/common/hexutil"
 	"github.com/erigontech/erigon-lib/common/hexutility"
 	"github.com/erigontech/erigon-lib/crypto"
-	"github.com/erigontech/erigon-lib/opstack"
 	rlp2 "github.com/erigontech/erigon-lib/rlp"
 )
 
@@ -74,6 +74,7 @@ type Receipt struct {
 	TxHash          libcommon.Hash    `json:"transactionHash" gencodec:"required" codec:"-"`
 	ContractAddress libcommon.Address `json:"contractAddress" codec:"-"`
 	GasUsed         uint64            `json:"gasUsed" gencodec:"required" codec:"-"`
+	BlobGasUsed     uint64            `json:"blobGasUsed,omitempty"`
 
 	// Inclusion information: These fields provide information about the inclusion of the
 	// transaction corresponding to this receipt.
@@ -100,11 +101,12 @@ type Receipt struct {
 	// post-Canyon deposit transactions.
 	DepositReceiptVersion *uint64 `json:"depositReceiptVersion,omitempty"`
 
-	L1BlobBaseFee       *big.Int `json:"l1BlobBaseFee,omitempty"`       // Always nil prior to the Ecotone hardfork
-	L1BaseFeeScalar     *uint64  `json:"l1BaseFeeScalar,omitempty"`     // Always nil prior to the Ecotone hardfork
-	L1BlobBaseFeeScalar *uint64  `json:"l1BlobBaseFeeScalar,omitempty"` // Always nil prior to the Ecotone hardfork
-	OperatorFeeScalar   *uint64  `json:"operatorFeeScalar,omitempty"`   // Always nil prior to the Isthmus hardfork
-	OperatorFeeConstant *uint64  `json:"operatorFeeConstant,omitempty"` // Always nil prior to the Isthmus hardfork
+	L1BlobBaseFee        *big.Int `json:"l1BlobBaseFee,omitempty"`        // Always nil prior to the Ecotone hardfork
+	L1BaseFeeScalar      *uint64  `json:"l1BaseFeeScalar,omitempty"`      // Always nil prior to the Ecotone hardfork
+	L1BlobBaseFeeScalar  *uint64  `json:"l1BlobBaseFeeScalar,omitempty"`  // Always nil prior to the Ecotone hardfork
+	OperatorFeeScalar    *uint64  `json:"operatorFeeScalar,omitempty"`    // Always nil prior to the Isthmus hardfork
+	OperatorFeeConstant  *uint64  `json:"operatorFeeConstant,omitempty"`  // Always nil prior to the Isthmus hardfork
+	DAFootprintGasScalar *uint64  `json:"daFootprintGasScalar,omitempty"` // Always nil prior to the Jovian hardfork
 }
 
 type receiptMarshaling struct {
@@ -641,13 +643,25 @@ func (r Receipts) DeriveFields(config *chain.Config, hash libcommon.Hash, number
 		if err != nil {
 			return err
 		}
+
+		var daFootprintGasScalar uint64
+		isJovian := config.IsJovian(time)
+		if isJovian {
+			scalar, err := opstack.ExtractDAFootprintGasScalar(txs[0].GetData())
+			if err != nil {
+				return fmt.Errorf("failed to extract DA footprint gas scalar: %w", err)
+			}
+			daFootprintGasScalar = uint64(scalar)
+		}
+
 		for i := 0; i < len(r); i++ {
 			if txs[i].Type() == DepositTxType {
 				continue
 			}
 
 			r[i].L1GasPrice = gasParams.L1BaseFee.ToBig()
-			l1Fee, l1GasUsed := gasParams.CostFunc(txs[i].RollupCostData())
+			rcd := txs[i].RollupCostData()
+			l1Fee, l1GasUsed := gasParams.CostFunc(rcd)
 			r[i].L1Fee = l1Fee.ToBig()
 			r[i].L1GasUsed = l1GasUsed.ToBig()
 			r[i].FeeScalar = gasParams.FeeScalar
@@ -656,6 +670,10 @@ func (r Receipts) DeriveFields(config *chain.Config, hash libcommon.Hash, number
 			r[i].L1BlobBaseFeeScalar = u32ptrTou64ptr(gasParams.L1BlobBaseFeeScalar)
 			r[i].OperatorFeeScalar = u32ptrTou64ptr(gasParams.OperatorFeeScalar)
 			r[i].OperatorFeeConstant = gasParams.OperatorFeeConstant
+			if isJovian {
+				r[i].DAFootprintGasScalar = &daFootprintGasScalar
+				r[i].BlobGasUsed = daFootprintGasScalar * rcd.EstimatedDASize().Uint64()
+			}
 		}
 	}
 	return nil

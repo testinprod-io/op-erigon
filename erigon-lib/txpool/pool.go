@@ -432,6 +432,7 @@ func RawRLPTxToOptimismL1CostFn(payload []byte, isRegolith, isEcotone, isFjord, 
 		return nil, fmt.Errorf("failed to read tx data entry rlp prefix: %w", err)
 	}
 	txCalldata := payload[dataPos : dataPos+dataLen]
+
 	return opstack.L1CostFnForTxPool(txCalldata, isRegolith, isEcotone, isFjord, isIsthmus, isJovian)
 }
 

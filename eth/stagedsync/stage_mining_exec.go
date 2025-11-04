@@ -3,6 +3,7 @@ package stagedsync
 import (
 	"errors"
 	"fmt"
+	"github.com/erigontech/erigon-lib/opstack"
 	"io"
 	"sync/atomic"
 	"time"
@@ -401,6 +402,11 @@ func addTransactionsToMiningBlock(logPrefix string, current *MiningBlock, chainC
 	}
 	signer := types.MakeSigner(&chainConfig, header.Number.Uint64(), header.Time)
 
+	// OP-Stack additions: throttling and DA footprint limit
+	//blockDABytes := new(big.Int)
+	isJovian := chainConfig.IsJovian(header.Time)
+	minTransactionDAFootprint := opstack.MinTransactionSize.Uint64() * uint64(current.daFootprintGasScalar)
+
 	var coalescedLogs types.Logs
 	noop := state.NewNoopWriter()
 
@@ -409,6 +415,7 @@ func addTransactionsToMiningBlock(logPrefix string, current *MiningBlock, chainC
 		gasSnap := gasPool.Gas()
 		blobGasSnap := gasPool.BlobGas()
 		snap := ibs.Snapshot()
+
 		receipt, _, err := core.ApplyTransaction(&chainConfig, core.GetHashFn(header, getHeader), engine, &coinbase, gasPool, ibs, noop, header, txn, &header.GasUsed, header.BlobGasUsed, *vmConfig)
 		if err != nil {
 			ibs.RevertToSnapshot(snap)
@@ -457,6 +464,17 @@ LOOP:
 			done = true
 			break
 		}
+
+		var daFootprintLeft uint64
+		if isJovian {
+			daFootprintLeft = header.GasLimit - *header.BlobGasUsed
+			// If we don't have enough DA space for any further transactions then we're done.
+			if daFootprintLeft < minTransactionDAFootprint {
+				log.Debug("Not enough DA space for further transactions", "have", daFootprintLeft, "want", minTransactionDAFootprint)
+				done = true
+				break
+			}
+		}
 		// Retrieve the next transaction and abort if all done
 		txn := txs.Peek()
 		if txn == nil {
@@ -486,6 +504,39 @@ LOOP:
 			txs.Pop()
 			continue
 		}
+
+		// OP-Stack addition: Jovian DA footprint limit
+		var txDAFootprint uint64
+		// Note that commitTransaction is only called after deposit transactions have already been committed,
+		// so we don't need to resolve the transaction here and exclude deposits.
+		if isJovian {
+			txDAFootprint = txn.RollupCostData().EstimatedDASize().Uint64() * uint64(current.daFootprintGasScalar)
+			if daFootprintLeft < txDAFootprint {
+				log.Debug("Not enough DA space left for transaction", "hash", txn.Hash(), "left", daFootprintLeft, "needed", txDAFootprint)
+				txs.Pop()
+				continue
+			}
+		}
+
+		// OP-erigon isn't for sequencing
+		// OP-Stack addition: sequencer throttling
+		//daBytesAfter := new(big.Int)
+		//if txn.RollupCostData().EstimatedDASize() != nil && miner.config.MaxDABlockSize != nil {
+		//	daBytesAfter.Add(blockDABytes, ltx.DABytes)
+		//	if daBytesAfter.Cmp(miner.config.MaxDABlockSize) > 0 {
+		//		log.Debug("adding tx would exceed block DA size limit",
+		//			"hash", ltx.Hash, "txda", ltx.DABytes, "blockda", blockDABytes, "dalimit", miner.config.MaxDABlockSize)
+		//		txs.Pop()
+		//		// If the number of remaining bytes is too few to hold even the minimum possible transaction size,
+		//		// then we can stop early.
+		//		daBytesRemaining := new(big.Int).Sub(miner.config.MaxDABlockSize, daBytesAfter)
+		//		if daBytesRemaining.Cmp(types.MinTransactionSize) < 0 {
+		//			break
+		//		}
+		//		continue
+		//	}
+		//}
+
 		logs, err := miningCommitTx(txn, coinbase, vmConfig, chainConfig, ibs, current)
 
 		if errors.Is(err, core.ErrGasLimitReached) {
@@ -504,6 +555,9 @@ LOOP:
 			// Everything ok, collect the logs and shift in the next transaction from the same account
 			logger.Trace(fmt.Sprintf("[%s] Added transaction", logPrefix), "hash", txn.Hash(), "sender", from, "nonce", txn.GetNonce(), "payload", payloadId)
 			coalescedLogs = append(coalescedLogs, logs...)
+			if isJovian {
+				*current.Header.BlobGasUsed += txDAFootprint
+			}
 			tcount++
 			txs.Shift()
 		} else {

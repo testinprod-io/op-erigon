@@ -2,7 +2,6 @@ package jsonrpc
 
 import (
 	"context"
-
 	"github.com/erigontech/erigon-lib/opstack"
 
 	"github.com/erigontech/erigon-lib/chain"

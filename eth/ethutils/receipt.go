@@ -98,6 +98,12 @@ func MarshalReceipt(
 			if receipt.OperatorFeeConstant != nil {
 				fields["operatorFeeConstant"] = hexutil.Uint64(*receipt.OperatorFeeConstant)
 			}
+			// Fields added in Jovian
+			if receipt.DAFootprintGasScalar != nil {
+				fields["daFootprintGasScalar"] = hexutil.Uint64(*receipt.DAFootprintGasScalar)
+				// Jovian repurposes blobGasUsed for DA footprint gas used
+				fields["blobGasUsed"] = hexutil.Uint64(receipt.BlobGasUsed)
+			}
 		} else {
 			if receipt.DepositNonce != nil {
 				fields["depositNonce"] = hexutil.Uint64(*receipt.DepositNonce)

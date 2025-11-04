@@ -120,7 +120,7 @@ func CalcBaseFee(config *chain.Config, parent *types.Header, time uint64) *big.I
 	}
 
 	// OPStack addition: calculate the base fee using the upstream code.
-	baseFee := calcBaseFeeInner(parent, elasticity, denominator)
+	baseFee := calcBaseFeeInner(config, parent, elasticity, denominator)
 
 	// OPStack addition: enforce minimum base fee.
 	// If the minimum base fee is 0, this has no effect.
@@ -134,20 +134,32 @@ func CalcBaseFee(config *chain.Config, parent *types.Header, time uint64) *big.I
 	return baseFee
 }
 
-func calcBaseFeeInner(parent *types.Header, elasticity uint64, denominator uint64) *big.Int {
+func calcBaseFeeInner(config *chain.Config, parent *types.Header, elasticity uint64, denominator uint64) *big.Int {
 	var (
 		parentGasTarget          = parent.GasLimit / elasticity
+		parentGasMetered         = parent.GasUsed
 		parentGasTargetBig       = new(big.Int).SetUint64(parentGasTarget)
 		baseFeeChangeDenominator = new(big.Int).SetUint64(denominator)
 	)
 
-	// If the parent gasUsed is the same as the target, the baseFee remains unchanged.
-	if parent.GasUsed == parentGasTarget {
+	if config.IsJovian(parent.Time) {
+		if parent.BlobGasUsed == nil {
+			panic("Jovian parent block has nil BlobGasUsed")
+		} else if *parent.BlobGasUsed > parent.GasUsed {
+			// Jovian updates the base fee based on the maximum of total transactions gas used and total DA footprint (which is
+			// stored in the BlobGasUsed field of the header).
+			parentGasMetered = *parent.BlobGasUsed
+		}
+	}
+
+	// If the parent gasMetered is the same as the target, the baseFee remains unchanged.
+	if parentGasMetered == parentGasTarget {
 		return new(big.Int).Set(parent.BaseFee)
 	}
-	if parent.GasUsed > parentGasTarget {
+
+	if parentGasMetered > parentGasTarget {
 		// If the parent block used more gas than its target, the baseFee should increase.
-		gasUsedDelta := new(big.Int).SetUint64(parent.GasUsed - parentGasTarget)
+		gasUsedDelta := new(big.Int).SetUint64(parentGasMetered - parentGasTarget)
 		x := new(big.Int).Mul(parent.BaseFee, gasUsedDelta)
 		y := x.Div(x, parentGasTargetBig)
 		baseFeeDelta := math.BigMax(
@@ -158,7 +170,7 @@ func calcBaseFeeInner(parent *types.Header, elasticity uint64, denominator uint6
 		return x.Add(parent.BaseFee, baseFeeDelta)
 	} else {
 		// Otherwise if the parent block used less gas than its target, the baseFee should decrease.
-		gasUsedDelta := new(big.Int).SetUint64(parentGasTarget - parent.GasUsed)
+		gasUsedDelta := new(big.Int).SetUint64(parentGasTarget - parentGasMetered)
 		x := new(big.Int).Mul(parent.BaseFee, gasUsedDelta)
 		y := x.Div(x, parentGasTargetBig)
 		baseFeeDelta := x.Div(y, baseFeeChangeDenominator)

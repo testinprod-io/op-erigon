@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/erigontech/erigon-lib/opstack"
 
 	"github.com/RoaringBitmap/roaring/roaring64"
 	"github.com/erigontech/erigon-lib/log/v3"
@@ -17,8 +18,6 @@ import (
 	"github.com/erigontech/erigon-lib/kv/iter"
 	"github.com/erigontech/erigon-lib/kv/order"
 	"github.com/erigontech/erigon-lib/kv/rawdbv3"
-	"github.com/erigontech/erigon-lib/opstack"
-
 	"github.com/erigontech/erigon/consensus"
 	"github.com/erigontech/erigon/consensus/ethash"
 	"github.com/erigontech/erigon/core"

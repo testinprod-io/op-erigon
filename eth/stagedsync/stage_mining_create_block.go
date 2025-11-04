@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/erigontech/erigon-lib/opstack"
 	"math/big"
 	"time"
 
@@ -34,6 +35,9 @@ type MiningBlock struct {
 	Receipts         types.Receipts
 	Withdrawals      []*types.Withdrawal
 	PreparedTxs      types.TransactionsStream
+
+	// OP-Stack addition: DA footprint block limit
+	daFootprintGasScalar uint16
 
 	ForceTxs types.TransactionsStream
 	Requests types.FlatRequests
@@ -237,6 +241,20 @@ func SpawnMiningCreateBlockStage(s *StageState, tx kv.RwTx, cfg MiningCreateBloc
 			"parentHash", parent.Hash().String(),
 			"callers", debug.Callers(10))
 		return err
+	}
+
+	if cfg.chainConfig.IsJovian(parent.Time) {
+		if len(cfg.blockBuilderParameters.Transactions) == 0 {
+			return errors.New("missing L1 attributes deposit transaction")
+		}
+		transaction, err := types.UnmarshalTransactionFromBinary(cfg.blockBuilderParameters.Transactions[0], false)
+		if err != nil || transaction.Type() != types.DepositTxType {
+			return errors.New("missing L1 attributes deposit transaction")
+		}
+		current.daFootprintGasScalar, err = opstack.ExtractDAFootprintGasScalar(transaction.GetData())
+		if err != nil {
+			return err
+		}
 	}
 
 	if cfg.blockBuilderParameters != nil {
