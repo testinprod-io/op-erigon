@@ -122,7 +122,7 @@ func SpawnIntermediateHashesStage(s *StageState, u Unwinder, tx kv.RwTx, cfg Tri
 		tooBigJump = s.BlockNumber < n
 	}
 	if s.BlockNumber == 0 || tooBigJump {
-		if root, err = RegenerateIntermediateHashes(logPrefix, tx, cfg, expectedRootHash, ctx, logger); err != nil {
+		if root, storageRootMessagePasser, err = RegenerateIntermediateHashes(logPrefix, tx, cfg, expectedRootHash, ctx, logger); err != nil {
 			return trie.EmptyRoot, trie.EmptyRoot, err
 		}
 	} else {
@@ -158,7 +158,7 @@ func SpawnIntermediateHashesStage(s *StageState, u Unwinder, tx kv.RwTx, cfg Tri
 	return root, storageRootMessagePasser, err
 }
 
-func RegenerateIntermediateHashes(logPrefix string, db kv.RwTx, cfg TrieCfg, expectedRootHash libcommon.Hash, ctx context.Context, logger log.Logger) (libcommon.Hash, error) {
+func RegenerateIntermediateHashes(logPrefix string, db kv.RwTx, cfg TrieCfg, expectedRootHash libcommon.Hash, ctx context.Context, logger log.Logger) (libcommon.Hash, libcommon.Hash, error) {
 	logger.Info(fmt.Sprintf("[%s] Regeneration trie hashes started", logPrefix))
 	defer logger.Info(fmt.Sprintf("[%s] Regeneration ended", logPrefix))
 	_ = db.ClearBucket(kv.TrieOfAccounts)
@@ -179,21 +179,53 @@ func RegenerateIntermediateHashes(logPrefix string, db kv.RwTx, cfg TrieCfg, exp
 	loader := trie.NewFlatDBTrieLoader(logPrefix, trie.NewRetainList(0), accTrieCollectorFunc, stTrieCollectorFunc, false)
 	hash, err := loader.CalcTrieRoot(db, ctx.Done())
 	if err != nil {
-		return trie.EmptyRoot, err
+		return trie.EmptyRoot, trie.EmptyRoot, err
 	}
 
+	getStorageRootMessagePasser := func() libcommon.Hash {
+		if cfg.chainCfg == nil || cfg.miningBlock == nil || !cfg.chainCfg.IsOptimismIsthmus(cfg.miningBlock.Header.Time) {
+			return trie.EmptyRoot
+		}
+
+		rl := trie.NewRetainList(0)
+		loader := trie.NewFlatDBTrieLoader("genesis", rl, nil, nil, false)
+
+		var pr *trie.ProofRetainer
+		pr, err = trie.NewProofRetainer(params.OptimismL2ToL1MessagePasser, &accounts.Account{}, []libcommon.Hash{}, rl)
+		if err != nil {
+			return trie.EmptyRoot
+		}
+		loader.SetProofRetainer(pr)
+
+		var storageRootMessagePasser libcommon.Hash
+		_, err = loader.CalcTrieRoot(db, nil)
+		if err != nil {
+			return trie.EmptyRoot
+		}
+		if pr != nil {
+			res, err := pr.ProofResult()
+			if err != nil {
+				return trie.EmptyRoot
+			}
+			storageRootMessagePasser = res.StorageHash
+		}
+		return storageRootMessagePasser
+	}
+
+	storageRootMessagePasser := getStorageRootMessagePasser()
+
 	if cfg.checkRoot && hash != expectedRootHash {
-		return hash, nil
+		return hash, storageRootMessagePasser, nil
 	}
 	logger.Info(fmt.Sprintf("[%s] Trie root", logPrefix), "hash", hash.Hex())
 
 	if err := accTrieCollector.Load(db, kv.TrieOfAccounts, etl.IdentityLoadFunc, etl.TransformArgs{Quit: ctx.Done()}); err != nil {
-		return trie.EmptyRoot, err
+		return trie.EmptyRoot, storageRootMessagePasser, err
 	}
 	if err := stTrieCollector.Load(db, kv.TrieOfStorage, etl.IdentityLoadFunc, etl.TransformArgs{Quit: ctx.Done()}); err != nil {
-		return trie.EmptyRoot, err
+		return trie.EmptyRoot, storageRootMessagePasser, err
 	}
-	return hash, nil
+	return hash, storageRootMessagePasser, nil
 }
 
 type HashPromoter struct {
