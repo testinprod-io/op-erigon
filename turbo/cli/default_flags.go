@@ -175,6 +175,7 @@ var DefaultFlags = []cli.Flag{
 	&utils.OverrideOptimismGraniteFlag,
 	&utils.OverrideOptimismHoloceneFlag,
 	&utils.OverrideOptimismIsthmusFlag,
+	&utils.OverrideOptimismJovianFlag,
 
 	&utils.RollupSequencerHTTPFlag,
 	&utils.RollupHistoricalRPCFlag,

@@ -583,7 +583,7 @@ func (s *EngineServer) forkchoiceUpdated(ctx context.Context, forkchoiceState *e
 		SuggestedFeeRecipient: gointerfaces.ConvertAddressToH160(payloadAttributes.SuggestedFeeRecipient),
 		Transactions:          txs,
 		NoTxPool:              payloadAttributes.NoTxPool,
-		MinBaseFee:            (*uint64)(payloadAttributes.MinBaseFee),
+		MinBaseFee:            payloadAttributes.MinBaseFee,
 	}
 
 	if version >= clparams.CapellaVersion {
