@@ -153,7 +153,7 @@ func ExecuteBlockEphemerally(
 		return nil, fmt.Errorf("gas used by execution: %d, in header: %d", *usedGas, header.GasUsed)
 	}
 
-	if header.BlobGasUsed != nil && *usedBlobGas != *header.BlobGasUsed {
+	if !chainConfig.IsOptimism() && header.BlobGasUsed != nil && *usedBlobGas != *header.BlobGasUsed {
 		return nil, fmt.Errorf("blob gas used by execution: %d, in header: %d", *usedBlobGas, *header.BlobGasUsed)
 	}
 

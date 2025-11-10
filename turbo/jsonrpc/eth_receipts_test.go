@@ -2,7 +2,6 @@ package jsonrpc
 
 import (
 	"context"
-	"github.com/erigontech/erigon-lib/opstack"
 	"math/big"
 	"testing"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/erigontech/erigon-lib/gointerfaces/txpool"
 	"github.com/erigontech/erigon-lib/kv/kvcache"
 	"github.com/erigontech/erigon-lib/log/v3"
+	"github.com/erigontech/erigon-lib/opstack"
 	"github.com/erigontech/erigon/cmd/rpcdaemon/rpcdaemontest"
 	"github.com/erigontech/erigon/common/u256"
 	"github.com/erigontech/erigon/core/rawdb"

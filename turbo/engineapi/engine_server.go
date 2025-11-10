@@ -140,7 +140,6 @@ func (s *EngineServer) newPayload(ctx context.Context, req *engine_types.Executi
 ) (*engine_types.PayloadStatus, error) {
 	var bloom types.Bloom
 	copy(bloom[:], req.LogsBloom)
-
 	txs := [][]byte{}
 	for _, transaction := range req.Transactions {
 		txs = append(txs, transaction)
@@ -163,11 +162,6 @@ func (s *EngineServer) newPayload(ctx context.Context, req *engine_types.Executi
 		Nonce:       merge.ProofOfStakeNonce,
 		ReceiptHash: req.ReceiptsRoot,
 		TxHash:      types.DeriveSha(types.BinaryTransactions(txs)),
-	}
-
-	// Payload must have eip-1559 params in ExtraData after Holocene
-	if err := misc.ValidateOptimismExtraData(s.config, req.Timestamp.Uint64(), req.ExtraData); err != nil {
-		return nil, &rpc.InvalidParamsError{Message: err.Error()}
 	}
 
 	var withdrawals types.Withdrawals
@@ -257,7 +251,15 @@ func (s *EngineServer) newPayload(ctx context.Context, req *engine_types.Executi
 		}, nil
 	}
 
-	if version >= clparams.DenebVersion {
+	// Payload must have eip-1559 params in ExtraData after Holocene
+	if err := misc.ValidateOptimismExtraData(s.config, req.Timestamp.Uint64(), req.ExtraData); err != nil {
+		return &engine_types.PayloadStatus{
+			Status:          engine_types.InvalidStatus,
+			ValidationError: engine_types.NewStringifiedError(err),
+		}, nil
+	}
+
+	if version >= clparams.DenebVersion && !s.config.IsOptimism() {
 		err := ethutils.ValidateBlobs(req.BlobGasUsed.Uint64(), s.config.GetMaxBlobGasPerBlock(header.Time), s.config.GetMaxBlobsPerBlock(header.Time), expectedBlobHashes, &transactions)
 		if errors.Is(err, ethutils.ErrNilBlobHashes) {
 			return nil, &rpc.InvalidParamsError{Message: "nil blob hashes array"}

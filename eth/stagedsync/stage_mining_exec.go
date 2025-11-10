@@ -470,7 +470,7 @@ LOOP:
 			daFootprintLeft = header.GasLimit - *header.BlobGasUsed
 			// If we don't have enough DA space for any further transactions then we're done.
 			if daFootprintLeft < minTransactionDAFootprint {
-				log.Debug("Not enough DA space for further transactions", "have", daFootprintLeft, "want", minTransactionDAFootprint)
+				log.Info("Not enough DA space for further transactions", "have", daFootprintLeft, "want", minTransactionDAFootprint)
 				done = true
 				break
 			}
@@ -509,10 +509,10 @@ LOOP:
 		var txDAFootprint uint64
 		// Note that commitTransaction is only called after deposit transactions have already been committed,
 		// so we don't need to resolve the transaction here and exclude deposits.
-		if isJovian {
+		if isJovian && txn.Type() != types.DepositTxType {
 			txDAFootprint = txn.RollupCostData().EstimatedDASize().Uint64() * uint64(current.daFootprintGasScalar)
 			if daFootprintLeft < txDAFootprint {
-				log.Debug("Not enough DA space left for transaction", "hash", txn.Hash(), "left", daFootprintLeft, "needed", txDAFootprint)
+				log.Info("Not enough DA space left for transaction", "hash", txn.Hash(), "left", daFootprintLeft, "needed", txDAFootprint)
 				txs.Pop()
 				continue
 			}
