@@ -197,7 +197,6 @@ func (s *Merge) Finalize(config *chain.Config, header *types.Header, state *stat
 		if err != nil {
 			return nil, nil, nil, fmt.Errorf("error calculating DA footprint: %w", err)
 		}
-		log.Info("DA Footprint: ", "val", daFootprint)
 		header.BlobGasUsed = &daFootprint
 	}
 
