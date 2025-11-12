@@ -12,9 +12,8 @@ import (
 
 	"github.com/erigontech/erigon-lib/common"
 	"github.com/erigontech/erigon-lib/common/hexutil"
-	"github.com/erigontech/erigon-lib/opstack"
-
 	"github.com/erigontech/erigon-lib/common/math"
+	"github.com/erigontech/erigon-lib/opstack"
 	"github.com/erigontech/erigon/core"
 	"github.com/erigontech/erigon/core/state"
 	"github.com/erigontech/erigon/core/types"

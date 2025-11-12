@@ -253,6 +253,8 @@ type TxPool struct {
 	isPostFjord    atomic.Bool
 	isthmusTime    *uint64
 	isPostIsthmus  atomic.Bool
+	jovianTime     *uint64
+	isPostJovian   atomic.Bool
 }
 
 type FeeCalculator interface {
@@ -261,7 +263,7 @@ type FeeCalculator interface {
 
 func New(newTxs chan types.Announcements, coreDB kv.RoDB, cfg txpoolcfg.Config, cache kvcache.Cache,
 	chainID uint256.Int, shanghaiTime, agraBlock, cancunTime, pragueTime *big.Int,
-	regolithTime, canyonTime, ecotoneTime, fjordTime, isthmusTime *big.Int,
+	regolithTime, canyonTime, ecotoneTime, fjordTime, isthmusTime *big.Int, jovianTime *big.Int,
 	blobSchedule *chain.BlobSchedule, feeCalculator FeeCalculator, logger log.Logger,
 ) (*TxPool, error) {
 	localsHistory, err := simplelru.NewLRU[string, struct{}](10_000, nil)
@@ -372,11 +374,18 @@ func New(newTxs chan types.Announcements, coreDB kv.RoDB, cfg txpoolcfg.Config, 
 		isthmusTime := isthmusTime.Uint64()
 		res.isthmusTime = &isthmusTime
 	}
+	if jovianTime != nil {
+		if !jovianTime.IsUint64() {
+			return nil, errors.New("jovianTime overflow")
+		}
+		jovianTime := jovianTime.Uint64()
+		res.jovianTime = &jovianTime
+	}
 
 	return res, nil
 }
 
-func RawRLPTxToOptimismL1CostFn(payload []byte, isRegolith, isEcotone, isFjord, isIsthmus bool) (types.L1CostFn, error) {
+func RawRLPTxToOptimismL1CostFn(payload []byte, isRegolith, isEcotone, isFjord, isIsthmus, isJovian bool) (types.L1CostFn, error) {
 	// skip prefix byte
 	if len(payload) == 0 {
 		return nil, fmt.Errorf("empty tx payload")
@@ -423,7 +432,8 @@ func RawRLPTxToOptimismL1CostFn(payload []byte, isRegolith, isEcotone, isFjord, 
 		return nil, fmt.Errorf("failed to read tx data entry rlp prefix: %w", err)
 	}
 	txCalldata := payload[dataPos : dataPos+dataLen]
-	return opstack.L1CostFnForTxPool(txCalldata, isRegolith, isEcotone, isFjord, isIsthmus)
+
+	return opstack.L1CostFnForTxPool(txCalldata, isRegolith, isEcotone, isFjord, isIsthmus, isJovian)
 }
 
 func (p *TxPool) Start(ctx context.Context, db kv.RwDB) error {
@@ -504,7 +514,7 @@ func (p *TxPool) OnNewBlock(ctx context.Context, stateChanges *remote.StateChang
 	if p.cfg.Optimism {
 		lastChangeBatch := stateChanges.ChangeBatch[len(stateChanges.ChangeBatch)-1]
 		if len(lastChangeBatch.Txs) > 0 {
-			l1CostFn, err := RawRLPTxToOptimismL1CostFn(lastChangeBatch.Txs[0], p.isRegolith(), p.isEcotone(), p.isFjord(), p.isIsthmus())
+			l1CostFn, err := RawRLPTxToOptimismL1CostFn(lastChangeBatch.Txs[0], p.isRegolith(), p.isEcotone(), p.isFjord(), p.isIsthmus(), p.isJovian())
 			if err == nil {
 				p.l1Cost = l1CostFn
 			} else {
@@ -1333,6 +1343,31 @@ func (p *TxPool) isIsthmus() bool {
 	activated := uint64(now) >= isthmusTime
 	if activated {
 		p.isPostIsthmus.Swap(true)
+	}
+	return activated
+}
+
+func (p *TxPool) isJovian() bool {
+	// once this flag has been set for the first time we no longer need to check the timestamp
+	set := p.isPostJovian.Load()
+	if set {
+		return true
+	}
+	if p.jovianTime == nil {
+		return false
+	}
+	jovianTime := *p.jovianTime
+
+	// a zero here means jovian is always active
+	if jovianTime == 0 {
+		p.isPostJovian.Swap(true)
+		return true
+	}
+
+	now := time.Now().Unix()
+	activated := uint64(now) >= jovianTime
+	if activated {
+		p.isPostJovian.Swap(true)
 	}
 	return activated
 }

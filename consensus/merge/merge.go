@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/erigontech/erigon-lib/opstack"
 	"math/big"
 
 	"github.com/holiman/uint256"
@@ -189,6 +190,16 @@ func (s *Merge) Finalize(config *chain.Config, header *types.Header, state *stat
 		}
 	}
 
+	// Store DA footprint in BlobGasUsed header field if it hasn't already been set yet.
+	// Builder code may already calculate it during block building to avoid recalculating it here.
+	if config.IsJovian(header.Time) && (header.BlobGasUsed == nil || *header.BlobGasUsed == 0) {
+		daFootprint, err := CalcDAFootprint(txs)
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("error calculating DA footprint: %w", err)
+		}
+		header.BlobGasUsed = &daFootprint
+	}
+
 	return txs, receipts, rs, nil
 }
 
@@ -372,4 +383,38 @@ func IsTTDReached(chain consensus.ChainHeaderReader, parentHash libcommon.Hash, 
 		return false, consensus.ErrUnknownAncestorTD
 	}
 	return td.Cmp(chain.Config().TerminalTotalDifficulty) >= 0, nil
+}
+
+// CalcDAFootprint calculates the total DA footprint of a block for an OP Stack chain.
+// Jovian introduces a DA footprint block limit which is stored in the BlobGasUsed header field and that is taken
+// into account during base fee updates.
+// CalcDAFootprint must not be called for pre-Jovian blocks.
+func CalcDAFootprint(txs types.Transactions) (uint64, error) {
+	if txs.Len() == 0 || txs[0].Type() != types.DepositTxType {
+		return 0, fmt.Errorf("missing deposit transaction")
+	}
+
+	// First Jovian block doesn't set the DA footprint gas scalar yet and
+	// it must not have user transactions.
+	data := txs[0].GetData()
+	if len(data) == opstack.IsthmusL1AttributesLen {
+		if txs[len(txs)-1].Type() != types.DepositTxType {
+			// sufficient to check last transaction because deposits precede non-deposit txs
+			return 0, fmt.Errorf("unexpected non-deposit transactions in Jovian activation block")
+		}
+		return 0, nil
+	} // ExtractDAFootprintGasScalar catches all invalid lengths
+
+	daFootprintGasScalar, err := opstack.ExtractDAFootprintGasScalar(data)
+	if err != nil {
+		return 0, err
+	}
+	var daFootprint uint64
+	for _, tx := range txs {
+		if tx.Type() == types.DepositTxType {
+			continue
+		}
+		daFootprint += tx.RollupCostData().EstimatedDASize().Uint64() * uint64(daFootprintGasScalar)
+	}
+	return daFootprint, nil
 }

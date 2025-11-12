@@ -202,10 +202,32 @@ var PrecompiledContractsIsthmus = map[libcommon.Address]PrecompiledContract{
 	libcommon.BytesToAddress([]byte{0x01, 0x00}): &p256Verify{},
 }
 
+var PrecompiledContractsJovian = map[libcommon.Address]PrecompiledContract{
+	libcommon.BytesToAddress([]byte{1}):          &ecrecover{},
+	libcommon.BytesToAddress([]byte{2}):          &sha256hash{},
+	libcommon.BytesToAddress([]byte{3}):          &ripemd160hash{},
+	libcommon.BytesToAddress([]byte{4}):          &dataCopy{},
+	libcommon.BytesToAddress([]byte{5}):          &bigModExp{eip2565: true},
+	libcommon.BytesToAddress([]byte{6}):          &bn256AddIstanbul{},
+	libcommon.BytesToAddress([]byte{7}):          &bn256ScalarMulIstanbul{},
+	libcommon.BytesToAddress([]byte{8}):          &bn256PairingJovian{},
+	libcommon.BytesToAddress([]byte{9}):          &blake2F{},
+	libcommon.BytesToAddress([]byte{0x0a}):       &pointEvaluation{},
+	libcommon.BytesToAddress([]byte{0x0b}):       &bls12381G1Add{},
+	libcommon.BytesToAddress([]byte{0x0c}):       &bls12381G1MultiExpJovian{},
+	libcommon.BytesToAddress([]byte{0x0d}):       &bls12381G2Add{},
+	libcommon.BytesToAddress([]byte{0x0e}):       &bls12381G2MultiExpJovian{},
+	libcommon.BytesToAddress([]byte{0x0f}):       &bls12381PairingJovian{},
+	libcommon.BytesToAddress([]byte{0x10}):       &bls12381MapFpToG1{},
+	libcommon.BytesToAddress([]byte{0x11}):       &bls12381MapFp2ToG2{},
+	libcommon.BytesToAddress([]byte{0x01, 0x00}): &p256Verify{},
+}
+
 var (
 	PrecompiledAddressesGranite   []libcommon.Address
 	PrecompiledAddressesFjord     []libcommon.Address
 	PrecompiledAddressesIsthmus   []libcommon.Address
+	PrecompiledAddressesJovian    []libcommon.Address
 	PrecompiledAddressesPrague    []libcommon.Address
 	PrecompiledAddressesNapoli    []libcommon.Address
 	PrecompiledAddressesCancun    []libcommon.Address
@@ -246,11 +268,16 @@ func init() {
 	for k := range PrecompiledContractsPrague {
 		PrecompiledAddressesPrague = append(PrecompiledAddressesPrague, k)
 	}
+	for k := range PrecompiledContractsJovian {
+		PrecompiledAddressesJovian = append(PrecompiledAddressesJovian, k)
+	}
 }
 
 // ActivePrecompiles returns the precompiles enabled with the current configuration.
 func ActivePrecompiles(rules *chain.Rules) []libcommon.Address {
 	switch {
+	case rules.IsOptimismJovian:
+		return PrecompiledAddressesJovian
 	case rules.IsOptimismIsthmus:
 		return PrecompiledAddressesIsthmus
 	case rules.IsOptimismGranite:
@@ -695,6 +722,23 @@ func (c *bn256PairingGranite) Run(input []byte) ([]byte, error) {
 	return runBn256Pairing(input)
 }
 
+type bn256PairingJovian struct{}
+
+func (c *bn256PairingJovian) RequiredGas(input []byte) uint64 {
+	return new(bn256PairingIstanbul).RequiredGas(input)
+}
+
+func (c *bn256PairingJovian) Run(input []byte) ([]byte, error) {
+	if len(input) > int(params.Bn256PairingMaxInputSizeJovian) {
+		return nil, errBadPairingInputSize
+	}
+	return runBn256Pairing(input)
+}
+
+func (c *bn256PairingJovian) Name() string {
+	return "BN254_PAIRING"
+}
+
 // bn256PairingIstanbul implements a pairing pre-compile for the bn256 curve
 // conforming to Istanbul consensus rules.
 type bn256PairingIstanbul struct{}
@@ -900,6 +944,25 @@ func (c *bls12381G1MultiExpIsthmus) Run(input []byte) ([]byte, error) {
 	return new(bls12381G1MultiExp).Run(input)
 }
 
+type bls12381G1MultiExpJovian struct {
+}
+
+func (c *bls12381G1MultiExpJovian) RequiredGas(input []byte) uint64 {
+	return new(bls12381G1MultiExp).RequiredGas(input)
+}
+
+func (c *bls12381G1MultiExpJovian) Run(input []byte) ([]byte, error) {
+	if len(input) > int(params.Bls12381G1MulMaxInputSizeJovian) {
+		return nil, errBLS12381MaxG1Size
+	}
+
+	return new(bls12381G1MultiExp).Run(input)
+}
+
+func (c *bls12381G1MultiExpJovian) Name() string {
+	return "BLS12_G1MSM"
+}
+
 // bls12381G2Add implements EIP-2537 G2Add precompile.
 type bls12381G2Add struct{}
 
@@ -1007,6 +1070,25 @@ func (c *bls12381G2MultiExpIsthmus) Run(input []byte) ([]byte, error) {
 	}
 
 	return new(bls12381G2MultiExp).Run(input)
+}
+
+type bls12381G2MultiExpJovian struct {
+}
+
+func (c *bls12381G2MultiExpJovian) RequiredGas(input []byte) uint64 {
+	return new(bls12381G2MultiExp).RequiredGas(input)
+}
+
+func (c *bls12381G2MultiExpJovian) Run(input []byte) ([]byte, error) {
+	if len(input) > int(params.Bls12381G2MulMaxInputSizeJovian) {
+		return nil, errBLS12381MaxG2Size
+	}
+
+	return new(bls12381G2MultiExp).Run(input)
+}
+
+func (c *bls12381G2MultiExpJovian) Name() string {
+	return "BLS12_G2MSM"
 }
 
 // bls12381Pairing implements EIP-2537 Pairing precompile.
@@ -1174,6 +1256,25 @@ func (c *bls12381PairingIsthmus) Run(input []byte) ([]byte, error) {
 	}
 
 	return new(bls12381Pairing).Run(input)
+}
+
+type bls12381PairingJovian struct {
+}
+
+func (c *bls12381PairingJovian) RequiredGas(input []byte) uint64 {
+	return new(bls12381Pairing).RequiredGas(input)
+}
+
+func (c *bls12381PairingJovian) Run(input []byte) ([]byte, error) {
+	if len(input) > int(params.Bls12381PairingMaxInputSizeJovian) {
+		return nil, errBLS12381MaxPairingSize
+	}
+
+	return new(bls12381Pairing).Run(input)
+}
+
+func (c *bls12381PairingJovian) Name() string {
+	return "BLS12_PAIRING_CHECK"
 }
 
 // bls12381MapFpToG1 implements EIP-2537 MapG1 precompile.

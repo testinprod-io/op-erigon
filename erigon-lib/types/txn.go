@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"hash"
 	"io"
+	"math/big"
 	"math/bits"
 	"sort"
 
@@ -1151,11 +1152,37 @@ func (al AccessList) StorageKeys() int {
 	return sum
 }
 
+var (
+	L1CostIntercept          = big.NewInt(-42_585_600)
+	L1CostFastlzCoef         = big.NewInt(836_500)
+	MinTransactionSize       = big.NewInt(100)
+	MinTransactionSizeScaled = new(big.Int).Mul(MinTransactionSize, big.NewInt(1e6))
+)
+
 // RollupCostData is a transaction structure that caches data for quickly computing the data
 // availability costs for the transaction.
 type RollupCostData struct {
 	Zeroes, Ones uint64
 	FastLzSize   uint64
+}
+
+// estimatedDASizeScaled estimates the number of bytes the transaction will occupy in the DA batch using the Fjord
+// linear regression model, and returns this value scaled up by 1e6.
+func (cd RollupCostData) estimatedDASizeScaled() *big.Int {
+	fastLzSize := new(big.Int).SetUint64(cd.FastLzSize)
+	estimatedSize := new(big.Int).Add(L1CostIntercept, new(big.Int).Mul(L1CostFastlzCoef, fastLzSize))
+
+	if estimatedSize.Cmp(MinTransactionSizeScaled) < 0 {
+		estimatedSize.Set(MinTransactionSizeScaled)
+	}
+	return estimatedSize
+}
+
+// EstimatedDASize estimates the number of bytes the transaction will occupy in its DA batch using the Fjord linear
+// regression model.
+func (cd RollupCostData) EstimatedDASize() *big.Int {
+	b := cd.estimatedDASizeScaled()
+	return b.Div(b, big.NewInt(1e6))
 }
 
 type L1CostFn func(tx *TxSlot) *uint256.Int

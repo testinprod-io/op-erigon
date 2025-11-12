@@ -78,6 +78,7 @@ type Config struct {
 	GraniteTime  *big.Int `json:"graniteTime,omitempty"` // Granite switch time (nil = no fork, 0 = already on optimism granite)
 	HoloceneTime *big.Int `json:"holoceneTime,omitempty"`
 	IsthmusTime  *big.Int `json:"isthmusTime,omitempty"` // Isthmus switch time (nil = no fork, 0 = already on Optimism Isthmus)
+	JovianTime   *big.Int `json:"jovianTime,omitempty"`  // Jovian switch time (nil = no fork, 0 = already on Optimism Jovian)
 
 	// Optional EIP-4844 parameters (see also EIP-7691 & EIP-7840)
 	MinBlobGasPrice *uint64       `json:"minBlobGasPrice,omitempty"`
@@ -203,7 +204,7 @@ func (c *Config) String() string {
 		engine,
 	)
 	if c.IsOptimism() {
-		configString += fmt.Sprintf("{Bedrock: %v, Regolith: %v, Canyon: %v, Ecotone: %v, Fjord: %v, Granite: %v, Holocene: %v, Isthmus: %v}",
+		configString += fmt.Sprintf("{Bedrock: %v, Regolith: %v, Canyon: %v, Ecotone: %v, Fjord: %v, Granite: %v, Holocene: %v, Isthmus: %v, Jovian: %v}",
 			c.BedrockBlock,
 			c.RegolithTime,
 			c.CanyonTime,
@@ -212,6 +213,7 @@ func (c *Config) String() string {
 			c.GraniteTime,
 			c.HoloceneTime,
 			c.IsthmusTime,
+			c.JovianTime,
 		)
 		configString += fmt.Sprintf("{EIP1559Elasticity: %v, EIP1559Denominator: %v, EIP1559DenominatorCanyon: %v}",
 			c.Optimism.EIP1559Elasticity,
@@ -423,6 +425,10 @@ func (c *Config) IsIsthmus(time uint64) bool {
 	return isForked(c.IsthmusTime, time)
 }
 
+func (c *Config) IsJovian(time uint64) bool {
+	return isForked(c.JovianTime, time)
+}
+
 // IsOptimism returns whether the node is an optimism node or not.
 func (c *Config) IsOptimism() bool {
 	return c.Optimism != nil
@@ -459,6 +465,10 @@ func (c *Config) IsOptimismHolocene(time uint64) bool {
 
 func (c *Config) IsOptimismIsthmus(time uint64) bool {
 	return c.IsOptimism() && c.IsIsthmus(time)
+}
+
+func (c *Config) IsOptimismJovian(time uint64) bool {
+	return c.IsOptimism() && c.IsJovian(time)
 }
 
 // IsOptimismPreBedrock returns true iff this is an optimism node & bedrock is not yet active
@@ -715,7 +725,7 @@ type Rules struct {
 	IsOptimismBedrock, IsOptimismRegolith                bool
 	IsOptimismCanyon, IsOptimismEcotone, IsOptimismFjord bool
 	IsOptimismGranite, IsOptimismHolocene                bool
-	IsOptimismIsthmus                                    bool
+	IsOptimismIsthmus, IsOptimismJovian                  bool
 }
 
 // Rules ensures c's ChainID is not nil and returns a new Rules instance
@@ -750,6 +760,7 @@ func (c *Config) Rules(num uint64, time uint64) *Rules {
 		IsOptimismGranite:  c.IsOptimismGranite(time),
 		IsOptimismHolocene: c.IsOptimismHolocene(time),
 		IsOptimismIsthmus:  c.IsOptimismIsthmus(time),
+		IsOptimismJovian:   c.IsOptimismJovian(time),
 	}
 }
 

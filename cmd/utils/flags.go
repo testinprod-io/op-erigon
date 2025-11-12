@@ -155,6 +155,10 @@ var (
 		Name:  "override.isthmus",
 		Usage: "Manually specify the Optimism Isthmus fork time, overriding the bundled setting",
 	}
+	OverrideOptimismJovianFlag = flags.BigFlag{
+		Name:  "override.jovian",
+		Usage: "Manually specify the Optimism Jovian fork time, overriding the bundled setting",
+	}
 	// Ethash settings
 	EthashCachesInMemoryFlag = cli.IntFlag{
 		Name:  "ethash.cachesinmem",
@@ -2041,6 +2045,9 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 	}
 	if ctx.IsSet(OverrideOptimismIsthmusFlag.Name) {
 		cfg.OverrideOptimismIsthmusTime = flags.GlobalBig(ctx, OverrideOptimismIsthmusFlag.Name)
+	}
+	if ctx.IsSet(OverrideOptimismJovianFlag.Name) {
+		cfg.OverrideOptimismJovianTime = flags.GlobalBig(ctx, OverrideOptimismJovianFlag.Name)
 	}
 	if ctx.IsSet(InternalConsensusFlag.Name) && clparams.EmbeddedSupported(cfg.NetworkID) {
 		cfg.InternalCL = ctx.Bool(InternalConsensusFlag.Name)

@@ -17,15 +17,14 @@
 package evmtypes
 
 import (
+	"github.com/erigontech/erigon-lib/opstack"
 	"math/big"
 
 	"github.com/holiman/uint256"
 
 	"github.com/erigontech/erigon-lib/chain"
 	"github.com/erigontech/erigon-lib/common"
-	"github.com/erigontech/erigon-lib/opstack"
 	types2 "github.com/erigontech/erigon-lib/types"
-
 	"github.com/erigontech/erigon/core/types"
 )
 

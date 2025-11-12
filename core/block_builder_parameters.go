@@ -20,4 +20,5 @@ type BlockBuilderParameters struct {
 	NoTxPool              bool
 	GasLimit              *uint64
 	EIP1559Params         []byte
+	MinBaseFee            *uint64
 }

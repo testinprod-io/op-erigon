@@ -58,6 +58,7 @@ func (e *EthereumExecutionModule) AssembleBlock(ctx context.Context, req *execut
 		NoTxPool:              req.NoTxPool,
 		GasLimit:              req.GasLimit,
 		EIP1559Params:         req.Eip_1559Params,
+		MinBaseFee:            req.MinBaseFee,
 	}
 
 	if err := e.checkWithdrawalsPresence(param.Timestamp, param.Withdrawals); err != nil {

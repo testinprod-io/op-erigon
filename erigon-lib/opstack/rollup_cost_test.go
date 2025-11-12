@@ -35,9 +35,11 @@ var (
 	bedrockFee  = uint256.NewInt(11326000000000)
 	regolithFee = uint256.NewInt(3710000000000)
 	ecotoneFee  = uint256.NewInt(960900) // (480/16)*(2*16*1000 + 3*10) == 960900
+
 	// the emptyTx is out of bounds for the linear regression so it uses the minimum size
 	fjordFee          = uint256.NewInt(3203000)             // 100_000_000 * (2 * 1000 * 1e6 * 16 + 3 * 10 * 1e6) / 1e12
 	ithmusOperatorFee = uint256.NewInt(1256417826611659930) // 1618 * 1439103868 / 1e6 + 1256417826609331460
+	jovianOperatorFee = uint256.NewInt(1256650673615173860) // 1618 * 1439103868 * 100 + 1256417826609331460
 
 	bedrockGas      = uint256.NewInt(1618)
 	regolithGas     = uint256.NewInt(530) // 530  = 1618 - (16*68)
@@ -516,4 +518,71 @@ func TestNewOperatorCostFunc(t *testing.T) {
 	fee = costFunc(bedrockGas.Uint64(), time.Uint64())
 	require.NotNil(t, fee)
 	require.Equal(t, ithmusOperatorFee, fee)
+
+	// emptyTx fee w/ jovian config should be not 0
+	config.JovianTime = time
+	costFunc = NewOperatorCostFunc(config, statedb)
+	fee = costFunc(bedrockGas.Uint64(), time.Uint64())
+	require.NotNil(t, fee)
+	require.Equal(t, jovianOperatorFee, fee)
 }
+
+//// TestTotalRollupCostFunc tests that the total rollup cost function correctly
+//// combines the L1 cost and operator cost.
+//func TestTotalRollupCostFunc(t *testing.T) {
+//	one := big.NewInt(1)
+//	zeroTime := big.NewInt(0)
+//	isthmusTime := big.NewInt(10)
+//	jovianTime := big.NewInt(20)
+//	config := &chain.Config{
+//		Optimism:     OptimismTestConfig,
+//		RegolithTime: zeroTime,
+//		EcotoneTime:  zeroTime,
+//		FjordTime:    zeroTime,
+//		HoloceneTime: zeroTime,
+//		IsthmusTime:  isthmusTime,
+//		JovianTime:   jovianTime,
+//	}
+//	statedb := &testStateGetter{
+//		basefee:             basefee,
+//		overhead:            overhead,
+//		scalar:              scalar,
+//		blobBasefee:         blobBasefee,
+//		basefeeScalar:       uint32(basefeeScalar.Uint64()),
+//		blobBasefeeScalar:   uint32(blobBasefeeScalar.Uint64()),
+//		operatorFeeScalar:   uint32(operatorFeeScalar.Uint64()),
+//		operatorFeeConstant: operatorFeeConstant.Uint64(),
+//	}
+//
+//	costFunc := NewTotalRollupCostFunc(config, statedb)
+//
+//	emptyTxWithGas := EmptyTxWithGas{emptyTxRollupCostData, 500}
+//	// Pre-Isthmus: only L1 cost
+//	cost := costFunc(&emptyTxWithGas, (&big.Int{}).Sub(isthmusTime, one).Uint64())
+//	require.NotNil(t, cost)
+//	require.Equal(t, fjordFee, cost, "pre-Isthmus total rollup cost should only contain L1 cost")
+//
+//	// Isthmus: L1 cost + Isthmus operator cost
+//	cost = costFunc(&emptyTxWithGas, (&big.Int{}).Add(isthmusTime, one).Uint64())
+//	require.NotNil(t, cost)
+//	expCost := (&uint256.Int{}).Add(fjordFee, ithmusOperatorFee)
+//	require.Equal(t, expCost, cost, "Isthmus total rollup cost should contain L1 cost and Isthmus operator cost")
+//
+//	// Jovian: L1 cost + fixed operator cost
+//	cost = costFunc(&emptyTxWithGas, (&big.Int{}).Add(jovianTime, one).Uint64())
+//	require.NotNil(t, cost)
+//	expCost = (&uint256.Int{}).Add(fjordFee, jovianOperatorFee)
+//	require.Equal(t, expCost, cost, "Jovian total rollup cost should contain L1 cost and Jovian operator cost")
+//}
+//
+//type EmptyTxWithGas struct {
+//	rollupCostData types.RollupCostData
+//	gas            uint64
+//}
+//
+//func (tx *EmptyTxWithGas) Gas() uint64 {
+//	return tx.gas
+//}
+//func (tx *EmptyTxWithGas) RollupCostData() types.RollupCostData {
+//	return tx.rollupCostData
+//}

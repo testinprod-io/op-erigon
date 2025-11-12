@@ -260,6 +260,7 @@ type Config struct {
 	OverrideOptimismGraniteTime  *big.Int `toml:",omitempty"`
 	OverrideOptimismHoloceneTime *big.Int `toml:",omitempty"`
 	OverrideOptimismIsthmusTime  *big.Int `toml:",omitempty"`
+	OverrideOptimismJovianTime   *big.Int `toml:",omitempty"`
 
 	OverridePragueTime *big.Int `toml:",omitempty"`
 

@@ -63,6 +63,7 @@ type PayloadAttributes struct {
 	NoTxPool      bool               `json:"noTxPool,omitempty"`
 	GasLimit      *hexutil.Uint64    `json:"gasLimit,omitempty"`
 	EIP1559Params hexutility.Bytes   `json:"eip1559Params,omitempty" gencodec:"optional"`
+	MinBaseFee    *uint64            `json:"minBaseFee,omitempty" gencodec:"optional"`
 }
 
 // TransitionConfiguration represents the correct configurations of the CL and the EL

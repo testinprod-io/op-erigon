@@ -30,7 +30,6 @@ import (
 	"github.com/erigontech/erigon-lib/common/fixedgas"
 	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/erigontech/erigon-lib/types"
-
 	"github.com/holiman/uint256"
 )
 
@@ -50,6 +49,9 @@ const (
 
 	PreEcotoneL1InfoBytes  = 4 + 32*8
 	PostEcotoneL1InfoBytes = 164
+
+	IsthmusL1AttributesLen = 176
+	JovianL1AttributesLen  = 178
 )
 
 func init() {
@@ -66,6 +68,8 @@ var (
 	EcotoneL1AttributesSelector = []byte{0x44, 0x0a, 0x5e, 0x20}
 	// IsthmusL1AttributesSelector is the selector indicating Isthmus style L1 gas attributes.
 	IsthmusL1AttributesSelector = []byte{0x09, 0x89, 0x99, 0xbe}
+	// JovianL1AttributesSelector is the selector indicating Jovian style L1 gas attributes.
+	JovianL1AttributesSelector = []byte{0x3d, 0xb6, 0xbe, 0x2b}
 
 	// L1BlockAddr is the address of the L1Block contract which stores the L1 gas attributes.
 	L1BlockAddr = libcommon.HexToAddress("0x4200000000000000000000000000000000000015")
@@ -82,6 +86,7 @@ var (
 	// `BlobBaseFeeScalarSlotOffset` respectively.
 	L1FeeScalarsSlot = libcommon.BigToHash(big.NewInt(3))
 
+	oneHundred     = uint256.NewInt(100)
 	oneMillion     = uint256.NewInt(1_000_000)
 	ecotoneDivisor = uint256.NewInt(1_000_000 * 16)
 	fjordDivisor   = uint256.NewInt(1_000_000_000_000)
@@ -365,10 +370,10 @@ func extractL1GasParamsPostEcotone(data []byte) (gasParams, error) {
 }
 
 func extractL1InfoPostIsthmus(data []byte) (l1BaseFee, l1BlobBaseFee *uint256.Int, l1BaseFeeScalar, l1BlobBaseFeeScalar, operatorFeeScalar uint32, operatorFeeConstant uint64, err error) {
-	if len(data) != 176 {
-		return nil, nil, 0, 0, 0, 0, fmt.Errorf("expected 176 L1 info bytes, got %d", len(data))
+	if len(data) < 176 {
+		return nil, nil, 0, 0, 0, 0, fmt.Errorf("expected at least 176 L1 info bytes, got %d", len(data))
 	}
-	// data layout assumed for Isthmus:
+	// data layout assumed for post-Isthmus:
 	// offset type varname
 	// 0     <selector>
 	// 4     uint32 _basefeeScalar
@@ -441,7 +446,7 @@ func l1CostPreEcotoneHelper(gasWithOverhead, l1BaseFee, scalar *uint256.Int) *ui
 	return fee
 }
 
-func L1CostFnForTxPool(data []byte, isRegolith, isEcotone, isFjord, isIsthmus bool) (types.L1CostFn, error) {
+func L1CostFnForTxPool(data []byte, isRegolith, isEcotone, isFjord, isIsthmus, isJovian bool) (types.L1CostFn, error) {
 	var costFunc l1CostFunc = nil
 	if isEcotone && len(data) >= 4 && !bytes.Equal(data[0:4], BedrockL1AttributesSelector) {
 		var l1BaseFee, l1BlobBaseFee *uint256.Int
@@ -482,6 +487,20 @@ func L1CostFnForTxPool(data []byte, isRegolith, isEcotone, isFjord, isIsthmus bo
 		fee, _ := costFunc(tx.RollupCostData)
 		return fee
 	}, nil
+}
+
+// ExtractDAFootprintGasScalar extracts the DA footprint gas scalar from the L1 attributes transaction data
+// of a Jovian-enabled block.
+func ExtractDAFootprintGasScalar(data []byte) (uint16, error) {
+	if len(data) < JovianL1AttributesLen {
+		return 0, fmt.Errorf("L1 attributes transaction data too short for DA footprint gas scalar: %d", len(data))
+	}
+	// Future forks need to be added here
+	if !bytes.Equal(data[0:4], JovianL1AttributesSelector) {
+		return 0, fmt.Errorf("L1 attributes transaction data does not have Jovian selector")
+	}
+	daFootprintGasScalar := binary.BigEndian.Uint16(data[JovianL1AttributesLen-2 : JovianL1AttributesLen])
+	return daFootprintGasScalar, nil
 }
 
 // NewL1CostFuncFjord returns an l1 cost function suitable for the Fjord upgrade
@@ -567,7 +586,11 @@ func NewOperatorCostFunc(config *chain.Config, statedb StateGetter) OperatorCost
 		operatorFeeParams := libcommon.Hash(operatorFeeParamsInt.Bytes32())
 		operatorFeeScalar, operatorFeeConstant := ExtractOperatorFeeParams(operatorFeeParams)
 
-		return newOperatorCostFunc(operatorFeeScalar, operatorFeeConstant)
+		// Return the Operator Fee fix version if the feature is active
+		if config.IsOptimismJovian(blockTime) {
+			return newOperatorCostFuncOperatorFeeFix(operatorFeeScalar, operatorFeeConstant)
+		}
+		return newOperatorCostFuncIsthmus(operatorFeeScalar, operatorFeeConstant)
 	}
 
 	return func(gas uint64, blockTime uint64) *uint256.Int {
@@ -580,11 +603,24 @@ func NewOperatorCostFunc(config *chain.Config, statedb StateGetter) OperatorCost
 	}
 }
 
-func newOperatorCostFunc(operatorFeeScalar *uint256.Int, operatorFeeConstant *uint256.Int) operatorCostFunc {
+// newOperatorCostFuncIsthmus returns the operator cost function introduced with Isthmus.
+func newOperatorCostFuncIsthmus(operatorFeeScalar *uint256.Int, operatorFeeConstant *uint256.Int) operatorCostFunc {
 	return func(gas uint64) *uint256.Int {
 		fee := new(uint256.Int).SetUint64(gas)
 		fee = fee.Mul(fee, operatorFeeScalar)
 		fee = fee.Div(fee, oneMillion)
+		fee = fee.Add(fee, operatorFeeConstant)
+
+		return fee
+	}
+}
+
+// newOperatorCostFuncOperatorFeeFix returns the operator cost function for the operator fee fix feature.
+func newOperatorCostFuncOperatorFeeFix(operatorFeeScalar *uint256.Int, operatorFeeConstant *uint256.Int) operatorCostFunc {
+	return func(gas uint64) *uint256.Int {
+		fee := new(uint256.Int).SetUint64(gas)
+		fee = fee.Mul(fee, operatorFeeScalar)
+		fee = fee.Mul(fee, oneHundred)
 		fee = fee.Add(fee, operatorFeeConstant)
 
 		return fee

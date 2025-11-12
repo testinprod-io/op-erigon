@@ -30,6 +30,16 @@ import (
 // CalcExcessBlobGas implements calc_excess_blob_gas from EIP-4844
 // Updated for EIP-7691: currentHeaderTime is used to determine the fork, and hence params
 func CalcExcessBlobGas(config *chain.Config, parent *types.Header, currentHeaderTime uint64) uint64 {
+	// OP-Stack chains don't support blobs, but still set the excessBlobGas field (always to zero).
+	// So this function is called in many places for OP-Stack chains too. In order to not require
+	// a blob schedule in the chain config, we short circuit here.
+	if config.IsOptimism() {
+		if config.BlobSchedule != nil {
+			panic("OP-Stack: CalcBlobFee: unexpected blob schedule or excess blob gas")
+		}
+		return 0
+	}
+
 	var excessBlobGas, blobGasUsed uint64
 	if parent.ExcessBlobGas != nil {
 		excessBlobGas = *parent.ExcessBlobGas
