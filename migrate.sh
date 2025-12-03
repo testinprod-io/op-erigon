@@ -7,18 +7,6 @@ banner() {
     echo "|                                          |"
     printf "|$(tput bold) %-40s $(tput sgr0)|\n" "$@"
     echo "+------------------------------------------+"
-    slack_report "$1" > /dev/null
-}
-
-# never fail
-slack_report() {
-    if ! [ -e "slack_report.sh" ]; then
-        echo "slack reporter does not exist" 1>&2
-        return 0
-    fi
-    echo "sending slack message: $1"
-    ./slack_report.sh "$1" || true
-    echo
 }
 
 echo " ____           _                _      __  __ _                 _   _              "
@@ -30,11 +18,11 @@ echo " |____/ \___|\__,_|_|  \___/ \___|_|\_\ |_|  |_|_|\__, |_|  \__,_|\__|_|\_
 echo "                                                   __/ |                            "
 echo "                                                  |___/                             "
 
-CHAIN="optimism-goerli"
+CHAIN="op-mainnet"
 LOG_DIR="migration-log"
 
 if [[ -n "$1" ]]; then
-    if [[ "$1" == "optimism-goerli" || "$1" == "optimism-mainnet" ]]; then
+    if [[ "$1" == "optimism-goerli" || "$1" == "op-mainnet" ]]; then
         CHAIN=$1
     else
         echo "invalid value for chain name. Must be either 'optimism-goerli' or 'optimism-mainnet'"
@@ -73,6 +61,7 @@ echo "data dir set to $ERIGON_DATA_DIR"
 EXTRA_FLAGS="--no-downloader --nodiscover --maxpeers=0 --txpool.disable"
 EXTRA_FLAGS="$EXTRA_FLAGS --log.console.verbosity=3"
 EXTRA_FLAGS="$EXTRA_FLAGS --chain=$CHAIN"
+EXTRA_FLAGS="$EXTRA_FLAGS --prune.mode=archive"
 EXTRA_FLAGS="$EXTRA_FLAGS --metrics --metrics.addr=0.0.0.0 --metrics.port=55555"
 # disable port collision between prometheus
 EXTRA_FLAGS="$EXTRA_FLAGS --private.api.addr=localhost:12345"
@@ -104,4 +93,3 @@ time ./build/bin/erigon $EXTRA_FLAGS --datadir=$ERIGON_DATA_DIR --log.dir.path=$
 banner "Recover Senders"
 time ./build/bin/erigon $EXTRA_FLAGS --datadir=$ERIGON_DATA_DIR --log.dir.path=$LOG_DIR/recover_senders recover-senders 0 "$BEDROCK_START_BLOCK_NUM" 2> /dev/null
 
-slack_report "Import done" > /dev/null
