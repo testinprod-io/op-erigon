@@ -82,19 +82,22 @@ func (api *BaseAPI) getReceipts(ctx context.Context, tx kv.Tx, block *types.Bloc
 		}
 
 		if header.Number != nil && chainConfig.IsOptimismBedrock(header.Number.Uint64()) {
-			gasParams, err := opstack.ExtractL1GasParams(chainConfig, header.Time, block.Transactions()[0].GetData())
-
-			var daFootprintGasScalar uint64
-			isJovian := chainConfig.IsJovian(header.Time)
-			if isJovian {
-				scalar, err := opstack.ExtractDAFootprintGasScalar(txn.GetData())
+			if txn.Type() != types.DepositTxType {
+				gasParams, err := opstack.ExtractL1GasParams(chainConfig, header.Time, block.Transactions()[0].GetData())
 				if err != nil {
-					return nil, fmt.Errorf("failed to extract DA footprint gas scalar: %w", err)
+					return nil, err
 				}
-				daFootprintGasScalar = uint64(scalar)
-			}
 
-			if err == nil && txn.Type() != types.DepositTxType {
+				var daFootprintGasScalar uint64
+				isJovian := chainConfig.IsJovian(header.Time)
+				if isJovian {
+					scalar, err := opstack.ExtractDAFootprintGasScalar(txn.GetData())
+					if err != nil {
+						return nil, fmt.Errorf("failed to extract DA footprint gas scalar: %w", err)
+					}
+					daFootprintGasScalar = uint64(scalar)
+				}
+
 				receipt.L1GasPrice = gasParams.L1BaseFee.ToBig()
 				rcd := txn.RollupCostData()
 				l1Fee, l1GasUsed := gasParams.CostFunc(rcd)
