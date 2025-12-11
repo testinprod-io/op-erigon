@@ -91,7 +91,7 @@ func (api *BaseAPI) getReceipts(ctx context.Context, tx kv.Tx, block *types.Bloc
 				var daFootprintGasScalar uint64
 				isJovian := chainConfig.IsJovian(header.Time)
 				if isJovian {
-					scalar, err := opstack.ExtractDAFootprintGasScalar(txn.GetData())
+					scalar, err := opstack.ExtractDAFootprintGasScalar(block.Transactions()[0].GetData())
 					if err != nil {
 						return nil, fmt.Errorf("failed to extract DA footprint gas scalar: %w", err)
 					}
