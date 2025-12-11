@@ -639,6 +639,10 @@ func (r Receipts) DeriveFields(config *chain.Config, hash libcommon.Hash, number
 		}
 	}
 	if config.IsOptimismBedrock(number) && len(txs) >= 2 { // need at least an info tx and a non-info tx
+		if txs[len(txs)-1].Type() == DepositTxType {
+			return nil
+		}
+
 		gasParams, err := opstack.ExtractL1GasParams(config, time, txs[0].GetData())
 		if err != nil {
 			return err
